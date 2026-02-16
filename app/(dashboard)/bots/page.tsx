@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
@@ -142,11 +141,10 @@ export default function BotsPage() {
   )
 
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader title="Bots Management" description="Create and manage your Telegram bots" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-6">
-          {/* Actions bar */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -189,7 +187,6 @@ export default function BotsPage() {
             </Dialog>
           </div>
 
-          {/* Stats */}
           <div className="grid gap-4 md:grid-cols-4">
             <Card className="bg-card border-border">
               <CardContent className="flex items-center gap-3 p-4">
@@ -237,9 +234,7 @@ export default function BotsPage() {
             </Card>
           </div>
 
-          {/* Bot list */}
           <div className="grid gap-4 lg:grid-cols-2">
-            {/* Left: Bot cards */}
             <div className="flex flex-col gap-3">
               {filteredBots.map((bot) => (
                 <Card
@@ -305,7 +300,6 @@ export default function BotsPage() {
               ))}
             </div>
 
-            {/* Right: Bot detail */}
             <div>
               {selectedBot ? (
                 <Card className="bg-card border-border">
@@ -338,6 +332,6 @@ export default function BotsPage() {
           </div>
         </div>
       </ScrollArea>
-    </DashboardShell>
+    </>
   )
 }

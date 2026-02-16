@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +31,6 @@ import {
   AlertTriangle,
   Search,
   Download,
-  TrendingUp,
   ArrowUpRight,
   ArrowDownRight,
   ShoppingCart,
@@ -105,11 +103,10 @@ export default function PaymentsPage() {
   })
 
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader title="Payments" description="Payment automation and transaction management" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-6">
-          {/* Stats */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {paymentStats.map((stat) => (
               <Card key={stat.label} className="bg-card border-border">
@@ -139,7 +136,6 @@ export default function PaymentsPage() {
               <TabsTrigger value="gateways">Gateways</TabsTrigger>
             </TabsList>
 
-            {/* Transactions Table */}
             <TabsContent value="transactions" className="mt-6">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-3">
@@ -222,7 +218,6 @@ export default function PaymentsPage() {
               </Card>
             </TabsContent>
 
-            {/* Daily Chart */}
             <TabsContent value="chart" className="mt-6">
               <Card className="bg-card border-border">
                 <CardHeader className="pb-2">
@@ -253,7 +248,6 @@ export default function PaymentsPage() {
               </Card>
             </TabsContent>
 
-            {/* Gateways */}
             <TabsContent value="gateways" className="mt-6">
               <div className="grid gap-4 md:grid-cols-3">
                 {[
@@ -313,6 +307,6 @@ export default function PaymentsPage() {
           </Tabs>
         </div>
       </ScrollArea>
-    </DashboardShell>
+    </>
   )
 }

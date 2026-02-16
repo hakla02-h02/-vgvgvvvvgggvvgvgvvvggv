@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -94,7 +93,7 @@ export default function FlowsPage() {
   const [activeFlow, setActiveFlow] = useState(existingFlows[0])
 
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader
         title="Flow Builder"
         description="Design automated messaging and sales flows"
@@ -106,9 +105,7 @@ export default function FlowsPage() {
               <TabsList className="bg-secondary">
                 <TabsTrigger value="flows">My Flows</TabsTrigger>
                 <TabsTrigger value="builder">Visual Builder</TabsTrigger>
-                <TabsTrigger value="pro">
-                  Advanced (PRO)
-                </TabsTrigger>
+                <TabsTrigger value="pro">Advanced (PRO)</TabsTrigger>
               </TabsList>
               <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
                 <Plus className="mr-2 h-4 w-4" />
@@ -116,7 +113,6 @@ export default function FlowsPage() {
               </Button>
             </div>
 
-            {/* Flows List */}
             <TabsContent value="flows" className="mt-6">
               <div className="grid gap-4 lg:grid-cols-3">
                 {existingFlows.map((flow) => (
@@ -163,10 +159,8 @@ export default function FlowsPage() {
               </div>
             </TabsContent>
 
-            {/* Visual Builder */}
             <TabsContent value="builder" className="mt-6">
               <div className="grid gap-6 lg:grid-cols-4">
-                {/* Node palette */}
                 <Card className="bg-card border-border lg:col-span-1">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-sm font-medium text-foreground">Components</CardTitle>
@@ -185,7 +179,6 @@ export default function FlowsPage() {
                   </CardContent>
                 </Card>
 
-                {/* Canvas */}
                 <Card className="bg-card border-border lg:col-span-3">
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -231,7 +224,6 @@ export default function FlowsPage() {
               </div>
             </TabsContent>
 
-            {/* PRO Features */}
             <TabsContent value="pro" className="mt-6">
               <Card className="bg-card border-border">
                 <CardContent className="p-6">
@@ -267,6 +259,6 @@ export default function FlowsPage() {
           </Tabs>
         </div>
       </ScrollArea>
-    </DashboardShell>
+    </>
   )
 }

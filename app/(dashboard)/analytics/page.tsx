@@ -1,6 +1,5 @@
 "use client"
 
-import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -88,7 +87,7 @@ const sourceData = [
 
 export default function AnalyticsPage() {
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader title="Analytics & Tracking" description="Pixel integration, conversion tracking, and UTM analytics" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-6">
@@ -334,6 +333,6 @@ export default function AnalyticsPage() {
           </Tabs>
         </div>
       </ScrollArea>
-    </DashboardShell>
+    </>
   )
 }

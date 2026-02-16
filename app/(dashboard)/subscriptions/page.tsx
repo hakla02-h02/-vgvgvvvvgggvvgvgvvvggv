@@ -1,6 +1,5 @@
 "use client"
 
-import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -72,7 +71,7 @@ const reminderSettings = [
 
 export default function SubscriptionsPage() {
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader title="Subscriptions" description="Recurring billing and subscriber management" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-6">
@@ -263,6 +262,6 @@ export default function SubscriptionsPage() {
           </Tabs>
         </div>
       </ScrollArea>
-    </DashboardShell>
+    </>
   )
 }

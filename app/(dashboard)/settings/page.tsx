@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -110,7 +109,7 @@ export default function SettingsPage() {
   const [apiKeyVisible, setApiKeyVisible] = useState(false)
 
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader title="Settings" description="Platform configuration, security, and integrations" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-6">
@@ -627,6 +626,6 @@ export default function SettingsPage() {
           </Tabs>
         </div>
       </ScrollArea>
-    </DashboardShell>
+    </>
   )
 }

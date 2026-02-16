@@ -1,4 +1,3 @@
-import { DashboardShell } from "@/components/dashboard-shell"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { StatCards } from "@/components/overview/stat-cards"
 import { RevenueChart } from "@/components/overview/revenue-chart"
@@ -9,7 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 
 export default function DashboardPage() {
   return (
-    <DashboardShell>
+    <>
       <DashboardHeader
         title="Dashboard"
         description="Overview of your Telegram sales automation"
@@ -29,6 +28,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </ScrollArea>
-    </DashboardShell>
+    </>
   )
 }
