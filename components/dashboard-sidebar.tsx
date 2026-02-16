@@ -13,7 +13,6 @@ import {
   RefreshCw,
   BarChart3,
   Users,
-  ShieldCheck,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -63,11 +62,6 @@ const navItems = [
     label: "Users & Groups",
     href: "/users",
     icon: Users,
-  },
-  {
-    label: "Admin",
-    href: "/admin",
-    icon: ShieldCheck,
   },
   {
     label: "Settings",
