@@ -1,7 +1,9 @@
 "use client"
 
+import { useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
 import { DollarSign, Bot, TrendingUp, ShoppingCart } from "lucide-react"
+import { supabase } from "@/lib/supabase"
 
 const stats = [
   {
@@ -35,6 +37,27 @@ const stats = [
 ]
 
 export function StatCards() {
+  useEffect(() => {
+    async function testConnection() {
+      try {
+        const { error } = await supabase.from("_test_ping").select("*").limit(1)
+        if (error && error.code === "PGRST116") {
+          // Table doesn't exist but connection works
+          console.log("[v0] Supabase connected successfully (table not found is expected)")
+        } else if (error && error.code === "42P01") {
+          console.log("[v0] Supabase connected successfully (relation does not exist is expected)")
+        } else if (error) {
+          console.log("[v0] Supabase connection test error:", error.message, error.code)
+        } else {
+          console.log("[v0] Supabase connected and query successful")
+        }
+      } catch (err) {
+        console.log("[v0] Supabase connection failed:", err)
+      }
+    }
+    testConnection()
+  }, [])
+
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       {stats.map((stat) => (
