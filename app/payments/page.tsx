@@ -36,6 +36,7 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   ShoppingCart,
+  CreditCard,
 } from "lucide-react"
 import {
   BarChart,
