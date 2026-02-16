@@ -26,7 +26,6 @@ import {
   AlertTriangle,
   TrendingUp,
   Bell,
-  Percent,
   UserMinus,
   ArrowUpRight,
   ShoppingCart,

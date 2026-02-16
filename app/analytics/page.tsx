@@ -7,8 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import {
   Table,
@@ -19,16 +17,8 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import {
-  BarChart3,
-  Eye,
-  MousePointerClick,
-  ShoppingCart,
-  DollarSign,
   Target,
-  Link2,
-  Globe,
   TrendingUp,
-  Facebook,
   CheckCircle,
 } from "lucide-react"
 import {
