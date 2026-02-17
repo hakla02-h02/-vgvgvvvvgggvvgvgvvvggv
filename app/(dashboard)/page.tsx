@@ -16,7 +16,7 @@ export default function DashboardPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Dashboard" description="Overview of your Telegram sales automation" />
+        <DashboardHeader title="Painel" />
         <NoBotSelected />
       </>
     )
@@ -24,10 +24,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <DashboardHeader
-        title="Dashboard"
-        description="Overview of your Telegram sales automation"
-      />
+      <DashboardHeader title="Painel" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-6">
           <StatCards />
