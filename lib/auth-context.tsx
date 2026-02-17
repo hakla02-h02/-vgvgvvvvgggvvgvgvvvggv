@@ -3,9 +3,8 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
-import type { User } from "@supabase/supabase-js"
 
-interface AuthSession {
+export interface AuthSession {
   userId: string
   email: string
 }
@@ -18,35 +17,23 @@ interface AuthContextType {
   logout: () => void
 }
 
+const SESSION_KEY = "teleflow_session"
+const SESSION_HOURS = 5
+
 const AuthContext = createContext<AuthContextType | null>(null)
 
-const USERS_REGISTRY_KEY = "teleflow_users_registry"
-const BANNED_KEY = "teleflow_banned"
-
-function toSession(user: User): AuthSession {
-  return { userId: user.id, email: user.email ?? "" }
+function saveLocal(session: AuthSession) {
+  localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, exp: Date.now() + SESSION_HOURS * 3600000 }))
 }
 
-function registerInRegistry(userId: string, email: string) {
-  if (typeof window === "undefined") return
+function loadLocal(): AuthSession | null {
   try {
-    const raw = localStorage.getItem(USERS_REGISTRY_KEY)
-    const list = raw ? JSON.parse(raw) : []
-    const exists = list.find((u: { userId: string }) => u.userId === userId)
-    if (!exists) {
-      list.push({ userId, email, firstSeen: Date.now() })
-      localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(list))
-    }
-  } catch { /* ignore */ }
-}
-
-function isUserBanned(userId: string): boolean {
-  if (typeof window === "undefined") return false
-  try {
-    const raw = localStorage.getItem(BANNED_KEY)
-    const ids: string[] = raw ? JSON.parse(raw) : []
-    return ids.includes(userId)
-  } catch { return false }
+    const raw = localStorage.getItem(SESSION_KEY)
+    if (!raw) return null
+    const data = JSON.parse(raw)
+    if (Date.now() > data.exp) { localStorage.removeItem(SESSION_KEY); return null }
+    return { userId: data.userId, email: data.email }
+  } catch { return null }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -55,67 +42,64 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      if (s?.user) setSession(toSession(s.user))
-      setIsLoading(false)
-    })
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, s) => {
-      if (s?.user) {
-        registerInRegistry(s.user.id, s.user.email ?? "")
-        setSession(toSession(s.user))
-      } else {
-        setSession(null)
-      }
-    })
-
-    return () => subscription.unsubscribe()
+    const s = loadLocal()
+    setSession(s)
+    setIsLoading(false)
   }, [])
 
   const login = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      if (error.message.includes("Invalid login")) return { error: "Email ou senha incorretos." }
-      return { error: error.message }
-    }
-    if (data.user) {
-      if (isUserBanned(data.user.id)) {
-        await supabase.auth.signOut()
-        return { error: "Sua conta foi banida." }
-      }
-      registerInRegistry(data.user.id, data.user.email ?? email)
-      setSession(toSession(data.user))
-      router.push("/")
-    }
+    const cleanEmail = email.toLowerCase().trim()
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, email, password, banned")
+      .eq("email", cleanEmail)
+      .single()
+
+    if (error || !data) return { error: "Email ou senha incorretos." }
+    if (data.password !== password) return { error: "Email ou senha incorretos." }
+    if (data.banned) return { error: "Sua conta foi banida." }
+
+    const s: AuthSession = { userId: data.id, email: data.email }
+    saveLocal(s)
+    setSession(s)
+    router.push("/")
     return { error: null }
   }, [router])
 
   const register = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    if (error) {
-      if (error.message.includes("already registered")) return { error: "Este email ja esta cadastrado." }
-      if (error.message.includes("at least 6") || error.message.includes("least 6")) return { error: "A senha precisa ter no minimo 6 caracteres." }
-      return { error: error.message }
+    const cleanEmail = email.toLowerCase().trim()
+
+    if (password.length < 4) return { error: "A senha precisa ter no minimo 4 caracteres." }
+
+    const { data: existing } = await supabase
+      .from("users")
+      .select("id")
+      .eq("email", cleanEmail)
+      .single()
+
+    if (existing) return { error: "Esse email ja esta cadastrado." }
+
+    const { data, error } = await supabase
+      .from("users")
+      .insert({ email: cleanEmail, password })
+      .select("id, email")
+      .single()
+
+    if (error || !data) {
+      console.log("[v0] Register error:", error)
+      return { error: "Erro ao criar conta. Tente novamente." }
     }
-    if (data.user && data.session) {
-      registerInRegistry(data.user.id, data.user.email ?? email)
-      setSession(toSession(data.user))
-      router.push("/")
-    } else if (data.user && !data.session) {
-      // Supabase email confirmation enabled - user created but needs to confirm
-      // For dev, we auto-login since confirmation may be disabled
-      const { data: loginData } = await supabase.auth.signInWithPassword({ email, password })
-      if (loginData.user) {
-        registerInRegistry(loginData.user.id, loginData.user.email ?? email)
-        setSession(toSession(loginData.user))
-        router.push("/")
-      }
-    }
+
+    const s: AuthSession = { userId: data.id, email: data.email }
+    saveLocal(s)
+    setSession(s)
+    router.push("/")
     return { error: null }
   }, [router])
 
   const logout = useCallback(() => {
-    supabase.auth.signOut()
+    localStorage.removeItem(SESSION_KEY)
     setSession(null)
     router.push("/login")
   }, [router])
