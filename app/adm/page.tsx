@@ -27,8 +27,6 @@ import {
   Ban,
   CheckCircle,
   Users,
-  ShieldCheck,
-  Zap,
 } from "lucide-react"
 import { getAllUsers, saveAllUsers, type StoredUser } from "@/lib/auth-context"
 import type { Bot as BotType } from "@/lib/bot-context"
@@ -43,7 +41,7 @@ function getStoredBots(): BotType[] {
   }
 }
 
-export default function AdminPage() {
+export default function AdmPage() {
   const [search, setSearch] = useState("")
   const [users, setUsers] = useState<StoredUser[]>([])
   const [bots, setBots] = useState<BotType[]>([])
@@ -70,8 +68,9 @@ export default function AdminPage() {
   }
 
   const filteredUsers = users.filter(
-    (u) => u.email.toLowerCase().includes(search.toLowerCase()) ||
-           u.userId.toLowerCase().includes(search.toLowerCase())
+    (u) =>
+      u.email.toLowerCase().includes(search.toLowerCase()) ||
+      u.userId.toLowerCase().includes(search.toLowerCase())
   )
 
   const totalBots = bots.length
@@ -79,23 +78,7 @@ export default function AdminPage() {
   const bannedUsers = users.filter((u) => u.banned).length
 
   return (
-    <ScrollArea className="flex-1 h-screen">
-      {/* Header */}
-      <div className="flex items-center justify-between border-b border-border px-6 py-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-destructive/15">
-            <ShieldCheck className="h-5 w-5 text-destructive" />
-          </div>
-          <div>
-            <h1 className="text-lg font-semibold text-foreground">Painel Admin</h1>
-            <p className="text-sm text-muted-foreground">Gerencie todos os usuarios da plataforma</p>
-          </div>
-        </div>
-        <Badge variant="outline" className="border-destructive/30 bg-destructive/10 text-destructive text-xs">
-          Admin
-        </Badge>
-      </div>
-
+    <ScrollArea className="flex-1">
       <div className="flex flex-col gap-6 p-6">
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-3">
@@ -159,7 +142,9 @@ export default function AdminPage() {
               <div className="flex flex-col items-center justify-center py-16 gap-3">
                 <Users className="h-10 w-10 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">
-                  {users.length === 0 ? "Nenhum usuario registrado ainda" : "Nenhum resultado"}
+                  {users.length === 0
+                    ? "Nenhum usuario registrado ainda"
+                    : "Nenhum resultado"}
                 </p>
               </div>
             ) : (
@@ -167,11 +152,10 @@ export default function AdminPage() {
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-muted-foreground text-xs">Email</TableHead>
-                    <TableHead className="text-muted-foreground text-xs">ID</TableHead>
                     <TableHead className="text-muted-foreground text-xs">Bots</TableHead>
                     <TableHead className="text-muted-foreground text-xs">Registrado em</TableHead>
                     <TableHead className="text-muted-foreground text-xs">Status</TableHead>
-                    <TableHead className="text-muted-foreground text-xs">Acoes</TableHead>
+                    <TableHead className="text-muted-foreground text-xs text-right">Acoes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -180,20 +164,16 @@ export default function AdminPage() {
                     return (
                       <TableRow key={user.userId} className="border-border">
                         <TableCell>
-                          <span className="text-sm font-medium text-foreground">{user.email}</span>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-xs font-mono text-muted-foreground">{user.userId}</span>
+                          <span className="text-sm font-medium text-foreground">
+                            {user.email}
+                          </span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1.5">
                             <Bot className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-sm text-foreground">{userBots.length}</span>
-                            {userBots.length > 0 && (
-                              <span className="text-xs text-muted-foreground">
-                                ({userBots.map((b) => b.name).join(", ")})
-                              </span>
-                            )}
+                            <span className="text-sm text-foreground">
+                              {userBots.length}
+                            </span>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -203,27 +183,40 @@ export default function AdminPage() {
                         </TableCell>
                         <TableCell>
                           {user.banned ? (
-                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20 text-xs">
+                            <Badge
+                              variant="outline"
+                              className="bg-destructive/10 text-destructive border-destructive/20 text-xs"
+                            >
                               Banido
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-success/10 text-success border-success/20 text-xs">
+                            <Badge
+                              variant="outline"
+                              className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs"
+                            >
                               Ativo
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell>
+                        <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground"
+                              >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="bg-popover border-border">
+                            <DropdownMenuContent
+                              align="end"
+                              className="bg-popover border-border"
+                            >
                               {user.banned ? (
                                 <DropdownMenuItem
                                   onClick={() => toggleBan(user.userId)}
-                                  className="text-success"
+                                  className="text-emerald-400"
                                 >
                                   <CheckCircle className="mr-2 h-4 w-4" />
                                   Desbanir
@@ -248,17 +241,6 @@ export default function AdminPage() {
             )}
           </CardContent>
         </Card>
-      </div>
-
-      {/* Back to dashboard link */}
-      <div className="flex justify-center pb-8">
-        <a
-          href="/"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Zap className="h-4 w-4" />
-          Voltar ao painel
-        </a>
       </div>
     </ScrollArea>
   )
