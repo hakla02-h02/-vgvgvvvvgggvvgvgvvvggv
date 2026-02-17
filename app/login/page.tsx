@@ -3,19 +3,17 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Zap, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Zap, Eye, EyeOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<"login" | "register">("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
-  const [submitting, setSubmitting] = useState(false)
-  const { login, register, session, isLoading } = useAuth()
+  const { login, session, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -24,21 +22,24 @@ export default function LoginPage() {
     }
   }, [isLoading, session, router])
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
-    if (!email.trim()) { setError("Digite seu email"); return }
-    if (!password.trim()) { setError("Digite sua senha"); return }
-
-    setSubmitting(true)
-    if (mode === "login") {
-      const { error: err } = await login(email.trim(), password)
-      if (err) setError(err)
-    } else {
-      const { error: err } = await register(email.trim(), password)
-      if (err) setError(err)
+    if (!email.trim()) {
+      setError("Digite seu email")
+      return
     }
-    setSubmitting(false)
+    if (!password.trim()) {
+      setError("Digite sua senha")
+      return
+    }
+    try {
+      login(email.trim(), password)
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === "BANNED") {
+        setError("Sua conta foi banida.")
+      }
+    }
   }
 
   if (isLoading || session) {
@@ -62,66 +63,42 @@ export default function LoginPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">TeleFlow</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "login" ? "Entre para acessar seu painel" : "Crie sua conta para comecar"}
+              Entre para acessar seu painel
             </p>
           </div>
-        </div>
-
-        {/* Tabs */}
-        <div className="mb-6 flex rounded-xl bg-secondary p-1">
-          <button
-            type="button"
-            onClick={() => { setMode("login"); setError("") }}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-              mode === "login"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Entrar
-          </button>
-          <button
-            type="button"
-            onClick={() => { setMode("register"); setError("") }}
-            className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-              mode === "register"
-                ? "bg-card text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            Cadastrar
-          </button>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-2">
-            <Label htmlFor="email" className="text-sm text-foreground">Email</Label>
+            <Label htmlFor="email" className="text-sm text-foreground">
+              Email
+            </Label>
             <Input
               id="email"
               type="email"
               placeholder="seu@email.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground rounded-xl"
+              className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
               autoComplete="email"
               autoFocus
-              disabled={submitting}
             />
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="password" className="text-sm text-foreground">Senha</Label>
+            <Label htmlFor="password" className="text-sm text-foreground">
+              Senha
+            </Label>
             <div className="relative">
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder={mode === "register" ? "Minimo 6 caracteres" : "Sua senha"}
+                placeholder="Sua senha"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-10 rounded-xl"
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                disabled={submitting}
+                className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-10"
+                autoComplete="current-password"
               />
               <button
                 type="button"
@@ -140,23 +117,14 @@ export default function LoginPage() {
 
           <Button
             type="submit"
-            disabled={submitting}
-            className="h-11 w-full bg-accent text-accent-foreground hover:bg-accent/90 font-medium rounded-xl"
+            className="h-11 w-full bg-accent text-accent-foreground hover:bg-accent/90 font-medium"
           >
-            {submitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : mode === "login" ? (
-              "Entrar"
-            ) : (
-              "Criar conta"
-            )}
+            Entrar
           </Button>
         </form>
 
         <p className="mt-6 text-center text-xs text-muted-foreground">
-          {mode === "login"
-            ? "Nao tem conta? Clique em Cadastrar acima."
-            : "Ja tem conta? Clique em Entrar acima."}
+          Sessao valida por 5 horas
         </p>
       </div>
     </div>
