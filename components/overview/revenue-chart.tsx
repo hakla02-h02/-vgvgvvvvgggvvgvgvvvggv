@@ -1,6 +1,10 @@
 "use client"
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { useState, useMemo } from "react"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { CalendarDays } from "lucide-react"
 import {
   AreaChart,
   Area,
@@ -11,36 +15,86 @@ import {
   ResponsiveContainer,
 } from "recharts"
 
-const data = [
-  { name: "Jan", vendas: 18 },
-  { name: "Fev", vendas: 24 },
-  { name: "Mar", vendas: 20 },
-  { name: "Abr", vendas: 32 },
-  { name: "Mai", vendas: 28 },
-  { name: "Jun", vendas: 42 },
-  { name: "Jul", vendas: 38 },
-  { name: "Ago", vendas: 45 },
-  { name: "Set", vendas: 40 },
-  { name: "Out", vendas: 52 },
-  { name: "Nov", vendas: 48 },
-  { name: "Dez", vendas: 58 },
+const horaData = Array.from({ length: 24 }, (_, i) => ({
+  name: `${String(i).padStart(2, "0")}h`,
+  vendas: Math.floor(Math.random() * 8) + 1,
+  valor: Math.floor(Math.random() * 800) + 50,
+}))
+
+const diaData = Array.from({ length: 30 }, (_, i) => ({
+  name: `${i + 1}`,
+  vendas: Math.floor(Math.random() * 20) + 2,
+  valor: Math.floor(Math.random() * 3000) + 200,
+}))
+
+const mesData = [
+  { name: "Jan", vendas: 18, valor: 3540 },
+  { name: "Fev", vendas: 24, valor: 4720 },
+  { name: "Mar", vendas: 20, valor: 3940 },
+  { name: "Abr", vendas: 32, valor: 6280 },
+  { name: "Mai", vendas: 28, valor: 5510 },
+  { name: "Jun", vendas: 42, valor: 8260 },
+  { name: "Jul", vendas: 38, valor: 7480 },
+  { name: "Ago", vendas: 45, valor: 8850 },
+  { name: "Set", vendas: 40, valor: 7870 },
+  { name: "Out", vendas: 52, valor: 10230 },
+  { name: "Nov", vendas: 48, valor: 9440 },
+  { name: "Dez", vendas: 58, valor: 11410 },
 ]
 
+type Periodo = "hora" | "dia" | "mes"
+
 export function RevenueChart() {
+  const [periodo, setPeriodo] = useState<Periodo>("mes")
+  const [dataEspecifica, setDataEspecifica] = useState("")
+
+  const chartData = useMemo(() => {
+    if (periodo === "hora") return horaData
+    if (periodo === "dia") return diaData
+    return mesData
+  }, [periodo])
+
+  const formatValor = (v: number) =>
+    v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+
   return (
     <Card className="bg-card border-border rounded-2xl">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-foreground">
-          Vendas por Mes
-        </CardTitle>
+      <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+        <p className="text-sm font-medium text-foreground">Vendas</p>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center rounded-xl bg-secondary p-0.5">
+            {(["hora", "dia", "mes"] as Periodo[]).map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriodo(p)}
+                className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                  periodo === p
+                    ? "bg-accent text-accent-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {p === "mes" ? "Mes" : p === "dia" ? "Dia" : "Hora"}
+              </button>
+            ))}
+          </div>
+          <div className="relative">
+            <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              type="date"
+              value={dataEspecifica}
+              onChange={(e) => setDataEspecifica(e.target.value)}
+              className="h-8 w-36 border-border bg-secondary pl-8 text-xs text-foreground rounded-xl"
+            />
+          </div>
+        </div>
       </CardHeader>
       <CardContent>
-        <div className="h-64">
+        <div className="h-72">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
+            <AreaChart data={chartData}>
               <defs>
-                <linearGradient id="salesGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="hsl(160, 60%, 45%)" stopOpacity={0.3} />
+                <linearGradient id="salesGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(160, 60%, 45%)" stopOpacity={0.25} />
                   <stop offset="100%" stopColor="hsl(160, 60%, 45%)" stopOpacity={0} />
                 </linearGradient>
               </defs>
@@ -49,12 +103,12 @@ export function RevenueChart() {
                 dataKey="name"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 12 }}
+                tick={{ fill: "hsl(0, 0%, 45%)", fontSize: 11 }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "hsl(0, 0%, 55%)", fontSize: 12 }}
+                tick={{ fill: "hsl(0, 0%, 45%)", fontSize: 11 }}
               />
               <Tooltip
                 contentStyle={{
@@ -62,16 +116,19 @@ export function RevenueChart() {
                   border: "1px solid hsl(0, 0%, 14%)",
                   borderRadius: "12px",
                   color: "hsl(0, 0%, 95%)",
-                  fontSize: 13,
+                  fontSize: 12,
                 }}
-                formatter={(value: number) => [value, "Vendas"]}
+                formatter={(value: number, name: string) => [
+                  name === "valor" ? formatValor(value) : value,
+                  name === "valor" ? "Faturado" : "Vendas",
+                ]}
               />
               <Area
                 type="monotone"
                 dataKey="vendas"
                 stroke="hsl(160, 60%, 45%)"
                 strokeWidth={2}
-                fill="url(#salesGradient)"
+                fill="url(#salesGrad)"
               />
             </AreaChart>
           </ResponsiveContainer>
