@@ -2,125 +2,126 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+import type { User } from "@supabase/supabase-js"
 
-const SESSION_DURATION = 5 * 60 * 60 * 1000 // 5 hours
-const STORAGE_KEY = "teleflow_session"
-const USERS_STORAGE_KEY = "teleflow_users"
-
-interface Session {
+interface AuthSession {
   userId: string
   email: string
-  loggedInAt: number
-}
-
-export interface StoredUser {
-  userId: string
-  email: string
-  registeredAt: number
-  banned: boolean
 }
 
 interface AuthContextType {
-  session: Session | null
+  session: AuthSession | null
   isLoading: boolean
-  login: (email: string, password: string) => void
+  login: (email: string, password: string) => Promise<{ error: string | null }>
+  register: (email: string, password: string) => Promise<{ error: string | null }>
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-function generateUserId(email: string) {
-  let hash = 0
-  for (let i = 0; i < email.length; i++) {
-    const char = email.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
-  }
-  return "user_" + Math.abs(hash).toString(36)
+const USERS_REGISTRY_KEY = "teleflow_users_registry"
+const BANNED_KEY = "teleflow_banned"
+
+function toSession(user: User): AuthSession {
+  return { userId: user.id, email: user.email ?? "" }
 }
 
-function getStoredSession(): Session | null {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const session: Session = JSON.parse(raw)
-    const elapsed = Date.now() - session.loggedInAt
-    if (elapsed > SESSION_DURATION) {
-      localStorage.removeItem(STORAGE_KEY)
-      return null
-    }
-    return session
-  } catch {
-    return null
-  }
-}
-
-// Store/get all registered users
-export function getAllUsers(): StoredUser[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(USERS_STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-export function saveAllUsers(users: StoredUser[]) {
+function registerInRegistry(userId: string, email: string) {
   if (typeof window === "undefined") return
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
+  try {
+    const raw = localStorage.getItem(USERS_REGISTRY_KEY)
+    const list = raw ? JSON.parse(raw) : []
+    const exists = list.find((u: { userId: string }) => u.userId === userId)
+    if (!exists) {
+      list.push({ userId, email, firstSeen: Date.now() })
+      localStorage.setItem(USERS_REGISTRY_KEY, JSON.stringify(list))
+    }
+  } catch { /* ignore */ }
 }
 
-function registerUserIfNew(userId: string, email: string) {
-  const users = getAllUsers()
-  const exists = users.find((u) => u.userId === userId)
-  if (!exists) {
-    users.push({ userId, email, registeredAt: Date.now(), banned: false })
-    saveAllUsers(users)
-  }
+function isUserBanned(userId: string): boolean {
+  if (typeof window === "undefined") return false
+  try {
+    const raw = localStorage.getItem(BANNED_KEY)
+    const ids: string[] = raw ? JSON.parse(raw) : []
+    return ids.includes(userId)
+  } catch { return false }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    const stored = getStoredSession()
-    setSession(stored)
-    setIsLoading(false)
+    supabase.auth.getSession().then(({ data: { session: s } }) => {
+      if (s?.user) setSession(toSession(s.user))
+      setIsLoading(false)
+    })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_ev, s) => {
+      if (s?.user) {
+        registerInRegistry(s.user.id, s.user.email ?? "")
+        setSession(toSession(s.user))
+      } else {
+        setSession(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const login = useCallback((email: string, _password: string) => {
-    const userId = generateUserId(email)
-
-    // Check if banned
-    const users = getAllUsers()
-    const existing = users.find((u) => u.userId === userId)
-    if (existing?.banned) {
-      throw new Error("BANNED")
+  const login = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) {
+      if (error.message.includes("Invalid login")) return { error: "Email ou senha incorretos." }
+      return { error: error.message }
     }
-
-    const newSession: Session = {
-      userId,
-      email,
-      loggedInAt: Date.now(),
+    if (data.user) {
+      if (isUserBanned(data.user.id)) {
+        await supabase.auth.signOut()
+        return { error: "Sua conta foi banida." }
+      }
+      registerInRegistry(data.user.id, data.user.email ?? email)
+      setSession(toSession(data.user))
+      router.push("/")
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession))
-    registerUserIfNew(userId, email)
-    setSession(newSession)
-    router.push("/")
+    return { error: null }
+  }, [router])
+
+  const register = useCallback(async (email: string, password: string): Promise<{ error: string | null }> => {
+    const { data, error } = await supabase.auth.signUp({ email, password })
+    if (error) {
+      if (error.message.includes("already registered")) return { error: "Este email ja esta cadastrado." }
+      if (error.message.includes("at least 6") || error.message.includes("least 6")) return { error: "A senha precisa ter no minimo 6 caracteres." }
+      return { error: error.message }
+    }
+    if (data.user && data.session) {
+      registerInRegistry(data.user.id, data.user.email ?? email)
+      setSession(toSession(data.user))
+      router.push("/")
+    } else if (data.user && !data.session) {
+      // Supabase email confirmation enabled - user created but needs to confirm
+      // For dev, we auto-login since confirmation may be disabled
+      const { data: loginData } = await supabase.auth.signInWithPassword({ email, password })
+      if (loginData.user) {
+        registerInRegistry(loginData.user.id, loginData.user.email ?? email)
+        setSession(toSession(loginData.user))
+        router.push("/")
+      }
+    }
+    return { error: null }
   }, [router])
 
   const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
+    supabase.auth.signOut()
     setSession(null)
     router.push("/login")
   }, [router])
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ session, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )
@@ -128,6 +129,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider")
+  if (!ctx) throw new Error("useAuth fora do AuthProvider")
   return ctx
 }
