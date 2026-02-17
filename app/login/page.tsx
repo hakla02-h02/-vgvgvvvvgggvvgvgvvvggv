@@ -33,7 +33,13 @@ export default function LoginPage() {
       setError("Digite sua senha")
       return
     }
-    login(email.trim(), password)
+    try {
+      login(email.trim(), password)
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === "BANNED") {
+        setError("Sua conta foi banida.")
+      }
+    }
   }
 
   if (isLoading || session) {
