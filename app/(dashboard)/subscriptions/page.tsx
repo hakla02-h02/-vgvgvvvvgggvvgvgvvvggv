@@ -17,6 +17,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { NoBotSelected } from "@/components/no-bot-selected"
+import { useBots } from "@/lib/bot-context"
 import {
   RefreshCw,
   Users,
@@ -70,6 +72,17 @@ const reminderSettings = [
 ]
 
 export default function SubscriptionsPage() {
+  const { selectedBot } = useBots()
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Subscriptions" description="Recurring billing and subscriber management" />
+        <NoBotSelected />
+      </>
+    )
+  }
+
   return (
     <>
       <DashboardHeader title="Subscriptions" description="Recurring billing and subscriber management" />

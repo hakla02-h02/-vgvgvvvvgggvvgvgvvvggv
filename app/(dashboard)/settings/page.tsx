@@ -18,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { NoBotSelected } from "@/components/no-bot-selected"
+import { useBots } from "@/lib/bot-context"
 import {
   Settings,
   Shield,
@@ -106,7 +108,17 @@ const webhooks = [
 ]
 
 export default function SettingsPage() {
+  const { selectedBot } = useBots()
   const [apiKeyVisible, setApiKeyVisible] = useState(false)
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Settings" description="Platform configuration, security, and integrations" />
+        <NoBotSelected />
+      </>
+    )
+  }
 
   return (
     <>

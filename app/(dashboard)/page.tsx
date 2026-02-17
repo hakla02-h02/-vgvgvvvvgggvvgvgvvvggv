@@ -1,12 +1,27 @@
+"use client"
+
 import { DashboardHeader } from "@/components/dashboard-header"
 import { StatCards } from "@/components/overview/stat-cards"
 import { RevenueChart } from "@/components/overview/revenue-chart"
 import { RecentTransactions } from "@/components/overview/recent-transactions"
 import { QuickActions } from "@/components/overview/quick-actions"
 import { NotificationsPanel } from "@/components/overview/notifications-panel"
+import { NoBotSelected } from "@/components/no-bot-selected"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { useBots } from "@/lib/bot-context"
 
 export default function DashboardPage() {
+  const { selectedBot } = useBots()
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Dashboard" description="Overview of your Telegram sales automation" />
+        <NoBotSelected />
+      </>
+    )
+  }
+
   return (
     <>
       <DashboardHeader

@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
+import { AuthProvider } from "@/lib/auth-context"
 import { PageLoading } from "@/components/page-loading"
 import "./globals.css"
 
@@ -23,8 +24,10 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="dark">
       <body className={`${inter.variable} font-sans antialiased`}>
-        <PageLoading />
-        {children}
+        <AuthProvider>
+          <PageLoading />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   )

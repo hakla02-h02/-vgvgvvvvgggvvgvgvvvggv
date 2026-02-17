@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import {
   Dialog,
@@ -15,21 +14,20 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
   Plus,
   Search,
-  Bot,
+  Bot as BotIcon,
   MoreHorizontal,
-  TrendingUp,
-  Users,
-  DollarSign,
   Activity,
-  GitBranch,
-  CreditCard,
-  Megaphone,
-  BarChart3,
+  Users,
+  Trash2,
+  Pencil,
+  Circle,
+  LinkIcon,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -37,165 +35,182 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-
-interface BotData {
-  id: string
-  name: string
-  username: string
-  status: "active" | "paused" | "inactive"
-  sales: number
-  revenue: string
-  users: number
-  conversion: string
-  flows: number
-  createdAt: string
-}
-
-const botsData: BotData[] = [
-  { id: "1", name: "VendasBot", username: "@vendas_bot", status: "active", sales: 847, revenue: "R$ 42,350.00", users: 3240, conversion: "12.4%", flows: 5, createdAt: "Jan 15, 2026" },
-  { id: "2", name: "ProBot", username: "@pro_sales_bot", status: "active", sales: 523, revenue: "R$ 28,190.00", users: 1890, conversion: "9.8%", flows: 3, createdAt: "Feb 02, 2026" },
-  { id: "3", name: "FunnelBot", username: "@funnel_master", status: "active", sales: 312, revenue: "R$ 15,600.00", users: 980, conversion: "7.2%", flows: 8, createdAt: "Jan 28, 2026" },
-  { id: "4", name: "LeadBot", username: "@lead_capture", status: "paused", sales: 189, revenue: "R$ 9,450.00", users: 2100, conversion: "5.1%", flows: 2, createdAt: "Dec 10, 2025" },
-  { id: "5", name: "UpsellBot", username: "@upsell_pro", status: "active", sales: 156, revenue: "R$ 7,800.00", users: 560, conversion: "15.3%", flows: 4, createdAt: "Feb 10, 2026" },
-  { id: "6", name: "TestBot", username: "@test_staging", status: "inactive", sales: 0, revenue: "R$ 0.00", users: 12, conversion: "0%", flows: 1, createdAt: "Feb 14, 2026" },
-]
-
-const statusStyles: Record<string, string> = {
-  active: "bg-success/10 text-success border-success/20",
-  paused: "bg-warning/10 text-warning border-warning/20",
-  inactive: "bg-muted text-muted-foreground border-border",
-}
-
-function BotDetailTabs({ bot }: { bot: BotData }) {
-  return (
-    <Tabs defaultValue="overview" className="mt-4">
-      <TabsList className="bg-secondary">
-        <TabsTrigger value="overview">Overview</TabsTrigger>
-        <TabsTrigger value="flows">Flows</TabsTrigger>
-        <TabsTrigger value="payments">Payments</TabsTrigger>
-        <TabsTrigger value="campaigns">Campaigns</TabsTrigger>
-      </TabsList>
-      <TabsContent value="overview" className="mt-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1 rounded-lg bg-secondary p-4">
-            <span className="text-xs text-muted-foreground">Total Sales</span>
-            <span className="text-lg font-bold text-foreground">{bot.sales}</span>
-          </div>
-          <div className="flex flex-col gap-1 rounded-lg bg-secondary p-4">
-            <span className="text-xs text-muted-foreground">Revenue</span>
-            <span className="text-lg font-bold text-foreground">{bot.revenue}</span>
-          </div>
-          <div className="flex flex-col gap-1 rounded-lg bg-secondary p-4">
-            <span className="text-xs text-muted-foreground">Users</span>
-            <span className="text-lg font-bold text-foreground">{bot.users.toLocaleString()}</span>
-          </div>
-          <div className="flex flex-col gap-1 rounded-lg bg-secondary p-4">
-            <span className="text-xs text-muted-foreground">Conversion</span>
-            <span className="text-lg font-bold text-foreground">{bot.conversion}</span>
-          </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="flows" className="mt-4">
-        <div className="flex flex-col gap-2">
-          {Array.from({ length: bot.flows }).map((_, i) => (
-            <div key={i} className="flex items-center justify-between rounded-lg bg-secondary px-4 py-3">
-              <div className="flex items-center gap-3">
-                <GitBranch className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm text-foreground">Flow {i + 1}</span>
-              </div>
-              <Badge variant="outline" className="bg-success/10 text-success border-success/20">Active</Badge>
-            </div>
-          ))}
-        </div>
-      </TabsContent>
-      <TabsContent value="payments" className="mt-4">
-        <div className="flex items-center gap-3 rounded-lg bg-secondary p-4">
-          <CreditCard className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium text-foreground">{bot.sales} transactions processed</p>
-            <p className="text-xs text-muted-foreground">Total: {bot.revenue}</p>
-          </div>
-        </div>
-      </TabsContent>
-      <TabsContent value="campaigns" className="mt-4">
-        <div className="flex items-center gap-3 rounded-lg bg-secondary p-4">
-          <Megaphone className="h-5 w-5 text-muted-foreground" />
-          <div>
-            <p className="text-sm font-medium text-foreground">Active campaigns for this bot</p>
-            <p className="text-xs text-muted-foreground">Reaching {bot.users.toLocaleString()} users</p>
-          </div>
-        </div>
-      </TabsContent>
-    </Tabs>
-  )
-}
+import { useBots, type Bot } from "@/lib/bot-context"
 
 export default function BotsPage() {
+  const { bots, selectedBot, setSelectedBot, addBot, updateBot, deleteBot } = useBots()
   const [search, setSearch] = useState("")
-  const [selectedBot, setSelectedBot] = useState<BotData | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
 
-  const filteredBots = botsData.filter(
+  // Create form state
+  const [newName, setNewName] = useState("")
+  const [newToken, setNewToken] = useState("")
+  const [newGroupName, setNewGroupName] = useState("")
+  const [newGroupLink, setNewGroupLink] = useState("")
+  const [createError, setCreateError] = useState("")
+
+  // Edit form state
+  const [editOpen, setEditOpen] = useState(false)
+  const [editBot, setEditBot] = useState<Bot | null>(null)
+  const [editName, setEditName] = useState("")
+  const [editToken, setEditToken] = useState("")
+  const [editGroupName, setEditGroupName] = useState("")
+  const [editGroupLink, setEditGroupLink] = useState("")
+
+  const filteredBots = bots.filter(
     (bot) =>
       bot.name.toLowerCase().includes(search.toLowerCase()) ||
-      bot.username.toLowerCase().includes(search.toLowerCase())
+      bot.token.toLowerCase().includes(search.toLowerCase())
   )
+
+  function handleCreate() {
+    setCreateError("")
+    if (!newName.trim()) {
+      setCreateError("Digite um nome para o bot")
+      return
+    }
+    if (!newToken.trim()) {
+      setCreateError("Digite o token do bot")
+      return
+    }
+    const group = newGroupName.trim()
+      ? { name: newGroupName.trim(), link: newGroupLink.trim() }
+      : undefined
+    addBot(newName.trim(), newToken.trim(), group)
+    setNewName("")
+    setNewToken("")
+    setNewGroupName("")
+    setNewGroupLink("")
+    setCreateOpen(false)
+  }
+
+  function openEdit(bot: Bot) {
+    setEditBot(bot)
+    setEditName(bot.name)
+    setEditToken(bot.token)
+    setEditGroupName(bot.group?.name || "")
+    setEditGroupLink(bot.group?.link || "")
+    setEditOpen(true)
+  }
+
+  function handleEdit() {
+    if (!editBot) return
+    updateBot(editBot.id, {
+      name: editName.trim() || editBot.name,
+      token: editToken.trim() || editBot.token,
+      group: editGroupName.trim()
+        ? { name: editGroupName.trim(), link: editGroupLink.trim() }
+        : null,
+    })
+    setEditOpen(false)
+    setEditBot(null)
+  }
+
+  function handleDelete(id: string) {
+    deleteBot(id)
+  }
+
+  const activeBots = bots.filter((b) => b.status === "active").length
 
   return (
     <>
-      <DashboardHeader title="Bots Management" description="Create and manage your Telegram bots" />
+      <DashboardHeader title="Bots Management" description="Crie e gerencie seus bots do Telegram" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-6">
+          {/* Top bar */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search bots..."
+                placeholder="Buscar bots..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-72 bg-secondary pl-9 border-border"
               />
             </div>
-            <Dialog>
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Bot
+                  Criar Bot
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-card border-border">
+              <DialogContent className="bg-card border-border sm:max-w-md">
                 <DialogHeader>
-                  <DialogTitle className="text-foreground">Create New Bot</DialogTitle>
+                  <DialogTitle className="text-foreground">Criar Novo Bot</DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col gap-4 pt-4">
                   <div className="flex flex-col gap-2">
-                    <Label className="text-foreground">Bot Name</Label>
-                    <Input placeholder="My Sales Bot" className="bg-secondary border-border" />
+                    <Label className="text-foreground">Nome do Bot</Label>
+                    <Input
+                      placeholder="Meu Bot de Vendas"
+                      value={newName}
+                      onChange={(e) => setNewName(e.target.value)}
+                      className="bg-secondary border-border"
+                    />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <Label className="text-foreground">Telegram Bot Token</Label>
-                    <Input placeholder="123456:ABC-DEF..." className="bg-secondary border-border" />
+                    <Label className="text-foreground">Token do Telegram</Label>
+                    <Input
+                      placeholder="123456:ABC-DEF..."
+                      value={newToken}
+                      onChange={(e) => setNewToken(e.target.value)}
+                      className="bg-secondary border-border font-mono text-xs"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Pegue o token com o @BotFather no Telegram
+                    </p>
                   </div>
-                  <div className="flex flex-col gap-2">
-                    <Label className="text-foreground">Description</Label>
-                    <Input placeholder="Describe your bot purpose" className="bg-secondary border-border" />
+
+                  <div className="border-t border-border pt-4">
+                    <p className="mb-3 text-sm font-medium text-foreground">Grupo do Telegram (opcional)</p>
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-muted-foreground text-xs">Nome do Grupo</Label>
+                        <Input
+                          placeholder="VIP Premium"
+                          value={newGroupName}
+                          onChange={(e) => setNewGroupName(e.target.value)}
+                          className="bg-secondary border-border"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-muted-foreground text-xs">Link do Grupo</Label>
+                        <Input
+                          placeholder="https://t.me/+abc123"
+                          value={newGroupLink}
+                          onChange={(e) => setNewGroupLink(e.target.value)}
+                          className="bg-secondary border-border"
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    Create Bot
+
+                  {createError && (
+                    <p className="text-sm text-destructive">{createError}</p>
+                  )}
+
+                  <Button
+                    onClick={handleCreate}
+                    className="bg-accent text-accent-foreground hover:bg-accent/90"
+                  >
+                    Criar Bot
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-4">
+          {/* Stats */}
+          <div className="grid gap-4 md:grid-cols-3">
             <Card className="bg-card border-border">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-                  <Bot className="h-4 w-4 text-muted-foreground" />
+                  <BotIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Bots</p>
-                  <p className="text-lg font-bold text-foreground">{botsData.length}</p>
+                  <p className="text-xs text-muted-foreground">Total de Bots</p>
+                  <p className="text-lg font-bold text-foreground">{bots.length}</p>
                 </div>
               </CardContent>
             </Card>
@@ -205,36 +220,47 @@ export default function BotsPage() {
                   <Activity className="h-4 w-4 text-success" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Active</p>
-                  <p className="text-lg font-bold text-foreground">{botsData.filter((b) => b.status === "active").length}</p>
+                  <p className="text-xs text-muted-foreground">Ativos</p>
+                  <p className="text-lg font-bold text-foreground">{activeBots}</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="bg-card border-border">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <Users className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Revenue</p>
-                  <p className="text-lg font-bold text-foreground">R$ 103,390</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border">
-              <CardContent className="flex items-center gap-3 p-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
-                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">Avg Conversion</p>
-                  <p className="text-lg font-bold text-foreground">9.96%</p>
+                  <p className="text-xs text-muted-foreground">Com Grupo</p>
+                  <p className="text-lg font-bold text-foreground">{bots.filter((b) => b.group).length}</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          {/* Bot list */}
+          {bots.length === 0 ? (
+            <Card className="bg-card border-border">
+              <CardContent className="flex flex-col items-center justify-center gap-4 p-12">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-secondary">
+                  <BotIcon className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold text-foreground">Nenhum bot criado</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Crie seu primeiro bot para comecar a usar o TeleFlow
+                  </p>
+                </div>
+                <Button
+                  onClick={() => setCreateOpen(true)}
+                  className="bg-accent text-accent-foreground hover:bg-accent/90"
+                >
+                  <Plus className="mr-2 h-4 w-4" />
+                  Criar Primeiro Bot
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
             <div className="flex flex-col gap-3">
               {filteredBots.map((bot) => (
                 <Card
@@ -248,90 +274,148 @@ export default function BotsPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                          <Bot className="h-5 w-5 text-muted-foreground" />
+                          <BotIcon className="h-5 w-5 text-muted-foreground" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="text-sm font-semibold text-foreground">{bot.name}</h3>
-                            <Badge variant="outline" className={statusStyles[bot.status]}>
-                              {bot.status}
+                            <Circle
+                              className={`h-2 w-2 ${
+                                bot.status === "active"
+                                  ? "fill-success text-success"
+                                  : "fill-muted-foreground text-muted-foreground"
+                              }`}
+                            />
+                            <Badge variant="outline" className={bot.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground border-border"}>
+                              {bot.status === "active" ? "Ativo" : "Inativo"}
                             </Badge>
+                            {selectedBot?.id === bot.id && (
+                              <Badge variant="outline" className="border-accent/30 bg-accent/5 text-accent text-xs">
+                                Selecionado
+                              </Badge>
+                            )}
                           </div>
-                          <p className="text-xs text-muted-foreground">{bot.username}</p>
+                          <p className="text-xs font-mono text-muted-foreground">
+                            {bot.token.slice(0, 15)}...
+                          </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Switch checked={bot.status === "active"} />
+                        {bot.group && (
+                          <Badge variant="outline" className="border-border text-muted-foreground">
+                            <LinkIcon className="mr-1 h-3 w-3" />
+                            {bot.group.name}
+                          </Badge>
+                        )}
+                        <Switch
+                          checked={bot.status === "active"}
+                          onCheckedChange={(checked) => {
+                            updateBot(bot.id, { status: checked ? "active" : "inactive" })
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground"
+                              onClick={(e) => e.stopPropagation()}
+                            >
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="bg-popover border-border">
-                            <DropdownMenuItem className="text-foreground">Edit Bot</DropdownMenuItem>
-                            <DropdownMenuItem className="text-foreground">View Analytics</DropdownMenuItem>
-                            <DropdownMenuItem className="text-foreground">Duplicate</DropdownMenuItem>
-                            <DropdownMenuItem className="text-destructive">Delete</DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="flex items-center gap-2 text-foreground"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openEdit(bot)
+                              }}
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="flex items-center gap-2 text-destructive"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(bot.id)
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Deletar
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                     </div>
-                    <div className="mt-3 grid grid-cols-4 gap-4">
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Sales</span>
-                        <span className="text-sm font-medium text-foreground">{bot.sales}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Revenue</span>
-                        <span className="text-sm font-medium text-foreground">{bot.revenue}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Users</span>
-                        <span className="text-sm font-medium text-foreground">{bot.users.toLocaleString()}</span>
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs text-muted-foreground">Conv.</span>
-                        <span className="text-sm font-medium text-foreground">{bot.conversion}</span>
-                      </div>
+                    <div className="mt-3 text-xs text-muted-foreground">
+                      Criado em {new Date(bot.createdAt).toLocaleDateString("pt-BR")}
                     </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
-
-            <div>
-              {selectedBot ? (
-                <Card className="bg-card border-border">
-                  <CardContent className="p-5">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary">
-                        <Bot className="h-6 w-6 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <h2 className="text-lg font-semibold text-foreground">{selectedBot.name}</h2>
-                        <p className="text-sm text-muted-foreground">{selectedBot.username} - Created {selectedBot.createdAt}</p>
-                      </div>
-                    </div>
-                    <BotDetailTabs bot={selectedBot} />
-                  </CardContent>
-                </Card>
-              ) : (
-                <Card className="bg-card border-border">
-                  <CardContent className="flex h-64 items-center justify-center p-5">
-                    <div className="text-center">
-                      <BarChart3 className="mx-auto h-8 w-8 text-muted-foreground" />
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Select a bot to view details
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+          )}
         </div>
       </ScrollArea>
+
+      {/* Edit Dialog */}
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <DialogContent className="bg-card border-border sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Editar Bot</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 pt-4">
+            <div className="flex flex-col gap-2">
+              <Label className="text-foreground">Nome do Bot</Label>
+              <Input
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="bg-secondary border-border"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label className="text-foreground">Token do Telegram</Label>
+              <Input
+                value={editToken}
+                onChange={(e) => setEditToken(e.target.value)}
+                className="bg-secondary border-border font-mono text-xs"
+              />
+            </div>
+            <div className="border-t border-border pt-4">
+              <p className="mb-3 text-sm font-medium text-foreground">Grupo do Telegram</p>
+              <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-2">
+                  <Label className="text-muted-foreground text-xs">Nome do Grupo</Label>
+                  <Input
+                    value={editGroupName}
+                    onChange={(e) => setEditGroupName(e.target.value)}
+                    className="bg-secondary border-border"
+                    placeholder="VIP Premium"
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="text-muted-foreground text-xs">Link do Grupo</Label>
+                  <Input
+                    value={editGroupLink}
+                    onChange={(e) => setEditGroupLink(e.target.value)}
+                    className="bg-secondary border-border"
+                    placeholder="https://t.me/+abc123"
+                  />
+                </div>
+              </div>
+            </div>
+            <Button
+              onClick={handleEdit}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+            >
+              Salvar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

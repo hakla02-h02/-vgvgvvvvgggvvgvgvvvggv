@@ -1,10 +1,12 @@
 "use client"
 
-import { Bell, Search } from "lucide-react"
+import { Bell, Search, Bot } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { useBots } from "@/lib/bot-context"
+import { useAuth } from "@/lib/auth-context"
 
 interface DashboardHeaderProps {
   title: string
@@ -12,12 +14,23 @@ interface DashboardHeaderProps {
 }
 
 export function DashboardHeader({ title, description }: DashboardHeaderProps) {
+  const { selectedBot } = useBots()
+  const { session } = useAuth()
+
   return (
     <header className="flex h-16 shrink-0 items-center justify-between border-b border-border bg-background px-6">
-      <div>
-        <h1 className="text-lg font-semibold text-foreground">{title}</h1>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+      <div className="flex items-center gap-3">
+        <div>
+          <h1 className="text-lg font-semibold text-foreground">{title}</h1>
+          {description && (
+            <p className="text-sm text-muted-foreground">{description}</p>
+          )}
+        </div>
+        {selectedBot && (
+          <Badge variant="outline" className="ml-2 border-accent/30 bg-accent/5 text-accent">
+            <Bot className="mr-1 h-3 w-3" />
+            {selectedBot.name}
+          </Badge>
         )}
       </div>
       <div className="flex items-center gap-3">
@@ -36,7 +49,9 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
           <span className="sr-only">Notifications</span>
         </Button>
         <Avatar className="h-8 w-8 bg-secondary">
-          <AvatarFallback className="bg-secondary text-foreground text-xs">TF</AvatarFallback>
+          <AvatarFallback className="bg-secondary text-foreground text-xs">
+            {session?.email ? session.email.slice(0, 2).toUpperCase() : "TF"}
+          </AvatarFallback>
         </Avatar>
       </div>
     </header>

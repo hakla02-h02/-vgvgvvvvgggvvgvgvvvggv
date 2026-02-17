@@ -26,6 +26,8 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Progress } from "@/components/ui/progress"
+import { NoBotSelected } from "@/components/no-bot-selected"
+import { useBots } from "@/lib/bot-context"
 import {
   Plus,
   Megaphone,
@@ -131,7 +133,17 @@ const contentTypes = [
 ]
 
 export default function CampaignsPage() {
+  const { selectedBot } = useBots()
   const [selectedCampaign, setSelectedCampaign] = useState(campaigns[0])
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Campaigns & Messaging" description="Mass messaging, scheduled broadcasts, and segmented campaigns" />
+        <NoBotSelected />
+      </>
+    )
+  }
 
   return (
     <>

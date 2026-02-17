@@ -15,6 +15,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { NoBotSelected } from "@/components/no-bot-selected"
+import { useBots } from "@/lib/bot-context"
 import {
   Target,
   TrendingUp,
@@ -86,6 +88,17 @@ const sourceData = [
 ]
 
 export default function AnalyticsPage() {
+  const { selectedBot } = useBots()
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Analytics & Tracking" description="Pixel integration, conversion tracking, and UTM analytics" />
+        <NoBotSelected />
+      </>
+    )
+  }
+
   return (
     <>
       <DashboardHeader title="Analytics & Tracking" description="Pixel integration, conversion tracking, and UTM analytics" />

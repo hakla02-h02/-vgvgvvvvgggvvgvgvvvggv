@@ -23,6 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { NoBotSelected } from "@/components/no-bot-selected"
+import { useBots } from "@/lib/bot-context"
 import {
   DollarSign,
   CheckCircle,
@@ -91,8 +93,18 @@ const statusIcons: Record<string, React.ElementType> = {
 }
 
 export default function PaymentsPage() {
+  const { selectedBot } = useBots()
   const [filter, setFilter] = useState("all")
   const [search, setSearch] = useState("")
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Payments" description="Payment automation and transaction management" />
+        <NoBotSelected />
+      </>
+    )
+  }
 
   const filteredTransactions = transactions.filter((tx) => {
     const matchesFilter = filter === "all" || tx.status === filter

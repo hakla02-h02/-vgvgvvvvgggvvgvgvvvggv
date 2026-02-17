@@ -7,6 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { NoBotSelected } from "@/components/no-bot-selected"
+import { useBots } from "@/lib/bot-context"
 import {
   Plus,
   GitBranch,
@@ -90,7 +92,17 @@ const proFeatures = [
 ]
 
 export default function FlowsPage() {
+  const { selectedBot } = useBots()
   const [activeFlow, setActiveFlow] = useState(existingFlows[0])
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Flow Builder" description="Design automated messaging and sales flows" />
+        <NoBotSelected />
+      </>
+    )
+  }
 
   return (
     <>

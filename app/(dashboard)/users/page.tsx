@@ -16,6 +16,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
+import { NoBotSelected } from "@/components/no-bot-selected"
+import { useBots } from "@/lib/bot-context"
 import {
   Users,
   UserCheck,
@@ -56,7 +58,17 @@ const geoStats = [
 ]
 
 export default function UsersPage() {
+  const { selectedBot } = useBots()
   const [search, setSearch] = useState("")
+
+  if (!selectedBot) {
+    return (
+      <>
+        <DashboardHeader title="Users & Groups" description="User management, VIP groups, and geolocation" />
+        <NoBotSelected />
+      </>
+    )
+  }
   const filteredUsers = usersData.filter(
     (u) =>
       u.name.toLowerCase().includes(search.toLowerCase()) ||

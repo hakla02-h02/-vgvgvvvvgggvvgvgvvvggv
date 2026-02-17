@@ -17,10 +17,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { BotSwitcher } from "@/components/bot-switcher"
+import { useAuth } from "@/lib/auth-context"
 
 const navItems = [
   {
@@ -73,6 +76,7 @@ const navItems = [
 export function DashboardSidebar() {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
+  const { session, logout } = useAuth()
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -92,6 +96,11 @@ export function DashboardSidebar() {
               TeleFlow
             </span>
           )}
+        </div>
+
+        {/* Bot Switcher */}
+        <div className="border-b border-border px-2 py-3">
+          <BotSwitcher collapsed={collapsed} />
         </div>
 
         {/* Navigation */}
@@ -134,20 +143,42 @@ export function DashboardSidebar() {
           </nav>
         </ScrollArea>
 
-        {/* Collapse toggle */}
-        <div className="border-t border-border p-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCollapsed(!collapsed)}
-            className="w-full justify-center text-muted-foreground hover:text-foreground"
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <ChevronLeft className="h-4 w-4" />
-            )}
-          </Button>
+        {/* User & Controls */}
+        <div className="border-t border-border p-2 flex flex-col gap-1">
+          {!collapsed && session && (
+            <div className="px-3 py-2 text-xs text-muted-foreground truncate">
+              {session.email}
+            </div>
+          )}
+          <div className="flex gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCollapsed(!collapsed)}
+              className="flex-1 justify-center text-muted-foreground hover:text-foreground"
+            >
+              {collapsed ? (
+                <ChevronRight className="h-4 w-4" />
+              ) : (
+                <ChevronLeft className="h-4 w-4" />
+              )}
+            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={logout}
+                  className="justify-center text-muted-foreground hover:text-destructive"
+                >
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                Sair
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </aside>
     </TooltipProvider>
