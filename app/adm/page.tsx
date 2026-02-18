@@ -28,52 +28,58 @@ import {
   CheckCircle,
   Users,
 } from "lucide-react"
-import { getAllUsers, saveAllUsers, type StoredUser } from "@/lib/auth-context"
-import type { Bot as BotType } from "@/lib/bot-context"
+import { createClient } from "@/lib/supabase/client"
 
-function getStoredBots(): BotType[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem("teleflow_bots")
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+interface Profile {
+  id: string
+  name: string
+  email: string
+  banned: boolean
+  created_at: string
 }
 
 export default function AdmPage() {
   const [search, setSearch] = useState("")
-  const [users, setUsers] = useState<StoredUser[]>([])
-  const [bots, setBots] = useState<BotType[]>([])
+  const [users, setUsers] = useState<Profile[]>([])
+  const supabase = createClient()
 
-  const loadData = useCallback(() => {
-    setUsers(getAllUsers())
-    setBots(getStoredBots())
-  }, [])
+  const loadData = useCallback(async () => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .order("created_at", { ascending: false })
+
+    if (data) {
+      setUsers(data)
+    }
+  }, [supabase])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  function toggleBan(userId: string) {
-    const updated = users.map((u) =>
-      u.userId === userId ? { ...u, banned: !u.banned } : u
-    )
-    saveAllUsers(updated)
-    setUsers(updated)
-  }
+  async function toggleBan(userId: string) {
+    const user = users.find((u) => u.id === userId)
+    if (!user) return
 
-  function getUserBots(userId: string) {
-    return bots.filter((b) => b.userId === userId)
+    const { error } = await supabase
+      .from("profiles")
+      .update({ banned: !user.banned })
+      .eq("id", userId)
+
+    if (!error) {
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, banned: !u.banned } : u))
+      )
+    }
   }
 
   const filteredUsers = users.filter(
     (u) =>
-      u.email.toLowerCase().includes(search.toLowerCase()) ||
-      u.userId.toLowerCase().includes(search.toLowerCase())
+      u.email?.toLowerCase().includes(search.toLowerCase()) ||
+      u.name?.toLowerCase().includes(search.toLowerCase())
   )
 
-  const totalBots = bots.length
   const activeUsers = users.filter((u) => !u.banned).length
   const bannedUsers = users.filter((u) => u.banned).length
 
@@ -102,8 +108,8 @@ export default function AdmPage() {
                   <Bot className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-foreground">{totalBots}</p>
-                  <p className="text-sm text-muted-foreground">Bots criados</p>
+                  <p className="text-2xl font-bold text-foreground">{users.length}</p>
+                  <p className="text-sm text-muted-foreground">Total usuarios</p>
                 </div>
               </div>
             </CardContent>
@@ -152,90 +158,78 @@ export default function AdmPage() {
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
                     <TableHead className="text-muted-foreground text-xs">Email</TableHead>
-                    <TableHead className="text-muted-foreground text-xs">Bots</TableHead>
                     <TableHead className="text-muted-foreground text-xs">Registrado em</TableHead>
                     <TableHead className="text-muted-foreground text-xs">Status</TableHead>
                     <TableHead className="text-muted-foreground text-xs text-right">Acoes</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => {
-                    const userBots = getUserBots(user.userId)
-                    return (
-                      <TableRow key={user.userId} className="border-border">
-                        <TableCell>
-                          <span className="text-sm font-medium text-foreground">
-                            {user.email}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-1.5">
-                            <Bot className="h-3.5 w-3.5 text-muted-foreground" />
-                            <span className="text-sm text-foreground">
-                              {userBots.length}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {new Date(user.registeredAt).toLocaleDateString("pt-BR")}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          {user.banned ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-destructive/10 text-destructive border-destructive/20 text-xs"
+                  {filteredUsers.map((user) => (
+                    <TableRow key={user.id} className="border-border">
+                      <TableCell>
+                        <span className="text-sm font-medium text-foreground">
+                          {user.email}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-sm text-muted-foreground">
+                          {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        {user.banned ? (
+                          <Badge
+                            variant="outline"
+                            className="bg-destructive/10 text-destructive border-destructive/20 text-xs"
+                          >
+                            Banido
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs"
+                          >
+                            Ativo
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground"
                             >
-                              Banido
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs"
-                            >
-                              Ativo
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 text-muted-foreground"
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            align="end"
+                            className="bg-popover border-border"
+                          >
+                            {user.banned ? (
+                              <DropdownMenuItem
+                                onClick={() => toggleBan(user.id)}
+                                className="text-emerald-400"
                               >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                              align="end"
-                              className="bg-popover border-border"
-                            >
-                              {user.banned ? (
-                                <DropdownMenuItem
-                                  onClick={() => toggleBan(user.userId)}
-                                  className="text-emerald-400"
-                                >
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Desbanir
-                                </DropdownMenuItem>
-                              ) : (
-                                <DropdownMenuItem
-                                  onClick={() => toggleBan(user.userId)}
-                                  className="text-destructive"
-                                >
-                                  <Ban className="mr-2 h-4 w-4" />
-                                  Banir
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
+                                <CheckCircle className="mr-2 h-4 w-4" />
+                                Desbanir
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() => toggleBan(user.id)}
+                                className="text-destructive"
+                              >
+                                <Ban className="mr-2 h-4 w-4" />
+                                Banir
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             )}

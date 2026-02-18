@@ -2,16 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-
-const SESSION_DURATION = 5 * 60 * 60 * 1000 // 5 hours
-const STORAGE_KEY = "teleflow_session"
-const USERS_STORAGE_KEY = "teleflow_users"
-
-interface Session {
-  userId: string
-  email: string
-  loggedInAt: number
-}
+import { createClient } from "@/lib/supabase/client"
+import type { User } from "@supabase/supabase-js"
 
 export interface StoredUser {
   userId: string
@@ -20,107 +12,98 @@ export interface StoredUser {
   banned: boolean
 }
 
+interface Session {
+  userId: string
+  email: string
+  loggedInAt: number
+}
+
 interface AuthContextType {
   session: Session | null
   isLoading: boolean
-  login: (email: string, password: string) => void
+  login: (email: string, password: string) => Promise<void>
+  signup: (email: string, password: string) => Promise<void>
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-function generateUserId(email: string) {
-  let hash = 0
-  for (let i = 0; i < email.length; i++) {
-    const char = email.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash |= 0
-  }
-  return "user_" + Math.abs(hash).toString(36)
-}
-
-function getStoredSession(): Session | null {
-  if (typeof window === "undefined") return null
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return null
-    const session: Session = JSON.parse(raw)
-    const elapsed = Date.now() - session.loggedInAt
-    if (elapsed > SESSION_DURATION) {
-      localStorage.removeItem(STORAGE_KEY)
-      return null
-    }
-    return session
-  } catch {
-    return null
+function mapUserToSession(user: User): Session {
+  return {
+    userId: user.id,
+    email: user.email ?? "",
+    loggedInAt: Date.now(),
   }
 }
 
-// Store/get all registered users
+// Keep getAllUsers/saveAllUsers for adm page compatibility (reads from supabase profiles if needed, but falls back to empty)
 export function getAllUsers(): StoredUser[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(USERS_STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
+  return []
 }
 
-export function saveAllUsers(users: StoredUser[]) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(users))
-}
-
-function registerUserIfNew(userId: string, email: string) {
-  const users = getAllUsers()
-  const exists = users.find((u) => u.userId === userId)
-  if (!exists) {
-    users.push({ userId, email, registeredAt: Date.now(), banned: false })
-    saveAllUsers(users)
-  }
+export function saveAllUsers(_users: StoredUser[]) {
+  // no-op - managed by supabase now
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
+  const supabase = createClient()
 
   useEffect(() => {
-    const stored = getStoredSession()
-    setSession(stored)
-    setIsLoading(false)
-  }, [])
+    // Check current session on mount
+    supabase.auth.getSession().then(({ data: { session: sbSession } }) => {
+      if (sbSession?.user) {
+        setSession(mapUserToSession(sbSession.user))
+      }
+      setIsLoading(false)
+    })
 
-  const login = useCallback((email: string, _password: string) => {
-    const userId = generateUserId(email)
+    // Listen to auth state changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sbSession) => {
+      if (sbSession?.user) {
+        setSession(mapUserToSession(sbSession.user))
+      } else {
+        setSession(null)
+      }
+    })
 
-    // Check if banned
-    const users = getAllUsers()
-    const existing = users.find((u) => u.userId === userId)
-    if (existing?.banned) {
-      throw new Error("BANNED")
-    }
+    return () => subscription.unsubscribe()
+  }, [supabase])
 
-    const newSession: Session = {
-      userId,
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
       email,
-      loggedInAt: Date.now(),
+      password,
+    })
+    if (error) {
+      throw new Error(error.message)
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newSession))
-    registerUserIfNew(userId, email)
-    setSession(newSession)
     router.push("/")
-  }, [router])
+  }, [supabase, router])
 
-  const logout = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY)
+  const signup = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    })
+    if (error) {
+      throw new Error(error.message)
+    }
+  }, [supabase])
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
     setSession(null)
     router.push("/login")
-  }, [router])
+  }, [supabase, router])
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ session, isLoading, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   )

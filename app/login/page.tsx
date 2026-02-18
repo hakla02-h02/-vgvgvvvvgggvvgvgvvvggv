@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Zap, Eye, EyeOff } from "lucide-react"
+import { Zap, Eye, EyeOff, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,7 +13,10 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
-  const { login, session, isLoading } = useAuth()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [mode, setMode] = useState<"login" | "signup">("login")
+  const [successMsg, setSuccessMsg] = useState("")
+  const { login, signup, session, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -22,9 +25,11 @@ export default function LoginPage() {
     }
   }, [isLoading, session, router])
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+    setSuccessMsg("")
+
     if (!email.trim()) {
       setError("Digite seu email")
       return
@@ -33,12 +38,33 @@ export default function LoginPage() {
       setError("Digite sua senha")
       return
     }
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres")
+      return
+    }
+
+    setIsSubmitting(true)
     try {
-      login(email.trim(), password)
-    } catch (err: unknown) {
-      if (err instanceof Error && err.message === "BANNED") {
-        setError("Sua conta foi banida.")
+      if (mode === "login") {
+        await login(email.trim(), password)
+      } else {
+        await signup(email.trim(), password)
+        setSuccessMsg("Conta criada! Verifique seu email para confirmar.")
       }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message.includes("Invalid login credentials")) {
+          setError("Email ou senha incorretos")
+        } else if (err.message.includes("User already registered")) {
+          setError("Este email ja esta registrado. Faca login.")
+        } else if (err.message.includes("Email not confirmed")) {
+          setError("Confirme seu email antes de entrar.")
+        } else {
+          setError(err.message)
+        }
+      }
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -63,7 +89,7 @@ export default function LoginPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">TeleFlow</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Entre para acessar seu painel
+              {mode === "login" ? "Entre para acessar seu painel" : "Crie sua conta"}
             </p>
           </div>
         </div>
@@ -83,6 +109,7 @@ export default function LoginPage() {
               className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
               autoComplete="email"
               autoFocus
+              disabled={isSubmitting}
             />
           </div>
 
@@ -98,7 +125,8 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-10"
-                autoComplete="current-password"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                disabled={isSubmitting}
               />
               <button
                 type="button"
@@ -115,16 +143,41 @@ export default function LoginPage() {
             <p className="text-sm text-destructive">{error}</p>
           )}
 
+          {successMsg && (
+            <p className="text-sm text-emerald-500">{successMsg}</p>
+          )}
+
           <Button
             type="submit"
+            disabled={isSubmitting}
             className="h-11 w-full bg-accent text-accent-foreground hover:bg-accent/90 font-medium"
           >
-            Entrar
+            {isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : mode === "login" ? (
+              "Entrar"
+            ) : (
+              "Criar conta"
+            )}
           </Button>
         </form>
 
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Sessao valida por 5 horas
+        <div className="mt-4 text-center">
+          <button
+            type="button"
+            onClick={() => {
+              setMode(mode === "login" ? "signup" : "login")
+              setError("")
+              setSuccessMsg("")
+            }}
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {mode === "login" ? "Nao tem conta? Criar conta" : "Ja tem conta? Entrar"}
+          </button>
+        </div>
+
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          Autenticacao via Supabase
         </p>
       </div>
     </div>
