@@ -84,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase, router])
 
   const signup = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -94,7 +94,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) {
       throw new Error(error.message)
     }
-  }, [supabase])
+    // Auto-login after signup (no email verification needed)
+    if (data.user && !data.session) {
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
+      if (loginError) {
+        throw new Error(loginError.message)
+      }
+    }
+    router.push("/")
+  }, [supabase, router])
 
   const logout = useCallback(async () => {
     await supabase.auth.signOut()

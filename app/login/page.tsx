@@ -49,7 +49,6 @@ export default function LoginPage() {
         await login(email.trim(), password)
       } else {
         await signup(email.trim(), password)
-        setSuccessMsg("Conta criada! Verifique seu email para confirmar.")
       }
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -57,8 +56,6 @@ export default function LoginPage() {
           setError("Email ou senha incorretos")
         } else if (err.message.includes("User already registered")) {
           setError("Este email ja esta registrado. Faca login.")
-        } else if (err.message.includes("Email not confirmed")) {
-          setError("Confirme seu email antes de entrar.")
         } else {
           setError(err.message)
         }
