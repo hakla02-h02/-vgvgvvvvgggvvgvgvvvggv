@@ -28,56 +28,31 @@ import {
   CheckCircle,
   Users,
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-
-interface Profile {
-  id: string
-  name: string
-  email: string
-  banned: boolean
-  created_at: string
-}
+import { getAllUsers, saveAllUsers, type StoredUser } from "@/lib/auth-context"
 
 export default function AdmPage() {
   const [search, setSearch] = useState("")
-  const [users, setUsers] = useState<Profile[]>([])
-  const supabase = createClient()
+  const [users, setUsers] = useState<StoredUser[]>([])
 
-  const loadData = useCallback(async () => {
-    const { data } = await supabase
-      .from("profiles")
-      .select("*")
-      .order("created_at", { ascending: false })
-
-    if (data) {
-      setUsers(data)
-    }
-  }, [supabase])
+  const loadData = useCallback(() => {
+    const allUsers = getAllUsers()
+    setUsers(allUsers)
+  }, [])
 
   useEffect(() => {
     loadData()
   }, [loadData])
 
-  async function toggleBan(userId: string) {
-    const user = users.find((u) => u.id === userId)
-    if (!user) return
-
-    const { error } = await supabase
-      .from("profiles")
-      .update({ banned: !user.banned })
-      .eq("id", userId)
-
-    if (!error) {
-      setUsers((prev) =>
-        prev.map((u) => (u.id === userId ? { ...u, banned: !u.banned } : u))
-      )
-    }
+  function toggleBan(userId: string) {
+    const updated = users.map((u) =>
+      u.userId === userId ? { ...u, banned: !u.banned } : u
+    )
+    setUsers(updated)
+    saveAllUsers(updated)
   }
 
-  const filteredUsers = users.filter(
-    (u) =>
-      u.email?.toLowerCase().includes(search.toLowerCase()) ||
-      u.name?.toLowerCase().includes(search.toLowerCase())
+  const filteredUsers = users.filter((u) =>
+    u.email?.toLowerCase().includes(search.toLowerCase())
   )
 
   const activeUsers = users.filter((u) => !u.banned).length
@@ -165,7 +140,7 @@ export default function AdmPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="border-border">
+                    <TableRow key={user.userId} className="border-border">
                       <TableCell>
                         <span className="text-sm font-medium text-foreground">
                           {user.email}
@@ -173,7 +148,7 @@ export default function AdmPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {new Date(user.created_at).toLocaleDateString("pt-BR")}
+                          {new Date(user.registeredAt).toLocaleDateString("pt-BR")}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -210,7 +185,7 @@ export default function AdmPage() {
                           >
                             {user.banned ? (
                               <DropdownMenuItem
-                                onClick={() => toggleBan(user.id)}
+                                onClick={() => toggleBan(user.userId)}
                                 className="text-emerald-400"
                               >
                                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -218,7 +193,7 @@ export default function AdmPage() {
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem
-                                onClick={() => toggleBan(user.id)}
+                                onClick={() => toggleBan(user.userId)}
                                 className="text-destructive"
                               >
                                 <Ban className="mr-2 h-4 w-4" />

@@ -2,8 +2,6 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
-import type { User } from "@supabase/supabase-js"
 
 export interface StoredUser {
   userId: string
@@ -21,100 +19,98 @@ interface Session {
 interface AuthContextType {
   session: Session | null
   isLoading: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (email: string, password: string) => Promise<void>
+  login: (email: string) => void
   logout: () => void
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-function mapUserToSession(user: User): Session {
-  return {
-    userId: user.id,
-    email: user.email ?? "",
-    loggedInAt: Date.now(),
+const SESSION_KEY = "teleflow_session"
+const USERS_KEY = "teleflow_users"
+
+export function getAllUsers(): StoredUser[] {
+  if (typeof window === "undefined") return []
+  try {
+    const raw = localStorage.getItem(USERS_KEY)
+    return raw ? JSON.parse(raw) : []
+  } catch {
+    return []
   }
 }
 
-// Keep getAllUsers/saveAllUsers for adm page compatibility (reads from supabase profiles if needed, but falls back to empty)
-export function getAllUsers(): StoredUser[] {
-  return []
-}
-
-export function saveAllUsers(_users: StoredUser[]) {
-  // no-op - managed by supabase now
+export function saveAllUsers(users: StoredUser[]) {
+  if (typeof window === "undefined") return
+  localStorage.setItem(USERS_KEY, JSON.stringify(users))
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
-  const supabase = createClient()
 
   useEffect(() => {
-    // Check current session on mount
-    supabase.auth.getSession().then(({ data: { session: sbSession } }) => {
-      if (sbSession?.user) {
-        setSession(mapUserToSession(sbSession.user))
-      }
-      setIsLoading(false)
-    })
-
-    // Listen to auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sbSession) => {
-      if (sbSession?.user) {
-        setSession(mapUserToSession(sbSession.user))
+    console.log("[v0] AuthProvider: checking localStorage for session")
+    try {
+      const raw = localStorage.getItem(SESSION_KEY)
+      if (raw) {
+        const parsed = JSON.parse(raw)
+        console.log("[v0] AuthProvider: found session for", parsed.email)
+        setSession(parsed)
       } else {
-        setSession(null)
+        console.log("[v0] AuthProvider: no session found")
       }
-    })
-
-    return () => subscription.unsubscribe()
-  }, [supabase])
-
-  const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    if (error) {
-      throw new Error(error.message)
+    } catch (err) {
+      console.log("[v0] AuthProvider: error reading session", err)
     }
-    router.push("/")
-  }, [supabase, router])
+    setIsLoading(false)
+  }, [])
 
-  const signup = useCallback(async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
-    })
-    if (error) {
-      throw new Error(error.message)
-    }
-    // Auto-login after signup (no email verification needed)
-    if (data.user && !data.session) {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
+  const login = useCallback((email: string) => {
+    console.log("[v0] login called with email:", email)
+
+    // Create or find user in local storage
+    const users = getAllUsers()
+    let user = users.find((u) => u.email === email)
+
+    if (!user) {
+      console.log("[v0] login: creating new user for", email)
+      user = {
+        userId: crypto.randomUUID(),
         email,
-        password,
-      })
-      if (loginError) {
-        throw new Error(loginError.message)
+        registeredAt: Date.now(),
+        banned: false,
+      }
+      users.push(user)
+      saveAllUsers(users)
+    } else {
+      console.log("[v0] login: found existing user for", email)
+      if (user.banned) {
+        console.log("[v0] login: user is banned, blocking")
+        throw new Error("Conta banida")
       }
     }
-    router.push("/")
-  }, [supabase, router])
 
-  const logout = useCallback(async () => {
-    await supabase.auth.signOut()
+    const newSession: Session = {
+      userId: user.userId,
+      email: user.email,
+      loggedInAt: Date.now(),
+    }
+
+    console.log("[v0] login: saving session and redirecting")
+    localStorage.setItem(SESSION_KEY, JSON.stringify(newSession))
+    setSession(newSession)
+    router.push("/")
+  }, [router])
+
+  const logout = useCallback(() => {
+    console.log("[v0] logout called")
+    localStorage.removeItem(SESSION_KEY)
     setSession(null)
     router.push("/login")
-  }, [supabase, router])
+  }, [router])
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, login, signup, logout }}>
+    <AuthContext.Provider value={{ session, isLoading, login, logout }}>
       {children}
     </AuthContext.Provider>
   )

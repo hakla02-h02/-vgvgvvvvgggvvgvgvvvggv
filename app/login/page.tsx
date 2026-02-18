@@ -3,64 +3,47 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Zap, Eye, EyeOff, Loader2 } from "lucide-react"
+import { Zap, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [mode, setMode] = useState<"login" | "signup">("login")
-  const [successMsg, setSuccessMsg] = useState("")
-  const { login, signup, session, isLoading } = useAuth()
+  const { login, session, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
+    console.log("[v0] LoginPage: isLoading =", isLoading, "session =", !!session)
     if (!isLoading && session) {
       router.replace("/")
     }
   }, [isLoading, session, router])
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
-    setSuccessMsg("")
+
+    console.log("[v0] LoginPage: handleSubmit called, email =", email)
 
     if (!email.trim()) {
       setError("Digite seu email")
       return
     }
-    if (!password.trim()) {
-      setError("Digite sua senha")
-      return
-    }
-    if (password.length < 6) {
-      setError("A senha deve ter pelo menos 6 caracteres")
-      return
-    }
 
     setIsSubmitting(true)
     try {
-      if (mode === "login") {
-        await login(email.trim(), password)
-      } else {
-        await signup(email.trim(), password)
-      }
+      console.log("[v0] LoginPage: calling login()")
+      login(email.trim())
     } catch (err: unknown) {
+      console.log("[v0] LoginPage: login error", err)
       if (err instanceof Error) {
-        if (err.message.includes("Invalid login credentials")) {
-          setError("Email ou senha incorretos")
-        } else if (err.message.includes("User already registered")) {
-          setError("Este email ja esta registrado. Faca login.")
-        } else {
-          setError(err.message)
-        }
+        setError(err.message)
+      } else {
+        setError("Erro ao entrar")
       }
-    } finally {
       setIsSubmitting(false)
     }
   }
@@ -86,7 +69,7 @@ export default function LoginPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">TeleFlow</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {mode === "login" ? "Entre para acessar seu painel" : "Crie sua conta"}
+              Digite seu email para entrar
             </p>
           </div>
         </div>
@@ -110,38 +93,8 @@ export default function LoginPage() {
             />
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password" className="text-sm text-foreground">
-              Senha
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Sua senha"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-10"
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
           {error && (
             <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          {successMsg && (
-            <p className="text-sm text-emerald-500">{successMsg}</p>
           )}
 
           <Button
@@ -151,30 +104,14 @@ export default function LoginPage() {
           >
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : mode === "login" ? (
-              "Entrar"
             ) : (
-              "Criar conta"
+              "Entrar"
             )}
           </Button>
         </form>
 
-        <div className="mt-4 text-center">
-          <button
-            type="button"
-            onClick={() => {
-              setMode(mode === "login" ? "signup" : "login")
-              setError("")
-              setSuccessMsg("")
-            }}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {mode === "login" ? "Nao tem conta? Criar conta" : "Ja tem conta? Entrar"}
-          </button>
-        </div>
-
-        <p className="mt-4 text-center text-xs text-muted-foreground">
-          Autenticacao via Supabase
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Coloque qualquer email para criar sua conta
         </p>
       </div>
     </div>
