@@ -5,13 +5,17 @@ import { useRouter } from "next/navigation"
 
 export interface StoredUser {
   userId: string
+  name: string
   email: string
+  phone: string
+  password: string
   registeredAt: number
   banned: boolean
 }
 
 interface Session {
   userId: string
+  name: string
   email: string
   loggedInAt: number
 }
@@ -19,7 +23,8 @@ interface Session {
 interface AuthContextType {
   session: Session | null
   isLoading: boolean
-  login: (email: string) => void
+  login: (email: string, password: string) => void
+  register: (data: { name: string; email: string; phone: string; password: string }) => void
   logout: () => void
 }
 
@@ -49,68 +54,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
 
   useEffect(() => {
-    console.log("[v0] AuthProvider: checking localStorage for session")
     try {
       const raw = localStorage.getItem(SESSION_KEY)
       if (raw) {
         const parsed = JSON.parse(raw)
-        console.log("[v0] AuthProvider: found session for", parsed.email)
         setSession(parsed)
-      } else {
-        console.log("[v0] AuthProvider: no session found")
       }
-    } catch (err) {
-      console.log("[v0] AuthProvider: error reading session", err)
+    } catch {
+      // ignore
     }
     setIsLoading(false)
   }, [])
 
-  const login = useCallback((email: string) => {
-    console.log("[v0] login called with email:", email)
-
-    // Create or find user in local storage
+  const login = useCallback((email: string, password: string) => {
     const users = getAllUsers()
-    let user = users.find((u) => u.email === email)
+    const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
 
     if (!user) {
-      console.log("[v0] login: creating new user for", email)
-      user = {
-        userId: crypto.randomUUID(),
-        email,
-        registeredAt: Date.now(),
-        banned: false,
-      }
-      users.push(user)
-      saveAllUsers(users)
-    } else {
-      console.log("[v0] login: found existing user for", email)
-      if (user.banned) {
-        console.log("[v0] login: user is banned, blocking")
-        throw new Error("Conta banida")
-      }
+      throw new Error("Email ou senha incorretos")
+    }
+
+    if (user.password !== password) {
+      throw new Error("Email ou senha incorretos")
+    }
+
+    if (user.banned) {
+      throw new Error("Conta banida")
     }
 
     const newSession: Session = {
       userId: user.userId,
+      name: user.name,
       email: user.email,
       loggedInAt: Date.now(),
     }
 
-    console.log("[v0] login: saving session and redirecting")
+    localStorage.setItem(SESSION_KEY, JSON.stringify(newSession))
+    setSession(newSession)
+    router.push("/")
+  }, [router])
+
+  const register = useCallback((data: { name: string; email: string; phone: string; password: string }) => {
+    const users = getAllUsers()
+    const exists = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase())
+
+    if (exists) {
+      throw new Error("Este email ja esta cadastrado")
+    }
+
+    const newUser: StoredUser = {
+      userId: crypto.randomUUID(),
+      name: data.name,
+      email: data.email.toLowerCase(),
+      phone: data.phone,
+      password: data.password,
+      registeredAt: Date.now(),
+      banned: false,
+    }
+
+    users.push(newUser)
+    saveAllUsers(users)
+
+    const newSession: Session = {
+      userId: newUser.userId,
+      name: newUser.name,
+      email: newUser.email,
+      loggedInAt: Date.now(),
+    }
+
     localStorage.setItem(SESSION_KEY, JSON.stringify(newSession))
     setSession(newSession)
     router.push("/")
   }, [router])
 
   const logout = useCallback(() => {
-    console.log("[v0] logout called")
     localStorage.removeItem(SESSION_KEY)
     setSession(null)
     router.push("/login")
   }, [router])
 
   return (
-    <AuthContext.Provider value={{ session, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ session, isLoading, login, register, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -9,13 +9,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export default function LoginPage() {
+export default function CadastroPage() {
+  const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const { login, session, isLoading } = useAuth()
+  const { register, session, isLoading } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
@@ -24,28 +28,56 @@ export default function LoginPage() {
     }
   }, [isLoading, session, router])
 
+  function formatPhone(value: string) {
+    const digits = value.replace(/\D/g, "").slice(0, 11)
+    if (digits.length <= 2) return digits
+    if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
+
+    if (!name.trim()) {
+      setError("Digite seu nome")
+      return
+    }
 
     if (!email.trim()) {
       setError("Digite seu email")
       return
     }
 
-    if (!password) {
-      setError("Digite sua senha")
+    const phoneDigits = phone.replace(/\D/g, "")
+    if (!phoneDigits || phoneDigits.length < 10) {
+      setError("Digite um numero de telefone valido")
+      return
+    }
+
+    if (password.length < 6) {
+      setError("A senha deve ter pelo menos 6 caracteres")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError("As senhas nao coincidem")
       return
     }
 
     setIsSubmitting(true)
     try {
-      login(email.trim(), password)
+      register({
+        name: name.trim(),
+        email: email.trim(),
+        phone: phoneDigits,
+        password,
+      })
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError("Erro ao entrar")
+        setError("Erro ao criar conta")
       }
       setIsSubmitting(false)
     }
@@ -71,12 +103,29 @@ export default function LoginPage() {
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">TeleFlow</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Entre com seu email e senha
+              Crie sua conta
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="name" className="text-sm text-foreground">
+              Nome
+            </Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Seu nome completo"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
+              autoComplete="name"
+              autoFocus
+              disabled={isSubmitting}
+            />
+          </div>
+
           <div className="flex flex-col gap-2">
             <Label htmlFor="email" className="text-sm text-foreground">
               Email
@@ -89,7 +138,22 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
               autoComplete="email"
-              autoFocus
+              disabled={isSubmitting}
+            />
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="phone" className="text-sm text-foreground">
+              Telefone
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              placeholder="(11) 99999-9999"
+              value={phone}
+              onChange={(e) => setPhone(formatPhone(e.target.value))}
+              className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
+              autoComplete="tel"
               disabled={isSubmitting}
             />
           </div>
@@ -102,11 +166,11 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type={showPassword ? "text" : "password"}
-                placeholder="Sua senha"
+                placeholder="Minimo 6 caracteres"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-11"
-                autoComplete="current-password"
+                autoComplete="new-password"
                 disabled={isSubmitting}
               />
               <button
@@ -117,6 +181,33 @@ export default function LoginPage() {
                 aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
               >
                 {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="confirm-password" className="text-sm text-foreground">
+              Confirmar Senha
+            </Label>
+            <div className="relative">
+              <Input
+                id="confirm-password"
+                type={showConfirm ? "text" : "password"}
+                placeholder="Repita a senha"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-11"
+                autoComplete="new-password"
+                disabled={isSubmitting}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm(!showConfirm)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+                aria-label={showConfirm ? "Esconder senha" : "Mostrar senha"}
+              >
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
@@ -133,15 +224,15 @@ export default function LoginPage() {
             {isSubmitting ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              "Entrar"
+              "Criar Conta"
             )}
           </Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Nao tem conta?{" "}
-          <Link href="/cadastro" className="text-accent hover:underline font-medium">
-            Criar conta
+          Ja tem conta?{" "}
+          <Link href="/login" className="text-accent hover:underline font-medium">
+            Entrar
           </Link>
         </p>
       </div>
