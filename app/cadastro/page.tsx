@@ -35,7 +35,7 @@ export default function CadastroPage() {
     return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError("")
 
@@ -67,7 +67,7 @@ export default function CadastroPage() {
 
     setIsSubmitting(true)
     try {
-      register({
+      await register({
         name: name.trim(),
         email: email.trim(),
         phone: phoneDigits,

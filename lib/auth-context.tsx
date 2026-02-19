@@ -2,18 +2,19 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import { supabase } from "@/lib/supabase"
+import type { Session, User } from "@supabase/supabase-js"
 
 export interface StoredUser {
-  userId: string
+  id: string
   name: string
   email: string
   phone: string
-  password: string
-  registeredAt: number
   banned: boolean
+  created_at: string
 }
 
-interface Session {
+interface AuthSession {
   userId: string
   name: string
   email: string
@@ -21,114 +22,163 @@ interface Session {
 }
 
 interface AuthContextType {
-  session: Session | null
+  session: AuthSession | null
   isLoading: boolean
-  login: (email: string, password: string) => void
-  register: (data: { name: string; email: string; phone: string; password: string }) => void
-  logout: () => void
+  login: (email: string, password: string) => Promise<void>
+  register: (data: { name: string; email: string; phone: string; password: string }) => Promise<void>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | null>(null)
 
-const SESSION_KEY = "teleflow_session"
-const USERS_KEY = "teleflow_users"
-
-export function getAllUsers(): StoredUser[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(USERS_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
+function mapToAuthSession(user: User, name?: string): AuthSession {
+  return {
+    userId: user.id,
+    name: name || user.user_metadata?.name || user.email || "",
+    email: user.email || "",
+    loggedInAt: Date.now(),
   }
 }
 
-export function saveAllUsers(users: StoredUser[]) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(USERS_KEY, JSON.stringify(users))
+// ---- Helper functions for admin page ----
+
+export async function getAllUsers(): Promise<StoredUser[]> {
+  const { data, error } = await supabase
+    .from("users")
+    .select("*")
+    .order("created_at", { ascending: false })
+
+  if (error) {
+    console.error("Error fetching users:", error)
+    return []
+  }
+
+  return data || []
 }
 
+export async function saveAllUsers(_users: StoredUser[]) {
+  // No-op: updates are done individually via toggleBan
+}
+
+export async function toggleUserBan(userId: string, banned: boolean) {
+  const { error } = await supabase
+    .from("users")
+    .update({ banned })
+    .eq("id", userId)
+
+  if (error) {
+    console.error("Error toggling ban:", error)
+    throw error
+  }
+}
+
+// ---- Provider ----
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(null)
+  const [session, setSession] = useState<AuthSession | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(SESSION_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw)
-        setSession(parsed)
+    // Check current session on mount
+    supabase.auth.getSession().then(({ data: { session: supaSession } }) => {
+      if (supaSession?.user) {
+        setSession(mapToAuthSession(supaSession.user))
       }
-    } catch {
-      // ignore
-    }
-    setIsLoading(false)
+      setIsLoading(false)
+    })
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, supaSession) => {
+      if (supaSession?.user) {
+        setSession(mapToAuthSession(supaSession.user))
+      } else {
+        setSession(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  const login = useCallback((email: string, password: string) => {
-    const users = getAllUsers()
-    const user = users.find((u) => u.email.toLowerCase() === email.toLowerCase())
+  const login = useCallback(
+    async (email: string, password: string) => {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    if (!user) {
-      throw new Error("Email ou senha incorretos")
-    }
+      if (error) {
+        throw new Error(error.message === "Invalid login credentials"
+          ? "Email ou senha incorretos"
+          : error.message)
+      }
 
-    if (user.password !== password) {
-      throw new Error("Email ou senha incorretos")
-    }
+      // Check if banned
+      const { data: userData } = await supabase
+        .from("users")
+        .select("banned")
+        .eq("id", data.user.id)
+        .single()
 
-    if (user.banned) {
-      throw new Error("Conta banida")
-    }
+      if (userData?.banned) {
+        await supabase.auth.signOut()
+        throw new Error("Conta banida")
+      }
 
-    const newSession: Session = {
-      userId: user.userId,
-      name: user.name,
-      email: user.email,
-      loggedInAt: Date.now(),
-    }
+      setSession(mapToAuthSession(data.user))
+      router.push("/")
+    },
+    [router]
+  )
 
-    localStorage.setItem(SESSION_KEY, JSON.stringify(newSession))
-    setSession(newSession)
-    router.push("/")
-  }, [router])
+  const register = useCallback(
+    async (data: { name: string; email: string; phone: string; password: string }) => {
+      // Sign up with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+        options: {
+          data: {
+            name: data.name,
+            phone: data.phone,
+          },
+        },
+      })
 
-  const register = useCallback((data: { name: string; email: string; phone: string; password: string }) => {
-    const users = getAllUsers()
-    const exists = users.find((u) => u.email.toLowerCase() === data.email.toLowerCase())
+      if (authError) {
+        if (authError.message.includes("already registered")) {
+          throw new Error("Este email ja esta cadastrado")
+        }
+        throw new Error(authError.message)
+      }
 
-    if (exists) {
-      throw new Error("Este email ja esta cadastrado")
-    }
+      if (!authData.user) {
+        throw new Error("Erro ao criar conta")
+      }
 
-    const newUser: StoredUser = {
-      userId: crypto.randomUUID(),
-      name: data.name,
-      email: data.email.toLowerCase(),
-      phone: data.phone,
-      password: data.password,
-      registeredAt: Date.now(),
-      banned: false,
-    }
+      // Insert into public users table
+      const { error: insertError } = await supabase.from("users").insert({
+        id: authData.user.id,
+        name: data.name,
+        email: data.email.toLowerCase(),
+        phone: data.phone,
+        banned: false,
+      })
 
-    users.push(newUser)
-    saveAllUsers(users)
+      if (insertError) {
+        console.error("Error inserting user profile:", insertError)
+      }
 
-    const newSession: Session = {
-      userId: newUser.userId,
-      name: newUser.name,
-      email: newUser.email,
-      loggedInAt: Date.now(),
-    }
+      setSession(mapToAuthSession(authData.user, data.name))
+      router.push("/")
+    },
+    [router]
+  )
 
-    localStorage.setItem(SESSION_KEY, JSON.stringify(newSession))
-    setSession(newSession)
-    router.push("/")
-  }, [router])
-
-  const logout = useCallback(() => {
-    localStorage.removeItem(SESSION_KEY)
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut()
     setSession(null)
     router.push("/login")
   }, [router])

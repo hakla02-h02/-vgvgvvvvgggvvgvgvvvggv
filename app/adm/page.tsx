@@ -28,14 +28,14 @@ import {
   CheckCircle,
   Users,
 } from "lucide-react"
-import { getAllUsers, saveAllUsers, type StoredUser } from "@/lib/auth-context"
+import { getAllUsers, toggleUserBan, type StoredUser } from "@/lib/auth-context"
 
 export default function AdmPage() {
   const [search, setSearch] = useState("")
   const [users, setUsers] = useState<StoredUser[]>([])
 
-  const loadData = useCallback(() => {
-    const allUsers = getAllUsers()
+  const loadData = useCallback(async () => {
+    const allUsers = await getAllUsers()
     setUsers(allUsers)
   }, [])
 
@@ -43,12 +43,18 @@ export default function AdmPage() {
     loadData()
   }, [loadData])
 
-  function toggleBan(userId: string) {
-    const updated = users.map((u) =>
-      u.userId === userId ? { ...u, banned: !u.banned } : u
-    )
-    setUsers(updated)
-    saveAllUsers(updated)
+  async function toggleBan(userId: string) {
+    const user = users.find((u) => u.id === userId)
+    if (!user) return
+    const newBanned = !user.banned
+    try {
+      await toggleUserBan(userId, newBanned)
+      setUsers((prev) =>
+        prev.map((u) => (u.id === userId ? { ...u, banned: newBanned } : u))
+      )
+    } catch {
+      // error logged inside toggleUserBan
+    }
   }
 
   const filteredUsers = users.filter((u) =>
@@ -140,7 +146,7 @@ export default function AdmPage() {
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((user) => (
-                    <TableRow key={user.userId} className="border-border">
+                    <TableRow key={user.id} className="border-border">
                       <TableCell>
                         <span className="text-sm font-medium text-foreground">
                           {user.email}
@@ -148,7 +154,7 @@ export default function AdmPage() {
                       </TableCell>
                       <TableCell>
                         <span className="text-sm text-muted-foreground">
-                          {new Date(user.registeredAt).toLocaleDateString("pt-BR")}
+                          {new Date(user.created_at).toLocaleDateString("pt-BR")}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -185,7 +191,7 @@ export default function AdmPage() {
                           >
                             {user.banned ? (
                               <DropdownMenuItem
-                                onClick={() => toggleBan(user.userId)}
+                                onClick={() => toggleBan(user.id)}
                                 className="text-emerald-400"
                               >
                                 <CheckCircle className="mr-2 h-4 w-4" />
@@ -193,7 +199,7 @@ export default function AdmPage() {
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem
-                                onClick={() => toggleBan(user.userId)}
+                                onClick={() => toggleBan(user.id)}
                                 className="text-destructive"
                               >
                                 <Ban className="mr-2 h-4 w-4" />
