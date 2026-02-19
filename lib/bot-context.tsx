@@ -2,50 +2,40 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react"
 import { useAuth } from "@/lib/auth-context"
+import { supabase } from "@/lib/supabase"
 
-const BOTS_STORAGE_KEY = "teleflow_bots"
 const SELECTED_BOT_KEY = "teleflow_selected_bot"
-
-export interface BotGroup {
-  name: string
-  link: string
-}
 
 export interface Bot {
   id: string
-  userId: string
+  user_id: string
   name: string
   token: string
-  group: BotGroup | null
-  createdAt: number
+  group_name: string | null
+  group_id: string | null
+  group_link: string | null
+  created_at: string
   status: "active" | "inactive"
 }
 
 interface BotContextType {
   bots: Bot[]
   selectedBot: Bot | null
+  isLoading: boolean
   setSelectedBot: (bot: Bot) => void
-  addBot: (name: string, token: string, group?: BotGroup) => Bot
-  updateBot: (id: string, updates: Partial<Omit<Bot, "id" | "userId">>) => void
-  deleteBot: (id: string) => void
+  addBot: (data: {
+    name: string
+    token: string
+    group_name?: string
+    group_id?: string
+    group_link?: string
+  }) => Promise<Bot>
+  updateBot: (id: string, updates: Partial<Omit<Bot, "id" | "user_id" | "created_at">>) => Promise<void>
+  deleteBot: (id: string) => Promise<void>
+  refreshBots: () => Promise<void>
 }
 
 const BotContext = createContext<BotContextType | null>(null)
-
-function getStoredBots(): Bot[] {
-  if (typeof window === "undefined") return []
-  try {
-    const raw = localStorage.getItem(BOTS_STORAGE_KEY)
-    return raw ? JSON.parse(raw) : []
-  } catch {
-    return []
-  }
-}
-
-function saveBotsToStorage(bots: Bot[]) {
-  if (typeof window === "undefined") return
-  localStorage.setItem(BOTS_STORAGE_KEY, JSON.stringify(bots))
-}
 
 function getStoredSelectedBotId(): string | null {
   if (typeof window === "undefined") return null
@@ -59,85 +49,156 @@ function saveSelectedBotId(id: string) {
 
 export function BotProvider({ children }: { children: ReactNode }) {
   const { session } = useAuth()
-  const [allBots, setAllBots] = useState<Bot[]>([])
+  const [bots, setBots] = useState<Bot[]>([])
   const [selectedBot, setSelectedBotState] = useState<Bot | null>(null)
-  const [loaded, setLoaded] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Load bots from storage
-  useEffect(() => {
-    const stored = getStoredBots()
-    setAllBots(stored)
-    setLoaded(true)
-  }, [])
+  const fetchBots = useCallback(async () => {
+    if (!session) {
+      setBots([])
+      setSelectedBotState(null)
+      setIsLoading(false)
+      return
+    }
 
-  // Filter bots by current user and auto-select
-  const userBots = session ? allBots.filter((b) => b.userId === session.userId) : []
+    const { data, error } = await supabase
+      .from("bots")
+      .select("*")
+      .eq("user_id", session.userId)
+      .order("created_at", { ascending: false })
 
-  useEffect(() => {
-    if (!loaded || !session) return
+    if (error) {
+      console.error("Error fetching bots:", error)
+      setIsLoading(false)
+      return
+    }
+
+    const fetchedBots = (data || []) as Bot[]
+    setBots(fetchedBots)
+
+    // Auto-select
     const savedId = getStoredSelectedBotId()
-    const found = userBots.find((b) => b.id === savedId)
+    const found = fetchedBots.find((b) => b.id === savedId)
     if (found) {
       setSelectedBotState(found)
-    } else if (userBots.length > 0) {
-      setSelectedBotState(userBots[0])
-      saveSelectedBotId(userBots[0].id)
+    } else if (fetchedBots.length > 0) {
+      setSelectedBotState(fetchedBots[0])
+      saveSelectedBotId(fetchedBots[0].id)
     } else {
       setSelectedBotState(null)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, session?.userId, allBots])
+
+    setIsLoading(false)
+  }, [session])
+
+  useEffect(() => {
+    fetchBots()
+  }, [fetchBots])
 
   const setSelectedBot = useCallback((bot: Bot) => {
     setSelectedBotState(bot)
     saveSelectedBotId(bot.id)
   }, [])
 
-  const addBot = useCallback((name: string, token: string, group?: BotGroup): Bot => {
-    if (!session) throw new Error("Not logged in")
-    const newBot: Bot = {
-      id: "bot_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
-      userId: session.userId,
-      name,
-      token,
-      group: group || null,
-      createdAt: Date.now(),
-      status: "active",
-    }
-    const updated = [...allBots, newBot]
-    setAllBots(updated)
-    saveBotsToStorage(updated)
-    setSelectedBotState(newBot)
-    saveSelectedBotId(newBot.id)
-    return newBot
-  }, [session, allBots])
+  const addBot = useCallback(
+    async (data: {
+      name: string
+      token: string
+      group_name?: string
+      group_id?: string
+      group_link?: string
+    }): Promise<Bot> => {
+      if (!session) throw new Error("Not logged in")
 
-  const updateBot = useCallback((id: string, updates: Partial<Omit<Bot, "id" | "userId">>) => {
-    const updated = allBots.map((b) => (b.id === id ? { ...b, ...updates } : b))
-    setAllBots(updated)
-    saveBotsToStorage(updated)
-    if (selectedBot?.id === id) {
-      setSelectedBotState({ ...selectedBot, ...updates } as Bot)
-    }
-  }, [allBots, selectedBot])
+      const { data: inserted, error } = await supabase
+        .from("bots")
+        .insert({
+          user_id: session.userId,
+          name: data.name,
+          token: data.token,
+          group_name: data.group_name || null,
+          group_id: data.group_id || null,
+          group_link: data.group_link || null,
+          status: "active",
+        })
+        .select()
+        .single()
 
-  const deleteBot = useCallback((id: string) => {
-    const updated = allBots.filter((b) => b.id !== id)
-    setAllBots(updated)
-    saveBotsToStorage(updated)
-    if (selectedBot?.id === id) {
-      const remaining = updated.filter((b) => b.userId === session?.userId)
-      if (remaining.length > 0) {
-        setSelectedBotState(remaining[0])
-        saveSelectedBotId(remaining[0].id)
-      } else {
-        setSelectedBotState(null)
+      if (error) {
+        console.error("Error creating bot:", error)
+        throw new Error("Erro ao criar bot")
       }
-    }
-  }, [allBots, selectedBot, session])
+
+      const newBot = inserted as Bot
+      setBots((prev) => [newBot, ...prev])
+      setSelectedBotState(newBot)
+      saveSelectedBotId(newBot.id)
+      return newBot
+    },
+    [session]
+  )
+
+  const updateBot = useCallback(
+    async (id: string, updates: Partial<Omit<Bot, "id" | "user_id" | "created_at">>) => {
+      const { error } = await supabase.from("bots").update(updates).eq("id", id)
+
+      if (error) {
+        console.error("Error updating bot:", error)
+        throw new Error("Erro ao atualizar bot")
+      }
+
+      setBots((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, ...updates } : b))
+      )
+      if (selectedBot?.id === id) {
+        setSelectedBotState((prev) => (prev ? { ...prev, ...updates } : prev))
+      }
+    },
+    [selectedBot]
+  )
+
+  const deleteBot = useCallback(
+    async (id: string) => {
+      const { error } = await supabase.from("bots").delete().eq("id", id)
+
+      if (error) {
+        console.error("Error deleting bot:", error)
+        throw new Error("Erro ao deletar bot")
+      }
+
+      setBots((prev) => {
+        const updated = prev.filter((b) => b.id !== id)
+        if (selectedBot?.id === id) {
+          if (updated.length > 0) {
+            setSelectedBotState(updated[0])
+            saveSelectedBotId(updated[0].id)
+          } else {
+            setSelectedBotState(null)
+          }
+        }
+        return updated
+      })
+    },
+    [selectedBot]
+  )
+
+  const refreshBots = useCallback(async () => {
+    await fetchBots()
+  }, [fetchBots])
 
   return (
-    <BotContext.Provider value={{ bots: userBots, selectedBot, setSelectedBot, addBot, updateBot, deleteBot }}>
+    <BotContext.Provider
+      value={{
+        bots,
+        selectedBot,
+        isLoading,
+        setSelectedBot,
+        addBot,
+        updateBot,
+        deleteBot,
+        refreshBots,
+      }}
+    >
       {children}
     </BotContext.Provider>
   )

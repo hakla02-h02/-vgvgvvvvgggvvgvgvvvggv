@@ -14,7 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogClose,
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import {
@@ -28,6 +27,7 @@ import {
   Pencil,
   Circle,
   LinkIcon,
+  Hash,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -41,11 +41,13 @@ export default function BotsPage() {
   const { bots, selectedBot, setSelectedBot, addBot, updateBot, deleteBot } = useBots()
   const [search, setSearch] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Create form state
   const [newName, setNewName] = useState("")
   const [newToken, setNewToken] = useState("")
   const [newGroupName, setNewGroupName] = useState("")
+  const [newGroupId, setNewGroupId] = useState("")
   const [newGroupLink, setNewGroupLink] = useState("")
   const [createError, setCreateError] = useState("")
 
@@ -55,7 +57,9 @@ export default function BotsPage() {
   const [editName, setEditName] = useState("")
   const [editToken, setEditToken] = useState("")
   const [editGroupName, setEditGroupName] = useState("")
+  const [editGroupId, setEditGroupId] = useState("")
   const [editGroupLink, setEditGroupLink] = useState("")
+  const [isEditSubmitting, setIsEditSubmitting] = useState(false)
 
   const filteredBots = bots.filter(
     (bot) =>
@@ -63,7 +67,7 @@ export default function BotsPage() {
       bot.token.toLowerCase().includes(search.toLowerCase())
   )
 
-  function handleCreate() {
+  async function handleCreate() {
     setCreateError("")
     if (!newName.trim()) {
       setCreateError("Digite um nome para o bot")
@@ -73,41 +77,69 @@ export default function BotsPage() {
       setCreateError("Digite o token do bot")
       return
     }
-    const group = newGroupName.trim()
-      ? { name: newGroupName.trim(), link: newGroupLink.trim() }
-      : undefined
-    addBot(newName.trim(), newToken.trim(), group)
-    setNewName("")
-    setNewToken("")
-    setNewGroupName("")
-    setNewGroupLink("")
-    setCreateOpen(false)
+
+    setIsSubmitting(true)
+    try {
+      await addBot({
+        name: newName.trim(),
+        token: newToken.trim(),
+        group_name: newGroupName.trim() || undefined,
+        group_id: newGroupId.trim() || undefined,
+        group_link: newGroupLink.trim() || undefined,
+      })
+      setNewName("")
+      setNewToken("")
+      setNewGroupName("")
+      setNewGroupId("")
+      setNewGroupLink("")
+      setCreateOpen(false)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setCreateError(err.message)
+      } else {
+        setCreateError("Erro ao criar bot")
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   function openEdit(bot: Bot) {
     setEditBot(bot)
     setEditName(bot.name)
     setEditToken(bot.token)
-    setEditGroupName(bot.group?.name || "")
-    setEditGroupLink(bot.group?.link || "")
+    setEditGroupName(bot.group_name || "")
+    setEditGroupId(bot.group_id || "")
+    setEditGroupLink(bot.group_link || "")
     setEditOpen(true)
   }
 
-  function handleEdit() {
+  async function handleEdit() {
     if (!editBot) return
-    updateBot(editBot.id, {
-      name: editName.trim() || editBot.name,
-      token: editToken.trim() || editBot.token,
-      group: editGroupName.trim()
-        ? { name: editGroupName.trim(), link: editGroupLink.trim() }
-        : null,
-    })
-    setEditOpen(false)
-    setEditBot(null)
+    setIsEditSubmitting(true)
+    try {
+      await updateBot(editBot.id, {
+        name: editName.trim() || editBot.name,
+        token: editToken.trim() || editBot.token,
+        group_name: editGroupName.trim() || null,
+        group_id: editGroupId.trim() || null,
+        group_link: editGroupLink.trim() || null,
+      })
+      setEditOpen(false)
+      setEditBot(null)
+    } catch {
+      // error handled inside updateBot
+    } finally {
+      setIsEditSubmitting(false)
+    }
   }
 
-  function handleDelete(id: string) {
-    deleteBot(id)
+  async function handleDelete(id: string) {
+    try {
+      await deleteBot(id)
+    } catch {
+      // error handled inside deleteBot
+    }
   }
 
   const activeBots = bots.filter((b) => b.status === "active").length
@@ -175,9 +207,21 @@ export default function BotsPage() {
                         />
                       </div>
                       <div className="flex flex-col gap-2">
+                        <Label className="text-muted-foreground text-xs">ID do Grupo</Label>
+                        <Input
+                          placeholder="-1001234567890 ou @meugrupo"
+                          value={newGroupId}
+                          onChange={(e) => setNewGroupId(e.target.value)}
+                          className="bg-secondary border-border font-mono text-xs"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          ID numerico (ex: -1001234567890) ou @ do grupo (ex: @meugrupo)
+                        </p>
+                      </div>
+                      <div className="flex flex-col gap-2">
                         <Label className="text-muted-foreground text-xs">Link do Grupo</Label>
                         <Input
-                          placeholder="https://t.me/+abc123"
+                          placeholder="https://t.me/+abc123 ou https://t.me/meugrupo"
                           value={newGroupLink}
                           onChange={(e) => setNewGroupLink(e.target.value)}
                           className="bg-secondary border-border"
@@ -192,9 +236,10 @@ export default function BotsPage() {
 
                   <Button
                     onClick={handleCreate}
+                    disabled={isSubmitting}
                     className="bg-accent text-accent-foreground hover:bg-accent/90"
                   >
-                    Criar Bot
+                    {isSubmitting ? "Criando..." : "Criar Bot"}
                   </Button>
                 </div>
               </DialogContent>
@@ -232,7 +277,7 @@ export default function BotsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Com Grupo</p>
-                  <p className="text-lg font-bold text-foreground">{bots.filter((b) => b.group).length}</p>
+                  <p className="text-lg font-bold text-foreground">{bots.filter((b) => b.group_name).length}</p>
                 </div>
               </CardContent>
             </Card>
@@ -301,16 +346,26 @@ export default function BotsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        {bot.group && (
+                        {bot.group_id && (
+                          <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
+                            <Hash className="mr-1 h-3 w-3" />
+                            {bot.group_id}
+                          </Badge>
+                        )}
+                        {bot.group_name && (
                           <Badge variant="outline" className="border-border text-muted-foreground">
                             <LinkIcon className="mr-1 h-3 w-3" />
-                            {bot.group.name}
+                            {bot.group_name}
                           </Badge>
                         )}
                         <Switch
                           checked={bot.status === "active"}
-                          onCheckedChange={(checked) => {
-                            updateBot(bot.id, { status: checked ? "active" : "inactive" })
+                          onCheckedChange={async (checked) => {
+                            try {
+                              await updateBot(bot.id, { status: checked ? "active" : "inactive" })
+                            } catch {
+                              // handled
+                            }
                           }}
                           onClick={(e) => e.stopPropagation()}
                         />
@@ -350,8 +405,19 @@ export default function BotsPage() {
                         </DropdownMenu>
                       </div>
                     </div>
-                    <div className="mt-3 text-xs text-muted-foreground">
-                      Criado em {new Date(bot.createdAt).toLocaleDateString("pt-BR")}
+                    <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
+                      <span>Criado em {new Date(bot.created_at).toLocaleDateString("pt-BR")}</span>
+                      {bot.group_link && (
+                        <a
+                          href={bot.group_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-accent hover:underline"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Link do grupo
+                        </a>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -397,6 +463,18 @@ export default function BotsPage() {
                   />
                 </div>
                 <div className="flex flex-col gap-2">
+                  <Label className="text-muted-foreground text-xs">ID do Grupo</Label>
+                  <Input
+                    value={editGroupId}
+                    onChange={(e) => setEditGroupId(e.target.value)}
+                    className="bg-secondary border-border font-mono text-xs"
+                    placeholder="-1001234567890 ou @meugrupo"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    ID numerico (ex: -1001234567890) ou @ do grupo (ex: @meugrupo)
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
                   <Label className="text-muted-foreground text-xs">Link do Grupo</Label>
                   <Input
                     value={editGroupLink}
@@ -409,9 +487,10 @@ export default function BotsPage() {
             </div>
             <Button
               onClick={handleEdit}
+              disabled={isEditSubmitting}
               className="bg-accent text-accent-foreground hover:bg-accent/90"
             >
-              Salvar
+              {isEditSubmitting ? "Salvando..." : "Salvar"}
             </Button>
           </div>
         </DialogContent>
