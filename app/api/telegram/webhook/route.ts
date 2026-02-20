@@ -64,38 +64,13 @@ export async function POST(req: NextRequest) {
 
     console.log("[v0] webhook: bot found:", bot.id)
 
-    // 2. SEMPRE salvar/atualizar o usuario (check + insert/update simples)
-    const { data: existingUsers, error: checkErr } = await supabase
+    // 2. SEMPRE salvar/atualizar o usuario via UPSERT (mais robusto)
+    console.log("[v0] webhook: saving user to bot_users - bot_id:", bot.id, "telegram_user_id:", telegramUserId)
+    
+    const { data: upsertedUser, error: upsertError } = await supabase
       .from("bot_users")
-      .select("id, funnel_step")
-      .eq("bot_id", bot.id)
-      .eq("telegram_user_id", telegramUserId)
-
-    if (checkErr) {
-      console.log("[v0] webhook: error checking user:", JSON.stringify(checkErr))
-    }
-
-    const existingUser = existingUsers?.[0]
-
-    if (existingUser) {
-      const { error: upErr } = await supabase
-        .from("bot_users")
-        .update({
-          first_name: fromData.first_name || null,
-          last_name: fromData.last_name || null,
-          username: fromData.username || null,
-          chat_id: chatId,
-          last_activity: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", existingUser.id)
-
-      if (upErr) console.log("[v0] webhook: update user FAILED:", JSON.stringify(upErr))
-      else console.log("[v0] webhook: updated existing user:", existingUser.id)
-    } else {
-      const { data: newUser, error: insErr } = await supabase
-        .from("bot_users")
-        .insert({
+      .upsert(
+        {
           bot_id: bot.id,
           telegram_user_id: telegramUserId,
           chat_id: chatId,
@@ -105,11 +80,62 @@ export async function POST(req: NextRequest) {
           funnel_step: 1,
           is_subscriber: false,
           last_activity: new Date().toISOString(),
-        })
-        .select()
+        },
+        {
+          onConflict: "bot_id,telegram_user_id",
+          ignoreDuplicates: false,
+        }
+      )
+      .select()
 
-      if (insErr) console.log("[v0] webhook: insert user FAILED:", JSON.stringify(insErr))
-      else console.log("[v0] webhook: inserted new user:", newUser?.[0]?.id)
+    if (upsertError) {
+      console.log("[v0] webhook: UPSERT FAILED:", JSON.stringify(upsertError))
+      // Fallback: tentar insert simples se upsert falhar (ex: sem unique constraint)
+      console.log("[v0] webhook: trying fallback insert...")
+      const { data: existingCheck } = await supabase
+        .from("bot_users")
+        .select("id")
+        .eq("bot_id", bot.id)
+        .eq("telegram_user_id", telegramUserId)
+
+      if (existingCheck && existingCheck.length > 0) {
+        // Ja existe, so atualizar
+        const { error: upErr } = await supabase
+          .from("bot_users")
+          .update({
+            first_name: fromData.first_name || null,
+            last_name: fromData.last_name || null,
+            username: fromData.username || null,
+            last_activity: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("bot_id", bot.id)
+          .eq("telegram_user_id", telegramUserId)
+        
+        if (upErr) console.log("[v0] webhook: FALLBACK UPDATE ALSO FAILED:", JSON.stringify(upErr))
+        else console.log("[v0] webhook: fallback update OK")
+      } else {
+        // Nao existe, inserir sem onConflict
+        const { data: newUser, error: insErr } = await supabase
+          .from("bot_users")
+          .insert({
+            bot_id: bot.id,
+            telegram_user_id: telegramUserId,
+            chat_id: chatId,
+            first_name: fromData.first_name || null,
+            last_name: fromData.last_name || null,
+            username: fromData.username || null,
+            funnel_step: 1,
+            is_subscriber: false,
+            last_activity: new Date().toISOString(),
+          })
+          .select()
+
+        if (insErr) console.log("[v0] webhook: FALLBACK INSERT ALSO FAILED:", JSON.stringify(insErr))
+        else console.log("[v0] webhook: fallback insert OK:", JSON.stringify(newUser))
+      }
+    } else {
+      console.log("[v0] webhook: user upserted OK:", JSON.stringify(upsertedUser))
     }
 
     // 3. Buscar fluxo ativo

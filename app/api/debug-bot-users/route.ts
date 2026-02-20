@@ -26,58 +26,24 @@ export async function GET() {
   results.user_flow_state = { count: stateData?.length || 0, data: stateData, error: stateErr?.message || null }
 
   // 4. Limpar qualquer RLS_TEST que ficou pra tras
-  await supabase.from("bot_users").delete().eq("telegram_user_id", 99999999)
+  const { error: cleanErr } = await supabase
+    .from("bot_users")
+    .delete()
+    .eq("telegram_user_id", 99999999)
+  results.cleaned_test_users = cleanErr ? cleanErr.message : "ok"
 
-  // 5. Encontrar usuarios faltantes e INSERIR automaticamente
-  const synced: string[] = []
-  const syncErrors: string[] = []
-
+  // 5. Comparar: usuarios no flow_state que NAO estao em bot_users
   if (stateData && usersData) {
     const userKeys = new Set(usersData.map((u) => `${u.bot_id}_${u.telegram_user_id}`))
     const missing = stateData.filter((s) => !userKeys.has(`${s.bot_id}_${s.telegram_user_id}`))
-
-    // Deduplica por bot_id + telegram_user_id
-    const uniqueMissing = new Map<string, typeof stateData[0]>()
-    for (const m of missing) {
-      const key = `${m.bot_id}_${m.telegram_user_id}`
-      if (!uniqueMissing.has(key)) uniqueMissing.set(key, m)
-    }
-
-    for (const [, m] of uniqueMissing) {
-      const { error: insErr } = await supabase
-        .from("bot_users")
-        .insert({
-          bot_id: m.bot_id,
-          telegram_user_id: m.telegram_user_id,
-          chat_id: m.chat_id,
-          first_name: null,
-          last_name: null,
-          username: null,
-          funnel_step: 1,
-          is_subscriber: false,
-          last_activity: m.created_at,
-        })
-
-      if (insErr) {
-        syncErrors.push(`${m.telegram_user_id}: ${insErr.message}`)
-      } else {
-        synced.push(`${m.telegram_user_id}`)
-      }
-    }
-
-    results.sync = {
-      missing_count: uniqueMissing.size,
-      synced,
-      errors: syncErrors,
+    results.missing_from_bot_users = {
+      count: missing.length,
+      users: missing.map((m) => ({ bot_id: m.bot_id, telegram_user_id: m.telegram_user_id })),
+      hint: missing.length > 0
+        ? "Estes usuarios estao no user_flow_state mas NAO na bot_users. Provavelmente RLS esta bloqueando o insert."
+        : "Todos os usuarios do flow_state estao na bot_users. OK!",
     }
   }
-
-  // 6. Re-ler bot_users apos sync
-  const { data: finalUsers } = await supabase
-    .from("bot_users")
-    .select("id, bot_id, telegram_user_id, first_name, username, funnel_step, created_at")
-    .order("created_at", { ascending: false })
-  results.bot_users_after_sync = { count: finalUsers?.length || 0, data: finalUsers }
 
   return NextResponse.json(results, { status: 200 })
 }
