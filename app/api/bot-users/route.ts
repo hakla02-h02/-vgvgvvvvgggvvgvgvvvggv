@@ -23,7 +23,49 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const allUsers = users || []
+    let allUsers = users || []
+
+    // Fallback: se bot_users vazio, sincronizar automaticamente do user_flow_state
+    if (allUsers.length === 0) {
+      const { data: flowStates } = await supabase
+        .from("user_flow_state")
+        .select("bot_id, telegram_user_id, chat_id, created_at")
+        .eq("bot_id", botId)
+
+      if (flowStates && flowStates.length > 0) {
+        // Deduplica por telegram_user_id
+        const uniqueMap = new Map<number, typeof flowStates[0]>()
+        for (const s of flowStates) {
+          if (!uniqueMap.has(s.telegram_user_id)) {
+            uniqueMap.set(s.telegram_user_id, s)
+          }
+        }
+
+        // Inserir todos de uma vez
+        const toInsert = Array.from(uniqueMap.values()).map((s) => ({
+          bot_id: s.bot_id,
+          telegram_user_id: s.telegram_user_id,
+          chat_id: s.chat_id,
+          first_name: null,
+          last_name: null,
+          username: null,
+          funnel_step: 1,
+          is_subscriber: false,
+          last_activity: s.created_at,
+        }))
+
+        await supabase.from("bot_users").insert(toInsert)
+
+        // Re-buscar agora que inserimos
+        const { data: retryUsers } = await supabase
+          .from("bot_users")
+          .select("*")
+          .eq("bot_id", botId)
+          .order("created_at", { ascending: false })
+
+        allUsers = retryUsers || []
+      }
+    }
     const now = new Date()
 
     // Calcular metricas

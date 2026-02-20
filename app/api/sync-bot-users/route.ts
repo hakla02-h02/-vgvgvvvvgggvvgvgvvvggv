@@ -8,15 +8,7 @@ export async function GET() {
   const results: Record<string, unknown> = {}
 
   try {
-    // 1. Limpar usuario fake do debug
-    const { error: cleanErr } = await supabase
-      .from("bot_users")
-      .delete()
-      .eq("telegram_user_id", 12345678)
-
-    results.cleaned_fake = cleanErr ? cleanErr.message : "ok"
-
-    // 2. Pegar todos os registros do user_flow_state
+    // Pegar todos os registros do user_flow_state (usuarios reais que interagiram)
     const { data: states, error: statesErr } = await supabase
       .from("user_flow_state")
       .select("bot_id, telegram_user_id, chat_id, created_at")
@@ -31,7 +23,7 @@ export async function GET() {
       return NextResponse.json({ message: "No user_flow_state entries found", results })
     }
 
-    // 3. Para cada estado, verificar se ja existe em bot_users e criar se nao existir
+    // Para cada estado, verificar se ja existe em bot_users e criar se nao existir
     const synced: string[] = []
     const skipped: string[] = []
     const errors: string[] = []
@@ -76,7 +68,7 @@ export async function GET() {
     results.skipped = skipped
     results.errors = errors
 
-    // 4. Verificar resultado final
+    // Verificar resultado final
     const { data: finalUsers } = await supabase
       .from("bot_users")
       .select("id, telegram_user_id, funnel_step")
