@@ -21,6 +21,7 @@ function sleep(ms: number) {
 }
 
 export async function POST(req: NextRequest) {
+  console.log("[v0] WEBHOOK V3 HIT - bot_users version")
   try {
     const { searchParams } = new URL(req.url)
     const botToken = searchParams.get("token")
