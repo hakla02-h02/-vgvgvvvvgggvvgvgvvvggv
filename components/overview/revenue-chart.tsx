@@ -59,15 +59,15 @@ export function RevenueChart() {
 
   return (
     <Card className="bg-card border-border rounded-2xl">
-      <CardHeader className="flex flex-row items-center justify-between gap-4 pb-2">
+      <CardHeader className="flex flex-col gap-3 pb-2 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm font-medium text-foreground">Vendas</p>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center rounded-xl bg-secondary p-0.5">
             {(["hora", "dia", "mes"] as Periodo[]).map((p) => (
               <button
                 key={p}
                 onClick={() => setPeriodo(p)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-medium capitalize transition-colors ${
+                className={`rounded-lg px-2.5 py-1.5 text-xs font-medium capitalize transition-colors ${
                   periodo === p
                     ? "bg-accent text-accent-foreground shadow-sm"
                     : "text-muted-foreground hover:text-foreground"
@@ -77,7 +77,7 @@ export function RevenueChart() {
               </button>
             ))}
           </div>
-          <div className="relative">
+          <div className="relative hidden sm:block">
             <CalendarDays className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
             <Input
               type="date"
@@ -89,7 +89,7 @@ export function RevenueChart() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-72">
+        <div className="h-52 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs>

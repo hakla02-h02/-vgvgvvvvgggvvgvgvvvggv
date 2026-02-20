@@ -50,46 +50,46 @@ export default function SubscriptionsPage() {
     <>
       <DashboardHeader title="Assinaturas" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 md:gap-4 grid-cols-3">
             <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary">
-                  <Users className="h-5 w-5 text-muted-foreground" />
+              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                  <Users className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Assinantes Ativos</p>
-                  <p className="text-2xl font-bold text-foreground">1.247</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Assinantes</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">1.247</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary">
-                  <UserMinus className="h-5 w-5 text-muted-foreground" />
+              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                  <UserMinus className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Taxa de Churn</p>
-                  <p className="text-2xl font-bold text-foreground">3,2%</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Churn</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">3,2%</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary">
-                  <RefreshCw className="h-5 w-5 text-muted-foreground" />
+              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                  <RefreshCw className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Renovacoes Hoje</p>
-                  <p className="text-2xl font-bold text-foreground">42</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Renovacoes</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">42</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Planos */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-3">
             {planos.map((plano) => (
               <Card key={plano.id} className="bg-card border-border rounded-2xl">
                 <CardContent className="p-5">
@@ -115,7 +115,7 @@ export default function SubscriptionsPage() {
 
           {/* Lista de assinantes */}
           <Card className="bg-card border-border rounded-2xl">
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">

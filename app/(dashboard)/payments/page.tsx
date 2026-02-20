@@ -70,39 +70,39 @@ export default function PaymentsPage() {
     <>
       <DashboardHeader title="Vendas" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           {/* Stats simples */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 md:gap-4 grid-cols-3">
             <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-success/10">
-                  <CheckCircle className="h-5 w-5 text-success" />
+              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-success/10">
+                  <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-success" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Aprovadas</p>
-                  <p className="text-2xl font-bold text-foreground">5</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Aprovadas</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">5</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-warning/10">
-                  <Clock className="h-5 w-5 text-warning" />
+              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-warning/10">
+                  <Clock className="h-4 w-4 md:h-5 md:w-5 text-warning" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Pendentes</p>
-                  <p className="text-2xl font-bold text-foreground">1</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Pendentes</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">1</p>
                 </div>
               </CardContent>
             </Card>
             <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-4 p-5">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary">
-                  <ShoppingCart className="h-5 w-5 text-muted-foreground" />
+              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                  <ShoppingCart className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Hoje</p>
-                  <p className="text-2xl font-bold text-foreground">8</p>
+                  <p className="text-xs md:text-sm text-muted-foreground">Total</p>
+                  <p className="text-lg md:text-2xl font-bold text-foreground">8</p>
                 </div>
               </CardContent>
             </Card>
@@ -117,7 +117,7 @@ export default function PaymentsPage() {
                   placeholder="Buscar..."
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  className="w-56 bg-secondary pl-9 border-border rounded-xl"
+                  className="w-full sm:w-56 bg-secondary pl-9 border-border rounded-xl"
                 />
               </div>
               <div className="flex items-center gap-3">
@@ -139,7 +139,7 @@ export default function PaymentsPage() {
                 </Button>
               </div>
             </div>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">

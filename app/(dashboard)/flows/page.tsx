@@ -76,8 +76,8 @@ export default function FlowsPage() {
     <>
       <DashboardHeader title="Fluxos" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-6">
-          <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-muted-foreground">Crie e gerencie fluxos de automacao</p>
             <Button className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl">
               <Plus className="mr-2 h-4 w-4" />
@@ -85,7 +85,7 @@ export default function FlowsPage() {
             </Button>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-5">
+          <div className="grid gap-4 md:gap-6 lg:grid-cols-5">
             {/* Lista de fluxos */}
             <div className="flex flex-col gap-3 lg:col-span-2">
               {fluxos.map((fluxo) => (

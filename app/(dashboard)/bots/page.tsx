@@ -148,7 +148,7 @@ export default function BotsPage() {
     <>
       <DashboardHeader title="Bots Management" description="Crie e gerencie seus bots do Telegram" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           {/* Top bar */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="relative">
@@ -157,7 +157,7 @@ export default function BotsPage() {
                 placeholder="Buscar bots..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-72 bg-secondary pl-9 border-border"
+                className="w-full sm:w-72 bg-secondary pl-9 border-border"
               />
             </div>
             <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -247,9 +247,9 @@ export default function BotsPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-3">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
             <Card className="bg-card border-border">
-              <CardContent className="flex items-center gap-3 p-4">
+              <CardContent className="flex items-center gap-3 p-3 md:p-4">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary">
                   <BotIcon className="h-4 w-4 text-muted-foreground" />
                 </div>
@@ -315,11 +315,11 @@ export default function BotsPage() {
                   }`}
                   onClick={() => setSelectedBot(bot)}
                 >
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-                          <BotIcon className="h-5 w-5 text-muted-foreground" />
+                  <CardContent className="p-3 md:p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                        <div className="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-lg bg-secondary">
+                          <BotIcon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
@@ -345,15 +345,15 @@ export default function BotsPage() {
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 md:gap-2 shrink-0">
                         {bot.group_id && (
-                          <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs">
+                          <Badge variant="outline" className="border-border text-muted-foreground font-mono text-xs hidden lg:flex">
                             <Hash className="mr-1 h-3 w-3" />
                             {bot.group_id}
                           </Badge>
                         )}
                         {bot.group_name && (
-                          <Badge variant="outline" className="border-border text-muted-foreground">
+                          <Badge variant="outline" className="border-border text-muted-foreground hidden md:flex">
                             <LinkIcon className="mr-1 h-3 w-3" />
                             {bot.group_name}
                           </Badge>

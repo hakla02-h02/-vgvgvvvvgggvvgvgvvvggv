@@ -37,7 +37,11 @@ const navItems = [
   { label: "Config", href: "/settings", icon: Settings },
 ]
 
-export function DashboardSidebar() {
+interface DashboardSidebarProps {
+  onNavigate?: () => void
+}
+
+export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const { session, logout } = useAuth()
@@ -79,6 +83,7 @@ export function DashboardSidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={onNavigate}
                   className={cn(
                     "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
                     isActive
@@ -119,7 +124,7 @@ export function DashboardSidebar() {
               variant="ghost"
               size="sm"
               onClick={() => setCollapsed(!collapsed)}
-              className="flex-1 justify-center text-muted-foreground hover:text-foreground rounded-xl"
+              className="hidden md:flex flex-1 justify-center text-muted-foreground hover:text-foreground rounded-xl"
             >
               {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
@@ -129,7 +134,7 @@ export function DashboardSidebar() {
                   variant="ghost"
                   size="sm"
                   onClick={logout}
-                  className="justify-center text-muted-foreground hover:text-destructive rounded-xl"
+                  className="flex-1 md:flex-none justify-center text-muted-foreground hover:text-destructive rounded-xl"
                 >
                   <LogOut className="h-4 w-4" />
                 </Button>

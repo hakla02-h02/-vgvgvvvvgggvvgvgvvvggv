@@ -65,9 +65,9 @@ export default function UsersPage() {
     <>
       <DashboardHeader title="Usuarios" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           {/* Stats */}
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
             <Card className="bg-card border-border rounded-2xl">
               <CardContent className="flex items-center gap-4 p-4">
                 <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
@@ -130,15 +130,11 @@ export default function UsersPage() {
                       placeholder="Buscar usuarios..."
                       value={busca}
                       onChange={(e) => setBusca(e.target.value)}
-                      className="w-72 bg-secondary pl-9 border-border rounded-xl"
+                      className="w-full sm:w-72 bg-secondary pl-9 border-border rounded-xl"
                     />
                   </div>
                 </div>
-                <CardContent className="p-0">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-border hover:bg-transparent">
-                        <TableHead className="text-muted-foreground">Usuario</TableHead>
+                <CardContent className="p-0 overflow-x-auto">
                         <TableHead className="text-muted-foreground">Cidade</TableHead>
                         <TableHead className="text-muted-foreground">Grupos</TableHead>
                         <TableHead className="text-muted-foreground">Status</TableHead>

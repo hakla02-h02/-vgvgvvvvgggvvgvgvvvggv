@@ -70,7 +70,7 @@ export default function AnalyticsPage() {
     <>
       <DashboardHeader title="Analytics" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-6">
+        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           {/* Graficos */}
           <div className="grid gap-6 lg:grid-cols-3">
             <Card className="bg-card border-border rounded-2xl lg:col-span-2">
@@ -78,7 +78,7 @@ export default function AnalyticsPage() {
                 <CardTitle className="text-sm font-medium text-foreground">Conversoes por Fonte</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-64">
+                <div className="h-48 sm:h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={conversaoTrend}>
                       <CartesianGrid strokeDasharray="3 3" stroke="hsl(0, 0%, 14%)" />
@@ -140,7 +140,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Pixels */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
             {pixels.map((pixel) => (
               <Card key={pixel.nome} className="bg-card border-border rounded-2xl">
                 <CardContent className="flex items-center justify-between p-4">
@@ -162,7 +162,7 @@ export default function AnalyticsPage() {
             <CardHeader>
               <CardTitle className="text-sm font-medium text-foreground">Desempenho UTM</CardTitle>
             </CardHeader>
-            <CardContent className="p-0">
+            <CardContent className="p-0 overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-border hover:bg-transparent">
