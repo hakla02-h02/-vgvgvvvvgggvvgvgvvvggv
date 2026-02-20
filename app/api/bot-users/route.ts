@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "bot_id is required" }, { status: 400 })
     }
 
+    // Limpar registros de teste que sobraram
+    await supabase.from("bot_users").delete().eq("telegram_user_id", 99999999)
+
     // Buscar todos os usuarios deste bot
     const { data: users, error } = await supabase
       .from("bot_users")
@@ -19,10 +22,57 @@ export async function GET(req: NextRequest) {
       .order("created_at", { ascending: false })
 
     if (error) {
+      console.error("[bot-users] Error fetching users:", error)
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    const allUsers = users || []
+    let allUsers = users || []
+
+    // SEMPRE sincronizar: verificar usuarios do user_flow_state que faltam na bot_users
+    const { data: flowStates } = await supabase
+      .from("user_flow_state")
+      .select("bot_id, telegram_user_id, chat_id, created_at")
+      .eq("bot_id", botId)
+
+    if (flowStates && flowStates.length > 0) {
+      const existingTgIds = new Set(allUsers.map((u) => u.telegram_user_id))
+
+      // Deduplica por telegram_user_id
+      const uniqueMap = new Map<number, typeof flowStates[0]>()
+      for (const s of flowStates) {
+        if (!uniqueMap.has(s.telegram_user_id) && !existingTgIds.has(s.telegram_user_id)) {
+          uniqueMap.set(s.telegram_user_id, s)
+        }
+      }
+
+      if (uniqueMap.size > 0) {
+        const toInsert = Array.from(uniqueMap.values()).map((s) => ({
+          bot_id: s.bot_id,
+          telegram_user_id: s.telegram_user_id,
+          chat_id: s.chat_id,
+          first_name: null,
+          last_name: null,
+          username: null,
+          funnel_step: 1,
+          is_subscriber: false,
+          last_activity: s.created_at,
+        }))
+
+        await supabase.from("bot_users").insert(toInsert)
+
+        // Re-buscar com os novos usuarios inclusos
+        const { data: retryUsers } = await supabase
+          .from("bot_users")
+          .select("*")
+          .eq("bot_id", botId)
+          .order("created_at", { ascending: false })
+
+        allUsers = retryUsers || []
+      }
+    }
+
+    // Limpar usuarios de teste (telegram_user_id = 99999999)
+    allUsers = allUsers.filter((u) => u.telegram_user_id !== 99999999)
     const now = new Date()
 
     // Calcular metricas
