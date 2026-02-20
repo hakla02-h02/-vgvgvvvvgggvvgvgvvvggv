@@ -80,12 +80,21 @@ export default function BotsPage() {
 
     setIsSubmitting(true)
     try {
-      await addBot({
+      const createdBot = await addBot({
         name: newName.trim(),
         token: newToken.trim(),
         group_name: newGroupName.trim() || undefined,
         group_id: newGroupId.trim() || undefined,
         group_link: newGroupLink.trim() || undefined,
+      })
+      // Auto-register Telegram webhook for new bot
+      await fetch("/api/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          botToken: createdBot.token,
+          action: "register",
+        }),
       })
       setNewName("")
       setNewToken("")
@@ -136,6 +145,18 @@ export default function BotsPage() {
 
   async function handleDelete(id: string) {
     try {
+      const botToDelete = bots.find((b) => b.id === id)
+      if (botToDelete) {
+        // Unregister webhook before deleting
+        await fetch("/api/telegram/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            botToken: botToDelete.token,
+            action: "unregister",
+          }),
+        })
+      }
       await deleteBot(id)
     } catch {
       // error handled inside deleteBot
@@ -363,6 +384,15 @@ export default function BotsPage() {
                           onCheckedChange={async (checked) => {
                             try {
                               await updateBot(bot.id, { status: checked ? "active" : "inactive" })
+                              // Register or unregister Telegram webhook
+                              await fetch("/api/telegram/register", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  botToken: bot.token,
+                                  action: checked ? "register" : "unregister",
+                                }),
+                              })
                             } catch {
                               // handled
                             }
