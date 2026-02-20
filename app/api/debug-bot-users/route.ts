@@ -25,41 +25,12 @@ export async function GET() {
     .order("created_at", { ascending: false })
   results.user_flow_state = { count: stateData?.length || 0, data: stateData, error: stateErr?.message || null }
 
-  // 4. Verificar RLS: tentar insert e delete de teste
-  if (botsData && botsData.length > 0) {
-    const testBotId = botsData[0].id
-    const testTgId = 99999999
-
-    // Tentar inserir
-    const { data: testInsert, error: testInsErr } = await supabase
-      .from("bot_users")
-      .insert({
-        bot_id: testBotId,
-        telegram_user_id: testTgId,
-        chat_id: testTgId,
-        first_name: "RLS_TEST",
-        funnel_step: 1,
-        is_subscriber: false,
-        last_activity: new Date().toISOString(),
-      })
-      .select()
-
-    results.rls_insert_test = {
-      success: !testInsErr,
-      data: testInsert,
-      error: testInsErr?.message || null,
-      hint: testInsErr ? "RLS pode estar bloqueando inserts na tabela bot_users! Desative RLS ou adicione uma policy." : "Insert OK - RLS nao esta bloqueando",
-    }
-
-    // Limpar teste
-    if (!testInsErr) {
-      await supabase
-        .from("bot_users")
-        .delete()
-        .eq("bot_id", testBotId)
-        .eq("telegram_user_id", testTgId)
-    }
-  }
+  // 4. Limpar qualquer RLS_TEST que ficou pra tras
+  const { error: cleanErr } = await supabase
+    .from("bot_users")
+    .delete()
+    .eq("telegram_user_id", 99999999)
+  results.cleaned_test_users = cleanErr ? cleanErr.message : "ok"
 
   // 5. Comparar: usuarios no flow_state que NAO estao em bot_users
   if (stateData && usersData) {
