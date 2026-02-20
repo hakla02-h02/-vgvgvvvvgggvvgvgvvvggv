@@ -20,166 +20,167 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// Cria ou atualiza o usuario na tabela bot_users
-async function upsertBotUser(
-  botId: string,
-  telegramUserId: number,
-  chatId: number,
-  from: { first_name?: string; last_name?: string; username?: string }
-) {
-  // Primeiro tentar encontrar o usuario existente
-  const { data: existing } = await supabase
-    .from("bot_users")
-    .select("id")
-    .eq("bot_id", botId)
-    .eq("telegram_user_id", telegramUserId)
-    .maybeSingle()
-
-  if (existing) {
-    // Usuario ja existe - so atualizar nome e atividade (NAO resetar funnel/subscriber)
-    const { error } = await supabase
-      .from("bot_users")
-      .update({
-        first_name: from.first_name || null,
-        last_name: from.last_name || null,
-        username: from.username || null,
-        last_activity: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existing.id)
-
-    if (error) console.error("[v0] upsertBotUser update error:", JSON.stringify(error))
-    else console.log("[v0] upsertBotUser updated existing user:", existing.id)
-  } else {
-    // Novo usuario - inserir com funnel_step 1
-    const { data, error } = await supabase
-      .from("bot_users")
-      .insert({
-        bot_id: botId,
-        telegram_user_id: telegramUserId,
-        chat_id: chatId,
-        first_name: from.first_name || null,
-        last_name: from.last_name || null,
-        username: from.username || null,
-        funnel_step: 1,
-        is_subscriber: false,
-        last_activity: new Date().toISOString(),
-      })
-      .select()
-
-    if (error) console.error("[v0] upsertBotUser insert error:", JSON.stringify(error))
-    else console.log("[v0] upsertBotUser inserted new user:", JSON.stringify(data))
-  }
-}
-
-// Atualiza a etapa no funil do usuario (so avanca, nunca retrocede)
-async function updateFunnelStep(botId: string, telegramUserId: number, newStep: number) {
-  // Buscar step atual (maybeSingle evita erro quando nao encontra)
-  const { data: user, error: selectError } = await supabase
-    .from("bot_users")
-    .select("funnel_step")
-    .eq("bot_id", botId)
-    .eq("telegram_user_id", telegramUserId)
-    .maybeSingle()
-
-  if (selectError) {
-    console.error("[v0] updateFunnelStep select error:", JSON.stringify(selectError))
-    return
-  }
-
-  if (user && newStep > user.funnel_step) {
-    const updatePayload: Record<string, unknown> = {
-      funnel_step: newStep,
-      updated_at: new Date().toISOString(),
-    }
-    if (newStep >= 4) {
-      updatePayload.is_subscriber = true
-      updatePayload.subscription_start = new Date().toISOString()
-      updatePayload.subscription_end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
-      updatePayload.subscription_plan = "Mensal"
-    }
-    const { error: updateError } = await supabase
-      .from("bot_users")
-      .update(updatePayload)
-      .eq("bot_id", botId)
-      .eq("telegram_user_id", telegramUserId)
-
-    if (updateError) {
-      console.error("[v0] updateFunnelStep update error:", JSON.stringify(updateError))
-    } else {
-      console.log("[v0] updateFunnelStep success: step", newStep, "for user", telegramUserId)
-    }
-  }
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const botToken = searchParams.get("token")
-    if (!botToken) return NextResponse.json({ error: "Missing token" }, { status: 400 })
+    if (!botToken) {
+      console.log("[v0] webhook: missing token param")
+      return NextResponse.json({ error: "Missing token" }, { status: 400 })
+    }
 
     const update = await req.json()
     const message = update?.message
-    if (!message) return NextResponse.json({ ok: true })
-
-    const chatId = message.chat.id
-    const telegramUserId = message.from?.id || chatId
-    const messageText = message.text || ""
-    const isStart = messageText === "/start"
-    const fromData = message.from || {}
-
-    // Buscar bot pelo token
-    const { data: bot } = await supabase
-      .from("bots")
-      .select("id, token, status")
-      .eq("token", botToken)
-      .single()
-
-    if (!bot || bot.status !== "active") {
-      console.log("[v0] Bot not found or inactive for token:", botToken?.substring(0, 10) + "...")
+    if (!message) {
+      console.log("[v0] webhook: no message in update")
       return NextResponse.json({ ok: true })
     }
 
-    console.log("[v0] Webhook received - bot:", bot.id, "user:", telegramUserId, "text:", messageText)
+    const chatId = message.chat.id
+    const telegramUserId = message.from?.id || chatId
+    const messageText = (message.text || "").trim()
+    const isStart = messageText === "/start"
+    const fromData = message.from || {}
 
-    // Sempre registrar/atualizar o usuario
-    await upsertBotUser(bot.id, telegramUserId, chatId, fromData)
+    console.log("[v0] webhook: received message from user", telegramUserId, "text:", messageText)
 
-    // Buscar fluxo ativo
-    const { data: flows } = await supabase
+    // 1. Buscar bot pelo token
+    const { data: bots, error: botError } = await supabase
+      .from("bots")
+      .select("id, token, status")
+      .eq("token", botToken)
+
+    if (botError) {
+      console.log("[v0] webhook: error fetching bot:", JSON.stringify(botError))
+      return NextResponse.json({ ok: true })
+    }
+
+    const bot = bots?.[0]
+    if (!bot) {
+      console.log("[v0] webhook: no bot found for token:", botToken.substring(0, 10) + "...")
+      return NextResponse.json({ ok: true })
+    }
+    if (bot.status !== "active") {
+      console.log("[v0] webhook: bot is inactive:", bot.id)
+      return NextResponse.json({ ok: true })
+    }
+
+    console.log("[v0] webhook: bot found:", bot.id)
+
+    // 2. SEMPRE salvar/atualizar o usuario (independente de ter fluxo ou nao)
+    const { data: existingUsers, error: existUserError } = await supabase
+      .from("bot_users")
+      .select("id, funnel_step")
+      .eq("bot_id", bot.id)
+      .eq("telegram_user_id", telegramUserId)
+
+    if (existUserError) {
+      console.log("[v0] webhook: error checking existing user:", JSON.stringify(existUserError))
+    }
+
+    const existingUser = existingUsers?.[0]
+
+    if (existingUser) {
+      // Atualizar atividade (NAO resetar funnel_step)
+      const { error: upErr } = await supabase
+        .from("bot_users")
+        .update({
+          first_name: fromData.first_name || null,
+          last_name: fromData.last_name || null,
+          username: fromData.username || null,
+          last_activity: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingUser.id)
+      
+      if (upErr) console.log("[v0] webhook: error updating user:", JSON.stringify(upErr))
+      else console.log("[v0] webhook: updated existing user:", existingUser.id)
+    } else {
+      // Novo usuario - inserir
+      const { data: newUser, error: insErr } = await supabase
+        .from("bot_users")
+        .insert({
+          bot_id: bot.id,
+          telegram_user_id: telegramUserId,
+          chat_id: chatId,
+          first_name: fromData.first_name || null,
+          last_name: fromData.last_name || null,
+          username: fromData.username || null,
+          funnel_step: 1,
+          is_subscriber: false,
+          last_activity: new Date().toISOString(),
+        })
+        .select()
+
+      if (insErr) console.log("[v0] webhook: error inserting user:", JSON.stringify(insErr))
+      else console.log("[v0] webhook: inserted new user:", JSON.stringify(newUser))
+    }
+
+    // 3. Buscar fluxo ativo
+    const { data: flows, error: flowError } = await supabase
       .from("flows")
       .select("id, name")
       .eq("bot_id", bot.id)
       .eq("status", "ativo")
       .order("created_at", { ascending: true })
 
-    if (!flows || flows.length === 0) return NextResponse.json({ ok: true })
-    const targetFlow = flows[0]
+    if (flowError) {
+      console.log("[v0] webhook: error fetching flows:", JSON.stringify(flowError))
+      return NextResponse.json({ ok: true })
+    }
 
-    // Buscar nodes do fluxo ordenados por posicao
-    const { data: nodes } = await supabase
+    if (!flows || flows.length === 0) {
+      console.log("[v0] webhook: no active flows for bot:", bot.id)
+      return NextResponse.json({ ok: true })
+    }
+
+    const targetFlow = flows[0]
+    console.log("[v0] webhook: using flow:", targetFlow.id, targetFlow.name)
+
+    // 4. Buscar nodes do fluxo
+    const { data: nodes, error: nodesError } = await supabase
       .from("flow_nodes")
       .select("id, type, label, config, position")
       .eq("flow_id", targetFlow.id)
       .order("position", { ascending: true })
 
-    if (!nodes || nodes.length === 0) return NextResponse.json({ ok: true })
+    if (nodesError) {
+      console.log("[v0] webhook: error fetching nodes:", JSON.stringify(nodesError))
+      return NextResponse.json({ ok: true })
+    }
 
-    // Buscar estado atual do usuario neste fluxo
-    const { data: existingState } = await supabase
+    if (!nodes || nodes.length === 0) {
+      console.log("[v0] webhook: no nodes in flow:", targetFlow.id)
+      return NextResponse.json({ ok: true })
+    }
+
+    console.log("[v0] webhook: found", nodes.length, "nodes")
+
+    // 5. Buscar estado do usuario neste fluxo (usando array, nao single)
+    const { data: stateRows, error: stateError } = await supabase
       .from("user_flow_state")
       .select("*")
       .eq("bot_id", bot.id)
       .eq("flow_id", targetFlow.id)
       .eq("telegram_user_id", telegramUserId)
-      .single()
 
-    // Se usuario mandou /start, resetar o estado e executar do zero
+    if (stateError) {
+      console.log("[v0] webhook: error fetching state:", JSON.stringify(stateError))
+    }
+
+    const existingState = stateRows?.[0] || null
+    console.log("[v0] webhook: existing state:", existingState ? existingState.status : "none")
+
+    // 6. Se /start => resetar estado e executar do zero
     if (isStart) {
       if (existingState) {
         await supabase
           .from("user_flow_state")
-          .update({ current_node_position: 0, status: "in_progress", updated_at: new Date().toISOString() })
+          .update({
+            current_node_position: 0,
+            status: "in_progress",
+            updated_at: new Date().toISOString(),
+          })
           .eq("id", existingState.id)
       } else {
         await supabase.from("user_flow_state").insert({
@@ -192,31 +193,32 @@ export async function POST(req: NextRequest) {
         })
       }
 
-      // Executar todos os nodes do fluxo a partir do inicio
+      console.log("[v0] webhook: executing flow from start")
       await executeNodes(botToken, chatId, nodes, 0, bot.id, targetFlow.id, telegramUserId)
       return NextResponse.json({ ok: true })
     }
 
-    // Se NAO e /start:
+    // 7. Se NAO e /start
     if (!existingState || existingState.status === "completed") {
+      console.log("[v0] webhook: ignoring - flow completed or no state")
       return NextResponse.json({ ok: true })
     }
 
-    // Se esta esperando resposta (condition node), processar a resposta
     if (existingState.status === "waiting_response") {
-      const nextPosition = existingState.current_node_position + 1
-      await executeNodes(botToken, chatId, nodes, nextPosition, bot.id, targetFlow.id, telegramUserId)
+      const nextPos = existingState.current_node_position + 1
+      console.log("[v0] webhook: continuing from position", nextPos)
+      await executeNodes(botToken, chatId, nodes, nextPos, bot.id, targetFlow.id, telegramUserId)
       return NextResponse.json({ ok: true })
     }
 
     return NextResponse.json({ ok: true })
   } catch (err) {
-    console.error("[webhook] Error:", err)
+    console.error("[v0] webhook: FATAL error:", err)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })
   }
 }
 
-// Executa nodes a partir de uma posicao especifica
+// Executa nodes a partir de uma posicao
 async function executeNodes(
   botToken: string,
   chatId: number,
@@ -229,15 +231,15 @@ async function executeNodes(
   const remainingNodes = nodes.filter((n) => n.position >= startPosition)
 
   for (const node of remainingNodes) {
+    console.log("[v0] webhook: executing node:", node.type, node.label, "pos:", node.position)
+
     switch (node.type) {
       case "trigger":
-        // Gatilho e apenas o ponto de entrada -- funnel step 1 (ja feito no upsert)
         break
 
       case "message": {
         const text = node.config?.text || node.label || "Mensagem"
         await sendTelegramMessage(botToken, chatId, text)
-        // Recebeu mensagem = funnel step 2
         await updateFunnelStep(botId, telegramUserId, 2)
         break
       }
@@ -263,14 +265,13 @@ async function executeNodes(
         if (node.config?.text) {
           await sendTelegramMessage(botToken, chatId, node.config.text)
         }
-        return
+        return // Para aqui e espera resposta
       }
 
       case "payment": {
         const amount = node.config?.amount || "0"
         const description = node.config?.description || "Pagamento"
         await sendTelegramMessage(botToken, chatId, `${description}\nValor: R$ ${amount}`)
-        // Chegou ao pagamento = funnel step 3
         await updateFunnelStep(botId, telegramUserId, 3)
         break
       }
@@ -278,7 +279,6 @@ async function executeNodes(
       case "action": {
         const actionText = node.config?.text || node.config?.action_name || node.label
         await sendTelegramMessage(botToken, chatId, `${actionText}`)
-        // Acao final = funnel step 4 (assinante)
         await updateFunnelStep(botId, telegramUserId, 4)
         break
       }
@@ -296,6 +296,38 @@ async function executeNodes(
     .eq("bot_id", botId)
     .eq("flow_id", flowId)
     .eq("telegram_user_id", telegramUserId)
+
+  console.log("[v0] webhook: flow completed for user", telegramUserId)
+}
+
+// Atualiza etapa no funil (so avanca, nunca retrocede)
+async function updateFunnelStep(botId: string, telegramUserId: number, newStep: number) {
+  const { data: users } = await supabase
+    .from("bot_users")
+    .select("funnel_step")
+    .eq("bot_id", botId)
+    .eq("telegram_user_id", telegramUserId)
+
+  const user = users?.[0]
+  if (user && newStep > user.funnel_step) {
+    const updatePayload: Record<string, unknown> = {
+      funnel_step: newStep,
+      updated_at: new Date().toISOString(),
+    }
+    if (newStep >= 4) {
+      updatePayload.is_subscriber = true
+      updatePayload.subscription_start = new Date().toISOString()
+      updatePayload.subscription_end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      updatePayload.subscription_plan = "Mensal"
+    }
+    await supabase
+      .from("bot_users")
+      .update(updatePayload)
+      .eq("bot_id", botId)
+      .eq("telegram_user_id", telegramUserId)
+
+    console.log("[v0] webhook: funnel step updated to", newStep)
+  }
 }
 
 export async function GET() {
