@@ -1,10 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  "https://dbtpnafcqfcllgoxdhxs.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHBuYWZjcWZjbGxnb3hkaHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Nzg3MTQsImV4cCI6MjA4NzA1NDcxNH0.0MF5a1uAuxeHIVGNglWYbFHYRIECNVEVZN1MLH4Z26A"
-)
+import { getSupabase } from "@/lib/supabase"
 
 async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`
@@ -21,6 +16,7 @@ function sleep(ms: number) {
 }
 
 export async function POST(req: NextRequest) {
+  const supabase = getSupabase()
   console.log("[v0] WEBHOOK V3 HIT - bot_users version")
   try {
     const { searchParams } = new URL(req.url)
@@ -229,6 +225,7 @@ async function executeNodes(
   flowId: string,
   telegramUserId: number
 ) {
+  const supabase = getSupabase()
   const remainingNodes = nodes.filter((n) => n.position >= startPosition)
 
   for (const node of remainingNodes) {
@@ -303,6 +300,7 @@ async function executeNodes(
 
 // Atualiza etapa no funil (so avanca, nunca retrocede)
 async function updateFunnelStep(botId: string, telegramUserId: number, newStep: number) {
+  const supabase = getSupabase()
   const { data: users } = await supabase
     .from("bot_users")
     .select("funnel_step")

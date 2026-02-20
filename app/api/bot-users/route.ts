@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  "https://dbtpnafcqfcllgoxdhxs.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHBuYWZjcWZjbGxnb3hkaHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Nzg3MTQsImV4cCI6MjA4NzA1NDcxNH0.0MF5a1uAuxeHIVGNglWYbFHYRIECNVEVZN1MLH4Z26A"
-)
+import { getSupabase } from "@/lib/supabase"
 
 export async function GET(req: NextRequest) {
+  const supabase = getSupabase()
   try {
     const { searchParams } = new URL(req.url)
     const botId = searchParams.get("bot_id")

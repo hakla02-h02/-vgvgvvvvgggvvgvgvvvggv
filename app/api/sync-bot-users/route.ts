@@ -1,14 +1,10 @@
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+import { getSupabase } from "@/lib/supabase"
 
 // Endpoint para sincronizar user_flow_state -> bot_users
 // Acesse: /api/sync-bot-users
 export async function GET() {
+  const supabase = getSupabase()
   const results: Record<string, unknown> = {}
 
   try {
