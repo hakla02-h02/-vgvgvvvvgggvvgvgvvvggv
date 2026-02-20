@@ -2,6 +2,25 @@
 -- TeleFlow: Flows & Flow Nodes + Webhook Log
 -- ============================================
 
+-- Drop everything first to avoid conflicts
+DROP POLICY IF EXISTS "Users can view own flows" ON flows;
+DROP POLICY IF EXISTS "Users can insert own flows" ON flows;
+DROP POLICY IF EXISTS "Users can update own flows" ON flows;
+DROP POLICY IF EXISTS "Users can delete own flows" ON flows;
+DROP POLICY IF EXISTS "Anon can read flows by bot_id" ON flows;
+DROP POLICY IF EXISTS "Users can view own flow nodes" ON flow_nodes;
+DROP POLICY IF EXISTS "Users can insert own flow nodes" ON flow_nodes;
+DROP POLICY IF EXISTS "Users can update own flow nodes" ON flow_nodes;
+DROP POLICY IF EXISTS "Users can delete own flow nodes" ON flow_nodes;
+DROP POLICY IF EXISTS "Anon can read flow nodes" ON flow_nodes;
+DROP POLICY IF EXISTS "Users can view own webhook logs" ON webhook_log;
+DROP POLICY IF EXISTS "Anon can insert webhook logs" ON webhook_log;
+DROP POLICY IF EXISTS "Anon can read webhook logs" ON webhook_log;
+
+DROP TABLE IF EXISTS webhook_log CASCADE;
+DROP TABLE IF EXISTS flow_nodes CASCADE;
+DROP TABLE IF EXISTS flows CASCADE;
+
 -- Table: flows (each flow belongs to a bot)
 CREATE TABLE IF NOT EXISTS flows (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
