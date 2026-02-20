@@ -20,6 +20,78 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+// Cria ou atualiza o usuario na tabela bot_users
+async function upsertBotUser(
+  botId: string,
+  telegramUserId: number,
+  chatId: number,
+  from: { first_name?: string; last_name?: string; username?: string }
+) {
+  const { data: existing } = await supabase
+    .from("bot_users")
+    .select("id")
+    .eq("bot_id", botId)
+    .eq("telegram_user_id", telegramUserId)
+    .single()
+
+  if (existing) {
+    // Atualizar ultima atividade e dados do telegram
+    await supabase
+      .from("bot_users")
+      .update({
+        first_name: from.first_name || null,
+        last_name: from.last_name || null,
+        username: from.username || null,
+        last_activity: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existing.id)
+  } else {
+    // Criar novo usuario com funnel_step 1 (iniciou bot)
+    await supabase.from("bot_users").insert({
+      bot_id: botId,
+      telegram_user_id: telegramUserId,
+      chat_id: chatId,
+      first_name: from.first_name || null,
+      last_name: from.last_name || null,
+      username: from.username || null,
+      funnel_step: 1,
+      is_subscriber: false,
+    })
+  }
+}
+
+// Atualiza a etapa no funil do usuario (so avanca, nunca retrocede)
+async function updateFunnelStep(botId: string, telegramUserId: number, newStep: number) {
+  const { data: user } = await supabase
+    .from("bot_users")
+    .select("funnel_step")
+    .eq("bot_id", botId)
+    .eq("telegram_user_id", telegramUserId)
+    .single()
+
+  if (user && newStep > user.funnel_step) {
+    await supabase
+      .from("bot_users")
+      .update({
+        funnel_step: newStep,
+        updated_at: new Date().toISOString(),
+        // Se chegou na etapa 4, marcar como assinante
+        ...(newStep >= 4
+          ? {
+              is_subscriber: true,
+              subscription_start: new Date().toISOString(),
+              // Assinatura de 30 dias por padrao
+              subscription_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+              subscription_plan: "Mensal",
+            }
+          : {}),
+      })
+      .eq("bot_id", botId)
+      .eq("telegram_user_id", telegramUserId)
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
@@ -34,6 +106,7 @@ export async function POST(req: NextRequest) {
     const telegramUserId = message.from?.id || chatId
     const messageText = message.text || ""
     const isStart = messageText === "/start"
+    const fromData = message.from || {}
 
     // Buscar bot pelo token
     const { data: bot } = await supabase
@@ -43,6 +116,9 @@ export async function POST(req: NextRequest) {
       .single()
 
     if (!bot || bot.status !== "active") return NextResponse.json({ ok: true })
+
+    // Sempre registrar/atualizar o usuario
+    await upsertBotUser(bot.id, telegramUserId, chatId, fromData)
 
     // Buscar fluxo ativo
     const { data: flows } = await supabase
@@ -81,16 +157,14 @@ export async function POST(req: NextRequest) {
           .update({ current_node_position: 0, status: "in_progress", updated_at: new Date().toISOString() })
           .eq("id", existingState.id)
       } else {
-        await supabase
-          .from("user_flow_state")
-          .insert({
-            bot_id: bot.id,
-            flow_id: targetFlow.id,
-            telegram_user_id: telegramUserId,
-            chat_id: chatId,
-            current_node_position: 0,
-            status: "in_progress",
-          })
+        await supabase.from("user_flow_state").insert({
+          bot_id: bot.id,
+          flow_id: targetFlow.id,
+          telegram_user_id: telegramUserId,
+          chat_id: chatId,
+          current_node_position: 0,
+          status: "in_progress",
+        })
       }
 
       // Executar todos os nodes do fluxo a partir do inicio
@@ -99,7 +173,6 @@ export async function POST(req: NextRequest) {
     }
 
     // Se NAO e /start:
-    // Se nao tem estado ou ja completou, ignorar (nao repetir fluxo)
     if (!existingState || existingState.status === "completed") {
       return NextResponse.json({ ok: true })
     }
@@ -111,7 +184,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: true })
     }
 
-    // Qualquer outro caso, ignorar
     return NextResponse.json({ ok: true })
   } catch (err) {
     console.error("[webhook] Error:", err)
@@ -129,18 +201,19 @@ async function executeNodes(
   flowId: string,
   telegramUserId: number
 ) {
-  // Filtrar apenas nodes a partir da posicao atual
   const remainingNodes = nodes.filter((n) => n.position >= startPosition)
 
   for (const node of remainingNodes) {
     switch (node.type) {
       case "trigger":
-        // Gatilho e apenas o ponto de entrada, pular
+        // Gatilho e apenas o ponto de entrada -- funnel step 1 (ja feito no upsert)
         break
 
       case "message": {
         const text = node.config?.text || node.label || "Mensagem"
         await sendTelegramMessage(botToken, chatId, text)
+        // Recebeu mensagem = funnel step 2
+        await updateFunnelStep(botId, telegramUserId, 2)
         break
       }
 
@@ -151,7 +224,6 @@ async function executeNodes(
       }
 
       case "condition": {
-        // Pausar aqui e esperar resposta do usuario
         await supabase
           .from("user_flow_state")
           .update({
@@ -163,11 +235,9 @@ async function executeNodes(
           .eq("flow_id", flowId)
           .eq("telegram_user_id", telegramUserId)
 
-        // Enviar mensagem da condicao se tiver
         if (node.config?.text) {
           await sendTelegramMessage(botToken, chatId, node.config.text)
         }
-        // PARAR a execucao aqui - proximo node so executa quando usuario responder
         return
       }
 
@@ -175,18 +245,22 @@ async function executeNodes(
         const amount = node.config?.amount || "0"
         const description = node.config?.description || "Pagamento"
         await sendTelegramMessage(botToken, chatId, `${description}\nValor: R$ ${amount}`)
+        // Chegou ao pagamento = funnel step 3
+        await updateFunnelStep(botId, telegramUserId, 3)
         break
       }
 
       case "action": {
         const actionText = node.config?.text || node.config?.action_name || node.label
         await sendTelegramMessage(botToken, chatId, `${actionText}`)
+        // Acao final = funnel step 4 (assinante)
+        await updateFunnelStep(botId, telegramUserId, 4)
         break
       }
     }
   }
 
-  // Se chegou aqui, o fluxo foi concluido
+  // Fluxo concluido
   await supabase
     .from("user_flow_state")
     .update({
