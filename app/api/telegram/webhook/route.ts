@@ -27,16 +27,17 @@ async function upsertBotUser(
   chatId: number,
   from: { first_name?: string; last_name?: string; username?: string }
 ) {
+  // Primeiro tentar encontrar o usuario existente
   const { data: existing } = await supabase
     .from("bot_users")
     .select("id")
     .eq("bot_id", botId)
     .eq("telegram_user_id", telegramUserId)
-    .single()
+    .maybeSingle()
 
   if (existing) {
-    // Atualizar ultima atividade e dados do telegram
-    await supabase
+    // Usuario ja existe - so atualizar nome e atividade (NAO resetar funnel/subscriber)
+    const { error } = await supabase
       .from("bot_users")
       .update({
         first_name: from.first_name || null,
@@ -46,49 +47,68 @@ async function upsertBotUser(
         updated_at: new Date().toISOString(),
       })
       .eq("id", existing.id)
+
+    if (error) console.error("[v0] upsertBotUser update error:", JSON.stringify(error))
+    else console.log("[v0] upsertBotUser updated existing user:", existing.id)
   } else {
-    // Criar novo usuario com funnel_step 1 (iniciou bot)
-    await supabase.from("bot_users").insert({
-      bot_id: botId,
-      telegram_user_id: telegramUserId,
-      chat_id: chatId,
-      first_name: from.first_name || null,
-      last_name: from.last_name || null,
-      username: from.username || null,
-      funnel_step: 1,
-      is_subscriber: false,
-    })
+    // Novo usuario - inserir com funnel_step 1
+    const { data, error } = await supabase
+      .from("bot_users")
+      .insert({
+        bot_id: botId,
+        telegram_user_id: telegramUserId,
+        chat_id: chatId,
+        first_name: from.first_name || null,
+        last_name: from.last_name || null,
+        username: from.username || null,
+        funnel_step: 1,
+        is_subscriber: false,
+        last_activity: new Date().toISOString(),
+      })
+      .select()
+
+    if (error) console.error("[v0] upsertBotUser insert error:", JSON.stringify(error))
+    else console.log("[v0] upsertBotUser inserted new user:", JSON.stringify(data))
   }
 }
 
 // Atualiza a etapa no funil do usuario (so avanca, nunca retrocede)
 async function updateFunnelStep(botId: string, telegramUserId: number, newStep: number) {
-  const { data: user } = await supabase
+  // Buscar step atual (maybeSingle evita erro quando nao encontra)
+  const { data: user, error: selectError } = await supabase
     .from("bot_users")
     .select("funnel_step")
     .eq("bot_id", botId)
     .eq("telegram_user_id", telegramUserId)
-    .single()
+    .maybeSingle()
+
+  if (selectError) {
+    console.error("[v0] updateFunnelStep select error:", JSON.stringify(selectError))
+    return
+  }
 
   if (user && newStep > user.funnel_step) {
-    await supabase
+    const updatePayload: Record<string, unknown> = {
+      funnel_step: newStep,
+      updated_at: new Date().toISOString(),
+    }
+    if (newStep >= 4) {
+      updatePayload.is_subscriber = true
+      updatePayload.subscription_start = new Date().toISOString()
+      updatePayload.subscription_end = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+      updatePayload.subscription_plan = "Mensal"
+    }
+    const { error: updateError } = await supabase
       .from("bot_users")
-      .update({
-        funnel_step: newStep,
-        updated_at: new Date().toISOString(),
-        // Se chegou na etapa 4, marcar como assinante
-        ...(newStep >= 4
-          ? {
-              is_subscriber: true,
-              subscription_start: new Date().toISOString(),
-              // Assinatura de 30 dias por padrao
-              subscription_end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-              subscription_plan: "Mensal",
-            }
-          : {}),
-      })
+      .update(updatePayload)
       .eq("bot_id", botId)
       .eq("telegram_user_id", telegramUserId)
+
+    if (updateError) {
+      console.error("[v0] updateFunnelStep update error:", JSON.stringify(updateError))
+    } else {
+      console.log("[v0] updateFunnelStep success: step", newStep, "for user", telegramUserId)
+    }
   }
 }
 
@@ -115,7 +135,12 @@ export async function POST(req: NextRequest) {
       .eq("token", botToken)
       .single()
 
-    if (!bot || bot.status !== "active") return NextResponse.json({ ok: true })
+    if (!bot || bot.status !== "active") {
+      console.log("[v0] Bot not found or inactive for token:", botToken?.substring(0, 10) + "...")
+      return NextResponse.json({ ok: true })
+    }
+
+    console.log("[v0] Webhook received - bot:", bot.id, "user:", telegramUserId, "text:", messageText)
 
     // Sempre registrar/atualizar o usuario
     await upsertBotUser(bot.id, telegramUserId, chatId, fromData)
