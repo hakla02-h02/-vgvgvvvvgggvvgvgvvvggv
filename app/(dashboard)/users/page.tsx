@@ -135,6 +135,10 @@ export default function UsersPage() {
                   </div>
                 </div>
                 <CardContent className="p-0 overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-border">
+                        <TableHead className="text-muted-foreground">Usuario</TableHead>
                         <TableHead className="text-muted-foreground">Cidade</TableHead>
                         <TableHead className="text-muted-foreground">Grupos</TableHead>
                         <TableHead className="text-muted-foreground">Status</TableHead>
