@@ -13,19 +13,40 @@ ON CONFLICT (id) DO UPDATE SET
   allowed_mime_types = ARRAY['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
 
 -- Allow anyone to read files (public bucket)
-CREATE POLICY IF NOT EXISTS "Public read access for flow-media"
-ON storage.objects FOR SELECT
-TO public
-USING (bucket_id = 'flow-media');
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Public read access for flow-media' AND tablename = 'objects'
+  ) THEN
+    CREATE POLICY "Public read access for flow-media"
+    ON storage.objects FOR SELECT
+    TO public
+    USING (bucket_id = 'flow-media');
+  END IF;
+END $$;
 
--- Allow authenticated users to upload files
-CREATE POLICY IF NOT EXISTS "Authenticated upload for flow-media"
-ON storage.objects FOR INSERT
-TO public
-WITH CHECK (bucket_id = 'flow-media');
+-- Allow anyone to upload files
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated upload for flow-media' AND tablename = 'objects'
+  ) THEN
+    CREATE POLICY "Authenticated upload for flow-media"
+    ON storage.objects FOR INSERT
+    TO public
+    WITH CHECK (bucket_id = 'flow-media');
+  END IF;
+END $$;
 
--- Allow authenticated users to delete their files
-CREATE POLICY IF NOT EXISTS "Authenticated delete for flow-media"
-ON storage.objects FOR DELETE
-TO public
-USING (bucket_id = 'flow-media');
+-- Allow anyone to delete files
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE policyname = 'Authenticated delete for flow-media' AND tablename = 'objects'
+  ) THEN
+    CREATE POLICY "Authenticated delete for flow-media"
+    ON storage.objects FOR DELETE
+    TO public
+    USING (bucket_id = 'flow-media');
+  END IF;
+END $$;
