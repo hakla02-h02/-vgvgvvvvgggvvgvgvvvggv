@@ -10,9 +10,10 @@ import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
 import {
   Users, Crown, Search, TrendingUp, Clock, X,
-  Zap, MessageSquare, CreditCard, CheckCircle2, ArrowDown,
+  MessageSquare, CreditCard, CheckCircle2, ArrowDown,
   Calendar, Activity, ChevronRight, Loader2, RefreshCw,
 } from "lucide-react"
+import Image from "next/image"
 
 // --- Types ---
 interface BotUserData {
@@ -48,6 +49,19 @@ interface ApiResponse {
 
 type FilterType = "todos" | "assinantes" | "nao_assinantes" | "expirando"
 
+// --- Dragon Icon (inline, works like lucide icon) ---
+function DragonIconInline({ className }: { className?: string }) {
+  return (
+    <Image
+      src="/images/dragon-icon.png"
+      alt=""
+      width={20}
+      height={20}
+      className={className}
+    />
+  )
+}
+
 // --- KPI Card ---
 function KPICard({ icon: Icon, label, value, suffix, iconBg, iconColor }: {
   icon: React.ElementType; label: string; value: string; suffix?: string
@@ -74,7 +88,7 @@ function KPICard({ icon: Icon, label, value, suffix, iconBg, iconColor }: {
 }
 
 // --- Funnel ---
-const funnelIcons = [Zap, MessageSquare, CreditCard, CheckCircle2]
+const funnelIcons = [DragonIconInline, MessageSquare, CreditCard, CheckCircle2]
 const funnelStepColors = [
   "from-accent/80 to-accent/40",
   "from-blue-500/80 to-blue-500/40",
@@ -105,7 +119,7 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
         {funnel[0]?.count === 0 ? (
           <div className="flex flex-col items-center justify-center py-10">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary mb-3">
-              <Zap className="h-5 w-5 text-muted-foreground" />
+              <DragonIconInline className="h-5 w-5" />
             </div>
             <p className="text-sm font-medium text-muted-foreground">Nenhum usuario ainda</p>
             <p className="text-xs text-muted-foreground/60 mt-1">Os dados aparecem quando alguem iniciar seu bot</p>
@@ -117,7 +131,7 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
               const drop = i > 0 && funnel[i - 1].count > 0
                 ? ((funnel[i - 1].count - step.count) / funnel[i - 1].count * 100).toFixed(1)
                 : null
-              const Icon = funnelIcons[i] || Zap
+              const Icon = funnelIcons[i] || DragonIconInline
 
               return (
                 <div key={step.id}>

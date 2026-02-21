@@ -16,10 +16,11 @@ import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
 import { supabase } from "@/lib/supabase"
 import {
-  Plus, GitBranch, MessageSquare, Timer, Split, Zap,
+  Plus, GitBranch, MessageSquare, Timer, Split,
   ArrowRight, GripVertical, ChevronRight, Users, CreditCard,
   Pencil, Trash2, Loader2, Image, Video, Link, X, Upload, FileCheck,
 } from "lucide-react"
+import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
 
 // ---- Types ----
@@ -52,10 +53,23 @@ interface FlowNode {
   updated_at: string
 }
 
+// ---- Dragon Icon (works like lucide icon) ----
+function DragonTriggerIcon({ className }: { className?: string }) {
+  return (
+    <NextImage
+      src="/images/dragon-icon.png"
+      alt=""
+      width={20}
+      height={20}
+      className={className}
+    />
+  )
+}
+
 // ---- Constants ----
 
 const nodeIcons: Record<NodeType, React.ElementType> = {
-  trigger: Zap, message: MessageSquare, delay: Timer,
+  trigger: DragonTriggerIcon, message: MessageSquare, delay: Timer,
   condition: Split, payment: CreditCard, action: Users,
 }
 

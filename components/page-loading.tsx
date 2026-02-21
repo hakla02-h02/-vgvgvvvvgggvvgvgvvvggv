@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
-import { Zap } from "lucide-react"
+import { DragonIcon } from "@/components/dragon-icon"
 
 export function PageLoading() {
   const pathname = usePathname()
@@ -36,8 +36,8 @@ export function PageLoading() {
       }`}
     >
       <div className="flex flex-col items-center gap-4">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground animate-pulse">
-          <Zap className="h-7 w-7" />
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl animate-pulse">
+          <DragonIcon className="h-8 w-8" />
         </div>
         <span className="text-lg font-semibold text-foreground tracking-tight">
           Dragon

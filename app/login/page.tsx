@@ -4,7 +4,8 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { Zap, Loader2, Eye, EyeOff } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
+import { DragonIcon } from "@/components/dragon-icon"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -54,8 +55,8 @@ export default function LoginPage() {
   if (isLoading || session) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground animate-pulse">
-          <Zap className="h-6 w-6" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl animate-pulse">
+          <DragonIcon className="h-7 w-7" />
         </div>
       </div>
     )
@@ -65,8 +66,8 @@ export default function LoginPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-            <Zap className="h-7 w-7" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl">
+            <DragonIcon className="h-9 w-9" />
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Dragon</h1>

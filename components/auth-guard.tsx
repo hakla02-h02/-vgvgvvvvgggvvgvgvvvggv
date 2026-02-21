@@ -3,7 +3,7 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth-context"
-import { Zap } from "lucide-react"
+import { DragonIcon } from "@/components/dragon-icon"
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { session, isLoading } = useAuth()
@@ -19,8 +19,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent text-accent-foreground animate-pulse">
-            <Zap className="h-6 w-6" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl animate-pulse">
+            <DragonIcon className="h-7 w-7" />
           </div>
           <p className="text-sm text-muted-foreground">Carregando...</p>
         </div>
