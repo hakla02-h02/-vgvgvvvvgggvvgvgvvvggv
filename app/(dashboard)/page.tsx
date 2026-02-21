@@ -35,7 +35,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Vendas Hoje</p>
-                  <p className="text-xl md:text-3xl font-bold text-foreground tracking-tight">24</p>
+                  <p className="text-xl md:text-3xl font-bold text-foreground tracking-tight">0</p>
                 </div>
               </CardContent>
             </Card>
@@ -46,7 +46,7 @@ export default function DashboardPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Faturado Hoje</p>
-                  <p className="text-xl md:text-3xl font-bold text-foreground tracking-tight">R$ 4.720</p>
+                  <p className="text-xl md:text-3xl font-bold text-foreground tracking-tight">R$ 0</p>
                 </div>
               </CardContent>
             </Card>

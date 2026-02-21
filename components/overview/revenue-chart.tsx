@@ -17,29 +17,29 @@ import {
 
 const horaData = Array.from({ length: 24 }, (_, i) => ({
   name: `${String(i).padStart(2, "0")}h`,
-  vendas: Math.floor(Math.random() * 8) + 1,
-  valor: Math.floor(Math.random() * 800) + 50,
+  vendas: 0,
+  valor: 0,
 }))
 
 const diaData = Array.from({ length: 30 }, (_, i) => ({
   name: `${i + 1}`,
-  vendas: Math.floor(Math.random() * 20) + 2,
-  valor: Math.floor(Math.random() * 3000) + 200,
+  vendas: 0,
+  valor: 0,
 }))
 
 const mesData = [
-  { name: "Jan", vendas: 18, valor: 3540 },
-  { name: "Fev", vendas: 24, valor: 4720 },
-  { name: "Mar", vendas: 20, valor: 3940 },
-  { name: "Abr", vendas: 32, valor: 6280 },
-  { name: "Mai", vendas: 28, valor: 5510 },
-  { name: "Jun", vendas: 42, valor: 8260 },
-  { name: "Jul", vendas: 38, valor: 7480 },
-  { name: "Ago", vendas: 45, valor: 8850 },
-  { name: "Set", vendas: 40, valor: 7870 },
-  { name: "Out", vendas: 52, valor: 10230 },
-  { name: "Nov", vendas: 48, valor: 9440 },
-  { name: "Dez", vendas: 58, valor: 11410 },
+  { name: "Jan", vendas: 0, valor: 0 },
+  { name: "Fev", vendas: 0, valor: 0 },
+  { name: "Mar", vendas: 0, valor: 0 },
+  { name: "Abr", vendas: 0, valor: 0 },
+  { name: "Mai", vendas: 0, valor: 0 },
+  { name: "Jun", vendas: 0, valor: 0 },
+  { name: "Jul", vendas: 0, valor: 0 },
+  { name: "Ago", vendas: 0, valor: 0 },
+  { name: "Set", vendas: 0, valor: 0 },
+  { name: "Out", vendas: 0, valor: 0 },
+  { name: "Nov", vendas: 0, valor: 0 },
+  { name: "Dez", vendas: 0, valor: 0 },
 ]
 
 type Periodo = "hora" | "dia" | "mes"

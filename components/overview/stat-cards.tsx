@@ -4,9 +4,9 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Bot, Users, TrendingUp } from "lucide-react"
 
 const stats = [
-  { label: "Conversao", value: "8,4%", icon: TrendingUp },
-  { label: "Usuarios", value: "1.240", icon: Users },
-  { label: "Bots Ativos", value: "3", icon: Bot },
+  { label: "Conversao", value: "0%", icon: TrendingUp },
+  { label: "Usuarios", value: "0", icon: Users },
+  { label: "Bots Ativos", value: "0", icon: Bot },
 ]
 
 export function StatCards() {
