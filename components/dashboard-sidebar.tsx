@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
@@ -16,7 +17,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Zap,
   LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -55,14 +55,23 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         )}
       >
         {/* Logo */}
-        <div className="flex h-14 items-center gap-3 border-b border-border px-4">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-            <Zap className="h-4 w-4" />
-          </div>
-          {!collapsed && (
-            <span className="text-lg font-bold text-foreground tracking-tight">
-              Dragon
-            </span>
+        <div className="flex h-14 items-center border-b border-border px-3">
+          {collapsed ? (
+            <Image
+              src="/images/dragon-logo.png"
+              alt="Dragon"
+              width={40}
+              height={40}
+              className="shrink-0 object-contain"
+            />
+          ) : (
+            <Image
+              src="/images/dragon-logo.png"
+              alt="Dragon"
+              width={90}
+              height={90}
+              className="shrink-0 object-contain"
+            />
           )}
         </div>
 
