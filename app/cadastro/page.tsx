@@ -6,6 +6,7 @@ import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 import { DragonIcon } from "@/components/dragon-icon"
+import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -98,15 +99,17 @@ export default function CadastroPage() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl">
-            <DragonIcon className="h-9 w-9" />
-          </div>
-          <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">Dragon</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              Crie sua conta
-            </p>
-          </div>
+          <Image
+            src="/images/dragon-logo.png"
+            alt="Dragon"
+            width={180}
+            height={180}
+            className="object-contain"
+            priority
+          />
+          <p className="text-sm text-muted-foreground">
+            Crie sua conta
+          </p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
