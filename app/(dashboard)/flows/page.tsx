@@ -18,8 +18,9 @@ import { supabase } from "@/lib/supabase"
 import {
   Plus, GitBranch, MessageSquare, Timer, Split, Zap,
   ArrowRight, GripVertical, ChevronRight, Users, CreditCard,
-  Pencil, Trash2, Loader2,
+  Pencil, Trash2, Loader2, Image, Video, Link, X,
 } from "lucide-react"
+import { Switch } from "@/components/ui/switch"
 
 // ---- Types ----
 
@@ -35,12 +36,17 @@ interface Flow {
 
 type NodeType = "trigger" | "message" | "delay" | "condition" | "payment" | "action"
 
+interface InlineButton {
+  text: string
+  url: string
+}
+
 interface FlowNode {
   id: string
   flow_id: string
   type: NodeType
   label: string
-  config: Record<string, string>
+  config: Record<string, unknown>
   position: number
   created_at: string
   updated_at: string
@@ -83,10 +89,8 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
   {
     type: "message",
     label: "Mensagem",
-    description: "Enviar uma mensagem para o usuario",
-    configFields: [
-      { key: "text", label: "Texto da mensagem", placeholder: "Digite a mensagem...", inputType: "textarea" },
-    ],
+    description: "Enviar mensagem com midia e botoes",
+    configFields: [],
   },
   {
     type: "delay",
@@ -146,6 +150,33 @@ export default function FlowsPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<typeof actionTemplates[0] | null>(null)
   const [nodeConfigValues, setNodeConfigValues] = useState<Record<string, string>>({})
   const [isAddingNode, setIsAddingNode] = useState(false)
+
+  // Message node config (media + inline buttons)
+  const [msgText, setMsgText] = useState("")
+  const [msgMediaUrl, setMsgMediaUrl] = useState("")
+  const [msgMediaType, setMsgMediaType] = useState<"photo" | "video" | "none">("none")
+  const [msgHasButtons, setMsgHasButtons] = useState(false)
+  const [msgButtons, setMsgButtons] = useState<InlineButton[]>([])
+
+  const resetMessageConfig = () => {
+    setMsgText("")
+    setMsgMediaUrl("")
+    setMsgMediaType("none")
+    setMsgHasButtons(false)
+    setMsgButtons([])
+  }
+
+  const addMsgButton = () => {
+    setMsgButtons((prev) => [...prev, { text: "", url: "" }])
+  }
+
+  const updateMsgButton = (index: number, field: "text" | "url", value: string) => {
+    setMsgButtons((prev) => prev.map((b, i) => (i === index ? { ...b, [field]: value } : b)))
+  }
+
+  const removeMsgButton = (index: number) => {
+    setMsgButtons((prev) => prev.filter((_, i) => i !== index))
+  }
 
   // Edit node dialog
   const [showEditNodeDialog, setShowEditNodeDialog] = useState(false)
@@ -297,10 +328,19 @@ export default function FlowsPage() {
 
     setIsAddingNode(true)
 
-    // Build the label based on template + config
     let label = selectedTemplate.label
-    if (selectedTemplate.type === "message" && nodeConfigValues.text) {
-      label = nodeConfigValues.text.length > 40 ? nodeConfigValues.text.slice(0, 40) + "..." : nodeConfigValues.text
+    let config: Record<string, unknown> = { ...nodeConfigValues }
+
+    if (selectedTemplate.type === "message") {
+      // Build rich message config
+      label = msgText ? (msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText) : "Mensagem"
+      const validButtons = msgButtons.filter((b) => b.text.trim() && b.url.trim())
+      config = {
+        text: msgText,
+        media_url: msgMediaType !== "none" ? msgMediaUrl : "",
+        media_type: msgMediaType !== "none" ? msgMediaType : "",
+        buttons: validButtons.length > 0 ? JSON.stringify(validButtons) : "",
+      }
     } else if (selectedTemplate.type === "delay" && nodeConfigValues.seconds) {
       const secs = parseInt(nodeConfigValues.seconds)
       if (secs >= 60) {
@@ -324,7 +364,7 @@ export default function FlowsPage() {
         flow_id: activeFlow.id,
         type: selectedTemplate.type,
         label,
-        config: nodeConfigValues,
+        config,
         position: newPosition,
       })
       .select()
@@ -339,6 +379,7 @@ export default function FlowsPage() {
     setNodes((prev) => [...prev, data as FlowNode])
     setSelectedTemplate(null)
     setNodeConfigValues({})
+    resetMessageConfig()
     setShowAddNodeDialog(false)
     setIsAddingNode(false)
   }
@@ -347,7 +388,33 @@ export default function FlowsPage() {
   const openEditNode = (node: FlowNode) => {
     setEditingNode(node)
     setEditNodeLabel(node.label)
-    setEditNodeConfig(node.config || {})
+    const cfg = node.config || {}
+    setEditNodeConfig(cfg as Record<string, string>)
+
+    // If it's a message node, populate the rich message state
+    if (node.type === "message") {
+      setMsgText((cfg.text as string) || "")
+      setMsgMediaUrl((cfg.media_url as string) || "")
+      const mType = (cfg.media_type as string) || ""
+      setMsgMediaType(mType === "photo" || mType === "video" ? mType : "none")
+      const btnStr = (cfg.buttons as string) || ""
+      if (btnStr) {
+        try {
+          const parsed = JSON.parse(btnStr) as InlineButton[]
+          setMsgButtons(parsed)
+          setMsgHasButtons(parsed.length > 0)
+        } catch {
+          setMsgButtons([])
+          setMsgHasButtons(false)
+        }
+      } else {
+        setMsgButtons([])
+        setMsgHasButtons(false)
+      }
+    } else {
+      resetMessageConfig()
+    }
+
     setShowEditNodeDialog(true)
   }
 
@@ -355,11 +422,26 @@ export default function FlowsPage() {
     if (!editingNode) return
 
     setIsSavingNode(true)
+
+    let finalConfig: Record<string, unknown> = { ...editNodeConfig }
+    let finalLabel = editNodeLabel
+
+    if (editingNode.type === "message") {
+      const validButtons = msgButtons.filter((b) => b.text.trim() && b.url.trim())
+      finalConfig = {
+        text: msgText,
+        media_url: msgMediaType !== "none" ? msgMediaUrl : "",
+        media_type: msgMediaType !== "none" ? msgMediaType : "",
+        buttons: validButtons.length > 0 ? JSON.stringify(validButtons) : "",
+      }
+      finalLabel = msgText ? (msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText) : "Mensagem"
+    }
+
     const { error } = await supabase
       .from("flow_nodes")
       .update({
-        label: editNodeLabel,
-        config: editNodeConfig,
+        label: finalLabel,
+        config: finalConfig,
         updated_at: new Date().toISOString(),
       })
       .eq("id", editingNode.id)
@@ -373,10 +455,11 @@ export default function FlowsPage() {
     setNodes((prev) =>
       prev.map((n) =>
         n.id === editingNode.id
-          ? { ...n, label: editNodeLabel, config: editNodeConfig }
+          ? { ...n, label: finalLabel, config: finalConfig }
           : n
       )
     )
+    resetMessageConfig()
     setShowEditNodeDialog(false)
     setEditingNode(null)
     setIsSavingNode(false)
@@ -579,7 +662,26 @@ export default function FlowsPage() {
                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/50">
                                   <Icon className={`h-4 w-4 ${nodeIconColors[node.type]}`} />
                                 </div>
-                                <p className="flex-1 text-sm font-medium text-foreground">{node.label}</p>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
+                                  {node.type === "message" && (
+                                    <div className="flex items-center gap-2 mt-0.5">
+                                      {node.config?.media_type && node.config.media_type !== "" && (
+                                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                          {node.config.media_type === "photo" ? <Image className="h-3 w-3" /> : <Video className="h-3 w-3" />}
+                                          {node.config.media_type === "photo" ? "Foto" : "Video"}
+                                        </span>
+                                      )}
+                                      {node.config?.buttons && node.config.buttons !== "" && (
+                                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                          <Link className="h-3 w-3" />
+                                          {(() => { try { return JSON.parse(node.config.buttons as string).length } catch { return 0 } })()}{" "}
+                                          {"botao(es)"}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button
                                     variant="ghost"
@@ -683,7 +785,7 @@ export default function FlowsPage() {
 
       {/* ---- Add Node Dialog ---- */}
       <Dialog open={showAddNodeDialog} onOpenChange={setShowAddNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground">Adicionar Acao</DialogTitle>
           </DialogHeader>
@@ -700,6 +802,7 @@ export default function FlowsPage() {
                     onClick={() => {
                       setSelectedTemplate(tpl)
                       setNodeConfigValues({})
+                      resetMessageConfig()
                     }}
                   >
                     <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/50">
@@ -732,7 +835,22 @@ export default function FlowsPage() {
                 })()}
               </div>
 
-              {selectedTemplate.configFields.length === 0 ? (
+              {selectedTemplate.type === "message" ? (
+                <MessageConfigForm
+                  msgText={msgText}
+                  setMsgText={setMsgText}
+                  msgMediaType={msgMediaType}
+                  setMsgMediaType={setMsgMediaType}
+                  msgMediaUrl={msgMediaUrl}
+                  setMsgMediaUrl={setMsgMediaUrl}
+                  msgHasButtons={msgHasButtons}
+                  setMsgHasButtons={setMsgHasButtons}
+                  msgButtons={msgButtons}
+                  addMsgButton={addMsgButton}
+                  updateMsgButton={updateMsgButton}
+                  removeMsgButton={removeMsgButton}
+                />
+              ) : selectedTemplate.configFields.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Este bloco nao precisa de configuracao.
                 </p>
@@ -768,13 +886,16 @@ export default function FlowsPage() {
                 <Button
                   variant="outline"
                   className="rounded-xl border-border text-foreground"
-                  onClick={() => setSelectedTemplate(null)}
+                  onClick={() => {
+                    setSelectedTemplate(null)
+                    resetMessageConfig()
+                  }}
                 >
                   Voltar
                 </Button>
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  disabled={isAddingNode}
+                  disabled={isAddingNode || (selectedTemplate.type === "message" && !msgText.trim())}
                   onClick={handleAddNode}
                 >
                   {isAddingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -788,63 +909,84 @@ export default function FlowsPage() {
 
       {/* ---- Edit Node Dialog ---- */}
       <Dialog open={showEditNodeDialog} onOpenChange={setShowEditNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-foreground">Editar Bloco</DialogTitle>
           </DialogHeader>
           {editingNode && (
             <div className="flex flex-col gap-4 py-2">
-              <div className="flex flex-col gap-2">
-                <Label className="text-foreground">Label</Label>
-                <Input
-                  value={editNodeLabel}
-                  onChange={(e) => setEditNodeLabel(e.target.value)}
-                  className="bg-secondary border-border rounded-xl text-foreground"
+              {editingNode.type === "message" ? (
+                <MessageConfigForm
+                  msgText={msgText}
+                  setMsgText={setMsgText}
+                  msgMediaType={msgMediaType}
+                  setMsgMediaType={setMsgMediaType}
+                  msgMediaUrl={msgMediaUrl}
+                  setMsgMediaUrl={setMsgMediaUrl}
+                  msgHasButtons={msgHasButtons}
+                  setMsgHasButtons={setMsgHasButtons}
+                  msgButtons={msgButtons}
+                  addMsgButton={addMsgButton}
+                  updateMsgButton={updateMsgButton}
+                  removeMsgButton={removeMsgButton}
                 />
-              </div>
-
-              {/* Show config fields based on node type */}
-              {(() => {
-                const tpl = actionTemplates.find((t) => t.type === editingNode.type)
-                if (!tpl || tpl.configFields.length === 0) return null
-                return tpl.configFields.map((field) => (
-                  <div key={field.key} className="flex flex-col gap-2">
-                    <Label className="text-foreground">{field.label}</Label>
-                    {field.inputType === "textarea" ? (
-                      <Textarea
-                        value={editNodeConfig[field.key] || ""}
-                        onChange={(e) =>
-                          setEditNodeConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
-                        }
-                        placeholder={field.placeholder}
-                        className="bg-secondary border-border rounded-xl text-foreground min-h-[80px]"
-                      />
-                    ) : (
-                      <Input
-                        type={field.inputType}
-                        value={editNodeConfig[field.key] || ""}
-                        onChange={(e) =>
-                          setEditNodeConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
-                        }
-                        placeholder={field.placeholder}
-                        className="bg-secondary border-border rounded-xl text-foreground"
-                      />
-                    )}
+              ) : (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <Label className="text-foreground">Label</Label>
+                    <Input
+                      value={editNodeLabel}
+                      onChange={(e) => setEditNodeLabel(e.target.value)}
+                      className="bg-secondary border-border rounded-xl text-foreground"
+                    />
                   </div>
-                ))
-              })()}
+
+                  {(() => {
+                    const tpl = actionTemplates.find((t) => t.type === editingNode.type)
+                    if (!tpl || tpl.configFields.length === 0) return null
+                    return tpl.configFields.map((field) => (
+                      <div key={field.key} className="flex flex-col gap-2">
+                        <Label className="text-foreground">{field.label}</Label>
+                        {field.inputType === "textarea" ? (
+                          <Textarea
+                            value={editNodeConfig[field.key] || ""}
+                            onChange={(e) =>
+                              setEditNodeConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
+                            }
+                            placeholder={field.placeholder}
+                            className="bg-secondary border-border rounded-xl text-foreground min-h-[80px]"
+                          />
+                        ) : (
+                          <Input
+                            type={field.inputType}
+                            value={editNodeConfig[field.key] || ""}
+                            onChange={(e) =>
+                              setEditNodeConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
+                            }
+                            placeholder={field.placeholder}
+                            className="bg-secondary border-border rounded-xl text-foreground"
+                          />
+                        )}
+                      </div>
+                    ))
+                  })()}
+                </>
+              )}
 
               <DialogFooter>
                 <Button
                   variant="outline"
                   className="rounded-xl border-border text-foreground"
-                  onClick={() => setShowEditNodeDialog(false)}
+                  onClick={() => {
+                    resetMessageConfig()
+                    setShowEditNodeDialog(false)
+                  }}
                 >
                   Cancelar
                 </Button>
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  disabled={isSavingNode || !editNodeLabel.trim()}
+                  disabled={isSavingNode || (editingNode.type === "message" ? !msgText.trim() : !editNodeLabel.trim())}
                   onClick={handleSaveNode}
                 >
                   {isSavingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -918,5 +1060,151 @@ export default function FlowsPage() {
         </DialogContent>
       </Dialog>
     </>
+  )
+}
+
+// ---- Message Config Form (media + inline keyboard buttons) ----
+
+function MessageConfigForm({
+  msgText,
+  setMsgText,
+  msgMediaType,
+  setMsgMediaType,
+  msgMediaUrl,
+  setMsgMediaUrl,
+  msgHasButtons,
+  setMsgHasButtons,
+  msgButtons,
+  addMsgButton,
+  updateMsgButton,
+  removeMsgButton,
+}: {
+  msgText: string
+  setMsgText: (v: string) => void
+  msgMediaType: "photo" | "video" | "none"
+  setMsgMediaType: (v: "photo" | "video" | "none") => void
+  msgMediaUrl: string
+  setMsgMediaUrl: (v: string) => void
+  msgHasButtons: boolean
+  setMsgHasButtons: (v: boolean) => void
+  msgButtons: InlineButton[]
+  addMsgButton: () => void
+  updateMsgButton: (index: number, field: "text" | "url", value: string) => void
+  removeMsgButton: (index: number) => void
+}) {
+  return (
+    <div className="flex flex-col gap-4">
+      {/* Texto da mensagem */}
+      <div className="flex flex-col gap-2">
+        <Label className="text-foreground">Texto da mensagem</Label>
+        <Textarea
+          value={msgText}
+          onChange={(e) => setMsgText(e.target.value)}
+          placeholder="Digite a mensagem que o bot vai enviar..."
+          className="bg-secondary border-border rounded-xl text-foreground min-h-[80px]"
+        />
+      </div>
+
+      {/* Midia */}
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-foreground text-sm">Midia (opcional)</Label>
+          <Select
+            value={msgMediaType}
+            onValueChange={(v) => setMsgMediaType(v as "photo" | "video" | "none")}
+          >
+            <SelectTrigger className="w-[140px] h-8 bg-secondary border-border rounded-lg text-foreground text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card border-border">
+              <SelectItem value="none">Nenhuma</SelectItem>
+              <SelectItem value="photo">
+                <span className="flex items-center gap-1.5"><Image className="h-3 w-3" /> Foto</span>
+              </SelectItem>
+              <SelectItem value="video">
+                <span className="flex items-center gap-1.5"><Video className="h-3 w-3" /> Video</span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {msgMediaType !== "none" && (
+          <div className="flex flex-col gap-2">
+            <Input
+              value={msgMediaUrl}
+              onChange={(e) => setMsgMediaUrl(e.target.value)}
+              placeholder={msgMediaType === "photo" ? "URL da imagem (https://...)" : "URL do video (https://...)"}
+              className="bg-secondary border-border rounded-xl text-foreground text-sm"
+            />
+            <p className="text-xs text-muted-foreground">
+              Cole a URL direta da {msgMediaType === "photo" ? "imagem" : "video"}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Botoes Inline */}
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Link className="h-4 w-4 text-muted-foreground" />
+            <Label className="text-foreground text-sm">Botoes com link</Label>
+          </div>
+          <Switch
+            checked={msgHasButtons}
+            onCheckedChange={(checked) => {
+              setMsgHasButtons(checked)
+              if (checked && msgButtons.length === 0) {
+                addMsgButton()
+              }
+            }}
+          />
+        </div>
+
+        {msgHasButtons && (
+          <div className="flex flex-col gap-2">
+            {msgButtons.map((btn, i) => (
+              <div key={i} className="flex items-start gap-2 rounded-lg border border-border/50 bg-secondary/30 p-2">
+                <div className="flex flex-1 flex-col gap-1.5">
+                  <Input
+                    value={btn.text}
+                    onChange={(e) => updateMsgButton(i, "text", e.target.value)}
+                    placeholder="Titulo do botao"
+                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-8"
+                  />
+                  <Input
+                    value={btn.url}
+                    onChange={(e) => updateMsgButton(i, "url", e.target.value)}
+                    placeholder="https://link-do-botao.com"
+                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-8"
+                  />
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                  onClick={() => removeMsgButton(i)}
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+            {msgButtons.length < 6 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full rounded-lg border-dashed border-border text-muted-foreground text-xs"
+                onClick={addMsgButton}
+              >
+                <Plus className="mr-1.5 h-3 w-3" />
+                Adicionar botao
+              </Button>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Maximo de 6 botoes. Cada botao aparece abaixo da mensagem no Telegram.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
   )
 }

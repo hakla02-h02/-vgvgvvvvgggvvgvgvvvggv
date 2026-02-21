@@ -2,12 +2,50 @@ import { NextRequest, NextResponse } from "next/server"
 import { after } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 
-async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
+interface InlineButton {
+  text: string
+  url: string
+}
+
+function buildInlineKeyboard(buttons: InlineButton[]) {
+  if (!buttons || buttons.length === 0) return undefined
+  // Each button goes on its own row for better mobile display
+  const keyboard = buttons.map((btn) => [{ text: btn.text, url: btn.url }])
+  return { inline_keyboard: keyboard }
+}
+
+async function sendTelegramMessage(botToken: string, chatId: number, text: string, replyMarkup?: object) {
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`
+  const body: Record<string, unknown> = { chat_id: chatId, text, parse_mode: "HTML" }
+  if (replyMarkup) body.reply_markup = replyMarkup
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: "HTML" }),
+    body: JSON.stringify(body),
+  })
+  return res.json()
+}
+
+async function sendTelegramPhoto(botToken: string, chatId: number, photoUrl: string, caption: string, replyMarkup?: object) {
+  const url = `https://api.telegram.org/bot${botToken}/sendPhoto`
+  const body: Record<string, unknown> = { chat_id: chatId, photo: photoUrl, caption, parse_mode: "HTML" }
+  if (replyMarkup) body.reply_markup = replyMarkup
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+  return res.json()
+}
+
+async function sendTelegramVideo(botToken: string, chatId: number, videoUrl: string, caption: string, replyMarkup?: object) {
+  const url = `https://api.telegram.org/bot${botToken}/sendVideo`
+  const body: Record<string, unknown> = { chat_id: chatId, video: videoUrl, caption, parse_mode: "HTML" }
+  if (replyMarkup) body.reply_markup = replyMarkup
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
   })
   return res.json()
 }
@@ -238,7 +276,7 @@ async function processWebhook({
 async function executeNodes(
   botToken: string,
   chatId: number,
-  nodes: Array<{ id: string; type: string; label: string; config: Record<string, string>; position: number }>,
+  nodes: Array<{ id: string; type: string; label: string; config: Record<string, unknown>; position: number }>,
   startPosition: number,
   botId: string,
   flowId: string,
@@ -265,14 +303,37 @@ async function executeNodes(
         break
 
       case "message": {
-        const text = node.config?.text || node.label || "Mensagem"
-        await sendTelegramMessage(botToken, chatId, text)
+        const text = (node.config?.text as string) || node.label || "Mensagem"
+        const mediaType = (node.config?.media_type as string) || ""
+        const mediaUrl = (node.config?.media_url as string) || ""
+        const buttonsStr = (node.config?.buttons as string) || ""
+
+        // Parse inline keyboard buttons
+        let inlineKeyboard: object | undefined
+        if (buttonsStr) {
+          try {
+            const buttons = JSON.parse(buttonsStr) as InlineButton[]
+            inlineKeyboard = buildInlineKeyboard(buttons)
+          } catch {
+            // Ignore parse errors
+          }
+        }
+
+        // Send with media or text only
+        if (mediaType === "photo" && mediaUrl) {
+          await sendTelegramPhoto(botToken, chatId, mediaUrl, text, inlineKeyboard)
+        } else if (mediaType === "video" && mediaUrl) {
+          await sendTelegramVideo(botToken, chatId, mediaUrl, text, inlineKeyboard)
+        } else {
+          await sendTelegramMessage(botToken, chatId, text, inlineKeyboard)
+        }
+
         await updateFunnelStep(botId, telegramUserId, 2)
         break
       }
 
       case "delay": {
-        const seconds = Math.min(parseInt(node.config?.seconds || "5", 10), 55)
+        const seconds = Math.min(parseInt((node.config?.seconds as string) || "5", 10), 55)
         await sleep(seconds * 1000)
         // Refresh lock after delay so it doesn't expire
         await supabase
@@ -297,21 +358,21 @@ async function executeNodes(
           .eq("telegram_user_id", telegramUserId)
 
         if (node.config?.text) {
-          await sendTelegramMessage(botToken, chatId, node.config.text)
+          await sendTelegramMessage(botToken, chatId, node.config.text as string)
         }
         return // Para aqui e espera resposta
       }
 
       case "payment": {
-        const amount = node.config?.amount || "0"
-        const description = node.config?.description || "Pagamento"
+        const amount = (node.config?.amount as string) || "0"
+        const description = (node.config?.description as string) || "Pagamento"
         await sendTelegramMessage(botToken, chatId, `${description}\nValor: R$ ${amount}`)
         await updateFunnelStep(botId, telegramUserId, 3)
         break
       }
 
       case "action": {
-        const actionText = node.config?.text || node.config?.action_name || node.label
+        const actionText = (node.config?.text as string) || (node.config?.action_name as string) || node.label
         await sendTelegramMessage(botToken, chatId, `${actionText}`)
         await updateFunnelStep(botId, telegramUserId, 4)
         break
