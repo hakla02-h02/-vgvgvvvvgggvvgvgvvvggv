@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,7 +18,7 @@ import { supabase } from "@/lib/supabase"
 import {
   Plus, GitBranch, MessageSquare, Timer, Split, Zap,
   ArrowRight, GripVertical, ChevronRight, Users, CreditCard,
-  Pencil, Trash2, Loader2, Image, Video, Link, X,
+  Pencil, Trash2, Loader2, Image, Video, Link, X, Upload, FileCheck,
 } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 
@@ -1092,6 +1092,42 @@ function MessageConfigForm({
   updateMsgButton: (index: number, field: "text" | "url", value: string) => void
   removeMsgButton: (index: number) => void
 }) {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState("")
+  const [fileName, setFileName] = useState("")
+
+  async function handleFileUpload(file: File) {
+    setUploading(true)
+    setUploadError("")
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("mediaType", msgMediaType)
+
+      const res = await fetch("/api/upload-media", { method: "POST", body: formData })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setUploadError(data.error || "Erro ao fazer upload")
+        return
+      }
+
+      setMsgMediaUrl(data.url)
+      setFileName(file.name)
+    } catch {
+      setUploadError("Erro de conexao ao fazer upload")
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  function handleDrop(e: React.DragEvent) {
+    e.preventDefault()
+    const file = e.dataTransfer.files[0]
+    if (file) handleFileUpload(file)
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Texto da mensagem */}
@@ -1111,7 +1147,14 @@ function MessageConfigForm({
           <Label className="text-foreground text-sm">Midia (opcional)</Label>
           <Select
             value={msgMediaType}
-            onValueChange={(v) => setMsgMediaType(v as "photo" | "video" | "none")}
+            onValueChange={(v) => {
+              setMsgMediaType(v as "photo" | "video" | "none")
+              if (v === "none") {
+                setMsgMediaUrl("")
+                setFileName("")
+                setUploadError("")
+              }
+            }}
           >
             <SelectTrigger className="w-[140px] h-8 bg-secondary border-border rounded-lg text-foreground text-xs">
               <SelectValue />
@@ -1129,15 +1172,83 @@ function MessageConfigForm({
         </div>
         {msgMediaType !== "none" && (
           <div className="flex flex-col gap-2">
-            <Input
-              value={msgMediaUrl}
-              onChange={(e) => setMsgMediaUrl(e.target.value)}
-              placeholder={msgMediaType === "photo" ? "URL da imagem (https://...)" : "URL do video (https://...)"}
-              className="bg-secondary border-border rounded-xl text-foreground text-sm"
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept={msgMediaType === "photo" ? "image/jpeg,image/png,image/gif,image/webp" : "video/mp4,video/webm,video/quicktime"}
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0]
+                if (file) handleFileUpload(file)
+                e.target.value = ""
+              }}
             />
-            <p className="text-xs text-muted-foreground">
-              Cole a URL direta da {msgMediaType === "photo" ? "imagem" : "video"}
-            </p>
+
+            {msgMediaUrl ? (
+              <div className="flex flex-col gap-2">
+                {msgMediaType === "photo" ? (
+                  <div className="relative rounded-lg overflow-hidden border border-border bg-secondary">
+                    <img src={msgMediaUrl} alt="Preview" className="w-full max-h-[160px] object-cover" />
+                  </div>
+                ) : (
+                  <div className="relative rounded-lg overflow-hidden border border-border bg-secondary">
+                    <video src={msgMediaUrl} className="w-full max-h-[160px] object-cover" controls />
+                  </div>
+                )}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <FileCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                    <span className="text-xs text-muted-foreground truncate">
+                      {fileName || "Arquivo enviado"}
+                    </span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={() => {
+                      setMsgMediaUrl("")
+                      setFileName("")
+                    }}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Remover
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={handleDrop}
+                onClick={() => !uploading && fileInputRef.current?.click()}
+                className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors ${
+                  uploading
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border hover:border-primary/40 hover:bg-secondary/50"
+                }`}
+              >
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                    <span className="text-xs text-muted-foreground">Enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="h-6 w-6 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground text-center">
+                      Clique ou arraste {msgMediaType === "photo" ? "uma foto" : "um video"} aqui
+                    </span>
+                    <span className="text-[10px] text-muted-foreground/60">
+                      {msgMediaType === "photo" ? "JPG, PNG, GIF, WEBP" : "MP4, WEBM, MOV"} - Max 50MB
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+
+            {uploadError && (
+              <p className="text-xs text-destructive">{uploadError}</p>
+            )}
           </div>
         )}
       </div>
