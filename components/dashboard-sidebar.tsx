@@ -29,11 +29,11 @@ const navItems = [
   { label: "Painel", href: "/", icon: LayoutDashboard },
   { label: "Bots", href: "/bots", icon: Bot },
   { label: "Fluxos", href: "/flows", icon: GitBranch },
-  { label: "Vendas", href: "/payments", icon: ShoppingCart },
-  { label: "Campanhas", href: "/campaigns", icon: Megaphone },
-  { label: "Assinaturas", href: "/subscriptions", icon: RefreshCw },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Usuarios", href: "/users", icon: Users },
+  { label: "Vendas", href: "/payments", icon: ShoppingCart, locked: true },
+  { label: "Campanhas", href: "/campaigns", icon: Megaphone, locked: true },
+  { label: "Assinaturas", href: "/subscriptions", icon: RefreshCw, locked: true },
+  { label: "Analytics", href: "/analytics", icon: BarChart3, locked: true },
+  { label: "Usuarios", href: "/users", icon: Users, locked: true },
   { label: "Config", href: "/settings", icon: Settings },
 ]
 
@@ -78,6 +78,31 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
               const isActive =
                 pathname === item.href ||
                 (item.href !== "/" && pathname.startsWith(item.href))
+
+              if (item.locked) {
+                const lockedContent = (
+                  <span
+                    key={item.href}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium opacity-30 cursor-not-allowed select-none"
+                  >
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span>{item.label}</span>}
+                  </span>
+                )
+
+                if (collapsed) {
+                  return (
+                    <Tooltip key={item.href}>
+                      <TooltipTrigger asChild>{lockedContent}</TooltipTrigger>
+                      <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                        {item.label} (Em breve)
+                      </TooltipContent>
+                    </Tooltip>
+                  )
+                }
+
+                return lockedContent
+              }
 
               const linkContent = (
                 <Link
