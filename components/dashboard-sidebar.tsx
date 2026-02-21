@@ -61,7 +61,7 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           </div>
           {!collapsed && (
             <span className="text-lg font-bold text-foreground tracking-tight">
-              TeleFlow
+              Dragon
             </span>
           )}
         </div>

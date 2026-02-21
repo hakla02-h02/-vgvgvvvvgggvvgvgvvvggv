@@ -314,7 +314,7 @@ export default function BotsPage() {
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-foreground">Nenhum bot criado</h3>
                   <p className="mt-1 text-sm text-muted-foreground">
-                    Crie seu primeiro bot para comecar a usar o TeleFlow
+                    Crie seu primeiro bot para comecar a usar o Dragon
                   </p>
                 </div>
                 <Button

@@ -7,13 +7,13 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 
 export const metadata: Metadata = {
-  title: "TeleFlow - Telegram Sales Automation",
+  title: "Dragon - Telegram Sales Automation",
   description:
-    "Enterprise SaaS dashboard for Telegram bot automation, sales funnels, payment automation, and performance tracking.",
+    "Plataforma de automacao de vendas via Telegram. Bots, funis, pagamentos e analytics em um so lugar.",
 }
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
+  themeColor: "#0B0F14",
 }
 
 export default function RootLayout({

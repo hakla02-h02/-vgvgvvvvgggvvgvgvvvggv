@@ -101,7 +101,7 @@ export default function CadastroPage() {
             <Zap className="h-7 w-7" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">TeleFlow</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Dragon</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Crie sua conta
             </p>

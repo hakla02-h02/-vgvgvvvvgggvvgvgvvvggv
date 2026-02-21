@@ -40,7 +40,7 @@ export function PageLoading() {
           <Zap className="h-7 w-7" />
         </div>
         <span className="text-lg font-semibold text-foreground tracking-tight">
-          TeleFlow
+          Dragon
         </span>
       </div>
     </div>

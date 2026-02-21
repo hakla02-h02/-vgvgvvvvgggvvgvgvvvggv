@@ -76,15 +76,15 @@ export default function SettingsPage() {
                   <CardContent className="flex flex-col gap-4">
                     <div className="flex flex-col gap-2">
                       <Label className="text-foreground">Nome</Label>
-                      <Input defaultValue="TeleFlow Admin" className="bg-secondary border-border rounded-xl" />
+                      <Input defaultValue="Dragon Admin" className="bg-secondary border-border rounded-xl" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label className="text-foreground">Email</Label>
-                      <Input defaultValue="admin@teleflow.io" className="bg-secondary border-border rounded-xl" />
+                      <Input defaultValue="admin@dragon.io" className="bg-secondary border-border rounded-xl" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label className="text-foreground">Telegram</Label>
-                      <Input defaultValue="@teleflow_admin" className="bg-secondary border-border rounded-xl" />
+                      <Input defaultValue="@dragon_admin" className="bg-secondary border-border rounded-xl" />
                     </div>
                     <Button className="bg-accent text-accent-foreground hover:bg-accent/90 w-fit rounded-xl">
                       <Save className="mr-2 h-4 w-4" />
@@ -107,7 +107,7 @@ export default function SettingsPage() {
                       <div className="flex items-center gap-2">
                         <Input
                           type={apiKeyVisible ? "text" : "password"}
-                          defaultValue="tf_live_sk_1234567890abcdef"
+                          defaultValue="drg_live_sk_1234567890abcdef"
                           className="bg-secondary border-border font-mono text-sm rounded-xl"
                           readOnly
                         />
@@ -268,7 +268,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="flex flex-col gap-2">
                       <Label className="text-foreground">Email para alertas</Label>
-                      <Input defaultValue="alerts@teleflow.io" className="bg-secondary border-border rounded-xl" />
+                      <Input defaultValue="alerts@dragon.io" className="bg-secondary border-border rounded-xl" />
                     </div>
                     <Button className="bg-accent text-accent-foreground hover:bg-accent/90 w-fit rounded-xl">
                       <Save className="mr-2 h-4 w-4" />

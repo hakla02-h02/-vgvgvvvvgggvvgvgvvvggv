@@ -4,7 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, type React
 import { useAuth } from "@/lib/auth-context"
 import { supabase } from "@/lib/supabase"
 
-const SELECTED_BOT_KEY = "teleflow_selected_bot"
+const SELECTED_BOT_KEY = "dragon_selected_bot"
 
 export interface Bot {
   id: string
