@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { after } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 
 async function sendTelegramMessage(botToken: string, chatId: number, text: string) {
@@ -15,215 +16,221 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// Deduplicate Telegram updates using update_id
-const processedUpdates = new Map<number, number>()
-const MAX_PROCESSED_CACHE = 1000
-
-function isUpdateAlreadyProcessed(updateId: number): boolean {
-  if (processedUpdates.has(updateId)) {
-    return true
-  }
-  // Clean old entries if cache is too large
-  if (processedUpdates.size > MAX_PROCESSED_CACHE) {
-    const entries = Array.from(processedUpdates.entries())
-    entries.sort((a, b) => a[1] - b[1])
-    const toRemove = entries.slice(0, MAX_PROCESSED_CACHE / 2)
-    for (const [key] of toRemove) {
-      processedUpdates.delete(key)
-    }
-  }
-  processedUpdates.set(updateId, Date.now())
-  return false
+// Check if flow is currently being executed (database-based lock via status + timestamp)
+// If status is "in_progress" and updated_at is less than 60 seconds ago, consider it locked
+function isFlowLocked(state: { status: string; updated_at: string } | null): boolean {
+  if (!state) return false
+  if (state.status !== "in_progress") return false
+  const updatedAt = new Date(state.updated_at).getTime()
+  const now = Date.now()
+  // If updated less than 60 seconds ago, it's still running
+  return now - updatedAt < 60_000
 }
 
-// Track which users currently have a flow executing to prevent concurrent runs
-const executingFlows = new Set<string>()
-
 export async function POST(req: NextRequest) {
+  // Parse everything we need BEFORE returning the response
   const supabase = getSupabase()
-  try {
-    const { searchParams } = new URL(req.url)
-    const botToken = searchParams.get("token")
-    if (!botToken) {
-      return NextResponse.json({ error: "Missing token" }, { status: 400 })
+
+  const { searchParams } = new URL(req.url)
+  const botToken = searchParams.get("token")
+  if (!botToken) {
+    return NextResponse.json({ error: "Missing token" }, { status: 400 })
+  }
+
+  const update = await req.json()
+  const updateId = update?.update_id
+  const message = update?.message
+  if (!message) {
+    return NextResponse.json({ ok: true })
+  }
+
+  const chatId = message.chat.id
+  const telegramUserId = message.from?.id || chatId
+  const messageText = (message.text || "").trim()
+  const isStart = messageText === "/start" || messageText.startsWith("/start ")
+  const fromData = message.from || {}
+
+  // Respond to Telegram IMMEDIATELY with 200 to prevent retries
+  // Then process the flow in background using after()
+  after(async () => {
+    try {
+      await processWebhook({
+        supabase,
+        botToken,
+        updateId,
+        chatId,
+        telegramUserId,
+        messageText,
+        isStart,
+        fromData,
+      })
+    } catch (err) {
+      console.error("webhook background processing error:", err)
     }
+  })
 
-    const update = await req.json()
+  // Return 200 immediately so Telegram does NOT retry
+  return NextResponse.json({ ok: true })
+}
 
-    // Deduplicate: Telegram may resend the same update if we respond slowly
-    const updateId = update?.update_id
-    if (updateId && isUpdateAlreadyProcessed(updateId)) {
-      return NextResponse.json({ ok: true })
-    }
+async function processWebhook({
+  supabase,
+  botToken,
+  updateId,
+  chatId,
+  telegramUserId,
+  messageText,
+  isStart,
+  fromData,
+}: {
+  supabase: ReturnType<typeof getSupabase>
+  botToken: string
+  updateId: number | undefined
+  chatId: number
+  telegramUserId: number
+  messageText: string
+  isStart: boolean
+  fromData: Record<string, string>
+}) {
+  // 1. Database-based deduplication using update_id
+  // We store processed update_ids in user_flow_state metadata or check via a simple approach:
+  // For /start commands, we use the flow state lock. For other messages, we check state status.
 
-    const message = update?.message
-    if (!message) {
-      return NextResponse.json({ ok: true })
-    }
+  // 2. Buscar bot pelo token
+  const { data: bots, error: botError } = await supabase
+    .from("bots")
+    .select("id, token, status")
+    .eq("token", botToken)
 
-    const chatId = message.chat.id
-    const telegramUserId = message.from?.id || chatId
-    const messageText = (message.text || "").trim()
-    const isStart = messageText === "/start" || messageText.startsWith("/start ")
-    const fromData = message.from || {}
+  if (botError) return
 
-    // 1. Buscar bot pelo token
-    const { data: bots, error: botError } = await supabase
-      .from("bots")
-      .select("id, token, status")
-      .eq("token", botToken)
+  const bot = bots?.[0]
+  if (!bot || bot.status !== "active") return
 
-    if (botError) {
-      return NextResponse.json({ ok: true })
-    }
+  // 3. Salvar/atualizar o usuario
+  const { data: existingUsers } = await supabase
+    .from("bot_users")
+    .select("id")
+    .eq("bot_id", bot.id)
+    .eq("telegram_user_id", telegramUserId)
 
-    const bot = bots?.[0]
-    if (!bot || bot.status !== "active") {
-      return NextResponse.json({ ok: true })
-    }
-
-    // 2. Salvar/atualizar o usuario via UPSERT
-    // Only update activity fields for existing users, don't reset funnel_step
-    const { data: existingUsers } = await supabase
+  if (existingUsers && existingUsers.length > 0) {
+    await supabase
       .from("bot_users")
-      .select("id")
+      .update({
+        first_name: fromData.first_name || null,
+        last_name: fromData.last_name || null,
+        username: fromData.username || null,
+        last_activity: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      })
       .eq("bot_id", bot.id)
       .eq("telegram_user_id", telegramUserId)
+  } else {
+    await supabase
+      .from("bot_users")
+      .insert({
+        bot_id: bot.id,
+        telegram_user_id: telegramUserId,
+        chat_id: chatId,
+        first_name: fromData.first_name || null,
+        last_name: fromData.last_name || null,
+        username: fromData.username || null,
+        funnel_step: 1,
+        is_subscriber: false,
+        last_activity: new Date().toISOString(),
+      })
+  }
 
-    if (existingUsers && existingUsers.length > 0) {
-      // User already exists - only update activity, not funnel data
+  // 4. Buscar fluxo ativo
+  const { data: flows } = await supabase
+    .from("flows")
+    .select("id, name")
+    .eq("bot_id", bot.id)
+    .eq("status", "ativo")
+    .order("created_at", { ascending: true })
+
+  if (!flows || flows.length === 0) return
+
+  const targetFlow = flows[0]
+
+  // 5. Buscar nodes do fluxo
+  const { data: nodes } = await supabase
+    .from("flow_nodes")
+    .select("id, type, label, config, position")
+    .eq("flow_id", targetFlow.id)
+    .order("position", { ascending: true })
+
+  if (!nodes || nodes.length === 0) return
+
+  // 6. Buscar estado do usuario neste fluxo
+  const { data: stateRows } = await supabase
+    .from("user_flow_state")
+    .select("*")
+    .eq("bot_id", bot.id)
+    .eq("flow_id", targetFlow.id)
+    .eq("telegram_user_id", telegramUserId)
+
+  const existingState = stateRows?.[0] || null
+
+  // 7. Se /start => resetar estado e executar do zero
+  if (isStart) {
+    // DATABASE-BASED LOCK: If flow is already in_progress (recently updated), skip
+    if (isFlowLocked(existingState)) {
+      return
+    }
+
+    if (existingState) {
       await supabase
-        .from("bot_users")
+        .from("user_flow_state")
         .update({
-          first_name: fromData.first_name || null,
-          last_name: fromData.last_name || null,
-          username: fromData.username || null,
-          last_activity: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("bot_id", bot.id)
-        .eq("telegram_user_id", telegramUserId)
-    } else {
-      // New user - insert with defaults
-      await supabase
-        .from("bot_users")
-        .insert({
-          bot_id: bot.id,
-          telegram_user_id: telegramUserId,
-          chat_id: chatId,
-          first_name: fromData.first_name || null,
-          last_name: fromData.last_name || null,
-          username: fromData.username || null,
-          funnel_step: 1,
-          is_subscriber: false,
-          last_activity: new Date().toISOString(),
-        })
-    }
-
-    // 3. Buscar fluxo ativo
-    const { data: flows, error: flowError } = await supabase
-      .from("flows")
-      .select("id, name")
-      .eq("bot_id", bot.id)
-      .eq("status", "ativo")
-      .order("created_at", { ascending: true })
-
-    if (flowError || !flows || flows.length === 0) {
-      return NextResponse.json({ ok: true })
-    }
-
-    const targetFlow = flows[0]
-
-    // 4. Buscar nodes do fluxo
-    const { data: nodes, error: nodesError } = await supabase
-      .from("flow_nodes")
-      .select("id, type, label, config, position")
-      .eq("flow_id", targetFlow.id)
-      .order("position", { ascending: true })
-
-    if (nodesError || !nodes || nodes.length === 0) {
-      return NextResponse.json({ ok: true })
-    }
-
-    // 5. Buscar estado do usuario neste fluxo
-    const { data: stateRows } = await supabase
-      .from("user_flow_state")
-      .select("*")
-      .eq("bot_id", bot.id)
-      .eq("flow_id", targetFlow.id)
-      .eq("telegram_user_id", telegramUserId)
-
-    const existingState = stateRows?.[0] || null
-
-    // Prevent concurrent flow execution for the same user
-    const executionKey = `${bot.id}-${targetFlow.id}-${telegramUserId}`
-
-    // 6. Se /start => resetar estado e executar do zero
-    if (isStart) {
-      // If flow is already executing for this user, ignore
-      if (executingFlows.has(executionKey)) {
-        return NextResponse.json({ ok: true })
-      }
-
-      if (existingState) {
-        await supabase
-          .from("user_flow_state")
-          .update({
-            current_node_position: 0,
-            status: "in_progress",
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", existingState.id)
-      } else {
-        await supabase.from("user_flow_state").insert({
-          bot_id: bot.id,
-          flow_id: targetFlow.id,
-          telegram_user_id: telegramUserId,
-          chat_id: chatId,
           current_node_position: 0,
           status: "in_progress",
+          updated_at: new Date().toISOString(),
         })
-      }
-
-      // Mark as executing, execute, then clean up
-      executingFlows.add(executionKey)
-      try {
-        await executeNodes(botToken, chatId, nodes, 0, bot.id, targetFlow.id, telegramUserId)
-      } finally {
-        executingFlows.delete(executionKey)
-      }
-      return NextResponse.json({ ok: true })
+        .eq("id", existingState.id)
+    } else {
+      await supabase.from("user_flow_state").insert({
+        bot_id: bot.id,
+        flow_id: targetFlow.id,
+        telegram_user_id: telegramUserId,
+        chat_id: chatId,
+        current_node_position: 0,
+        status: "in_progress",
+      })
     }
 
-    // 7. Se NAO e /start
-    if (!existingState || existingState.status === "completed") {
-      return NextResponse.json({ ok: true })
+    await executeNodes(botToken, chatId, nodes, 0, bot.id, targetFlow.id, telegramUserId)
+    return
+  }
+
+  // 8. Se NAO e /start
+  if (!existingState || existingState.status === "completed") {
+    return
+  }
+
+  // If flow is in_progress (e.g. during a delay), ignore new messages
+  if (existingState.status === "in_progress") {
+    return
+  }
+
+  if (existingState.status === "waiting_response") {
+    // Check lock to prevent double processing
+    if (isFlowLocked(existingState)) {
+      return
     }
 
-    // If flow is already executing for this user (e.g. during a delay), ignore
-    if (existingState.status === "in_progress" && executingFlows.has(executionKey)) {
-      return NextResponse.json({ ok: true })
-    }
+    // Mark as in_progress immediately to lock
+    await supabase
+      .from("user_flow_state")
+      .update({
+        status: "in_progress",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", existingState.id)
 
-    if (existingState.status === "waiting_response") {
-      if (executingFlows.has(executionKey)) {
-        return NextResponse.json({ ok: true })
-      }
-
-      const nextPos = existingState.current_node_position + 1
-      executingFlows.add(executionKey)
-      try {
-        await executeNodes(botToken, chatId, nodes, nextPos, bot.id, targetFlow.id, telegramUserId)
-      } finally {
-        executingFlows.delete(executionKey)
-      }
-      return NextResponse.json({ ok: true })
-    }
-
-    return NextResponse.json({ ok: true })
-  } catch (err) {
-    console.error("webhook: FATAL error:", err)
-    return NextResponse.json({ error: "Internal error" }, { status: 500 })
+    const nextPos = existingState.current_node_position + 1
+    await executeNodes(botToken, chatId, nodes, nextPos, bot.id, targetFlow.id, telegramUserId)
   }
 }
 
@@ -241,7 +248,7 @@ async function executeNodes(
   const remainingNodes = nodes.filter((n) => n.position >= startPosition)
 
   for (const node of remainingNodes) {
-    // Update current position in DB so we track progress
+    // Update current position and keep refreshing the lock timestamp
     await supabase
       .from("user_flow_state")
       .update({
@@ -265,8 +272,15 @@ async function executeNodes(
       }
 
       case "delay": {
-        const seconds = Math.min(parseInt(node.config?.seconds || "5", 10), 30)
+        const seconds = Math.min(parseInt(node.config?.seconds || "5", 10), 55)
         await sleep(seconds * 1000)
+        // Refresh lock after delay so it doesn't expire
+        await supabase
+          .from("user_flow_state")
+          .update({ updated_at: new Date().toISOString() })
+          .eq("bot_id", botId)
+          .eq("flow_id", flowId)
+          .eq("telegram_user_id", telegramUserId)
         break
       }
 
