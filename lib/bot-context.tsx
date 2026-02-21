@@ -110,23 +110,32 @@ export function BotProvider({ children }: { children: ReactNode }) {
     }): Promise<Bot> => {
       if (!session) throw new Error("Not logged in")
 
+      // Debug: check Supabase auth session
+      const { data: authData } = await supabase.auth.getSession()
+      console.log("[v0] Supabase auth session:", authData?.session?.user?.id)
+      console.log("[v0] App session userId:", session.userId)
+      console.log("[v0] Auth session match:", authData?.session?.user?.id === session.userId)
+
+      const insertPayload = {
+        user_id: session.userId,
+        name: data.name,
+        token: data.token,
+        group_name: data.group_name || null,
+        group_id: data.group_id || null,
+        group_link: data.group_link || null,
+        status: "active",
+      }
+      console.log("[v0] Insert payload:", JSON.stringify(insertPayload))
+
       const { data: inserted, error } = await supabase
         .from("bots")
-        .insert({
-          user_id: session.userId,
-          name: data.name,
-          token: data.token,
-          group_name: data.group_name || null,
-          group_id: data.group_id || null,
-          group_link: data.group_link || null,
-          status: "active",
-        })
+        .insert(insertPayload)
         .select()
         .single()
 
       if (error) {
-        console.error("Error creating bot:", error)
-        throw new Error("Erro ao criar bot")
+        console.error("[v0] Error creating bot - code:", error.code, "message:", error.message, "details:", error.details, "hint:", error.hint)
+        throw new Error(`Erro ao criar bot: ${error.message}`)
       }
 
       const newBot = inserted as Bot
