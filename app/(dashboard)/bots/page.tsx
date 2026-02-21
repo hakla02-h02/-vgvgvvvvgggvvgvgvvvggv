@@ -103,7 +103,6 @@ export default function BotsPage() {
       setNewGroupLink("")
       setCreateOpen(false)
     } catch (err: unknown) {
-      console.log("[v0] Bot creation error:", err)
       if (err instanceof Error) {
         setCreateError(err.message)
       } else {

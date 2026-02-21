@@ -158,17 +158,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error("Erro ao criar conta")
       }
 
-      // Insert into public users table
-      const { error: insertError } = await supabase.from("users").insert({
+      // Insert into public users table (upsert to handle edge cases)
+      const { error: insertError } = await supabase.from("users").upsert({
         id: authData.user.id,
         name: data.name,
         email: data.email.toLowerCase(),
         phone: data.phone,
         banned: false,
-      })
+      }, { onConflict: "id" })
 
       if (insertError) {
         console.error("Error inserting user profile:", insertError)
+        // Don't fail silently - retry once
+        const { error: retryError } = await supabase.from("users").upsert({
+          id: authData.user.id,
+          name: data.name,
+          email: data.email.toLowerCase(),
+          phone: data.phone,
+          banned: false,
+        }, { onConflict: "id" })
+
+        if (retryError) {
+          console.error("Retry also failed:", retryError)
+        }
       }
 
       setSession(mapToAuthSession(authData.user, data.name))

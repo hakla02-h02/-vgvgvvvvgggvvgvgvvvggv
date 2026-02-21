@@ -110,32 +110,53 @@ export function BotProvider({ children }: { children: ReactNode }) {
     }): Promise<Bot> => {
       if (!session) throw new Error("Not logged in")
 
-      // Debug: check Supabase auth session
-      const { data: authData } = await supabase.auth.getSession()
-      console.log("[v0] Supabase auth session:", authData?.session?.user?.id)
-      console.log("[v0] App session userId:", session.userId)
-      console.log("[v0] Auth session match:", authData?.session?.user?.id === session.userId)
+      // Ensure user exists in public.users before creating bot
+      // This fixes the foreign key constraint error when the user profile
+      // was not properly created during registration
+      const { data: existingUser } = await supabase
+        .from("users")
+        .select("id")
+        .eq("id", session.userId)
+        .single()
 
-      const insertPayload = {
-        user_id: session.userId,
-        name: data.name,
-        token: data.token,
-        group_name: data.group_name || null,
-        group_id: data.group_id || null,
-        group_link: data.group_link || null,
-        status: "active",
+      if (!existingUser) {
+        const { data: authData } = await supabase.auth.getSession()
+        const authUser = authData?.session?.user
+        if (authUser) {
+          const { error: upsertError } = await supabase.from("users").upsert({
+            id: authUser.id,
+            name: authUser.user_metadata?.name || authUser.email || "",
+            email: authUser.email?.toLowerCase() || "",
+            phone: authUser.user_metadata?.phone || "",
+            banned: false,
+          }, { onConflict: "id" })
+
+          if (upsertError) {
+            console.error("Error ensuring user profile:", upsertError)
+            throw new Error("Erro ao verificar perfil do usuario")
+          }
+        } else {
+          throw new Error("Sessao expirada. Faca login novamente.")
+        }
       }
-      console.log("[v0] Insert payload:", JSON.stringify(insertPayload))
 
       const { data: inserted, error } = await supabase
         .from("bots")
-        .insert(insertPayload)
+        .insert({
+          user_id: session.userId,
+          name: data.name,
+          token: data.token,
+          group_name: data.group_name || null,
+          group_id: data.group_id || null,
+          group_link: data.group_link || null,
+          status: "active",
+        })
         .select()
         .single()
 
       if (error) {
-        console.error("[v0] Error creating bot - code:", error.code, "message:", error.message, "details:", error.details, "hint:", error.hint)
-        throw new Error(`Erro ao criar bot: ${error.message}`)
+        console.error("Error creating bot:", error)
+        throw new Error("Erro ao criar bot")
       }
 
       const newBot = inserted as Bot
