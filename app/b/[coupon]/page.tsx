@@ -23,9 +23,10 @@ export default function ReferralLandingPage() {
         const data = await res.json()
 
         if (data.valid) {
-          // Save the coupon to localStorage for the signup page to pick up
+          // Save the coupon to localStorage as fallback
           localStorage.setItem("referral_coupon", coupon)
-          router.push("/cadastro")
+          // Pass the coupon in the URL so it persists visibly
+          router.push(`/cadastro?ref=${encodeURIComponent(coupon)}`)
         } else {
           setStatus("invalid")
         }

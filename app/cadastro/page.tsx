@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { Loader2, Eye, EyeOff, Gift } from "lucide-react"
@@ -24,6 +24,7 @@ export default function CadastroPage() {
   const [referralCoupon, setReferralCoupon] = useState<string | null>(null)
   const { register, session, isLoading } = useAuth()
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     if (!isLoading && session) {
@@ -31,13 +32,20 @@ export default function CadastroPage() {
     }
   }, [isLoading, session, router])
 
-  // Pick up referral coupon from localStorage (set by /b/[coupon] page)
+  // Pick up referral coupon from URL query param first, then fallback to localStorage
   useEffect(() => {
-    const storedCoupon = localStorage.getItem("referral_coupon")
-    if (storedCoupon) {
-      setReferralCoupon(storedCoupon)
+    const refParam = searchParams.get("ref")
+    if (refParam) {
+      setReferralCoupon(refParam.toLowerCase())
+      // Also save to localStorage as backup
+      localStorage.setItem("referral_coupon", refParam.toLowerCase())
+    } else {
+      const storedCoupon = localStorage.getItem("referral_coupon")
+      if (storedCoupon) {
+        setReferralCoupon(storedCoupon)
+      }
     }
-  }, [])
+  }, [searchParams])
 
   function formatPhone(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 11)
