@@ -47,7 +47,7 @@ export function BotSwitcher({ collapsed }: { collapsed: boolean }) {
           </div>
           {!collapsed && (
             <>
-              <span className="truncate flex-1 text-left">{selectedBot?.name || "Selecionar"}</span>
+              <span className="truncate flex-1 text-left">{selectedBot?.name || "Gerenciar Bots"}</span>
               <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
             </>
           )}

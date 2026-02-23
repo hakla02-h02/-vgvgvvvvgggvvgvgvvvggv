@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
@@ -14,7 +13,6 @@ import {
   RefreshCw,
   BarChart3,
   Users,
-  Settings,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -22,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { BotSwitcher } from "@/components/bot-switcher"
 import { useAuth } from "@/lib/auth-context"
 
@@ -34,7 +33,6 @@ const navItems = [
   { label: "Assinaturas", href: "/subscriptions", icon: RefreshCw, locked: true },
   { label: "Analytics", href: "/analytics", icon: BarChart3, locked: true },
   { label: "Usuarios", href: "/users", icon: Users, locked: true },
-  { label: "Config", href: "/settings", icon: Settings },
 ]
 
 interface DashboardSidebarProps {
@@ -54,24 +52,57 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           collapsed ? "w-16" : "w-60"
         )}
       >
-        {/* Logo */}
-        <div className="flex h-14 items-center border-b border-border px-3">
+        {/* User Profile */}
+        <div className="border-b border-border px-2 py-3">
           {collapsed ? (
-            <Image
-              src="/images/dragon-logo.png"
-              alt="Dragon"
-              width={40}
-              height={40}
-              className="shrink-0 object-contain"
-            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link
+                  href="/settings"
+                  onClick={onNavigate}
+                  className="flex items-center justify-center rounded-xl p-1.5 transition-colors hover:bg-sidebar-accent"
+                >
+                  <Avatar className="h-8 w-8 bg-secondary rounded-xl">
+                    <AvatarFallback className="bg-secondary text-foreground text-xs font-semibold rounded-xl">
+                      {session?.name
+                        ? session.name.slice(0, 2).toUpperCase()
+                        : session?.email
+                          ? session.email.slice(0, 2).toUpperCase()
+                          : "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                {session?.name || session?.email || "Minha conta"}
+              </TooltipContent>
+            </Tooltip>
           ) : (
-            <Image
-              src="/images/dragon-logo.png"
-              alt="Dragon"
-              width={90}
-              height={90}
-              className="shrink-0 object-contain"
-            />
+            <Link
+              href="/settings"
+              onClick={onNavigate}
+              className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-sidebar-accent"
+            >
+              <Avatar className="h-8 w-8 bg-secondary rounded-xl shrink-0">
+                <AvatarFallback className="bg-secondary text-foreground text-xs font-semibold rounded-xl">
+                  {session?.name
+                    ? session.name.slice(0, 2).toUpperCase()
+                    : session?.email
+                      ? session.email.slice(0, 2).toUpperCase()
+                      : "U"}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0">
+                <span className="text-sm font-medium text-foreground truncate">
+                  {session?.name || "Minha conta"}
+                </span>
+                {session?.email && (
+                  <span className="text-xs text-muted-foreground truncate">
+                    {session.email}
+                  </span>
+                )}
+              </div>
+            </Link>
           )}
         </div>
 
@@ -146,38 +177,31 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           </nav>
         </ScrollArea>
 
-        {/* User & Controls */}
-        <div className="border-t border-border p-2 flex flex-col gap-1">
-          {!collapsed && session && (
-            <div className="px-3 py-1.5 text-xs text-muted-foreground truncate">
-              {session.email}
-            </div>
-          )}
-          <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setCollapsed(!collapsed)}
-              className="hidden md:flex flex-1 justify-center text-muted-foreground hover:text-foreground rounded-xl"
-            >
-              {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-            </Button>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={logout}
-                  className="flex-1 md:flex-none justify-center text-muted-foreground hover:text-destructive rounded-xl"
-                >
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                Sair
-              </TooltipContent>
-            </Tooltip>
-          </div>
+        {/* Controls */}
+        <div className="border-t border-border p-2 flex gap-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setCollapsed(!collapsed)}
+            className="hidden md:flex flex-1 justify-center text-muted-foreground hover:text-foreground rounded-xl"
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={logout}
+                className="flex-1 md:flex-none justify-center text-muted-foreground hover:text-destructive rounded-xl"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-popover text-popover-foreground">
+              Sair
+            </TooltipContent>
+          </Tooltip>
         </div>
       </aside>
     </TooltipProvider>

@@ -1,5 +1,6 @@
 "use client"
 
+import Link from "next/link"
 import { Bell, Search, Bot } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -42,11 +43,13 @@ export function DashboardHeader({ title, description }: DashboardHeaderProps) {
           <Bell className="h-4 w-4" />
           <span className="sr-only">Notificacoes</span>
         </Button>
-        <Avatar className="h-7 w-7 md:h-8 md:w-8 bg-secondary rounded-xl">
-          <AvatarFallback className="bg-secondary text-foreground text-xs rounded-xl">
-            {session?.email ? session.email.slice(0, 2).toUpperCase() : "TF"}
-          </AvatarFallback>
-        </Avatar>
+        <Link href="/settings" className="rounded-xl transition-opacity hover:opacity-80">
+          <Avatar className="h-7 w-7 md:h-8 md:w-8 bg-secondary rounded-xl">
+            <AvatarFallback className="bg-secondary text-foreground text-xs rounded-xl">
+              {session?.email ? session.email.slice(0, 2).toUpperCase() : "TF"}
+            </AvatarFallback>
+          </Avatar>
+        </Link>
       </div>
     </header>
   )
