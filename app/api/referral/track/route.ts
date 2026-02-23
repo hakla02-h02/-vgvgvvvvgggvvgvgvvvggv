@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { supabase } from "@/lib/supabase"
 
 // POST: Track a referral after user registration
-// Uses the track_referral RPC function (SECURITY DEFINER) to bypass RLS
-// so we don't need the user's access token
+// RLS policies allow anon role to INSERT into referrals table directly
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
@@ -41,22 +40,23 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Use the SECURITY DEFINER RPC function to insert the referral
-    // This bypasses RLS so we don't need the user's auth token
-    const { error: rpcError } = await supabase.rpc("track_referral", {
-      p_referrer_id: couponData.user_id,
-      p_referred_id: referredId,
-      p_coupon_code: couponData.coupon_code,
-    })
+    // Insert the referral directly - RLS policies allow anon INSERT
+    const { error: insertError } = await supabase
+      .from("referrals")
+      .insert({
+        referrer_id: couponData.user_id,
+        referred_id: referredId,
+        coupon_code: couponData.coupon_code,
+      })
 
-    if (rpcError) {
-      console.error("[v0] Track referral RPC error:", rpcError)
+    if (insertError) {
+      console.error("[v0] Insert referral error:", insertError)
       // If it's a unique constraint violation, the referral already exists
-      if (rpcError.code === "23505") {
+      if (insertError.code === "23505") {
         return NextResponse.json({ success: true, message: "Indicacao ja registrada" })
       }
       return NextResponse.json(
-        { error: rpcError.message },
+        { error: insertError.message },
         { status: 500 }
       )
     }
