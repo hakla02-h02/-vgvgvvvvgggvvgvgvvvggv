@@ -18,9 +18,13 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // R$0,10 por venda feita pelo indicado
+    const totalSales = count || 0
+    const earningsPerSale = 0.10
+
     return NextResponse.json({
-      total_referrals: count || 0,
-      total_earnings: (count || 0) * 50,
+      total_referrals: totalSales,
+      total_earnings: Number((totalSales * earningsPerSale).toFixed(2)),
     })
   } catch (err) {
     console.error("[v0] Stats GET error:", err)

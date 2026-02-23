@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
-import { Users, DollarSign, Copy, Link2, Check, Loader2, UserPlus } from "lucide-react"
+import { Users, DollarSign, Copy, Link2, Check, Loader2, UserPlus, Pencil, X, Crown, ShoppingBag } from "lucide-react"
 import useSWR from "swr"
 
 const fetcher = async (url: string) => {
@@ -37,6 +37,10 @@ export default function ReferralPage() {
   const [createError, setCreateError] = useState("")
   const [copied, setCopied] = useState(false)
   const [origin, setOrigin] = useState("")
+  const [isEditing, setIsEditing] = useState(false)
+  const [editInput, setEditInput] = useState("")
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [editError, setEditError] = useState("")
 
   useEffect(() => {
     setOrigin(window.location.origin)
@@ -121,6 +125,50 @@ export default function ReferralPage() {
     setTimeout(() => setCopied(false), 2000)
   }, [referralLink])
 
+  const handleStartEdit = useCallback(() => {
+    if (coupon) {
+      setEditInput(coupon.coupon_code)
+      setEditError("")
+      setIsEditing(true)
+    }
+  }, [coupon])
+
+  const handleCancelEdit = useCallback(() => {
+    setIsEditing(false)
+    setEditInput("")
+    setEditError("")
+  }, [])
+
+  const handleUpdateCoupon = useCallback(async () => {
+    const code = editInput.trim().toLowerCase()
+    if (!code || !userId) return
+
+    setIsUpdating(true)
+    setEditError("")
+
+    try {
+      const res = await fetch("/api/referral/coupon", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ coupon_code: code, userId }),
+      })
+      const data = await res.json()
+
+      if (!res.ok) {
+        setEditError(data.error || "Erro ao atualizar cupom")
+        return
+      }
+
+      setIsEditing(false)
+      setEditInput("")
+      mutateCoupon()
+    } catch {
+      setEditError("Erro ao atualizar cupom")
+    } finally {
+      setIsUpdating(false)
+    }
+  }, [editInput, mutateCoupon, userId])
+
   function formatDate(dateStr: string) {
     return new Date(dateStr).toLocaleDateString("pt-BR", {
       day: "2-digit",
@@ -143,8 +191,25 @@ export default function ReferralPage() {
       <DashboardHeader title="Indique e Ganhe" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-          {/* Stats Cards - Only 2: Indicados + Ganhos */}
-          <div className="grid gap-3 md:gap-4 grid-cols-2">
+          {/* Plano Atual */}
+          <Card className="bg-card border-border rounded-2xl">
+            <CardContent className="flex items-center gap-4 p-4 md:p-5">
+              <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
+                <Crown className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+              </div>
+              <div className="flex-1">
+                <p className="text-xs md:text-sm text-muted-foreground">Seu Plano de Indicacao</p>
+                <p className="text-base md:text-lg font-bold text-foreground">Basico</p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Comissao por venda</p>
+                <p className="text-base md:text-lg font-bold text-accent">R$ 0,10</p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Cards */}
+          <div className="grid gap-3 md:gap-4 grid-cols-3">
             <Card className="bg-card border-border rounded-2xl">
               <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
                 <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
@@ -159,12 +224,23 @@ export default function ReferralPage() {
             <Card className="bg-card border-border rounded-2xl">
               <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
                 <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
+                  <ShoppingBag className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+                </div>
+                <div>
+                  <p className="text-xs md:text-sm text-muted-foreground">Vendas</p>
+                  <p className="text-xl md:text-3xl font-bold text-foreground">{totalReferrals}</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-card border-border rounded-2xl">
+              <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
+                <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
                   <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-accent" />
                 </div>
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground">Ganhos</p>
                   <p className="text-xl md:text-3xl font-bold text-foreground">
-                    R$ {totalEarnings.toLocaleString("pt-BR")}
+                    R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                   </p>
                 </div>
               </CardContent>
@@ -182,27 +258,93 @@ export default function ReferralPage() {
             <CardContent>
               {coupon ? (
                 <div className="flex flex-col gap-3">
-                  <div className="flex gap-2">
-                    <Input
-                      readOnly
-                      value={referralLink}
-                      className="bg-secondary border-border rounded-xl text-sm text-foreground font-mono"
-                    />
-                    <Button
-                      variant="outline"
-                      onClick={handleCopy}
-                      className="border-border rounded-xl shrink-0 min-w-[44px]"
-                    >
-                      {copied ? (
-                        <Check className="h-4 w-4 text-accent" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
+                  {isEditing ? (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Digite o novo codigo do cupom:
+                      </p>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Novo cupom (ex: maria20)"
+                          value={editInput}
+                          onChange={(e) => {
+                            setEditInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                            setEditError("")
+                          }}
+                          className="bg-secondary border-border rounded-xl text-foreground placeholder:text-muted-foreground"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault()
+                              handleUpdateCoupon()
+                            }
+                            if (e.key === "Escape") {
+                              handleCancelEdit()
+                            }
+                          }}
+                          disabled={isUpdating}
+                          maxLength={20}
+                          autoFocus
+                        />
+                        <Button
+                          onClick={handleUpdateCoupon}
+                          disabled={isUpdating || editInput.trim().length < 3}
+                          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl shrink-0"
+                        >
+                          {isUpdating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Check className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleCancelEdit}
+                          disabled={isUpdating}
+                          className="border-border rounded-xl shrink-0 min-w-[44px]"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      {editError && (
+                        <p className="text-xs text-destructive">{editError}</p>
                       )}
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Compartilhe este link para ganhar por cada pessoa que se cadastrar.
-                  </p>
+                      <p className="text-xs text-muted-foreground">
+                        Apenas letras minusculas, numeros e hifens. Entre 3 e 20 caracteres.
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex gap-2">
+                        <Input
+                          readOnly
+                          value={referralLink}
+                          className="bg-secondary border-border rounded-xl text-sm text-foreground font-mono"
+                        />
+                        <Button
+                          variant="outline"
+                          onClick={handleCopy}
+                          className="border-border rounded-xl shrink-0 min-w-[44px]"
+                        >
+                          {copied ? (
+                            <Check className="h-4 w-4 text-accent" />
+                          ) : (
+                            <Copy className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={handleStartEdit}
+                          className="border-border rounded-xl shrink-0 min-w-[44px]"
+                          title="Editar cupom"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Compartilhe este link para ganhar R$ 0,10 por cada venda feita.
+                      </p>
+                    </>
+                  )}
                 </div>
               ) : (
                 <div className="flex flex-col gap-3">
