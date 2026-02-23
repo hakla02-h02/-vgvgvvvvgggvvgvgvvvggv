@@ -183,21 +183,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       }
 
-      // Handle referral coupon - link new user to referrer
+      // Handle referral coupon - link new user to referrer via server API
       if (data.referralCoupon) {
         try {
-          const { data: couponData } = await supabase
-            .from("referral_coupons")
-            .select("user_id, coupon_code")
-            .eq("coupon_code", data.referralCoupon.toLowerCase())
-            .single()
+          // Get the access token from the session to authenticate the API call
+          const { data: sessionData } = await supabase.auth.getSession()
+          const accessToken = sessionData?.session?.access_token
 
-          if (couponData && couponData.user_id !== authData.user.id) {
-            await supabase.from("referrals").insert({
-              referrer_id: couponData.user_id,
-              referred_id: authData.user.id,
-              coupon_code: couponData.coupon_code,
+          if (accessToken) {
+            const trackRes = await fetch("/api/referral/track", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                referredId: authData.user.id,
+                couponCode: data.referralCoupon,
+                accessToken,
+              }),
             })
+
+            if (!trackRes.ok) {
+              const trackData = await trackRes.json()
+              console.error("Error tracking referral:", trackData.error)
+            }
+          } else {
+            console.error("No access token available after signup")
           }
         } catch (referralError) {
           console.error("Error creating referral:", referralError)
