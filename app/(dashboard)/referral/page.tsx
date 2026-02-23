@@ -6,8 +6,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { NoBotSelected } from "@/components/no-bot-selected"
-import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
 import { Users, DollarSign, Copy, Link2, Check, Loader2, UserPlus, Pencil, X, Crown, ShoppingBag } from "lucide-react"
 import useSWR from "swr"
@@ -29,7 +27,6 @@ interface ReferralUser {
 }
 
 export default function ReferralPage() {
-  const { selectedBot } = useBots()
   const { session } = useAuth()
   const userId = session?.userId
   const [couponInput, setCouponInput] = useState("")
@@ -82,6 +79,7 @@ export default function ReferralPage() {
 
   const coupon = couponData?.coupon ?? null
   const totalReferrals = statsData?.total_referrals ?? 0
+  const totalSales = statsData?.total_sales ?? 0
   const totalEarnings = statsData?.total_earnings ?? 0
   const referrals: ReferralUser[] = referralsData?.referrals ?? []
 
@@ -177,15 +175,6 @@ export default function ReferralPage() {
     })
   }
 
-  if (!selectedBot) {
-    return (
-      <>
-        <DashboardHeader title="Indique e Ganhe" />
-        <NoBotSelected />
-      </>
-    )
-  }
-
   return (
     <>
       <DashboardHeader title="Indique e Ganhe" />
@@ -228,7 +217,7 @@ export default function ReferralPage() {
                 </div>
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground">Vendas</p>
-                  <p className="text-xl md:text-3xl font-bold text-foreground">{totalReferrals}</p>
+                  <p className="text-xl md:text-3xl font-bold text-foreground">{totalSales}</p>
                 </div>
               </CardContent>
             </Card>

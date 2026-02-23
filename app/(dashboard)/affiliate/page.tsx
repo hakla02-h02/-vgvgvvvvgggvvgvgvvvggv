@@ -9,8 +9,6 @@ import { Input } from "@/components/ui/input"
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
-import { NoBotSelected } from "@/components/no-bot-selected"
-import { useBots } from "@/lib/bot-context"
 import { UserCheck, DollarSign, Users, Copy, TrendingUp } from "lucide-react"
 
 const afiliados = [
@@ -28,17 +26,6 @@ const statusStyles: Record<string, string> = {
 }
 
 export default function AffiliatePage() {
-  const { selectedBot } = useBots()
-
-  if (!selectedBot) {
-    return (
-      <>
-        <DashboardHeader title="Afiliado" />
-        <NoBotSelected />
-      </>
-    )
-  }
-
   return (
     <>
       <DashboardHeader title="Afiliado" />

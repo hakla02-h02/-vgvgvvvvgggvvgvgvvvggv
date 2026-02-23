@@ -5,8 +5,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { NoBotSelected } from "@/components/no-bot-selected"
-import { useBots } from "@/lib/bot-context"
 import { Trophy, Target, Lock, DollarSign, Gift } from "lucide-react"
 
 const milestones = [
@@ -17,17 +15,7 @@ const milestones = [
 ]
 
 export default function RewardsPage() {
-  const { selectedBot } = useBots()
   const faturamentoAtual = 0
-
-  if (!selectedBot) {
-    return (
-      <>
-        <DashboardHeader title="Premiacoes" />
-        <NoBotSelected />
-      </>
-    )
-  }
 
   const currentMilestoneIdx = milestones.findIndex((m) => faturamentoAtual < m.value)
   const proximaMeta = currentMilestoneIdx >= 0 ? milestones[currentMilestoneIdx] : milestones[milestones.length - 1]
