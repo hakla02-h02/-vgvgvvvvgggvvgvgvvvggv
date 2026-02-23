@@ -8,10 +8,18 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
+import { useAuth } from "@/lib/auth-context"
 import { Users, DollarSign, Copy, Link2, Check, Loader2, UserPlus } from "lucide-react"
 import useSWR from "swr"
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = async (url: string) => {
+  const res = await fetch(url)
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}))
+    throw new Error(err.error || "Erro ao carregar dados")
+  }
+  return res.json()
+}
 
 interface ReferralUser {
   id: string
@@ -22,26 +30,64 @@ interface ReferralUser {
 
 export default function ReferralPage() {
   const { selectedBot } = useBots()
+  const { session } = useAuth()
+  const userId = session?.userId
   const [couponInput, setCouponInput] = useState("")
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState("")
   const [copied, setCopied] = useState(false)
+  const [origin, setOrigin] = useState("")
 
-  const { data: couponData, mutate: mutateCoupon } = useSWR("/api/referral/coupon", fetcher)
-  const { data: statsData } = useSWR("/api/referral/stats", fetcher, { refreshInterval: 30000 })
-  const { data: referralsData } = useSWR("/api/referral/referrals", fetcher, { refreshInterval: 30000 })
+  useEffect(() => {
+    setOrigin(window.location.origin)
+  }, [])
 
-  const coupon = couponData?.coupon
-  const stats = statsData || { total_referrals: 0, total_earnings: 0 }
-  const referrals: ReferralUser[] = referralsData?.referrals || []
+  // Only fetch when userId is available
+  const { data: couponData, mutate: mutateCoupon } = useSWR(
+    userId ? `/api/referral/coupon?userId=${userId}` : null,
+    fetcher,
+    {
+      onErrorRetry: (_error, _key, _config, revalidate, { retryCount }) => {
+        if (retryCount >= 2) return
+        setTimeout(() => revalidate({ retryCount }), 3000)
+      },
+    }
+  )
+  const { data: statsData } = useSWR(
+    userId ? `/api/referral/stats?userId=${userId}` : null,
+    fetcher,
+    {
+      refreshInterval: 30000,
+      onErrorRetry: (_error, _key, _config, revalidate, { retryCount }) => {
+        if (retryCount >= 2) return
+        setTimeout(() => revalidate({ retryCount }), 3000)
+      },
+    }
+  )
+  const { data: referralsData } = useSWR(
+    userId ? `/api/referral/referrals?userId=${userId}` : null,
+    fetcher,
+    {
+      refreshInterval: 30000,
+      onErrorRetry: (_error, _key, _config, revalidate, { retryCount }) => {
+        if (retryCount >= 2) return
+        setTimeout(() => revalidate({ retryCount }), 3000)
+      },
+    }
+  )
 
-  const referralLink = coupon
-    ? `${typeof window !== "undefined" ? window.location.origin : ""}/b/${coupon.coupon_code}`
+  const coupon = couponData?.coupon ?? null
+  const totalReferrals = statsData?.total_referrals ?? 0
+  const totalEarnings = statsData?.total_earnings ?? 0
+  const referrals: ReferralUser[] = referralsData?.referrals ?? []
+
+  const referralLink = coupon && origin
+    ? `${origin}/b/${coupon.coupon_code}`
     : ""
 
   const handleCreateCoupon = useCallback(async () => {
     const code = couponInput.trim().toLowerCase()
-    if (!code) return
+    if (!code || !userId) return
 
     setIsCreating(true)
     setCreateError("")
@@ -50,7 +96,7 @@ export default function ReferralPage() {
       const res = await fetch("/api/referral/coupon", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ coupon_code: code }),
+        body: JSON.stringify({ coupon_code: code, userId }),
       })
       const data = await res.json()
 
@@ -66,7 +112,7 @@ export default function ReferralPage() {
     } finally {
       setIsCreating(false)
     }
-  }, [couponInput, mutateCoupon])
+  }, [couponInput, mutateCoupon, userId])
 
   const handleCopy = useCallback(() => {
     if (!referralLink) return
@@ -106,7 +152,7 @@ export default function ReferralPage() {
                 </div>
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground">Indicados</p>
-                  <p className="text-xl md:text-3xl font-bold text-foreground">{stats.total_referrals}</p>
+                  <p className="text-xl md:text-3xl font-bold text-foreground">{totalReferrals}</p>
                 </div>
               </CardContent>
             </Card>
@@ -118,7 +164,7 @@ export default function ReferralPage() {
                 <div>
                   <p className="text-xs md:text-sm text-muted-foreground">Ganhos</p>
                   <p className="text-xl md:text-3xl font-bold text-foreground">
-                    R$ {stats.total_earnings.toLocaleString("pt-BR")}
+                    R$ {totalEarnings.toLocaleString("pt-BR")}
                   </p>
                 </div>
               </CardContent>
