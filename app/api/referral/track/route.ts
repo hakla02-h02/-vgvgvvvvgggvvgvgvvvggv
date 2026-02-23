@@ -1,40 +1,25 @@
-import { createClient } from "@supabase/supabase-js"
 import { NextRequest, NextResponse } from "next/server"
-
-const SUPABASE_URL = "https://dbtpnafcqfcllgoxdhxs.supabase.co"
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHBuYWZjcWZjbGxnb3hkaHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Nzg3MTQsImV4cCI6MjA4NzA1NDcxNH0.0MF5a1uAuxeHIVGNglWYbFHYRIECNVEVZN1MLH4Z26A"
+import { supabase } from "@/lib/supabase"
 
 // POST: Track a referral after user registration
+// Uses the track_referral RPC function (SECURITY DEFINER) to bypass RLS
+// so we don't need the user's access token
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { referredId, couponCode, accessToken } = body
+    const { referredId, couponCode } = body
 
-    if (!referredId || !couponCode || !accessToken) {
+    if (!referredId || !couponCode) {
       return NextResponse.json(
-        { error: "referredId, couponCode, and accessToken are required" },
+        { error: "referredId and couponCode are required" },
         { status: 400 }
       )
     }
 
     const normalizedCode = couponCode.trim().toLowerCase()
 
-    // Create an authenticated Supabase client using the user's access token
-    // This ensures auth.uid() = referredId in RLS policies
-    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      },
-    })
-
-    // Also create an anon client for the coupon lookup (public read policy exists)
-    const supabaseAnon = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-
     // Look up the coupon to find the referrer
-    const { data: couponData, error: couponError } = await supabaseAnon
+    const { data: couponData, error: couponError } = await supabase
       .from("referral_coupons")
       .select("user_id, coupon_code")
       .eq("coupon_code", normalizedCode)
@@ -56,24 +41,22 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Insert the referral using the authenticated client
-    // RLS policy: auth.uid() = referred_id - this works because we pass the user's token
-    const { error: insertError } = await supabaseAuth
-      .from("referrals")
-      .insert({
-        referrer_id: couponData.user_id,
-        referred_id: referredId,
-        coupon_code: couponData.coupon_code,
-      })
+    // Use the SECURITY DEFINER RPC function to insert the referral
+    // This bypasses RLS so we don't need the user's auth token
+    const { error: rpcError } = await supabase.rpc("track_referral", {
+      p_referrer_id: couponData.user_id,
+      p_referred_id: referredId,
+      p_coupon_code: couponData.coupon_code,
+    })
 
-    if (insertError) {
-      console.error("[v0] Insert referral error:", insertError)
+    if (rpcError) {
+      console.error("[v0] Track referral RPC error:", rpcError)
       // If it's a unique constraint violation, the referral already exists
-      if (insertError.code === "23505") {
+      if (rpcError.code === "23505") {
         return NextResponse.json({ success: true, message: "Indicacao ja registrada" })
       }
       return NextResponse.json(
-        { error: insertError.message },
+        { error: rpcError.message },
         { status: 500 }
       )
     }

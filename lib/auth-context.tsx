@@ -184,29 +184,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Handle referral coupon - link new user to referrer via server API
+      // No access token needed - the API uses a SECURITY DEFINER RPC function
       if (data.referralCoupon) {
         try {
-          // Get the access token from the session to authenticate the API call
-          const { data: sessionData } = await supabase.auth.getSession()
-          const accessToken = sessionData?.session?.access_token
+          const trackRes = await fetch("/api/referral/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              referredId: authData.user.id,
+              couponCode: data.referralCoupon,
+            }),
+          })
 
-          if (accessToken) {
-            const trackRes = await fetch("/api/referral/track", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                referredId: authData.user.id,
-                couponCode: data.referralCoupon,
-                accessToken,
-              }),
-            })
-
-            if (!trackRes.ok) {
-              const trackData = await trackRes.json()
-              console.error("Error tracking referral:", trackData.error)
-            }
-          } else {
-            console.error("No access token available after signup")
+          if (!trackRes.ok) {
+            const trackData = await trackRes.json()
+            console.error("Error tracking referral:", trackData.error)
           }
         } catch (referralError) {
           console.error("Error creating referral:", referralError)
