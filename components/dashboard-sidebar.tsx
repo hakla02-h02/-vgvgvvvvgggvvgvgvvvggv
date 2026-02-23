@@ -51,10 +51,10 @@ const navSections: NavSection[] = [
     category: "MENU",
     items: [
       { label: "Dashboard", description: "Visao geral", href: "/", icon: LayoutDashboard },
-      { label: "Analises", description: "Metricas e relatorios", href: "/analytics", icon: BarChart3, locked: true },
-      { label: "Financeiro", description: "Receitas e transacoes", href: "/payments", icon: DollarSign, locked: true },
-      { label: "Clientes", description: "Base de leads", href: "/users", icon: Users, locked: true },
-      { label: "Afiliado", description: "Comissoes", href: "/affiliate", icon: UserCheck, locked: true },
+      { label: "Analises", description: "Metricas e relatorios", href: "/analytics", icon: BarChart3 },
+      { label: "Financeiro", description: "Receitas e transacoes", href: "/payments", icon: DollarSign },
+      { label: "Clientes", description: "Base de leads", href: "/users", icon: Users },
+      { label: "Afiliado", description: "Comissoes", href: "/affiliate", icon: UserCheck },
     ],
   },
   {
@@ -62,25 +62,25 @@ const navSections: NavSection[] = [
     items: [
       { label: "Meus Robos", description: "Gerenciar bots", href: "/bots", icon: Bot },
       { label: "Meus Fluxos", description: "Fluxos de venda", href: "/flows", icon: GitBranch },
-      { label: "Remarketing", description: "Campanhas", href: "/campaigns", icon: Megaphone, locked: true },
-      { label: "Postagens", description: "Envios e agendamentos", href: "/posts", icon: Send, locked: true },
-      { label: "Ferramentas", description: "Utilitarios de midia", href: "/tools", icon: Wrench, locked: true },
+      { label: "Remarketing", description: "Campanhas", href: "/campaigns", icon: Megaphone },
+      { label: "Postagens", description: "Envios e agendamentos", href: "/posts", icon: Send },
+      { label: "Ferramentas", description: "Utilitarios de midia", href: "/tools", icon: Wrench },
     ],
   },
   {
     category: "INTEGRACOES",
     items: [
-      { label: "Gateways", description: "Pagamentos PIX", href: "/gateways", icon: CreditCard, locked: true },
-      { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair, locked: true },
-      { label: "Checkout", description: "Pagina de pagamento", href: "/checkout", icon: ShoppingCart, locked: true },
-      { label: "Bio Link", description: "Paginas de bio", href: "/biolink", icon: LinkIcon, locked: true },
+      { label: "Gateways", description: "Pagamentos PIX", href: "/gateways", icon: CreditCard },
+      { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair },
+      { label: "Checkout", description: "Pagina de pagamento", href: "/checkout", icon: ShoppingCart },
+      { label: "Bio Link", description: "Paginas de bio", href: "/biolink", icon: LinkIcon },
     ],
   },
   {
     category: "RECOMPENSAS",
     items: [
-      { label: "Indique e Ganhe", description: "Convide amigos", href: "/referral", icon: Gift, locked: true },
-      { label: "Premiacoes", description: "Conquistas e premios", href: "/rewards", icon: Trophy, locked: true },
+      { label: "Indique e Ganhe", description: "Convide amigos", href: "/referral", icon: Gift },
+      { label: "Premiacoes", description: "Conquistas e premios", href: "/rewards", icon: Trophy },
     ],
   },
 ]
