@@ -28,6 +28,7 @@ import {
   User,
   Mail,
   Phone,
+  LogOut,
 } from "lucide-react"
 
 interface UserProfile {
@@ -47,7 +48,7 @@ const milestones = [
 ]
 
 export default function SettingsPage() {
-  const { session } = useAuth()
+  const { session, logout } = useAuth()
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
@@ -209,7 +210,7 @@ export default function SettingsPage() {
     <>
       <DashboardHeader title="Meu Perfil" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-4 md:p-6 max-w-4xl">
+        <div className="flex flex-col gap-6 p-4 md:p-6 max-w-5xl mx-auto w-full">
 
           {/* ── PROFILE HERO ── */}
           <section className="relative overflow-hidden rounded-2xl border border-border bg-card">
@@ -522,6 +523,16 @@ export default function SettingsPage() {
               </div>
             </div>
           </section>
+
+          {/* ── LOGOUT ── */}
+          <Button
+            variant="ghost"
+            onClick={logout}
+            className="w-full rounded-2xl border border-destructive/30 bg-destructive/5 text-destructive hover:bg-destructive/10 hover:text-destructive h-12 gap-3 font-medium"
+          >
+            <LogOut className="h-4 w-4" />
+            Sair da conta
+          </Button>
 
         </div>
       </ScrollArea>
