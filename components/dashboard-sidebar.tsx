@@ -17,7 +17,6 @@ import {
   Wrench,
   CreditCard,
   Crosshair,
-  ShoppingCart,
   LinkIcon,
   Gift,
   Trophy,
@@ -72,7 +71,6 @@ const navSections: NavSection[] = [
     items: [
       { label: "Gateways", description: "Pagamentos PIX", href: "/gateways", icon: CreditCard },
       { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair },
-      { label: "Checkout", description: "Pagina de pagamento", href: "/checkout", icon: ShoppingCart },
       { label: "Bio Link", description: "Paginas de bio", href: "/biolink", icon: LinkIcon },
     ],
   },
