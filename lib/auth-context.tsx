@@ -25,7 +25,7 @@ interface AuthContextType {
   session: AuthSession | null
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
-  register: (data: { name: string; email: string; phone: string; password: string }) => Promise<void>
+  register: (data: { name: string; email: string; phone: string; password: string; referralCoupon?: string }) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -134,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const register = useCallback(
-    async (data: { name: string; email: string; phone: string; password: string }) => {
+    async (data: { name: string; email: string; phone: string; password: string; referralCoupon?: string }) => {
       // Sign up with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
@@ -180,6 +180,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         if (retryError) {
           console.error("Retry also failed:", retryError)
+        }
+      }
+
+      // Handle referral coupon - link new user to referrer
+      if (data.referralCoupon) {
+        try {
+          const { data: couponData } = await supabase
+            .from("referral_coupons")
+            .select("user_id, coupon_code")
+            .eq("coupon_code", data.referralCoupon.toLowerCase())
+            .single()
+
+          if (couponData && couponData.user_id !== authData.user.id) {
+            await supabase.from("referrals").insert({
+              referrer_id: couponData.user_id,
+              referred_id: authData.user.id,
+              coupon_code: couponData.coupon_code,
+            })
+          }
+        } catch (referralError) {
+          console.error("Error creating referral:", referralError)
+          // Don't block registration if referral fails
         }
       }
 

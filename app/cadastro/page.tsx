@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { Loader2, Eye, EyeOff } from "lucide-react"
+import { Loader2, Eye, EyeOff, Gift } from "lucide-react"
 import { DragonIcon } from "@/components/dragon-icon"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
@@ -21,6 +21,7 @@ export default function CadastroPage() {
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [referralCoupon, setReferralCoupon] = useState<string | null>(null)
   const { register, session, isLoading } = useAuth()
   const router = useRouter()
 
@@ -29,6 +30,14 @@ export default function CadastroPage() {
       router.replace("/")
     }
   }, [isLoading, session, router])
+
+  // Pick up referral coupon from localStorage (set by /b/[coupon] page)
+  useEffect(() => {
+    const storedCoupon = localStorage.getItem("referral_coupon")
+    if (storedCoupon) {
+      setReferralCoupon(storedCoupon)
+    }
+  }, [])
 
   function formatPhone(value: string) {
     const digits = value.replace(/\D/g, "").slice(0, 11)
@@ -74,7 +83,10 @@ export default function CadastroPage() {
         email: email.trim(),
         phone: phoneDigits,
         password,
+        referralCoupon: referralCoupon || undefined,
       })
+      // Clear the coupon from localStorage after successful registration
+      localStorage.removeItem("referral_coupon")
     } catch (err: unknown) {
       if (err instanceof Error) {
         setError(err.message)
@@ -113,6 +125,14 @@ export default function CadastroPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {referralCoupon && (
+            <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 p-3">
+              <Gift className="h-4 w-4 text-accent shrink-0" />
+              <span className="text-sm text-accent">
+                Cupom de indicacao: <span className="font-semibold">{referralCoupon}</span>
+              </span>
+            </div>
+          )}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name" className="text-sm text-foreground">
               Nome
