@@ -15,7 +15,7 @@ import {
   Users,
   ChevronLeft,
   ChevronRight,
-  LogOut,
+  Power,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -52,63 +52,69 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           collapsed ? "w-16" : "w-60"
         )}
       >
-        {/* User Profile */}
+        {/* User Profile + Bot Switcher card */}
         <div className="border-b border-border px-2 py-3">
-          {collapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
+          <div className={cn(
+            "rounded-xl bg-secondary/50 p-3 flex flex-col gap-2.5",
+            collapsed && "items-center p-2"
+          )}>
+            {/* Top row: Avatar + Name + Power button */}
+            {collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href="/settings"
+                    onClick={onNavigate}
+                    className="rounded-xl transition-opacity hover:opacity-80"
+                  >
+                    <Avatar className="h-9 w-9 bg-secondary rounded-xl">
+                      <AvatarFallback className="bg-secondary text-foreground text-sm font-bold rounded-xl">
+                        {session?.name
+                          ? session.name.charAt(0).toUpperCase()
+                          : session?.email
+                            ? session.email.charAt(0).toUpperCase()
+                            : "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                  {session?.name || session?.email || "Minha conta"}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <div className="flex items-center gap-3">
                 <Link
                   href="/settings"
                   onClick={onNavigate}
-                  className="flex items-center justify-center rounded-xl p-1.5 transition-colors hover:bg-sidebar-accent"
+                  className="rounded-xl transition-opacity hover:opacity-80 shrink-0"
                 >
-                  <Avatar className="h-8 w-8 bg-secondary rounded-xl">
-                    <AvatarFallback className="bg-secondary text-foreground text-xs font-semibold rounded-xl">
+                  <Avatar className="h-9 w-9 bg-secondary rounded-xl">
+                    <AvatarFallback className="bg-secondary text-foreground text-sm font-bold rounded-xl">
                       {session?.name
-                        ? session.name.slice(0, 2).toUpperCase()
+                        ? session.name.charAt(0).toUpperCase()
                         : session?.email
-                          ? session.email.slice(0, 2).toUpperCase()
+                          ? session.email.charAt(0).toUpperCase()
                           : "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                {session?.name || session?.email || "Minha conta"}
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <Link
-              href="/settings"
-              onClick={onNavigate}
-              className="flex items-center gap-3 rounded-xl px-3 py-2 transition-colors hover:bg-sidebar-accent"
-            >
-              <Avatar className="h-8 w-8 bg-secondary rounded-xl shrink-0">
-                <AvatarFallback className="bg-secondary text-foreground text-xs font-semibold rounded-xl">
-                  {session?.name
-                    ? session.name.slice(0, 2).toUpperCase()
-                    : session?.email
-                      ? session.email.slice(0, 2).toUpperCase()
-                      : "U"}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col min-w-0">
-                <span className="text-sm font-medium text-foreground truncate">
-                  {session?.name || "Minha conta"}
+                <span className="text-sm font-semibold text-foreground truncate flex-1">
+                  {session?.name || session?.email?.split("@")[0] || "Usuario"}
                 </span>
-                {session?.email && (
-                  <span className="text-xs text-muted-foreground truncate">
-                    {session.email}
-                  </span>
-                )}
+                <button
+                  onClick={logout}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
+                  aria-label="Sair"
+                >
+                  <Power className="h-4 w-4" />
+                </button>
               </div>
-            </Link>
-          )}
-        </div>
+            )}
 
-        {/* Bot Switcher */}
-        <div className="border-b border-border px-2 py-3">
-          <BotSwitcher collapsed={collapsed} />
+            {/* Bot Switcher dropdown */}
+            <BotSwitcher collapsed={collapsed} />
+          </div>
         </div>
 
         {/* Navigation */}
@@ -177,31 +183,16 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           </nav>
         </ScrollArea>
 
-        {/* Controls */}
-        <div className="border-t border-border p-2 flex gap-1">
+        {/* Collapse toggle */}
+        <div className="border-t border-border p-2">
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex flex-1 justify-center text-muted-foreground hover:text-foreground rounded-xl"
+            className="hidden md:flex w-full justify-center text-muted-foreground hover:text-foreground rounded-xl"
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
           </Button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={logout}
-                className="flex-1 md:flex-none justify-center text-muted-foreground hover:text-destructive rounded-xl"
-              >
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right" className="bg-popover text-popover-foreground">
-              Sair
-            </TooltipContent>
-          </Tooltip>
         </div>
       </aside>
     </TooltipProvider>

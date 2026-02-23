@@ -38,18 +38,18 @@ export function BotSwitcher({ collapsed }: { collapsed: boolean }) {
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "flex items-center gap-2 rounded-lg bg-secondary/50 px-3 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-secondary w-full",
+            "flex items-center gap-2 rounded-lg bg-secondary px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-secondary/80 w-full",
             collapsed && "justify-center px-2"
           )}
         >
-          <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-accent/20 text-accent">
-            <Bot className="h-3 w-3" />
-          </div>
           {!collapsed && (
             <>
-              <span className="truncate flex-1 text-left">{selectedBot?.name || "Gerenciar Bots"}</span>
-              <ChevronDown className="h-3 w-3 shrink-0 text-muted-foreground" />
+              <span className="truncate flex-1 text-left">Gerenciar Bots</span>
+              <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </>
+          )}
+          {collapsed && (
+            <Bot className="h-4 w-4 text-muted-foreground" />
           )}
         </button>
       </DropdownMenuTrigger>
