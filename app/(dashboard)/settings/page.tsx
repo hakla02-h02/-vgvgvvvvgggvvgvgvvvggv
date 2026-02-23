@@ -1,12 +1,10 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect, useCallback } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Switch } from "@/components/ui/switch"
-import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/lib/auth-context"
@@ -23,72 +21,189 @@ import {
   Clock,
   Copy,
   Check,
-  ChevronRight,
-  MousePointer,
-  BarChart3,
-  Bell,
   Gift,
   Target,
-  Sparkles,
   KeyRound,
+  Loader2,
+  User,
+  Mail,
+  Phone,
 } from "lucide-react"
 
+interface UserProfile {
+  id: string
+  name: string
+  email: string
+  phone: string
+  avatar_url: string | null
+  created_at: string
+}
+
 const milestones = [
-  { label: "R$ 1K", value: 1000, unlocked: false },
-  { label: "R$ 5K", value: 5000, unlocked: false },
-  { label: "R$ 10K", value: 10000, unlocked: false },
-  { label: "R$ 25K", value: 25000, unlocked: false },
-  { label: "R$ 50K", value: 50000, unlocked: false },
-  { label: "R$ 100K", value: 100000, unlocked: false },
+  { label: "R$ 10K", value: 10000 },
+  { label: "R$ 100K", value: 100000 },
+  { label: "R$ 500K", value: 500000 },
+  { label: "R$ 1M", value: 1000000 },
 ]
 
 export default function SettingsPage() {
   const { session } = useAuth()
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
   const [editMode, setEditMode] = useState(false)
-  const [showOldPass, setShowOldPass] = useState(false)
-  const [showNewPass, setShowNewPass] = useState(false)
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [nome, setNome] = useState("")
   const [copiedId, setCopiedId] = useState(false)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const [nome, setNome] = useState(session?.name || "")
-  const [apelido, setApelido] = useState(session?.email?.split("@")[0] || "")
+  // Password state
+  const [showOldPass, setShowOldPass] = useState(false)
+  const [showNewPass, setShowNewPass] = useState(false)
+  const [oldPass, setOldPass] = useState("")
+  const [newPass, setNewPass] = useState("")
+  const [passLoading, setPassLoading] = useState(false)
+  const [passMsg, setPassMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const [cursorPersonalizado, setCursorPersonalizado] = useState(false)
-  const [mostrarRanking, setMostrarRanking] = useState(false)
-  const [notificacoesPush, setNotificacoesPush] = useState(false)
+  // Save message
+  const [saveMsg, setSaveMsg] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
-  const memberSince = session?.loggedInAt
-    ? new Date(session.loggedInAt).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
-    : "fevereiro de 2026"
+  // Fetch profile
+  const fetchProfile = useCallback(async () => {
+    if (!session?.userId) return
+    try {
+      const res = await fetch(`/api/profile?userId=${session.userId}`)
+      if (res.ok) {
+        const data = await res.json()
+        setProfile(data)
+        setNome(data.name || "")
+      }
+    } catch {
+      // silent
+    } finally {
+      setLoading(false)
+    }
+  }, [session?.userId])
 
-  const lastAccess = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
-  const accountId = session?.userId?.slice(0, 12) || "000000000000"
+  useEffect(() => {
+    fetchProfile()
+  }, [fetchProfile])
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onloadend = () => setAvatarPreview(reader.result as string)
-      reader.readAsDataURL(file)
+    if (!file || !session?.userId) return
+
+    setAvatarUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("userId", session.userId)
+
+      const res = await fetch("/api/profile/avatar", { method: "POST", body: formData })
+      const data = await res.json()
+
+      if (res.ok && data.url) {
+        setProfile((prev) => prev ? { ...prev, avatar_url: data.url + "?t=" + Date.now() } : prev)
+      }
+    } catch {
+      // silent
+    } finally {
+      setAvatarUploading(false)
+    }
+  }
+
+  const handleSaveProfile = async () => {
+    if (!session?.userId) return
+    setSaving(true)
+    setSaveMsg(null)
+    try {
+      const res = await fetch("/api/profile", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: session.userId, name: nome }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setProfile(data)
+        setEditMode(false)
+        setSaveMsg({ type: "success", text: "Perfil atualizado" })
+        setTimeout(() => setSaveMsg(null), 3000)
+      } else {
+        const err = await res.json()
+        setSaveMsg({ type: "error", text: err.error || "Erro ao salvar" })
+      }
+    } catch {
+      setSaveMsg({ type: "error", text: "Erro ao salvar" })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
+    if (!session?.email) return
+    setPassLoading(true)
+    setPassMsg(null)
+    try {
+      const res = await fetch("/api/profile/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: session.email,
+          currentPassword: oldPass,
+          newPassword: newPass,
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPassMsg({ type: "success", text: "Senha alterada com sucesso" })
+        setOldPass("")
+        setNewPass("")
+      } else {
+        setPassMsg({ type: "error", text: data.error || "Erro ao alterar" })
+      }
+    } catch {
+      setPassMsg({ type: "error", text: "Erro ao alterar senha" })
+    } finally {
+      setPassLoading(false)
+      setTimeout(() => setPassMsg(null), 4000)
     }
   }
 
   const handleCopyId = () => {
-    navigator.clipboard.writeText(session?.userId || accountId)
+    navigator.clipboard.writeText(session?.userId || "")
     setCopiedId(true)
     setTimeout(() => setCopiedId(false), 2000)
   }
 
-  const userInitial = session?.name
-    ? session.name.charAt(0).toUpperCase()
+  const userInitial = profile?.name
+    ? profile.name.charAt(0).toUpperCase()
     : session?.email
       ? session.email.charAt(0).toUpperCase()
       : "U"
 
+  const memberSince = profile?.created_at
+    ? new Date(profile.created_at).toLocaleDateString("pt-BR", { month: "long", year: "numeric" })
+    : "---"
+
+  const lastAccess = new Date().toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })
+  const accountId = session?.userId?.slice(0, 12) || "000000000000"
+
+  // Rewards
   const faturamentoAtual = 0
-  const proximaMeta = 10000
-  const progressPercent = (faturamentoAtual / proximaMeta) * 100
+  const currentMilestoneIdx = milestones.findIndex((m) => faturamentoAtual < m.value)
+  const proximaMeta = currentMilestoneIdx >= 0 ? milestones[currentMilestoneIdx].value : milestones[milestones.length - 1].value
+  const progressPercent = Math.min(100, (faturamentoAtual / proximaMeta) * 100)
+
+  if (loading) {
+    return (
+      <>
+        <DashboardHeader title="Meu Perfil" />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -98,7 +213,6 @@ export default function SettingsPage() {
 
           {/* ── PROFILE HERO ── */}
           <section className="relative overflow-hidden rounded-2xl border border-border bg-card">
-            {/* Gradient accent stripe at top */}
             <div className="h-24 bg-gradient-to-r from-accent/20 via-accent/5 to-transparent" />
 
             <div className="px-6 pb-6 -mt-12">
@@ -106,8 +220,8 @@ export default function SettingsPage() {
                 {/* Avatar */}
                 <div className="relative group shrink-0">
                   <Avatar className="h-24 w-24 rounded-2xl ring-4 ring-card shadow-xl">
-                    {avatarPreview ? (
-                      <AvatarImage src={avatarPreview} alt="Avatar" className="rounded-2xl" />
+                    {profile?.avatar_url ? (
+                      <AvatarImage src={profile.avatar_url} alt="Avatar" className="rounded-2xl object-cover" />
                     ) : null}
                     <AvatarFallback className="bg-accent text-accent-foreground text-3xl font-bold rounded-2xl">
                       {userInitial}
@@ -115,10 +229,15 @@ export default function SettingsPage() {
                   </Avatar>
                   <button
                     onClick={() => fileInputRef.current?.click()}
+                    disabled={avatarUploading}
                     className="absolute inset-0 flex items-center justify-center rounded-2xl bg-background/70 opacity-0 group-hover:opacity-100 transition-all"
                     aria-label="Trocar foto"
                   >
-                    <Camera className="h-6 w-6 text-foreground" />
+                    {avatarUploading ? (
+                      <Loader2 className="h-6 w-6 text-foreground animate-spin" />
+                    ) : (
+                      <Camera className="h-6 w-6 text-foreground" />
+                    )}
                   </button>
                   <input
                     ref={fileInputRef}
@@ -132,16 +251,10 @@ export default function SettingsPage() {
                 {/* Name + email */}
                 <div className="flex-1 min-w-0 pb-1">
                   <h1 className="text-2xl font-bold text-foreground truncate">
-                    {session?.name || "Usuario"}
+                    {profile?.name || session?.name || "Usuario"}
                   </h1>
-                  <p className="text-sm text-muted-foreground truncate">{session?.email}</p>
+                  <p className="text-sm text-muted-foreground truncate">{profile?.email || session?.email}</p>
                 </div>
-
-                {/* Ranking badge */}
-                <Badge className="self-start md:self-end rounded-lg bg-accent/10 text-accent border-accent/20 text-xs font-bold px-3 py-1.5 gap-1.5 hover:bg-accent/10">
-                  <Trophy className="h-3.5 w-3.5" />
-                  {"RANKING #836"}
-                </Badge>
               </div>
 
               {/* Meta row */}
@@ -186,20 +299,42 @@ export default function SettingsPage() {
           <section className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border">
               <div className="flex items-center gap-3">
-                <Sparkles className="h-4 w-4 text-accent" />
+                <User className="h-4 w-4 text-accent" />
                 <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Informacoes Pessoais</h2>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 className="rounded-xl gap-2 text-muted-foreground hover:text-foreground"
-                onClick={() => setEditMode(!editMode)}
+                onClick={() => {
+                  if (editMode) {
+                    handleSaveProfile()
+                  } else {
+                    setEditMode(true)
+                  }
+                }}
+                disabled={saving}
               >
-                {editMode ? <Save className="h-3.5 w-3.5" /> : <Pencil className="h-3.5 w-3.5" />}
+                {saving ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : editMode ? (
+                  <Save className="h-3.5 w-3.5" />
+                ) : (
+                  <Pencil className="h-3.5 w-3.5" />
+                )}
                 {editMode ? "Salvar" : "Editar"}
               </Button>
             </div>
             <div className="p-6">
+              {saveMsg && (
+                <div className={`mb-4 rounded-xl px-4 py-2.5 text-sm ${
+                  saveMsg.type === "success"
+                    ? "bg-accent/10 text-accent"
+                    : "bg-destructive/10 text-destructive"
+                }`}>
+                  {saveMsg.text}
+                </div>
+              )}
               <div className="grid gap-4 md:grid-cols-2">
                 {/* Nome */}
                 <div>
@@ -213,27 +348,9 @@ export default function SettingsPage() {
                       className="bg-secondary border-border rounded-xl h-11"
                     />
                   ) : (
-                    <div className="flex items-center h-11 rounded-xl bg-secondary/40 px-4 text-sm text-foreground">
-                      {session?.name || "Nao informado"}
-                    </div>
-                  )}
-                </div>
-
-                {/* Apelido */}
-                <div>
-                  <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2 block">
-                    Apelido
-                  </label>
-                  {editMode ? (
-                    <Input
-                      value={apelido}
-                      onChange={(e) => setApelido(e.target.value)}
-                      className="bg-secondary border-border rounded-xl h-11"
-                      placeholder="@apelido"
-                    />
-                  ) : (
-                    <div className="flex items-center h-11 rounded-xl bg-secondary/40 px-4 text-sm text-muted-foreground">
-                      {"@"}{apelido || "nao-definido"}
+                    <div className="flex items-center gap-3 h-11 rounded-xl bg-secondary/40 px-4 text-sm text-foreground">
+                      <User className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      {profile?.name || "Nao informado"}
                     </div>
                   )}
                 </div>
@@ -243,140 +360,102 @@ export default function SettingsPage() {
                   <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2 block">
                     Email
                   </label>
-                  <div className="flex items-center h-11 rounded-xl bg-secondary/40 px-4 text-sm text-foreground">
-                    {session?.email || "Nao informado"}
-                    <Lock className="h-3.5 w-3.5 text-muted-foreground ml-auto" />
+                  <div className="flex items-center gap-3 h-11 rounded-xl bg-secondary/40 px-4 text-sm text-foreground">
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate flex-1">{profile?.email || session?.email || "Nao informado"}</span>
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   </div>
                 </div>
 
-                {/* Telefone - read only */}
+                {/* Telefone - read only (from registration) */}
                 <div>
                   <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2 block">
                     Telefone
                   </label>
-                  <div className="flex items-center h-11 rounded-xl bg-secondary/40 px-4 text-sm text-muted-foreground">
-                    Nao informado
+                  <div className="flex items-center gap-3 h-11 rounded-xl bg-secondary/40 px-4 text-sm text-foreground">
+                    <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    <span className="truncate flex-1">{profile?.phone || "Nao informado"}</span>
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  </div>
+                </div>
+
+                {/* Conta criada */}
+                <div>
+                  <label className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2 block">
+                    Conta criada em
+                  </label>
+                  <div className="flex items-center gap-3 h-11 rounded-xl bg-secondary/40 px-4 text-sm text-muted-foreground">
+                    <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                    {profile?.created_at
+                      ? new Date(profile.created_at).toLocaleDateString("pt-BR", {
+                          day: "2-digit",
+                          month: "long",
+                          year: "numeric",
+                        })
+                      : "---"}
                   </div>
                 </div>
               </div>
             </div>
           </section>
 
-          {/* ── SECURITY + PASSWORD ── */}
+          {/* ── SECURITY ── */}
           <section className="rounded-2xl border border-border bg-card overflow-hidden">
             <div className="flex items-center gap-3 px-6 py-4 border-b border-border">
               <KeyRound className="h-4 w-4 text-accent" />
-              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Seguranca</h2>
+              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Alterar Senha</h2>
             </div>
             <div className="p-6">
-              <div className="grid gap-6 md:grid-cols-2">
-                {/* Change password */}
-                <div className="flex flex-col gap-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Alterar senha</p>
-                  <div className="relative">
-                    <Input
-                      type={showOldPass ? "text" : "password"}
-                      placeholder="Senha atual"
-                      className="bg-secondary border-border rounded-xl h-11 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowOldPass(!showOldPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showOldPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      type={showNewPass ? "text" : "password"}
-                      placeholder="Nova senha"
-                      className="bg-secondary border-border rounded-xl h-11 pr-10"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPass(!showNewPass)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl h-10">
-                    Alterar senha
-                  </Button>
+              {passMsg && (
+                <div className={`mb-4 rounded-xl px-4 py-2.5 text-sm ${
+                  passMsg.type === "success"
+                    ? "bg-accent/10 text-accent"
+                    : "bg-destructive/10 text-destructive"
+                }`}>
+                  {passMsg.text}
                 </div>
-
-                {/* 2FA */}
-                <div className="flex flex-col gap-3">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Autenticacao 2FA</p>
-                  <div className="flex-1 rounded-xl border border-dashed border-border bg-secondary/30 p-5 flex flex-col items-center justify-center text-center gap-3">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                      <Lock className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">Proteja sua conta</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">Adicione uma camada extra de seguranca com autenticacao de dois fatores</p>
-                    </div>
-                    <Badge variant="outline" className="rounded-md text-[10px] px-2 py-0.5 text-muted-foreground border-border">
-                      Inativo
-                    </Badge>
-                    <Button variant="outline" className="rounded-xl border-border mt-1 gap-2">
-                      Ativar 2FA
-                      <ChevronRight className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
+              )}
+              <div className="flex flex-col gap-3 max-w-md">
+                <div className="relative">
+                  <Input
+                    type={showOldPass ? "text" : "password"}
+                    placeholder="Senha atual"
+                    value={oldPass}
+                    onChange={(e) => setOldPass(e.target.value)}
+                    className="bg-secondary border-border rounded-xl h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowOldPass(!showOldPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showOldPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-              </div>
-            </div>
-          </section>
-
-          {/* ── PREFERENCES ── */}
-          <section className="rounded-2xl border border-border bg-card overflow-hidden">
-            <div className="flex items-center gap-3 px-6 py-4 border-b border-border">
-              <MousePointer className="h-4 w-4 text-accent" />
-              <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Preferencias</h2>
-            </div>
-            <div className="divide-y divide-border">
-              {/* Cursor */}
-              <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                    <MousePointer className="h-4 w-4 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Cursor personalizado</p>
-                    <p className="text-xs text-muted-foreground">Usar cursor customizado na plataforma</p>
-                  </div>
+                <div className="relative">
+                  <Input
+                    type={showNewPass ? "text" : "password"}
+                    placeholder="Nova senha (min 6 caracteres)"
+                    value={newPass}
+                    onChange={(e) => setNewPass(e.target.value)}
+                    className="bg-secondary border-border rounded-xl h-11 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
-                <Switch checked={cursorPersonalizado} onCheckedChange={setCursorPersonalizado} />
-              </div>
-
-              {/* Ranking */}
-              <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                    <BarChart3 className="h-4 w-4 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Mostrar no ranking</p>
-                    <p className="text-xs text-muted-foreground">Exibir seu faturamento no ranking publico</p>
-                  </div>
-                </div>
-                <Switch checked={mostrarRanking} onCheckedChange={setMostrarRanking} />
-              </div>
-
-              {/* Notificacoes */}
-              <div className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                    <Bell className="h-4 w-4 text-accent" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Notificacoes push</p>
-                    <p className="text-xs text-muted-foreground">Receber alertas de vendas em tempo real</p>
-                  </div>
-                </div>
-                <Switch checked={notificacoesPush} onCheckedChange={setNotificacoesPush} />
+                <Button
+                  onClick={handleChangePassword}
+                  disabled={passLoading || !oldPass || !newPass}
+                  className="w-full bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl h-10"
+                >
+                  {passLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  Alterar senha
+                </Button>
               </div>
             </div>
           </section>
@@ -388,33 +467,36 @@ export default function SettingsPage() {
               <h2 className="text-sm font-semibold text-foreground uppercase tracking-wide">Premiacoes</h2>
             </div>
             <div className="p-6">
-              {/* Milestones track */}
-              <div className="flex items-center gap-2 overflow-x-auto pb-4">
-                {milestones.map((m, i) => (
-                  <div key={m.label} className="flex items-center gap-2 shrink-0">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <div className={`flex h-12 w-12 items-center justify-center rounded-full border-2 transition-colors ${
-                        m.unlocked
-                          ? "border-accent bg-accent/10"
-                          : "border-border bg-secondary/50"
-                      }`}>
-                        {m.unlocked ? (
-                          <Trophy className="h-5 w-5 text-accent" />
-                        ) : (
-                          <Lock className="h-4 w-4 text-muted-foreground/50" />
-                        )}
+              {/* Milestones */}
+              <div className="flex items-center justify-between gap-2 overflow-x-auto pb-4">
+                {milestones.map((m, i) => {
+                  const unlocked = faturamentoAtual >= m.value
+                  return (
+                    <div key={m.label} className="flex items-center gap-2 shrink-0">
+                      <div className="flex flex-col items-center gap-1.5">
+                        <div className={`flex h-14 w-14 items-center justify-center rounded-full border-2 transition-colors ${
+                          unlocked
+                            ? "border-accent bg-accent/10"
+                            : "border-border bg-secondary/50"
+                        }`}>
+                          {unlocked ? (
+                            <Trophy className="h-5 w-5 text-accent" />
+                          ) : (
+                            <Lock className="h-4 w-4 text-muted-foreground/50" />
+                          )}
+                        </div>
+                        <span className={`text-[10px] font-bold uppercase ${
+                          unlocked ? "text-accent" : "text-muted-foreground/60"
+                        }`}>
+                          {m.label}
+                        </span>
                       </div>
-                      <span className={`text-[10px] font-bold uppercase ${
-                        m.unlocked ? "text-accent" : "text-muted-foreground/60"
-                      }`}>
-                        {m.label}
-                      </span>
+                      {i < milestones.length - 1 && (
+                        <div className="h-0.5 w-8 bg-border rounded-full shrink-0 mt-[-18px]" />
+                      )}
                     </div>
-                    {i < milestones.length - 1 && (
-                      <div className="h-0.5 w-6 bg-border rounded-full shrink-0 mt-[-18px]" />
-                    )}
-                  </div>
-                ))}
+                  )
+                })}
               </div>
 
               {/* Progress */}
@@ -434,7 +516,7 @@ export default function SettingsPage() {
                   </div>
                   <div>
                     <span className="text-muted-foreground">Proxima meta: </span>
-                    <span className="font-bold text-accent">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
+                    <span className="font-bold text-accent">+R$ {proximaMeta.toLocaleString("pt-BR")}</span>
                   </div>
                 </div>
               </div>
