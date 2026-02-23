@@ -6,17 +6,26 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
+  BarChart3,
+  DollarSign,
+  Users,
+  UserCheck,
   Bot,
   GitBranch,
-  ShoppingCart,
   Megaphone,
-  RefreshCw,
-  BarChart3,
-  Users,
+  Send,
+  Wrench,
+  CreditCard,
+  Crosshair,
+  ShoppingCart,
+  LinkIcon,
+  Gift,
+  Trophy,
   ChevronLeft,
   ChevronRight,
   Power,
 } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
@@ -24,15 +33,56 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { BotSwitcher } from "@/components/bot-switcher"
 import { useAuth } from "@/lib/auth-context"
 
-const navItems = [
-  { label: "Painel", href: "/", icon: LayoutDashboard },
-  { label: "Bots", href: "/bots", icon: Bot },
-  { label: "Fluxos", href: "/flows", icon: GitBranch },
-  { label: "Vendas", href: "/payments", icon: ShoppingCart, locked: true },
-  { label: "Campanhas", href: "/campaigns", icon: Megaphone, locked: true },
-  { label: "Assinaturas", href: "/subscriptions", icon: RefreshCw, locked: true },
-  { label: "Analytics", href: "/analytics", icon: BarChart3, locked: true },
-  { label: "Usuarios", href: "/users", icon: Users, locked: true },
+type NavItem = {
+  label: string
+  description: string
+  href: string
+  icon: LucideIcon
+  locked?: boolean
+}
+
+type NavSection = {
+  category: string
+  items: NavItem[]
+}
+
+const navSections: NavSection[] = [
+  {
+    category: "MENU",
+    items: [
+      { label: "Dashboard", description: "Visao geral", href: "/", icon: LayoutDashboard },
+      { label: "Analises", description: "Metricas e relatorios", href: "/analytics", icon: BarChart3, locked: true },
+      { label: "Financeiro", description: "Receitas e transacoes", href: "/payments", icon: DollarSign, locked: true },
+      { label: "Clientes", description: "Base de leads", href: "/users", icon: Users, locked: true },
+      { label: "Afiliado", description: "Comissoes", href: "/affiliate", icon: UserCheck, locked: true },
+    ],
+  },
+  {
+    category: "AUTOMACOES",
+    items: [
+      { label: "Meus Robos", description: "Gerenciar bots", href: "/bots", icon: Bot },
+      { label: "Meus Fluxos", description: "Fluxos de venda", href: "/flows", icon: GitBranch },
+      { label: "Remarketing", description: "Campanhas", href: "/campaigns", icon: Megaphone, locked: true },
+      { label: "Postagens", description: "Envios e agendamentos", href: "/posts", icon: Send, locked: true },
+      { label: "Ferramentas", description: "Utilitarios de midia", href: "/tools", icon: Wrench, locked: true },
+    ],
+  },
+  {
+    category: "INTEGRACOES",
+    items: [
+      { label: "Gateways", description: "Pagamentos PIX", href: "/gateways", icon: CreditCard, locked: true },
+      { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair, locked: true },
+      { label: "Checkout", description: "Pagina de pagamento", href: "/checkout", icon: ShoppingCart, locked: true },
+      { label: "Bio Link", description: "Paginas de bio", href: "/biolink", icon: LinkIcon, locked: true },
+    ],
+  },
+  {
+    category: "RECOMPENSAS",
+    items: [
+      { label: "Indique e Ganhe", description: "Convide amigos", href: "/referral", icon: Gift, locked: true },
+      { label: "Premiacoes", description: "Conquistas e premios", href: "/rewards", icon: Trophy, locked: true },
+    ],
+  },
 ]
 
 interface DashboardSidebarProps {
@@ -49,7 +99,7 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
       <aside
         className={cn(
           "flex h-screen flex-col border-r border-border bg-sidebar transition-all duration-300",
-          collapsed ? "w-16" : "w-60"
+          collapsed ? "w-16" : "w-64"
         )}
       >
         {/* User Profile + Bot Switcher card */}
@@ -118,68 +168,104 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 py-3">
-          <nav className="flex flex-col gap-0.5 px-2">
-            {navItems.map((item) => {
-              const isActive =
-                pathname === item.href ||
-                (item.href !== "/" && pathname.startsWith(item.href))
-
-              if (item.locked) {
-                const lockedContent = (
-                  <span
-                    key={item.href}
-                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium opacity-30 cursor-not-allowed select-none"
-                  >
-                    <item.icon className="h-4 w-4 shrink-0" />
-                    {!collapsed && <span>{item.label}</span>}
+        <ScrollArea className="flex-1 py-2">
+          <nav className="flex flex-col gap-4 px-2">
+            {navSections.map((section) => (
+              <div key={section.category} className="flex flex-col gap-0.5">
+                {/* Category label */}
+                {!collapsed && (
+                  <span className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-accent">
+                    {section.category}
                   </span>
-                )
+                )}
+                {collapsed && (
+                  <div className="mx-auto mb-1 h-px w-6 bg-border" />
+                )}
 
-                if (collapsed) {
-                  return (
-                    <Tooltip key={item.href}>
-                      <TooltipTrigger asChild>{lockedContent}</TooltipTrigger>
-                      <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                        {item.label} (Em breve)
-                      </TooltipContent>
-                    </Tooltip>
+                {/* Items */}
+                {section.items.map((item) => {
+                  const isActive =
+                    pathname === item.href ||
+                    (item.href !== "/" && pathname.startsWith(item.href))
+
+                  if (item.locked) {
+                    const lockedContent = (
+                      <span
+                        key={item.href}
+                        className={cn(
+                          "flex items-center gap-3 rounded-xl px-3 py-2.5 opacity-30 cursor-not-allowed select-none",
+                          collapsed && "justify-center px-2"
+                        )}
+                      >
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        {!collapsed && (
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-medium text-foreground truncate">{item.label}</span>
+                            <span className="text-[11px] text-muted-foreground truncate">{item.description}</span>
+                          </div>
+                        )}
+                      </span>
+                    )
+
+                    if (collapsed) {
+                      return (
+                        <Tooltip key={item.href}>
+                          <TooltipTrigger asChild>{lockedContent}</TooltipTrigger>
+                          <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                            <p className="font-medium">{item.label}</p>
+                            <p className="text-xs text-muted-foreground">Em breve</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
+                    }
+
+                    return lockedContent
+                  }
+
+                  const linkContent = (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={onNavigate}
+                      className={cn(
+                        "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
+                        collapsed && "justify-center px-2",
+                        isActive
+                          ? "bg-sidebar-accent text-sidebar-primary"
+                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      )}
+                    >
+                      <item.icon className={cn("h-5 w-5 shrink-0", isActive && "text-accent")} />
+                      {!collapsed && (
+                        <div className="flex flex-col min-w-0">
+                          <span className={cn(
+                            "text-sm font-medium truncate",
+                            isActive ? "text-foreground" : "text-foreground/90"
+                          )}>
+                            {item.label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground truncate">{item.description}</span>
+                        </div>
+                      )}
+                    </Link>
                   )
-                }
 
-                return lockedContent
-              }
+                  if (collapsed) {
+                    return (
+                      <Tooltip key={item.href}>
+                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                        <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                          <p className="font-medium">{item.label}</p>
+                          <p className="text-xs text-muted-foreground">{item.description}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )
+                  }
 
-              const linkContent = (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={onNavigate}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors",
-                    isActive
-                      ? "bg-sidebar-accent text-sidebar-primary"
-                      : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                  )}
-                >
-                  <item.icon className={cn("h-4 w-4 shrink-0", isActive && "text-accent")} />
-                  {!collapsed && <span>{item.label}</span>}
-                </Link>
-              )
-
-              if (collapsed) {
-                return (
-                  <Tooltip key={item.href}>
-                    <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
-                    <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                      {item.label}
-                    </TooltipContent>
-                  </Tooltip>
-                )
-              }
-
-              return linkContent
-            })}
+                  return linkContent
+                })}
+              </div>
+            ))}
           </nav>
         </ScrollArea>
 
