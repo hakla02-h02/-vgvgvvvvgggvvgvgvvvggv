@@ -75,13 +75,12 @@ export default function SettingsPage() {
     try {
       const res = await fetch(`/api/profile?userId=${session.userId}`)
       const data = await res.json()
-      console.log("[v0] Profile fetched:", res.status, data)
       if (res.ok) {
         setProfile(data)
         setNome(data.name || "")
       }
-    } catch (err) {
-      console.error("[v0] Profile fetch error:", err)
+    } catch {
+      // silent
     } finally {
       setLoading(false)
     }
@@ -104,16 +103,12 @@ export default function SettingsPage() {
       const res = await fetch("/api/profile/avatar", { method: "POST", body: formData })
       const data = await res.json()
 
-      console.log("[v0] Avatar upload response:", res.status, data)
       if (res.ok && data.url) {
         const newUrl = data.url + "?t=" + Date.now()
-        console.log("[v0] Setting avatar_url to:", newUrl)
         setProfile((prev) => prev ? { ...prev, avatar_url: newUrl } : prev)
-      } else {
-        console.error("[v0] Avatar upload failed:", data.error)
       }
-    } catch (err) {
-      console.error("[v0] Avatar upload error:", err)
+    } catch {
+      // silent
     } finally {
       setAvatarUploading(false)
     }
