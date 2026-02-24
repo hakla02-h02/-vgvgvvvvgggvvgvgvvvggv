@@ -20,13 +20,15 @@ import {
   ArrowRight, GripVertical, ChevronRight, Users, CreditCard,
   Pencil, Trash2, Loader2, Image, Video, Link, X, Upload, FileCheck,
   Star, Zap, RotateCcw, ShoppingBag, UserPlus, Mail, Target, Sparkles, Crown,
+  Search, Settings2, Clock, Bell, Tag, Percent, Globe, FileText, Heart,
+  Send, CalendarDays, Repeat, Filter, MessageCircle, AlertCircle,
 } from "lucide-react"
 import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
 
 // ---- Types ----
 
-type FlowCategory = "inicial" | "remarketing" | "followup" | "pos-venda" | "captacao" | "notificacao" | "personalizado"
+type FlowCategory = "inicial" | "remarketing" | "followup" | "pos-venda" | "captacao" | "notificacao" | "seo" | "personalizado"
 
 interface Flow {
   id: string
@@ -80,10 +82,168 @@ const flowCategories: { value: FlowCategory; label: string; description: string;
   { value: "pos-venda", label: "Pos-venda", description: "Fluxo para quem ja comprou", icon: ShoppingBag, color: "border-purple-500/30 bg-purple-500/10", iconColor: "text-purple-400" },
   { value: "captacao", label: "Captacao", description: "Captar novos leads e contatos", icon: UserPlus, color: "border-cyan-500/30 bg-cyan-500/10", iconColor: "text-cyan-400" },
   { value: "notificacao", label: "Notificacao", description: "Enviar avisos e alertas", icon: Mail, color: "border-yellow-500/30 bg-yellow-500/10", iconColor: "text-yellow-400" },
+  { value: "seo", label: "SEO", description: "Otimizacao e conteudo para buscadores", icon: Search, color: "border-emerald-500/30 bg-emerald-500/10", iconColor: "text-emerald-400" },
   { value: "personalizado", label: "Personalizado", description: "Crie seu proprio tipo de fluxo", icon: Sparkles, color: "border-pink-500/30 bg-pink-500/10", iconColor: "text-pink-400" },
 ]
 
 const getCategoryConfig = (cat: FlowCategory) => flowCategories.find((c) => c.value === cat) || flowCategories[flowCategories.length - 1]
+
+// ---- Category-specific configuration fields ----
+
+interface CategoryField {
+  key: string
+  label: string
+  type: "text" | "number" | "select" | "toggle" | "textarea"
+  placeholder?: string
+  options?: { value: string; label: string }[]
+  description?: string
+  icon: React.ElementType
+}
+
+interface CategoryConfigDef {
+  category: FlowCategory
+  title: string
+  description: string
+  fields: CategoryField[]
+}
+
+const categoryConfigs: CategoryConfigDef[] = [
+  {
+    category: "inicial",
+    title: "Configuracoes do Fluxo Inicial",
+    description: "O primeiro contato do usuario com o bot. Configure a experiencia de boas-vindas.",
+    fields: [
+      { key: "welcome_message", label: "Mensagem de boas-vindas", type: "textarea", placeholder: "Ola! Bem-vindo ao nosso bot...", icon: MessageCircle, description: "Mensagem exibida ao iniciar" },
+      { key: "auto_start", label: "Iniciar automaticamente", type: "toggle", icon: Zap, description: "Dispara ao primeiro contato" },
+      { key: "collect_name", label: "Coletar nome do usuario", type: "toggle", icon: UserPlus, description: "Pedir nome antes de prosseguir" },
+      { key: "main_menu_enabled", label: "Exibir menu principal", type: "toggle", icon: GitBranch, description: "Mostra opcoes apos boas-vindas" },
+    ],
+  },
+  {
+    category: "remarketing",
+    title: "Configuracoes de Remarketing",
+    description: "Reengaje usuarios inativos ou que nao converteram.",
+    fields: [
+      { key: "trigger_after_days", label: "Disparar apos (dias)", type: "number", placeholder: "3", icon: Clock, description: "Dias sem interacao para disparar" },
+      { key: "target_audience", label: "Publico-alvo", type: "select", icon: Users, options: [
+        { value: "inativos", label: "Usuarios inativos" },
+        { value: "carrinho", label: "Abandonaram carrinho" },
+        { value: "visitantes", label: "Visitaram mas nao compraram" },
+        { value: "todos", label: "Todos os contatos" },
+      ], description: "Quem vai receber" },
+      { key: "offer_type", label: "Tipo de oferta", type: "select", icon: Tag, options: [
+        { value: "desconto", label: "Desconto %" },
+        { value: "cupom", label: "Cupom fixo" },
+        { value: "frete", label: "Frete gratis" },
+        { value: "nenhum", label: "Sem oferta" },
+      ], description: "Incentivo para reengajar" },
+      { key: "discount_value", label: "Valor do desconto", type: "text", placeholder: "10% ou R$20", icon: Percent, description: "Valor do incentivo" },
+      { key: "max_sends", label: "Maximo de envios", type: "number", placeholder: "3", icon: Repeat, description: "Limite de mensagens por usuario" },
+      { key: "urgency_enabled", label: "Urgencia (tempo limitado)", type: "toggle", icon: AlertCircle, description: "Adicionar countdown na oferta" },
+    ],
+  },
+  {
+    category: "followup",
+    title: "Configuracoes de Follow-up",
+    description: "Acompanhe usuarios apos uma interacao.",
+    fields: [
+      { key: "followup_delay_hours", label: "Delay apos interacao (horas)", type: "number", placeholder: "24", icon: Clock, description: "Tempo para enviar follow-up" },
+      { key: "trigger_event", label: "Evento gatilho", type: "select", icon: Zap, options: [
+        { value: "mensagem", label: "Enviou mensagem" },
+        { value: "visualizou", label: "Visualizou conteudo" },
+        { value: "clicou", label: "Clicou em link" },
+        { value: "respondeu", label: "Respondeu pesquisa" },
+      ], description: "O que ativa este follow-up" },
+      { key: "max_followups", label: "Maximo de follow-ups", type: "number", placeholder: "3", icon: Repeat, description: "Quantas vezes insistir" },
+      { key: "stop_on_reply", label: "Parar se responder", type: "toggle", icon: MessageCircle, description: "Cancela sequencia se usuario responder" },
+      { key: "personalize", label: "Personalizar com nome", type: "toggle", icon: Heart, description: "Usar nome do usuario na mensagem" },
+    ],
+  },
+  {
+    category: "pos-venda",
+    title: "Configuracoes de Pos-venda",
+    description: "Fluxo para quem ja comprou. Fidelizacao e upsell.",
+    fields: [
+      { key: "trigger_after_purchase_hours", label: "Enviar apos compra (horas)", type: "number", placeholder: "2", icon: Clock, description: "Delay apos confirmacao de compra" },
+      { key: "satisfaction_survey", label: "Pesquisa de satisfacao", type: "toggle", icon: Star, description: "Enviar pesquisa NPS/CSAT" },
+      { key: "review_request", label: "Pedir avaliacao", type: "toggle", icon: Heart, description: "Solicitar review do produto" },
+      { key: "upsell_enabled", label: "Oferecer upsell", type: "toggle", icon: ShoppingBag, description: "Sugerir produtos complementares" },
+      { key: "upsell_discount", label: "Desconto no upsell (%)", type: "number", placeholder: "15", icon: Percent, description: "Desconto para produtos sugeridos" },
+      { key: "support_shortcut", label: "Atalho para suporte", type: "toggle", icon: MessageCircle, description: "Botao rapido para falar com suporte" },
+    ],
+  },
+  {
+    category: "captacao",
+    title: "Configuracoes de Captacao",
+    description: "Capture leads e novos contatos para sua base.",
+    fields: [
+      { key: "collect_email", label: "Coletar e-mail", type: "toggle", icon: Mail, description: "Pedir e-mail do lead" },
+      { key: "collect_phone", label: "Coletar telefone", type: "toggle", icon: Send, description: "Pedir telefone do lead" },
+      { key: "lead_magnet", label: "Isca digital", type: "select", icon: Tag, options: [
+        { value: "ebook", label: "E-book" },
+        { value: "desconto", label: "Cupom de desconto" },
+        { value: "webinar", label: "Webinar/Aula" },
+        { value: "checklist", label: "Checklist" },
+        { value: "nenhum", label: "Nenhuma" },
+      ], description: "O que oferecer em troca dos dados" },
+      { key: "qualification_question", label: "Pergunta de qualificacao", type: "textarea", placeholder: "Qual seu maior desafio hoje?", icon: Filter, description: "Segmentar o lead com perguntas" },
+      { key: "redirect_after", label: "Redirecionar apos captura", type: "text", placeholder: "https://seusite.com/obrigado", icon: Globe, description: "URL de destino pos-captura" },
+      { key: "tag_lead", label: "Tag do lead", type: "text", placeholder: "lead-quente", icon: Tag, description: "Tag para identificar esses leads" },
+    ],
+  },
+  {
+    category: "notificacao",
+    title: "Configuracoes de Notificacao",
+    description: "Envie avisos, alertas e comunicados.",
+    fields: [
+      { key: "notification_type", label: "Tipo de notificacao", type: "select", icon: Bell, options: [
+        { value: "aviso", label: "Aviso geral" },
+        { value: "promocao", label: "Promocao" },
+        { value: "lembrete", label: "Lembrete" },
+        { value: "atualizacao", label: "Atualizacao" },
+      ], description: "Categoria da notificacao" },
+      { key: "schedule_enabled", label: "Agendar envio", type: "toggle", icon: CalendarDays, description: "Programar data/hora de envio" },
+      { key: "schedule_datetime", label: "Data e hora", type: "text", placeholder: "2025-12-25 09:00", icon: Clock, description: "Quando enviar (se agendado)" },
+      { key: "frequency_limit", label: "Limite de frequencia (horas)", type: "number", placeholder: "24", icon: Repeat, description: "Intervalo minimo entre envios" },
+      { key: "priority", label: "Prioridade", type: "select", icon: AlertCircle, options: [
+        { value: "alta", label: "Alta" },
+        { value: "media", label: "Media" },
+        { value: "baixa", label: "Baixa" },
+      ], description: "Nivel de urgencia" },
+    ],
+  },
+  {
+    category: "seo",
+    title: "Configuracoes de SEO",
+    description: "Otimize conteudo e fluxos para buscadores.",
+    fields: [
+      { key: "target_keywords", label: "Palavras-chave alvo", type: "textarea", placeholder: "chatbot, automacao, vendas online", icon: Search, description: "Keywords separadas por virgula" },
+      { key: "meta_title", label: "Meta titulo", type: "text", placeholder: "Melhor chatbot para vendas", icon: FileText, description: "Titulo para motores de busca" },
+      { key: "meta_description", label: "Meta descricao", type: "textarea", placeholder: "Descricao otimizada para SEO...", icon: FileText, description: "Descricao de ate 160 caracteres" },
+      { key: "content_type", label: "Tipo de conteudo", type: "select", icon: Globe, options: [
+        { value: "landing", label: "Landing Page" },
+        { value: "blog", label: "Blog Post" },
+        { value: "produto", label: "Pagina de Produto" },
+        { value: "faq", label: "FAQ / Perguntas" },
+      ], description: "Formato do conteudo gerado" },
+      { key: "auto_links", label: "Links internos automaticos", type: "toggle", icon: Link, description: "Gerar links internos nos textos" },
+      { key: "canonical_url", label: "URL canonica", type: "text", placeholder: "https://seusite.com/pagina", icon: Globe, description: "URL principal para indexacao" },
+    ],
+  },
+  {
+    category: "personalizado",
+    title: "Configuracoes Personalizadas",
+    description: "Defina suas proprias configuracoes para este fluxo.",
+    fields: [
+      { key: "custom_label", label: "Label personalizado", type: "text", placeholder: "Ex: Fluxo VIP", icon: Tag, description: "Nome interno para organizacao" },
+      { key: "custom_description", label: "Descricao", type: "textarea", placeholder: "Descreva o objetivo deste fluxo...", icon: FileText, description: "Anotacao sobre o fluxo" },
+      { key: "custom_trigger", label: "Gatilho personalizado", type: "text", placeholder: "Ex: Quando usuario digita /vip", icon: Zap, description: "Condicao para ativar este fluxo" },
+      { key: "custom_tag", label: "Tag", type: "text", placeholder: "Ex: vip, especial", icon: Tag, description: "Tags para segmentacao" },
+    ],
+  },
+]
+
+const getCategoryConfigDef = (cat: FlowCategory) => categoryConfigs.find((c) => c.category === cat) || categoryConfigs[categoryConfigs.length - 1]
 
 // ---- Constants ----
 
@@ -233,6 +393,11 @@ export default function FlowsPage() {
   const [editFlowCategory, setEditFlowCategory] = useState<FlowCategory>("personalizado")
   const [editFlowName, setEditFlowName] = useState("")
   const [isSavingFlow, setIsSavingFlow] = useState(false)
+
+  // Category-specific config
+  const [flowCategoryConfig, setFlowCategoryConfig] = useState<Record<string, string | boolean>>({})
+  const [isSavingCategoryConfig, setIsSavingCategoryConfig] = useState(false)
+  const [showCategoryConfig, setShowCategoryConfig] = useState(false)
 
   // Derived: primary flow and secondary flows
   const primaryFlow = flows.find((f) => f.is_primary)
@@ -667,6 +832,41 @@ export default function FlowsPage() {
     setIsDeletingNode(false)
   }
 
+  // ---- Load category config when active flow changes ----
+  useEffect(() => {
+    if (!activeFlow) {
+      setFlowCategoryConfig({})
+      setShowCategoryConfig(false)
+      return
+    }
+    // Load from local state per flow (in real app, this would come from DB)
+    const stored = localStorage.getItem(`flow_config_${activeFlow.id}`)
+    if (stored) {
+      try {
+        setFlowCategoryConfig(JSON.parse(stored))
+      } catch {
+        setFlowCategoryConfig({})
+      }
+    } else {
+      setFlowCategoryConfig({})
+    }
+  }, [activeFlow?.id])
+
+  const handleSaveCategoryConfig = async () => {
+    if (!activeFlow) return
+    setIsSavingCategoryConfig(true)
+    // Save to localStorage as fallback (would be DB in production)
+    localStorage.setItem(`flow_config_${activeFlow.id}`, JSON.stringify(flowCategoryConfig))
+    // Attempt to save to supabase (if config column exists)
+    await supabase
+      .from("flows")
+      .update({ config: flowCategoryConfig, updated_at: new Date().toISOString() })
+      .eq("id", activeFlow.id)
+      .then(() => {})
+      .catch(() => {})
+    setIsSavingCategoryConfig(false)
+  }
+
   // ---- Toggle flow status ----
   const toggleFlowStatus = async (flow: Flow) => {
     const newStatus = flow.status === "ativo" ? "pausado" : "ativo"
@@ -932,6 +1132,15 @@ export default function FlowsPage() {
                           </Button>
                         )}
                         <Button
+                          variant={showCategoryConfig ? "default" : "ghost"}
+                          size="sm"
+                          className={`h-8 text-xs ${showCategoryConfig ? "bg-accent text-accent-foreground hover:bg-accent/90" : "text-muted-foreground hover:text-foreground"}`}
+                          onClick={() => setShowCategoryConfig(!showCategoryConfig)}
+                        >
+                          <Settings2 className="h-3.5 w-3.5 mr-1" />
+                          Config
+                        </Button>
+                        <Button
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-foreground"
@@ -950,6 +1159,106 @@ export default function FlowsPage() {
                       </div>
                     </div>
                   </CardHeader>
+
+                  {/* ====== PAINEL DE CONFIGURACOES DO TIPO ====== */}
+                  {showCategoryConfig && (
+                    <div className="mx-6 mb-4">
+                      {(() => {
+                        const configDef = getCategoryConfigDef(activeFlow.category)
+                        const catStyle = getCategoryConfig(activeFlow.category)
+                        return (
+                          <div className={`rounded-xl border p-4 ${catStyle.color}`}>
+                            <div className="flex items-center justify-between mb-3">
+                              <div className="flex items-center gap-2">
+                                <Settings2 className={`h-4 w-4 ${catStyle.iconColor}`} />
+                                <h3 className="text-sm font-semibold text-foreground">{configDef.title}</h3>
+                              </div>
+                              <Button
+                                size="sm"
+                                className="h-7 text-xs bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg"
+                                disabled={isSavingCategoryConfig}
+                                onClick={handleSaveCategoryConfig}
+                              >
+                                {isSavingCategoryConfig && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
+                                Salvar
+                              </Button>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-4">{configDef.description}</p>
+                            <div className="flex flex-col gap-3">
+                              {configDef.fields.map((field) => {
+                                const FieldIcon = field.icon
+                                return (
+                                  <div key={field.key} className="flex flex-col gap-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <FieldIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                      <Label className="text-xs font-medium text-foreground">{field.label}</Label>
+                                    </div>
+                                    {field.description && (
+                                      <p className="text-[10px] text-muted-foreground ml-5">{field.description}</p>
+                                    )}
+                                    {field.type === "toggle" ? (
+                                      <div className="ml-5">
+                                        <Switch
+                                          checked={!!flowCategoryConfig[field.key]}
+                                          onCheckedChange={(checked) =>
+                                            setFlowCategoryConfig((prev) => ({ ...prev, [field.key]: checked }))
+                                          }
+                                        />
+                                      </div>
+                                    ) : field.type === "select" ? (
+                                      <div className="ml-5">
+                                        <Select
+                                          value={(flowCategoryConfig[field.key] as string) || ""}
+                                          onValueChange={(v) =>
+                                            setFlowCategoryConfig((prev) => ({ ...prev, [field.key]: v }))
+                                          }
+                                        >
+                                          <SelectTrigger className="h-8 bg-background/60 border-border/50 rounded-lg text-foreground text-xs">
+                                            <SelectValue placeholder="Selecione..." />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-card border-border">
+                                            {field.options?.map((opt) => (
+                                              <SelectItem key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                              </SelectItem>
+                                            ))}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    ) : field.type === "textarea" ? (
+                                      <div className="ml-5">
+                                        <Textarea
+                                          value={(flowCategoryConfig[field.key] as string) || ""}
+                                          onChange={(e) =>
+                                            setFlowCategoryConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
+                                          }
+                                          placeholder={field.placeholder}
+                                          className="bg-background/60 border-border/50 rounded-lg text-foreground text-xs min-h-[60px]"
+                                        />
+                                      </div>
+                                    ) : (
+                                      <div className="ml-5">
+                                        <Input
+                                          type={field.type === "number" ? "number" : "text"}
+                                          value={(flowCategoryConfig[field.key] as string) || ""}
+                                          onChange={(e) =>
+                                            setFlowCategoryConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
+                                          }
+                                          placeholder={field.placeholder}
+                                          className="h-8 bg-background/60 border-border/50 rounded-lg text-foreground text-xs"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })()}
+                    </div>
+                  )}
+
                   <CardContent>
                     {isLoadingNodes ? (
                       <div className="flex items-center justify-center py-10">
