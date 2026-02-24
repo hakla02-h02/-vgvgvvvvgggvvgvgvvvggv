@@ -19,11 +19,14 @@ import {
   Plus, GitBranch, MessageSquare, Timer, Split,
   ArrowRight, GripVertical, ChevronRight, Users, CreditCard,
   Pencil, Trash2, Loader2, Image, Video, Link, X, Upload, FileCheck,
+  Star, Zap, RotateCcw, ShoppingBag, UserPlus, Mail, Target, Sparkles, Crown,
 } from "lucide-react"
 import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
 
 // ---- Types ----
+
+type FlowCategory = "inicial" | "remarketing" | "followup" | "pos-venda" | "captacao" | "notificacao" | "personalizado"
 
 interface Flow {
   id: string
@@ -31,6 +34,8 @@ interface Flow {
   user_id: string
   name: string
   status: "ativo" | "pausado"
+  category: FlowCategory
+  is_primary: boolean
   created_at: string
   updated_at: string
 }
@@ -53,7 +58,7 @@ interface FlowNode {
   updated_at: string
 }
 
-// ---- Dragon Icon (works like lucide icon) ----
+// ---- Dragon Icon ----
 function DragonTriggerIcon({ className }: { className?: string }) {
   return (
     <NextImage
@@ -65,6 +70,20 @@ function DragonTriggerIcon({ className }: { className?: string }) {
     />
   )
 }
+
+// ---- Flow Category Config ----
+
+const flowCategories: { value: FlowCategory; label: string; description: string; icon: React.ElementType; color: string; iconColor: string }[] = [
+  { value: "inicial", label: "Fluxo Inicial", description: "Primeiro contato do usuario com o bot", icon: Crown, color: "border-accent bg-accent/10", iconColor: "text-accent" },
+  { value: "remarketing", label: "Remarketing", description: "Reengajar usuarios que nao converteram", icon: Target, color: "border-orange-500/30 bg-orange-500/10", iconColor: "text-orange-400" },
+  { value: "followup", label: "Follow-up", description: "Acompanhamento apos interacao", icon: RotateCcw, color: "border-blue-500/30 bg-blue-500/10", iconColor: "text-blue-400" },
+  { value: "pos-venda", label: "Pos-venda", description: "Fluxo para quem ja comprou", icon: ShoppingBag, color: "border-purple-500/30 bg-purple-500/10", iconColor: "text-purple-400" },
+  { value: "captacao", label: "Captacao", description: "Captar novos leads e contatos", icon: UserPlus, color: "border-cyan-500/30 bg-cyan-500/10", iconColor: "text-cyan-400" },
+  { value: "notificacao", label: "Notificacao", description: "Enviar avisos e alertas", icon: Mail, color: "border-yellow-500/30 bg-yellow-500/10", iconColor: "text-yellow-400" },
+  { value: "personalizado", label: "Personalizado", description: "Crie seu proprio tipo de fluxo", icon: Sparkles, color: "border-pink-500/30 bg-pink-500/10", iconColor: "text-pink-400" },
+]
+
+const getCategoryConfig = (cat: FlowCategory) => flowCategories.find((c) => c.value === cat) || flowCategories[flowCategories.length - 1]
 
 // ---- Constants ----
 
@@ -92,7 +111,7 @@ const statusStyles: Record<string, string> = {
   pausado: "bg-warning/10 text-warning border-warning/20",
 }
 
-// Available action templates users can pick from
+// Available action templates
 const actionTemplates: { type: NodeType; label: string; description: string; configFields: { key: string; label: string; placeholder: string; inputType: "text" | "textarea" | "number" }[] }[] = [
   {
     type: "trigger",
@@ -157,6 +176,7 @@ export default function FlowsPage() {
   // New flow dialog
   const [showNewFlowDialog, setShowNewFlowDialog] = useState(false)
   const [newFlowName, setNewFlowName] = useState("")
+  const [newFlowCategory, setNewFlowCategory] = useState<FlowCategory>("personalizado")
   const [isCreatingFlow, setIsCreatingFlow] = useState(false)
 
   // Add node dialog
@@ -165,7 +185,7 @@ export default function FlowsPage() {
   const [nodeConfigValues, setNodeConfigValues] = useState<Record<string, string>>({})
   const [isAddingNode, setIsAddingNode] = useState(false)
 
-  // Message node config (media + inline buttons)
+  // Message node config
   const [msgText, setMsgText] = useState("")
   const [msgMediaUrl, setMsgMediaUrl] = useState("")
   const [msgMediaType, setMsgMediaType] = useState<"photo" | "video" | "none">("none")
@@ -208,6 +228,16 @@ export default function FlowsPage() {
   const [showDeleteFlowDialog, setShowDeleteFlowDialog] = useState(false)
   const [isDeletingFlow, setIsDeletingFlow] = useState(false)
 
+  // Edit flow category
+  const [showEditFlowDialog, setShowEditFlowDialog] = useState(false)
+  const [editFlowCategory, setEditFlowCategory] = useState<FlowCategory>("personalizado")
+  const [editFlowName, setEditFlowName] = useState("")
+  const [isSavingFlow, setIsSavingFlow] = useState(false)
+
+  // Derived: primary flow and secondary flows
+  const primaryFlow = flows.find((f) => f.is_primary)
+  const secondaryFlows = flows.filter((f) => !f.is_primary)
+
   // ---- Fetch flows for selected bot ----
   const fetchFlows = useCallback(async () => {
     if (!selectedBot || !session) {
@@ -233,10 +263,19 @@ export default function FlowsPage() {
     }
 
     const fetched = (data || []) as Flow[]
-    setFlows(fetched)
+    // Backwards compat: if no flow has is_primary, mark the first one
+    const hasPrimary = fetched.some((f) => f.is_primary)
+    const normalized = fetched.map((f, i) => ({
+      ...f,
+      is_primary: hasPrimary ? !!f.is_primary : i === 0 && fetched.length > 0,
+      category: (f.category || (i === 0 && !hasPrimary ? "inicial" : "personalizado")) as FlowCategory,
+    }))
 
-    if (fetched.length > 0) {
-      setActiveFlow(fetched[0])
+    setFlows(normalized)
+
+    if (normalized.length > 0) {
+      const primary = normalized.find((f) => f.is_primary) || normalized[0]
+      setActiveFlow(primary)
     } else {
       setActiveFlow(null)
       setNodes([])
@@ -281,6 +320,11 @@ export default function FlowsPage() {
     if (!selectedBot || !session || !newFlowName.trim()) return
 
     setIsCreatingFlow(true)
+
+    // If this is the first flow, it becomes the primary
+    const isFirst = flows.length === 0
+    const category = isFirst ? "inicial" : newFlowCategory
+
     const { data, error } = await supabase
       .from("flows")
       .insert({
@@ -288,6 +332,8 @@ export default function FlowsPage() {
         user_id: session.userId,
         name: newFlowName.trim(),
         status: "ativo",
+        category,
+        is_primary: isFirst,
       })
       .select()
       .single()
@@ -298,10 +344,11 @@ export default function FlowsPage() {
       return
     }
 
-    const newFlow = data as Flow
+    const newFlow = { ...data, category, is_primary: isFirst } as Flow
     setFlows((prev) => [...prev, newFlow])
     setActiveFlow(newFlow)
     setNewFlowName("")
+    setNewFlowCategory("personalizado")
     setShowNewFlowDialog(false)
     setIsCreatingFlow(false)
   }
@@ -324,6 +371,16 @@ export default function FlowsPage() {
 
     setFlows((prev) => {
       const updated = prev.filter((f) => f.id !== activeFlow.id)
+      // If we deleted the primary, promote the first remaining
+      if (activeFlow.is_primary && updated.length > 0) {
+        updated[0] = { ...updated[0], is_primary: true, category: "inicial" }
+        // Update in DB
+        supabase
+          .from("flows")
+          .update({ is_primary: true, category: "inicial" })
+          .eq("id", updated[0].id)
+          .then()
+      }
       if (updated.length > 0) {
         setActiveFlow(updated[0])
       } else {
@@ -336,6 +393,69 @@ export default function FlowsPage() {
     setIsDeletingFlow(false)
   }
 
+  // ---- Set as primary flow ----
+  const handleSetPrimary = async (flow: Flow) => {
+    // Remove primary from current
+    const oldPrimary = flows.find((f) => f.is_primary)
+    if (oldPrimary) {
+      await supabase
+        .from("flows")
+        .update({ is_primary: false })
+        .eq("id", oldPrimary.id)
+    }
+    // Set new primary
+    await supabase
+      .from("flows")
+      .update({ is_primary: true, category: "inicial" })
+      .eq("id", flow.id)
+
+    setFlows((prev) =>
+      prev.map((f) => ({
+        ...f,
+        is_primary: f.id === flow.id,
+        category: f.id === flow.id ? "inicial" : (f.id === oldPrimary?.id ? "personalizado" : f.category),
+      }))
+    )
+    setActiveFlow({ ...flow, is_primary: true, category: "inicial" })
+  }
+
+  // ---- Edit flow (name + category) ----
+  const openEditFlow = (flow: Flow) => {
+    setEditFlowName(flow.name)
+    setEditFlowCategory(flow.category)
+    setShowEditFlowDialog(true)
+  }
+
+  const handleSaveFlow = async () => {
+    if (!activeFlow) return
+    setIsSavingFlow(true)
+
+    const { error } = await supabase
+      .from("flows")
+      .update({
+        name: editFlowName.trim(),
+        category: activeFlow.is_primary ? "inicial" : editFlowCategory,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", activeFlow.id)
+
+    if (error) {
+      console.error("Error updating flow:", error)
+      setIsSavingFlow(false)
+      return
+    }
+
+    const updatedCategory = activeFlow.is_primary ? "inicial" : editFlowCategory
+    setFlows((prev) =>
+      prev.map((f) =>
+        f.id === activeFlow.id ? { ...f, name: editFlowName.trim(), category: updatedCategory } : f
+      )
+    )
+    setActiveFlow((prev) => prev ? { ...prev, name: editFlowName.trim(), category: updatedCategory } : prev)
+    setShowEditFlowDialog(false)
+    setIsSavingFlow(false)
+  }
+
   // ---- Add node ----
   const handleAddNode = async () => {
     if (!activeFlow || !selectedTemplate) return
@@ -346,7 +466,6 @@ export default function FlowsPage() {
     let config: Record<string, unknown> = { ...nodeConfigValues }
 
     if (selectedTemplate.type === "message") {
-      // Build rich message config
       label = msgText ? (msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText) : "Mensagem"
       const validButtons = msgButtons.filter((b) => b.text.trim() && b.url.trim())
       config = {
@@ -405,7 +524,6 @@ export default function FlowsPage() {
     const cfg = node.config || {}
     setEditNodeConfig(cfg as Record<string, string>)
 
-    // If it's a message node, populate the rich message state
     if (node.type === "message") {
       setMsgText((cfg.text as string) || "")
       setMsgMediaUrl((cfg.media_url as string) || "")
@@ -495,11 +613,9 @@ export default function FlowsPage() {
       return
     }
 
-    // Re-order remaining nodes
     const remaining = nodes.filter((n) => n.id !== deletingNode.id)
     const reordered = remaining.map((n, i) => ({ ...n, position: i }))
 
-    // Update positions in DB
     for (const node of reordered) {
       await supabase
         .from("flow_nodes")
@@ -554,7 +670,10 @@ export default function FlowsPage() {
             <p className="text-sm text-muted-foreground">Crie e gerencie fluxos de automacao</p>
             <Button
               className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-              onClick={() => setShowNewFlowDialog(true)}
+              onClick={() => {
+                setNewFlowCategory(flows.length === 0 ? "inicial" : "personalizado")
+                setShowNewFlowDialog(true)
+              }}
             >
               <Plus className="mr-2 h-4 w-4" />
               Novo Fluxo
@@ -568,78 +687,220 @@ export default function FlowsPage() {
           ) : flows.length === 0 ? (
             <Card className="bg-card border-border rounded-2xl">
               <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-secondary">
-                  <GitBranch className="h-6 w-6 text-muted-foreground" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
+                  <Zap className="h-6 w-6 text-accent" />
                 </div>
                 <div className="text-center">
-                  <h3 className="text-sm font-semibold text-foreground">Nenhum fluxo criado</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Crie seu primeiro fluxo de automacao para este bot
+                  <h3 className="text-sm font-semibold text-foreground">Crie seu Fluxo Inicial</h3>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                    O primeiro fluxo sera o ponto de entrada do seu bot. E ele que seus usuarios vao ver quando interagirem pela primeira vez.
                   </p>
                 </div>
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  onClick={() => setShowNewFlowDialog(true)}
+                  onClick={() => {
+                    setNewFlowCategory("inicial")
+                    setShowNewFlowDialog(true)
+                  }}
                 >
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar Fluxo
+                  <Zap className="mr-2 h-4 w-4" />
+                  Criar Fluxo Inicial
                 </Button>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:gap-6 lg:grid-cols-5">
-              {/* Lista de fluxos */}
-              <div className="flex flex-col gap-3 lg:col-span-2">
-                {flows.map((fluxo) => (
-                  <Card
-                    key={fluxo.id}
-                    className={`cursor-pointer bg-card border-border rounded-2xl transition-colors hover:bg-secondary/50 ${
-                      activeFlow?.id === fluxo.id ? "ring-1 ring-accent" : ""
-                    }`}
-                    onClick={() => setActiveFlow(fluxo)}
-                  >
-                    <CardContent className="flex items-center justify-between p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-                          <GitBranch className="h-4 w-4 text-muted-foreground" />
+            <div className="flex flex-col gap-6">
+              {/* ====== FLUXO PRINCIPAL (HERO CARD) ====== */}
+              {primaryFlow && (
+                <Card
+                  className={`relative overflow-hidden rounded-2xl border-2 transition-all cursor-pointer ${
+                    activeFlow?.id === primaryFlow.id
+                      ? "border-accent bg-accent/5 shadow-lg shadow-accent/5"
+                      : "border-accent/30 bg-card hover:border-accent/60"
+                  }`}
+                  onClick={() => setActiveFlow(primaryFlow)}
+                >
+                  {/* Accent glow stripe */}
+                  <div className="absolute top-0 left-0 right-0 h-1 bg-accent" />
+
+                  <CardContent className="p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/15 border border-accent/30">
+                          <Crown className="h-6 w-6 text-accent" />
                         </div>
                         <div>
-                          <h3 className="text-sm font-semibold text-foreground">{fluxo.name}</h3>
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <h3 className="text-base font-bold text-foreground">{primaryFlow.name}</h3>
+                            <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[10px] font-semibold px-1.5 py-0">
+                              PRINCIPAL
+                            </Badge>
+                          </div>
                           <p className="text-xs text-muted-foreground">
-                            {fluxo.status === "ativo" ? "Ativo" : "Pausado"}
+                            Fluxo inicial do bot — primeiro contato dos usuarios
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Badge
+                          variant="outline"
+                          className={`rounded-lg cursor-pointer text-xs ${statusStyles[primaryFlow.status]}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleFlowStatus(primaryFlow)
+                          }}
+                        >
+                          {primaryFlow.status === "ativo" ? "Ativo" : "Pausado"}
+                        </Badge>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setActiveFlow(primaryFlow)
+                            openEditFlow(primaryFlow)
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* ====== FLUXOS SECUNDARIOS ====== */}
+              {(secondaryFlows.length > 0 || primaryFlow) && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      <h2 className="text-sm font-semibold text-foreground">
+                        Fluxos Secundarios
+                      </h2>
+                      <span className="text-xs text-muted-foreground">
+                        ({secondaryFlows.length})
+                      </span>
+                    </div>
+                  </div>
+
+                  {secondaryFlows.length === 0 ? (
+                    <Card className="bg-card border-border border-dashed rounded-2xl">
+                      <CardContent className="flex flex-col items-center justify-center py-10 gap-3">
+                        <p className="text-sm text-muted-foreground text-center max-w-sm">
+                          Crie fluxos secundarios como remarketing, follow-up, pos-venda e mais.
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="rounded-xl border-border text-foreground hover:border-accent hover:text-accent"
+                          onClick={() => {
+                            setNewFlowCategory("personalizado")
+                            setShowNewFlowDialog(true)
+                          }}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Criar Fluxo Secundario
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {secondaryFlows.map((fluxo) => {
+                        const catConfig = getCategoryConfig(fluxo.category)
+                        const CatIcon = catConfig.icon
+                        const isActive = activeFlow?.id === fluxo.id
+
+                        return (
+                          <Card
+                            key={fluxo.id}
+                            className={`cursor-pointer rounded-2xl transition-all ${
+                              isActive
+                                ? `ring-1 ring-accent bg-secondary/50`
+                                : "bg-card border-border hover:bg-secondary/30"
+                            }`}
+                            onClick={() => setActiveFlow(fluxo)}
+                          >
+                            <CardContent className="flex items-center justify-between p-4">
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border shrink-0 ${catConfig.color}`}>
+                                  <CatIcon className={`h-4 w-4 ${catConfig.iconColor}`} />
+                                </div>
+                                <div className="min-w-0">
+                                  <h3 className="text-sm font-semibold text-foreground truncate">{fluxo.name}</h3>
+                                  <p className="text-[11px] text-muted-foreground">{catConfig.label}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <Badge
+                                  variant="outline"
+                                  className={`rounded-lg cursor-pointer text-[10px] ${statusStyles[fluxo.status]}`}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    toggleFlowStatus(fluxo)
+                                  }}
+                                >
+                                  {fluxo.status}
+                                </Badge>
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            </CardContent>
+                          </Card>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* ====== VISUAL BUILDER DO FLUXO ATIVO ====== */}
+              {activeFlow && (
+                <Card className="bg-card border-border rounded-2xl">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {(() => {
+                          const catConfig = getCategoryConfig(activeFlow.category)
+                          const CatIcon = catConfig.icon
+                          return (
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${catConfig.color}`}>
+                              <CatIcon className={`h-4 w-4 ${catConfig.iconColor}`} />
+                            </div>
+                          )
+                        })()}
+                        <div>
+                          <CardTitle className="text-sm font-medium text-foreground">
+                            {activeFlow.name}
+                          </CardTitle>
+                          <p className="text-[11px] text-muted-foreground">
+                            {getCategoryConfig(activeFlow.category).label}
+                            {activeFlow.is_primary && " — Fluxo Principal"}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge
-                          variant="outline"
-                          className={`rounded-lg cursor-pointer ${statusStyles[fluxo.status]}`}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleFlowStatus(fluxo)
-                          }}
-                        >
-                          {fluxo.status}
-                        </Badge>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Visual builder */}
-              {activeFlow && (
-                <Card className="bg-card border-border rounded-2xl lg:col-span-3">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm font-medium text-foreground">
-                        {activeFlow.name}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
                         <Badge variant="outline" className={`rounded-lg ${statusStyles[activeFlow.status]}`}>
                           {activeFlow.status}
                         </Badge>
+                        {!activeFlow.is_primary && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 text-xs text-muted-foreground hover:text-accent"
+                            onClick={() => handleSetPrimary(activeFlow)}
+                          >
+                            <Star className="h-3.5 w-3.5 mr-1" />
+                            Tornar principal
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                          onClick={() => openEditFlow(activeFlow)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -728,7 +989,6 @@ export default function FlowsPage() {
                           )
                         })}
 
-                        {/* Add action button at the end */}
                         {nodes.length > 0 && (
                           <div className="flex justify-center py-1">
                             <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/50" />
@@ -758,9 +1018,11 @@ export default function FlowsPage() {
 
       {/* ---- New Flow Dialog ---- */}
       <Dialog open={showNewFlowDialog} onOpenChange={setShowNewFlowDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Novo Fluxo</DialogTitle>
+            <DialogTitle className="text-foreground">
+              {flows.length === 0 ? "Criar Fluxo Inicial" : "Novo Fluxo"}
+            </DialogTitle>
           </DialogHeader>
           <div className="flex flex-col gap-4 py-2">
             <div className="flex flex-col gap-2">
@@ -769,13 +1031,56 @@ export default function FlowsPage() {
                 id="flow-name"
                 value={newFlowName}
                 onChange={(e) => setNewFlowName(e.target.value)}
-                placeholder="Ex: Funil de Vendas"
+                placeholder={flows.length === 0 ? "Ex: Boas-vindas" : "Ex: Remarketing VIP"}
                 className="bg-secondary border-border rounded-xl text-foreground"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleCreateFlow()
                 }}
               />
             </div>
+
+            {/* Category selection - only for secondary flows */}
+            {flows.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <Label className="text-foreground">Tipo de fluxo</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {flowCategories.filter((c) => c.value !== "inicial").map((cat) => {
+                    const CatIcon = cat.icon
+                    const isSelected = newFlowCategory === cat.value
+                    return (
+                      <button
+                        key={cat.value}
+                        className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                          isSelected
+                            ? `${cat.color} ring-1 ring-accent`
+                            : "border-border bg-secondary/30 hover:bg-secondary/60"
+                        }`}
+                        onClick={() => setNewFlowCategory(cat.value)}
+                      >
+                        <CatIcon className={`h-4 w-4 shrink-0 ${isSelected ? cat.iconColor : "text-muted-foreground"}`} />
+                        <div className="min-w-0">
+                          <p className={`text-xs font-medium truncate ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                            {cat.label}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  {getCategoryConfig(newFlowCategory).description}
+                </p>
+              </div>
+            )}
+
+            {flows.length === 0 && (
+              <div className="flex items-start gap-3 rounded-xl bg-accent/5 border border-accent/20 p-3">
+                <Zap className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  Este sera o fluxo principal do seu bot. E o primeiro que seus usuarios vao ver ao interagir.
+                </p>
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -792,6 +1097,79 @@ export default function FlowsPage() {
             >
               {isCreatingFlow && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Criar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ---- Edit Flow Dialog ---- */}
+      <Dialog open={showEditFlowDialog} onOpenChange={setShowEditFlowDialog}>
+        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Editar Fluxo</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-2">
+              <Label className="text-foreground">Nome do fluxo</Label>
+              <Input
+                value={editFlowName}
+                onChange={(e) => setEditFlowName(e.target.value)}
+                className="bg-secondary border-border rounded-xl text-foreground"
+              />
+            </div>
+            {!activeFlow?.is_primary && (
+              <div className="flex flex-col gap-2">
+                <Label className="text-foreground">Tipo de fluxo</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {flowCategories.filter((c) => c.value !== "inicial").map((cat) => {
+                    const CatIcon = cat.icon
+                    const isSelected = editFlowCategory === cat.value
+                    return (
+                      <button
+                        key={cat.value}
+                        className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                          isSelected
+                            ? `${cat.color} ring-1 ring-accent`
+                            : "border-border bg-secondary/30 hover:bg-secondary/60"
+                        }`}
+                        onClick={() => setEditFlowCategory(cat.value)}
+                      >
+                        <CatIcon className={`h-4 w-4 shrink-0 ${isSelected ? cat.iconColor : "text-muted-foreground"}`} />
+                        <div className="min-w-0">
+                          <p className={`text-xs font-medium truncate ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                            {cat.label}
+                          </p>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+            {activeFlow?.is_primary && (
+              <div className="flex items-start gap-3 rounded-xl bg-accent/5 border border-accent/20 p-3">
+                <Crown className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  Este e o fluxo principal. Voce pode trocar o principal clicando em {"'Tornar principal'"} em outro fluxo.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="rounded-xl border-border text-foreground"
+              onClick={() => setShowEditFlowDialog(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
+              disabled={!editFlowName.trim() || isSavingFlow}
+              onClick={handleSaveFlow}
+            >
+              {isSavingFlow && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Salvar
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1077,7 +1455,7 @@ export default function FlowsPage() {
   )
 }
 
-// ---- Message Config Form (media + inline keyboard buttons) ----
+// ---- Message Config Form ----
 
 function MessageConfigForm({
   msgText,
