@@ -19,7 +19,7 @@ import {
   Trophy,
   ChevronLeft,
   ChevronRight,
-  Power,
+  LogOut,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -107,7 +107,7 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
         {/* Logo */}
-        <div className={cn("flex items-center justify-center px-4 pt-4 pb-1", collapsed && "px-2")}>
+        <div className={cn("flex items-center px-4 pt-4 pb-1", collapsed && "justify-center px-2")}>
           {collapsed ? (
             <DragonIcon className="h-7 w-7 shrink-0" />
           ) : (
@@ -165,7 +165,7 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                   className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive hover:bg-destructive/10"
                   aria-label="Sair"
                 >
-                  <Power className="h-3.5 w-3.5" />
+                  <LogOut className="h-3.5 w-3.5" />
                 </button>
               </div>
             )}
