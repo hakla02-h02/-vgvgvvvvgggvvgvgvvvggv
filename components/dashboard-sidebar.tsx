@@ -25,6 +25,7 @@ import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import Image from "next/image"
 import { BotSwitcher } from "@/components/bot-switcher"
 import { DragonIcon } from "@/components/dragon-icon"
 import { useAuth } from "@/lib/auth-context"
@@ -106,10 +107,17 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
         {/* Logo */}
-        <div className={cn("flex items-center gap-2.5 px-4 pt-4 pb-1", collapsed && "justify-center px-2")}>
-          <DragonIcon className="h-7 w-7 shrink-0" />
-          {!collapsed && (
-            <span className="text-base font-bold text-foreground tracking-tight">Dragon</span>
+        <div className={cn("flex items-center justify-center px-4 pt-4 pb-1", collapsed && "px-2")}>
+          {collapsed ? (
+            <DragonIcon className="h-7 w-7 shrink-0" />
+          ) : (
+            <Image
+              src="/images/dragon-logo.png"
+              alt="Dragon"
+              width={140}
+              height={36}
+              className="h-8 w-auto object-contain"
+            />
           )}
         </div>
 
@@ -175,10 +183,10 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                 {/* Category divider */}
                 {!collapsed ? (
                   <div className="flex items-center gap-2.5 px-2 pb-2 pt-1">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/60">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-accent">
                       {section.category}
                     </span>
-                    <div className="h-px flex-1 bg-border/50" />
+                    <div className="h-px flex-1 bg-accent/15" />
                   </div>
                 ) : (
                   <div className="flex justify-center py-1.5">
