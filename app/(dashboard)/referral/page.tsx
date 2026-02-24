@@ -28,6 +28,7 @@ interface ReferralUser {
 
 export default function ReferralPage() {
   const { session } = useAuth()
+  console.log("[v0] ReferralPage mounted, session:", session?.userId || "no session")
   const userId = session?.userId
   const [couponInput, setCouponInput] = useState("")
   const [isCreating, setIsCreating] = useState(false)
