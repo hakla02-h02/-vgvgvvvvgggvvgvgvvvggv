@@ -23,12 +23,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Power,
+  Settings,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { BotSwitcher } from "@/components/bot-switcher"
 import { useAuth } from "@/lib/auth-context"
 
@@ -92,92 +92,47 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
   const [collapsed, setCollapsed] = useState(false)
   const { session, logout } = useAuth()
 
+  const userInitial = session?.name
+    ? session.name.charAt(0).toUpperCase()
+    : session?.email
+      ? session.email.charAt(0).toUpperCase()
+      : "U"
+
+  const userName = session?.name || session?.email?.split("@")[0] || "Usuario"
+
   return (
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "flex h-screen flex-col border-r border-border bg-sidebar transition-all duration-300",
-          collapsed ? "w-16" : "w-64"
+          "flex h-screen flex-col bg-sidebar transition-all duration-300 relative",
+          collapsed ? "w-[68px]" : "w-[260px]"
         )}
       >
-        {/* User Profile + Bot Switcher card */}
-        <div className="border-b border-border px-2 py-3">
-          <div className={cn(
-            "rounded-xl bg-secondary/50 p-3 flex flex-col gap-2.5",
-            collapsed && "items-center p-2"
-          )}>
-            {/* Top row: Avatar + Name + Power button */}
-            {collapsed ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link
-                    href="/settings"
-                    onClick={onNavigate}
-                    className="rounded-xl transition-opacity hover:opacity-80"
-                  >
-                    <Avatar className="h-9 w-9 bg-secondary rounded-xl">
-                      <AvatarFallback className="bg-secondary text-foreground text-sm font-bold rounded-xl">
-                        {session?.name
-                          ? session.name.charAt(0).toUpperCase()
-                          : session?.email
-                            ? session.email.charAt(0).toUpperCase()
-                            : "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                  {session?.name || session?.email || "Minha conta"}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <div className="flex items-center gap-3">
-                <Link
-                  href="/settings"
-                  onClick={onNavigate}
-                  className="rounded-xl transition-opacity hover:opacity-80 shrink-0"
-                >
-                  <Avatar className="h-9 w-9 bg-secondary rounded-xl">
-                    <AvatarFallback className="bg-secondary text-foreground text-sm font-bold rounded-xl">
-                      {session?.name
-                        ? session.name.charAt(0).toUpperCase()
-                        : session?.email
-                          ? session.email.charAt(0).toUpperCase()
-                          : "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                </Link>
-                <span className="text-sm font-semibold text-foreground truncate flex-1">
-                  {session?.name || session?.email?.split("@")[0] || "Usuario"}
-                </span>
-                <button
-                  onClick={logout}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-destructive/10 text-destructive transition-colors hover:bg-destructive/20"
-                  aria-label="Sair"
-                >
-                  <Power className="h-4 w-4" />
-                </button>
-              </div>
-            )}
+        {/* Subtle right edge line */}
+        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
-            {/* Bot Switcher dropdown */}
-            <BotSwitcher collapsed={collapsed} />
-          </div>
+        {/* Bot Switcher area */}
+        <div className={cn("px-3 pt-4 pb-2", collapsed && "px-2")}>
+          <BotSwitcher collapsed={collapsed} />
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 py-2">
-          <nav className="flex flex-col gap-4 px-2">
+        <ScrollArea className="flex-1 py-1">
+          <nav className={cn("flex flex-col gap-5", collapsed ? "px-2" : "px-3")}>
             {navSections.map((section) => (
               <div key={section.category} className="flex flex-col gap-0.5">
-                {/* Category label */}
-                {!collapsed && (
-                  <span className="px-3 pb-1.5 pt-1 text-[11px] font-semibold uppercase tracking-wider text-accent">
-                    {section.category}
-                  </span>
-                )}
-                {collapsed && (
-                  <div className="mx-auto mb-1 h-px w-6 bg-border" />
+                {/* Category divider */}
+                {!collapsed ? (
+                  <div className="flex items-center gap-2.5 px-2 pb-2 pt-1">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/60">
+                      {section.category}
+                    </span>
+                    <div className="h-px flex-1 bg-border/50" />
+                  </div>
+                ) : (
+                  <div className="flex justify-center py-1.5">
+                    <div className="h-px w-5 bg-border/60" />
+                  </div>
                 )}
 
                 {/* Items */}
@@ -191,16 +146,20 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                       <span
                         key={item.href}
                         className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-2.5 opacity-30 cursor-not-allowed select-none",
-                          collapsed && "justify-center px-2"
+                          "group relative flex items-center gap-3 rounded-lg px-2.5 py-2 opacity-25 cursor-not-allowed select-none",
+                          collapsed && "justify-center px-0"
                         )}
                       >
-                        <item.icon className="h-5 w-5 shrink-0" />
+                        <span className={cn(
+                          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+                          collapsed ? "h-9 w-9" : ""
+                        )}>
+                          <item.icon className="h-[18px] w-[18px]" />
+                        </span>
                         {!collapsed && (
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-sm font-medium text-foreground truncate">{item.label}</span>
-                            <span className="text-[11px] text-muted-foreground truncate">{item.description}</span>
-                          </div>
+                          <span className="text-[13px] font-medium text-foreground/70 truncate">
+                            {item.label}
+                          </span>
                         )}
                       </span>
                     )
@@ -226,24 +185,37 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                       href={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors",
-                        collapsed && "justify-center px-2",
+                        "group relative flex items-center gap-3 rounded-lg px-2.5 py-2 transition-all duration-200",
+                        collapsed && "justify-center px-0",
                         isActive
-                          ? "bg-sidebar-accent text-sidebar-primary"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          ? "bg-accent/10 text-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                       )}
                     >
-                      <item.icon className={cn("h-5 w-5 shrink-0", isActive && "text-accent")} />
+                      {/* Active indicator bar */}
+                      {isActive && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-accent" />
+                      )}
+
+                      <span className={cn(
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
+                        collapsed ? "h-9 w-9" : "",
+                        isActive
+                          ? "text-accent"
+                          : "text-muted-foreground group-hover:text-foreground"
+                      )}>
+                        <item.icon className="h-[18px] w-[18px]" />
+                      </span>
+
                       {!collapsed && (
-                        <div className="flex flex-col min-w-0">
-                          <span className={cn(
-                            "text-sm font-medium truncate",
-                            isActive ? "text-foreground" : "text-foreground/90"
-                          )}>
-                            {item.label}
-                          </span>
-                          <span className="text-[11px] text-muted-foreground truncate">{item.description}</span>
-                        </div>
+                        <span className={cn(
+                          "text-[13px] font-medium truncate transition-colors duration-200",
+                          isActive
+                            ? "text-foreground"
+                            : "text-muted-foreground group-hover:text-foreground"
+                        )}>
+                          {item.label}
+                        </span>
                       )}
                     </Link>
                   )
@@ -267,15 +239,87 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           </nav>
         </ScrollArea>
 
-        {/* Collapse toggle */}
-        <div className="border-t border-border p-2">
+        {/* Bottom area: User profile + collapse */}
+        <div className={cn(
+          "mt-auto flex flex-col gap-1 px-3 pb-3 pt-2",
+          collapsed && "px-2 items-center"
+        )}>
+          {/* User profile row */}
+          <div className={cn(
+            "flex items-center gap-2 rounded-lg p-2 transition-colors",
+            collapsed ? "justify-center" : ""
+          )}>
+            {collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href="/settings"
+                    onClick={onNavigate}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent text-xs font-bold transition-colors hover:bg-accent/25"
+                  >
+                    {userInitial}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                  {userName}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <>
+                <Link
+                  href="/settings"
+                  onClick={onNavigate}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent text-xs font-bold transition-colors hover:bg-accent/25"
+                >
+                  {userInitial}
+                </Link>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[13px] font-medium text-foreground truncate">
+                    {userName}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link
+                        href="/settings"
+                        onClick={onNavigate}
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary/60"
+                      >
+                        <Settings className="h-3.5 w-3.5" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-popover text-popover-foreground">
+                      Configuracoes
+                    </TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={logout}
+                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive hover:bg-destructive/10"
+                        aria-label="Sair"
+                      >
+                        <Power className="h-3.5 w-3.5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="bg-popover text-popover-foreground">
+                      Sair
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Collapse toggle */}
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex w-full justify-center text-muted-foreground hover:text-foreground rounded-xl"
+            className="hidden md:flex w-full justify-center text-muted-foreground/50 hover:text-foreground hover:bg-transparent h-7"
           >
-            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+            {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           </Button>
         </div>
       </aside>
