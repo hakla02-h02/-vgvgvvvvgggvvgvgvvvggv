@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { BotSwitcher } from "@/components/bot-switcher"
+import { DragonIcon } from "@/components/dragon-icon"
 import { useAuth } from "@/lib/auth-context"
 
 type NavItem = {
@@ -104,8 +105,16 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         {/* Subtle right edge line */}
         <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
+        {/* Logo */}
+        <div className={cn("flex items-center gap-2.5 px-4 pt-4 pb-1", collapsed && "justify-center px-2")}>
+          <DragonIcon className="h-7 w-7 shrink-0" />
+          {!collapsed && (
+            <span className="text-base font-bold text-foreground tracking-tight">Dragon</span>
+          )}
+        </div>
+
         {/* User Profile + Bot Switcher */}
-        <div className={cn("px-3 pt-4 pb-2", collapsed && "px-2")}>
+        <div className={cn("px-3 pt-2 pb-2", collapsed && "px-2")}>
           <div className={cn(
             "rounded-xl bg-secondary/30 p-3 flex flex-col gap-3",
             collapsed && "items-center p-2 gap-2"

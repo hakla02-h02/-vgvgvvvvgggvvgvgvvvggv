@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     const referredIds = referrals.map((r) => r.referred_id)
     const { data: users } = await supabase
       .from("users")
-      .select("id, name, email, created_at")
+      .select("id, name, email, phone, banned, created_at")
       .in("id", referredIds)
 
     const usersMap = new Map(users?.map((u) => [u.id, u]) || [])
@@ -36,9 +36,14 @@ export async function GET(req: NextRequest) {
       const user = usersMap.get(r.referred_id)
       return {
         id: r.id,
+        referred_id: r.referred_id,
         name: user?.name || "Usuario",
         email: user?.email || "",
-        created_at: r.created_at,
+        phone: user?.phone || "",
+        banned: user?.banned || false,
+        user_created_at: user?.created_at || r.created_at,
+        referral_date: r.created_at,
+        coupon_code: r.coupon_code,
       }
     })
 

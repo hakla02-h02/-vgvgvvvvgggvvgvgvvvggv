@@ -7,7 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
-import { Users, DollarSign, Copy, Link2, Check, Loader2, UserPlus, Pencil, X, Crown, ShoppingBag } from "lucide-react"
+import { Users, DollarSign, Copy, Link2, Check, Loader2, UserPlus, Pencil, X, Crown, ShoppingBag, Eye, Phone, Mail, Calendar, Shield, ChevronRight } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 
 const fetcher = async (url: string) => {
@@ -21,16 +23,21 @@ const fetcher = async (url: string) => {
 
 interface ReferralUser {
   id: string
+  referred_id: string
   name: string
   email: string
-  created_at: string
+  phone: string
+  banned: boolean
+  user_created_at: string
+  referral_date: string
+  coupon_code: string
 }
 
 export default function ReferralPage() {
   const { session } = useAuth()
-  console.log("[v0] ReferralPage mounted, session:", session?.userId || "no session")
   const userId = session?.userId
   const [couponInput, setCouponInput] = useState("")
+  const [selectedUser, setSelectedUser] = useState<ReferralUser | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [createError, setCreateError] = useState("")
   const [copied, setCopied] = useState(false)
@@ -385,10 +392,17 @@ export default function ReferralPage() {
           {/* Referrals List */}
           <Card className="bg-card border-border rounded-2xl">
             <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <UserPlus className="h-4 w-4 text-accent" />
-                Seus Indicados
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <UserPlus className="h-4 w-4 text-accent" />
+                  Seus Indicados
+                </CardTitle>
+                {referrals.length > 0 && (
+                  <Badge variant="secondary" className="text-xs font-medium rounded-lg">
+                    {referrals.length} {referrals.length === 1 ? "pessoa" : "pessoas"}
+                  </Badge>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {referrals.length === 0 ? (
@@ -408,20 +422,56 @@ export default function ReferralPage() {
                   {referrals.map((ref) => (
                     <div
                       key={ref.id}
-                      className="flex items-center justify-between rounded-xl bg-secondary p-3"
+                      className="group flex items-center justify-between rounded-xl bg-secondary/70 p-3 transition-colors hover:bg-secondary"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-sm font-bold text-accent">
-                          {ref.name.charAt(0).toUpperCase()}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                        {/* Avatar */}
+                        <div className="relative shrink-0">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
+                            {ref.name.charAt(0).toUpperCase()}
+                          </div>
+                          {/* Status dot */}
+                          <span
+                            className={cn(
+                              "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card",
+                              ref.banned ? "bg-destructive" : "bg-accent"
+                            )}
+                          />
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-foreground">{ref.name}</p>
-                          <p className="text-xs text-muted-foreground">{ref.email}</p>
+                        {/* Info */}
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-medium text-foreground truncate">{ref.name}</p>
+                            <Badge
+                              variant="outline"
+                              className={cn(
+                                "text-[10px] px-1.5 py-0 h-4 rounded-md border shrink-0",
+                                ref.banned
+                                  ? "border-destructive/30 text-destructive"
+                                  : "border-accent/30 text-accent"
+                              )}
+                            >
+                              {ref.banned ? "Inativo" : "Ativo"}
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">{ref.email}</p>
                         </div>
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatDate(ref.created_at)}
-                      </span>
+                      {/* Right side */}
+                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                        <div className="text-right hidden sm:block">
+                          <p className="text-xs text-muted-foreground">Indicado em</p>
+                          <p className="text-xs font-medium text-foreground">{formatDate(ref.referral_date)}</p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setSelectedUser(ref)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -430,6 +480,138 @@ export default function ReferralPage() {
           </Card>
         </div>
       </ScrollArea>
+
+      {/* User Detail Modal */}
+      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
+        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Detalhes do Indicado</DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="flex flex-col gap-5">
+              {/* Profile header */}
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-lg font-bold text-accent">
+                    {selectedUser.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span
+                    className={cn(
+                      "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card",
+                      selectedUser.banned ? "bg-destructive" : "bg-accent"
+                    )}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-semibold text-foreground truncate">{selectedUser.name}</p>
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "text-[11px] px-2 py-0.5 rounded-md border mt-1",
+                      selectedUser.banned
+                        ? "border-destructive/30 text-destructive bg-destructive/5"
+                        : "border-accent/30 text-accent bg-accent/5"
+                    )}
+                  >
+                    {selectedUser.banned ? "Conta Inativa" : "Conta Ativa"}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Info list */}
+              <div className="flex flex-col gap-3 rounded-xl bg-secondary/50 p-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-muted-foreground">Email</p>
+                    <p className="text-sm text-foreground truncate">{selectedUser.email}</p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-border/50" />
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-muted-foreground">Telefone</p>
+                    <p className="text-sm text-foreground">{selectedUser.phone || "Nao informado"}</p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-border/50" />
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-muted-foreground">Data de Cadastro</p>
+                    <p className="text-sm text-foreground">{formatDate(selectedUser.user_created_at)}</p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-border/50" />
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <Link2 className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-muted-foreground">Indicado via Cupom</p>
+                    <p className="text-sm text-foreground font-mono">{selectedUser.coupon_code}</p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-border/50" />
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-muted-foreground">Data da Indicacao</p>
+                    <p className="text-sm text-foreground">{formatDate(selectedUser.referral_date)}</p>
+                  </div>
+                </div>
+
+                <div className="h-px bg-border/50" />
+
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] text-muted-foreground">Status da Conta</p>
+                    <p className={cn(
+                      "text-sm font-medium",
+                      selectedUser.banned ? "text-destructive" : "text-accent"
+                    )}>
+                      {selectedUser.banned ? "Banido / Inativo" : "Ativo"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Earnings estimate */}
+              <div className="rounded-xl bg-accent/5 border border-accent/10 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Comissao por venda deste indicado</p>
+                    <p className="text-lg font-bold text-accent mt-0.5">R$ 0,10</p>
+                  </div>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
+                    <DollarSign className="h-5 w-5 text-accent" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
