@@ -23,7 +23,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Power,
-  Settings,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -111,9 +110,58 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         {/* Subtle right edge line */}
         <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
-        {/* Bot Switcher area */}
+        {/* User Profile + Bot Switcher */}
         <div className={cn("px-3 pt-4 pb-2", collapsed && "px-2")}>
-          <BotSwitcher collapsed={collapsed} />
+          <div className={cn(
+            "rounded-xl bg-secondary/30 p-3 flex flex-col gap-3",
+            collapsed && "items-center p-2 gap-2"
+          )}>
+            {/* Profile row */}
+            {collapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href="/settings"
+                    onClick={onNavigate}
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent text-xs font-bold transition-colors hover:bg-accent/25 ring-2 ring-accent/20"
+                  >
+                    {userInitial}
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                  {userName}
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/settings"
+                  onClick={onNavigate}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent text-sm font-bold transition-colors hover:bg-accent/25 ring-2 ring-accent/20"
+                >
+                  {userInitial}
+                </Link>
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-[13px] font-semibold text-foreground truncate">
+                    {userName}
+                  </span>
+                  <span className="text-[11px] text-muted-foreground truncate">
+                    {session?.email || ""}
+                  </span>
+                </div>
+                <button
+                  onClick={logout}
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive hover:bg-destructive/10"
+                  aria-label="Sair"
+                >
+                  <Power className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Bot Switcher */}
+            <BotSwitcher collapsed={collapsed} />
+          </div>
         </div>
 
         {/* Navigation */}
@@ -239,80 +287,8 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
           </nav>
         </ScrollArea>
 
-        {/* Bottom area: User profile + collapse */}
-        <div className={cn(
-          "mt-auto flex flex-col gap-1 px-3 pb-3 pt-2",
-          collapsed && "px-2 items-center"
-        )}>
-          {/* User profile row */}
-          <div className={cn(
-            "flex items-center gap-2 rounded-lg p-2 transition-colors",
-            collapsed ? "justify-center" : ""
-          )}>
-            {collapsed ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Link
-                    href="/settings"
-                    onClick={onNavigate}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent text-xs font-bold transition-colors hover:bg-accent/25"
-                  >
-                    {userInitial}
-                  </Link>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="bg-popover text-popover-foreground">
-                  {userName}
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <>
-                <Link
-                  href="/settings"
-                  onClick={onNavigate}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent text-xs font-bold transition-colors hover:bg-accent/25"
-                >
-                  {userInitial}
-                </Link>
-                <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-[13px] font-medium text-foreground truncate">
-                    {userName}
-                  </span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Link
-                        href="/settings"
-                        onClick={onNavigate}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-foreground hover:bg-secondary/60"
-                      >
-                        <Settings className="h-3.5 w-3.5" />
-                      </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-popover text-popover-foreground">
-                      Configuracoes
-                    </TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        onClick={logout}
-                        className="flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive hover:bg-destructive/10"
-                        aria-label="Sair"
-                      >
-                        <Power className="h-3.5 w-3.5" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-popover text-popover-foreground">
-                      Sair
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Collapse toggle */}
+        {/* Collapse toggle */}
+        <div className={cn("px-3 pb-3 pt-1", collapsed && "px-2")}>
           <Button
             variant="ghost"
             size="sm"
