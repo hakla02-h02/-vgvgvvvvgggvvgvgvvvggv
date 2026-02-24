@@ -22,6 +22,7 @@ import {
   Star, Zap, RotateCcw, ShoppingBag, UserPlus, Mail, Target, Sparkles, Crown,
   Search, Settings2, Clock, Bell, Tag, Percent, Globe, FileText, Heart,
   Send, CalendarDays, Repeat, Filter, MessageCircle, AlertCircle,
+  ExternalLink, Workflow, CheckCircle2,
 } from "lucide-react"
 import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
@@ -42,7 +43,7 @@ interface Flow {
   updated_at: string
 }
 
-type NodeType = "trigger" | "message" | "delay" | "condition" | "payment" | "action"
+type NodeType = "trigger" | "message" | "delay" | "condition" | "payment" | "action" | "redirect"
 
 interface InlineButton {
   text: string
@@ -111,12 +112,18 @@ const categoryConfigs: CategoryConfigDef[] = [
   {
     category: "inicial",
     title: "Configuracoes do Fluxo Inicial",
-    description: "O primeiro contato do usuario com o bot. Configure a experiencia de boas-vindas.",
+    description: "O primeiro contato do usuario com o bot. Configure a experiencia de boas-vindas e vincule fluxos secundarios.",
     fields: [
       { key: "welcome_message", label: "Mensagem de boas-vindas", type: "textarea", placeholder: "Ola! Bem-vindo ao nosso bot...", icon: MessageCircle, description: "Mensagem exibida ao iniciar" },
       { key: "auto_start", label: "Iniciar automaticamente", type: "toggle", icon: Zap, description: "Dispara ao primeiro contato" },
       { key: "collect_name", label: "Coletar nome do usuario", type: "toggle", icon: UserPlus, description: "Pedir nome antes de prosseguir" },
+      { key: "collect_email", label: "Coletar e-mail", type: "toggle", icon: Mail, description: "Pedir e-mail antes de prosseguir" },
       { key: "main_menu_enabled", label: "Exibir menu principal", type: "toggle", icon: GitBranch, description: "Mostra opcoes apos boas-vindas" },
+      { key: "fallback_message", label: "Mensagem de fallback", type: "textarea", placeholder: "Desculpe, nao entendi. Tente novamente.", icon: AlertCircle, description: "Quando o bot nao entende o usuario" },
+      { key: "inactivity_timeout_min", label: "Timeout de inatividade (min)", type: "number", placeholder: "10", icon: Clock, description: "Minutos sem resposta para encerrar" },
+      { key: "inactivity_message", label: "Mensagem de inatividade", type: "textarea", placeholder: "Parece que voce saiu. Se precisar, e so me chamar!", icon: Timer, description: "Enviada ao expirar o timeout" },
+      { key: "show_typing", label: "Simular digitando", type: "toggle", icon: MessageCircle, description: "Exibir 'digitando...' antes das respostas" },
+      { key: "typing_delay_sec", label: "Delay de digitacao (seg)", type: "number", placeholder: "2", icon: Clock, description: "Tempo do indicador de digitacao" },
     ],
   },
   {
@@ -250,6 +257,7 @@ const getCategoryConfigDef = (cat: FlowCategory) => categoryConfigs.find((c) => 
 const nodeIcons: Record<NodeType, React.ElementType> = {
   trigger: DragonTriggerIcon, message: MessageSquare, delay: Timer,
   condition: Split, payment: CreditCard, action: Users,
+  redirect: ExternalLink,
 }
 
 const nodeColors: Record<NodeType, string> = {
@@ -259,11 +267,13 @@ const nodeColors: Record<NodeType, string> = {
   condition: "border-purple-500/30 bg-purple-500/5",
   payment: "border-success/30 bg-success/5",
   action: "border-cyan-500/30 bg-cyan-500/5",
+  redirect: "border-orange-500/30 bg-orange-500/5",
 }
 
 const nodeIconColors: Record<NodeType, string> = {
   trigger: "text-accent", message: "text-blue-400", delay: "text-warning",
   condition: "text-purple-400", payment: "text-success", action: "text-cyan-400",
+  redirect: "text-orange-400",
 }
 
 const statusStyles: Record<string, string> = {
@@ -316,6 +326,14 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     description: "Executar uma acao automatica",
     configFields: [
       { key: "action_name", label: "Nome da acao", placeholder: "Ex: Adicionar ao grupo VIP", inputType: "text" },
+    ],
+  },
+  {
+    type: "redirect",
+    label: "Redirecionar para Fluxo",
+    description: "Enviar usuario para outro fluxo secundario",
+    configFields: [
+      { key: "target_flow_id", label: "Fluxo de destino", placeholder: "Selecione o fluxo...", inputType: "text" },
     ],
   },
 ]
@@ -690,6 +708,12 @@ export default function FlowsPage() {
       label = nodeConfigValues.description
     } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
       label = nodeConfigValues.action_name
+    } else if (selectedTemplate.type === "redirect" && nodeConfigValues.target_flow_name) {
+      label = `Ir para: ${nodeConfigValues.target_flow_name}`
+      config = {
+        target_flow_id: nodeConfigValues.target_flow_id,
+        target_flow_name: nodeConfigValues.target_flow_name,
+      }
     }
 
     const newPosition = nodes.length
@@ -770,6 +794,12 @@ export default function FlowsPage() {
         buttons: validButtons.length > 0 ? JSON.stringify(validButtons) : "",
       }
       finalLabel = msgText ? (msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText) : "Mensagem"
+    } else if (editingNode.type === "redirect") {
+      finalConfig = {
+        target_flow_id: editNodeConfig.target_flow_id,
+        target_flow_name: editNodeConfig.target_flow_name,
+      }
+      finalLabel = editNodeConfig.target_flow_name ? `Ir para: ${editNodeConfig.target_flow_name}` : "Redirecionar"
     }
 
     const { error } = await supabase
@@ -1184,6 +1214,62 @@ export default function FlowsPage() {
                               </Button>
                             </div>
                             <p className="text-xs text-muted-foreground mb-4">{configDef.description}</p>
+
+                            {/* ---- FLUXOS VINCULADOS (only for primary flow) ---- */}
+                            {activeFlow.is_primary && secondaryFlows.length > 0 && (
+                              <div className="mb-4 rounded-xl border border-border/50 bg-background/30 p-3">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Workflow className="h-4 w-4 text-orange-400" />
+                                  <h4 className="text-xs font-semibold text-foreground">Fluxos Vinculados</h4>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    ({nodes.filter((n) => n.type === "redirect").length} conectados)
+                                  </span>
+                                </div>
+                                <p className="text-[10px] text-muted-foreground mb-2.5">
+                                  Fluxos secundarios que o usuario pode ser redirecionado a partir deste fluxo. Adicione um bloco "Redirecionar para Fluxo" no builder abaixo.
+                                </p>
+                                <div className="flex flex-col gap-1.5">
+                                  {secondaryFlows.map((sf) => {
+                                    const sfCat = getCategoryConfig(sf.category)
+                                    const SFIcon = sfCat.icon
+                                    const isLinked = nodes.some((n) => n.type === "redirect" && n.config?.target_flow_id === sf.id)
+                                    return (
+                                      <div
+                                        key={sf.id}
+                                        className={`flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-colors ${
+                                          isLinked ? "bg-orange-500/5 border border-orange-500/20" : "bg-secondary/30 border border-transparent"
+                                        }`}
+                                      >
+                                        <div className={`flex h-7 w-7 items-center justify-center rounded-md border shrink-0 ${sfCat.color}`}>
+                                          <SFIcon className={`h-3.5 w-3.5 ${sfCat.iconColor}`} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-medium text-foreground truncate">{sf.name}</p>
+                                          <p className="text-[10px] text-muted-foreground">{sfCat.label}</p>
+                                        </div>
+                                        {isLinked ? (
+                                          <Badge className="bg-orange-500/15 text-orange-400 border-orange-500/30 rounded-md text-[9px] px-1.5 py-0 shrink-0">
+                                            Conectado
+                                          </Badge>
+                                        ) : (
+                                          <span className="text-[10px] text-muted-foreground shrink-0">Nao vinculado</span>
+                                        )}
+                                      </div>
+                                    )
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {activeFlow.is_primary && secondaryFlows.length === 0 && (
+                              <div className="mb-4 rounded-xl border border-dashed border-border p-4 flex flex-col items-center gap-2">
+                                <Workflow className="h-5 w-5 text-muted-foreground" />
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Crie fluxos secundarios (remarketing, follow-up, etc.) para poder vincular ao fluxo principal.
+                                </p>
+                              </div>
+                            )}
+
                             <div className="flex flex-col gap-3">
                               {configDef.fields.map((field) => {
                                 const FieldIcon = field.icon
@@ -1301,6 +1387,26 @@ export default function FlowsPage() {
                                           {"botao(es)"}
                                         </span>
                                       )}
+                                    </div>
+                                  )}
+                                  {node.type === "redirect" && node.config?.target_flow_name && (
+                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                      <ExternalLink className="h-3 w-3 text-orange-400" />
+                                      <span className="text-xs text-orange-400 font-medium">
+                                        {node.config.target_flow_name as string}
+                                      </span>
+                                      {(() => {
+                                        const targetFlow = flows.find((f) => f.id === node.config?.target_flow_id)
+                                        if (targetFlow) {
+                                          const tCat = getCategoryConfig(targetFlow.category)
+                                          return (
+                                            <Badge variant="outline" className={`text-[9px] px-1 py-0 rounded ${tCat.color}`}>
+                                              {tCat.label}
+                                            </Badge>
+                                          )
+                                        }
+                                        return null
+                                      })()}
                                     </div>
                                   )}
                                 </div>
@@ -1589,6 +1695,51 @@ export default function FlowsPage() {
                   updateMsgButton={updateMsgButton}
                   removeMsgButton={removeMsgButton}
                 />
+              ) : selectedTemplate.type === "redirect" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Selecione o fluxo de destino</Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    O usuario sera redirecionado para este fluxo ao chegar nesta etapa.
+                  </p>
+                  {flows.filter((f) => f.id !== activeFlow?.id).length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-6">
+                      <Workflow className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground text-center">
+                        Nenhum outro fluxo disponivel. Crie fluxos secundarios primeiro.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-[250px] overflow-y-auto pr-1">
+                      {flows.filter((f) => f.id !== activeFlow?.id).map((f) => {
+                        const fCat = getCategoryConfig(f.category)
+                        const FCatIcon = fCat.icon
+                        const isSelected = nodeConfigValues.target_flow_id === f.id
+                        return (
+                          <button
+                            key={f.id}
+                            className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all ${
+                              isSelected
+                                ? `${fCat.color} ring-1 ring-accent`
+                                : "border-border bg-secondary/30 hover:bg-secondary/60"
+                            }`}
+                            onClick={() => setNodeConfigValues((prev) => ({ ...prev, target_flow_id: f.id, target_flow_name: f.name }))}
+                          >
+                            <div className={`flex h-9 w-9 items-center justify-center rounded-lg border shrink-0 ${fCat.color}`}>
+                              <FCatIcon className={`h-4 w-4 ${fCat.iconColor}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{fCat.label}{f.is_primary ? " — Principal" : ""}</p>
+                            </div>
+                            {isSelected && (
+                              <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               ) : selectedTemplate.configFields.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Este bloco nao precisa de configuracao.
@@ -1634,7 +1785,7 @@ export default function FlowsPage() {
                 </Button>
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  disabled={isAddingNode || (selectedTemplate.type === "message" && !msgText.trim())}
+                  disabled={isAddingNode || (selectedTemplate.type === "message" && !msgText.trim()) || (selectedTemplate.type === "redirect" && !nodeConfigValues.target_flow_id)}
                   onClick={handleAddNode}
                 >
                   {isAddingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1669,6 +1820,51 @@ export default function FlowsPage() {
                   updateMsgButton={updateMsgButton}
                   removeMsgButton={removeMsgButton}
                 />
+              ) : editingNode.type === "redirect" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Selecione o fluxo de destino</Label>
+                  {flows.filter((f) => f.id !== activeFlow?.id).length === 0 ? (
+                    <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border p-6">
+                      <Workflow className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground text-center">
+                        Nenhum outro fluxo disponivel.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-2 max-h-[250px] overflow-y-auto pr-1">
+                      {flows.filter((f) => f.id !== activeFlow?.id).map((f) => {
+                        const fCat = getCategoryConfig(f.category)
+                        const FCatIcon = fCat.icon
+                        const isSelected = editNodeConfig.target_flow_id === f.id
+                        return (
+                          <button
+                            key={f.id}
+                            className={`flex items-center gap-3 rounded-xl border px-3 py-3 text-left transition-all ${
+                              isSelected
+                                ? `${fCat.color} ring-1 ring-accent`
+                                : "border-border bg-secondary/30 hover:bg-secondary/60"
+                            }`}
+                            onClick={() => {
+                              setEditNodeConfig((prev) => ({ ...prev, target_flow_id: f.id, target_flow_name: f.name }))
+                              setEditNodeLabel(`Ir para: ${f.name}`)
+                            }}
+                          >
+                            <div className={`flex h-9 w-9 items-center justify-center rounded-lg border shrink-0 ${fCat.color}`}>
+                              <FCatIcon className={`h-4 w-4 ${fCat.iconColor}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{f.name}</p>
+                              <p className="text-[11px] text-muted-foreground">{fCat.label}{f.is_primary ? " — Principal" : ""}</p>
+                            </div>
+                            {isSelected && (
+                              <CheckCircle2 className="h-5 w-5 text-accent shrink-0" />
+                            )}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <>
                   <div className="flex flex-col gap-2">
