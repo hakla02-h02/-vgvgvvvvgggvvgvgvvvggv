@@ -325,18 +325,38 @@ export default function FlowsPage() {
     const isFirst = flows.length === 0
     const category = isFirst ? "inicial" : newFlowCategory
 
-    const { data, error } = await supabase
+    // Try with category/is_primary columns first, fallback without them
+    let insertPayload: Record<string, unknown> = {
+      bot_id: selectedBot.id,
+      user_id: session.userId,
+      name: newFlowName.trim(),
+      status: "ativo",
+      category,
+      is_primary: isFirst,
+    }
+
+    let { data, error } = await supabase
       .from("flows")
-      .insert({
+      .insert(insertPayload)
+      .select()
+      .single()
+
+    // If columns don't exist yet, retry without them
+    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.code === "42703")) {
+      insertPayload = {
         bot_id: selectedBot.id,
         user_id: session.userId,
         name: newFlowName.trim(),
         status: "ativo",
-        category,
-        is_primary: isFirst,
-      })
-      .select()
-      .single()
+      }
+      const retry = await supabase
+        .from("flows")
+        .insert(insertPayload)
+        .select()
+        .single()
+      data = retry.data
+      error = retry.error
+    }
 
     if (error) {
       console.error("Error creating flow:", error)
@@ -374,12 +394,13 @@ export default function FlowsPage() {
       // If we deleted the primary, promote the first remaining
       if (activeFlow.is_primary && updated.length > 0) {
         updated[0] = { ...updated[0], is_primary: true, category: "inicial" }
-        // Update in DB
+        // Update in DB (try with new cols, ignore if they don't exist)
         supabase
           .from("flows")
           .update({ is_primary: true, category: "inicial" })
           .eq("id", updated[0].id)
-          .then()
+          .then(() => {})
+          .catch(() => {})
       }
       if (updated.length > 0) {
         setActiveFlow(updated[0])
@@ -398,16 +419,21 @@ export default function FlowsPage() {
     // Remove primary from current
     const oldPrimary = flows.find((f) => f.is_primary)
     if (oldPrimary) {
+      // Try updating new columns, ignore errors if they don't exist
       await supabase
         .from("flows")
         .update({ is_primary: false })
         .eq("id", oldPrimary.id)
+        .then(() => {})
+        .catch(() => {})
     }
-    // Set new primary
+    // Set new primary (try with new columns)
     await supabase
       .from("flows")
       .update({ is_primary: true, category: "inicial" })
       .eq("id", flow.id)
+      .then(() => {})
+      .catch(() => {})
 
     setFlows((prev) =>
       prev.map((f) => ({
@@ -430,7 +456,7 @@ export default function FlowsPage() {
     if (!activeFlow) return
     setIsSavingFlow(true)
 
-    const { error } = await supabase
+    let { error } = await supabase
       .from("flows")
       .update({
         name: editFlowName.trim(),
@@ -438,6 +464,18 @@ export default function FlowsPage() {
         updated_at: new Date().toISOString(),
       })
       .eq("id", activeFlow.id)
+
+    // Fallback without category column
+    if (error && (error.message?.includes("category") || error.code === "42703")) {
+      const retry = await supabase
+        .from("flows")
+        .update({
+          name: editFlowName.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", activeFlow.id)
+      error = retry.error
+    }
 
     if (error) {
       console.error("Error updating flow:", error)
