@@ -180,45 +180,75 @@ async function processWebhook({
       })
   }
 
-  // 4. Buscar fluxo ativo
-  const { data: flows } = await supabase
+  // 4. Buscar fluxo principal (is_primary=true) OU o mais antigo
+  const { data: allFlows } = await supabase
     .from("flows")
-    .select("id, name")
+    .select("id, name, is_primary, category")
     .eq("bot_id", bot.id)
     .eq("status", "ativo")
     .order("created_at", { ascending: true })
 
-  if (!flows || flows.length === 0) return
+  if (!allFlows || allFlows.length === 0) return
 
-  const targetFlow = flows[0]
+  // Encontrar fluxo principal
+  const primaryFlow = allFlows.find((f) => f.is_primary) || allFlows[0]
 
-  // 5. Buscar nodes do fluxo
+  // 5. Buscar estado ATUAL do usuario (pode estar em qualquer fluxo)
+  const { data: allStates } = await supabase
+    .from("user_flow_state")
+    .select("*")
+    .eq("bot_id", bot.id)
+    .eq("telegram_user_id", telegramUserId)
+    .order("updated_at", { ascending: false })
+
+  // Encontrar estado ativo (in_progress ou waiting_response)
+  const activeState = allStates?.find((s) => s.status === "in_progress" || s.status === "waiting_response") || null
+  const currentFlowId = activeState?.flow_id || primaryFlow.id
+
+  // 6. Buscar nodes do fluxo atual
   const { data: nodes } = await supabase
     .from("flow_nodes")
     .select("id, type, label, config, position")
-    .eq("flow_id", targetFlow.id)
+    .eq("flow_id", currentFlowId)
     .order("position", { ascending: true })
 
   if (!nodes || nodes.length === 0) return
 
-  // 6. Buscar estado do usuario neste fluxo
-  const { data: stateRows } = await supabase
-    .from("user_flow_state")
-    .select("*")
-    .eq("bot_id", bot.id)
-    .eq("flow_id", targetFlow.id)
-    .eq("telegram_user_id", telegramUserId)
-
-  const existingState = stateRows?.[0] || null
-
-  // 7. Se /start => resetar estado e executar do zero
+  // 7. Se /start => resetar TODOS os estados e executar fluxo principal do zero
   if (isStart) {
-    // DATABASE-BASED LOCK: If flow is already in_progress (recently updated), skip
-    if (isFlowLocked(existingState)) {
+    if (isFlowLocked(activeState)) {
       return
     }
 
-    if (existingState) {
+    // Resetar todos os estados deste usuario neste bot
+    if (allStates && allStates.length > 0) {
+      for (const state of allStates) {
+        await supabase
+          .from("user_flow_state")
+          .update({
+            status: "completed",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", state.id)
+      }
+    }
+
+    // Buscar nodes do fluxo principal (pode ser diferente do currentFlowId)
+    let primaryNodes = nodes
+    if (currentFlowId !== primaryFlow.id) {
+      const { data: pNodes } = await supabase
+        .from("flow_nodes")
+        .select("id, type, label, config, position")
+        .eq("flow_id", primaryFlow.id)
+        .order("position", { ascending: true })
+      primaryNodes = pNodes || []
+    }
+
+    if (primaryNodes.length === 0) return
+
+    // Criar/atualizar estado no fluxo principal
+    const existingPrimaryState = allStates?.find((s) => s.flow_id === primaryFlow.id)
+    if (existingPrimaryState) {
       await supabase
         .from("user_flow_state")
         .update({
@@ -226,11 +256,11 @@ async function processWebhook({
           status: "in_progress",
           updated_at: new Date().toISOString(),
         })
-        .eq("id", existingState.id)
+        .eq("id", existingPrimaryState.id)
     } else {
       await supabase.from("user_flow_state").insert({
         bot_id: bot.id,
-        flow_id: targetFlow.id,
+        flow_id: primaryFlow.id,
         telegram_user_id: telegramUserId,
         chat_id: chatId,
         current_node_position: 0,
@@ -238,37 +268,34 @@ async function processWebhook({
       })
     }
 
-    await executeNodes(botToken, chatId, nodes, 0, bot.id, targetFlow.id, telegramUserId)
+    await executeNodes(botToken, chatId, primaryNodes, 0, bot.id, primaryFlow.id, telegramUserId)
     return
   }
 
-  // 8. Se NAO e /start
-  if (!existingState || existingState.status === "completed") {
+  // 8. Se NAO e /start - processar no fluxo ativo
+  if (!activeState || activeState.status === "completed") {
     return
   }
 
-  // If flow is in_progress (e.g. during a delay), ignore new messages
-  if (existingState.status === "in_progress") {
+  if (activeState.status === "in_progress") {
     return
   }
 
-  if (existingState.status === "waiting_response") {
-    // Check lock to prevent double processing
-    if (isFlowLocked(existingState)) {
+  if (activeState.status === "waiting_response") {
+    if (isFlowLocked(activeState)) {
       return
     }
 
-    // Mark as in_progress immediately to lock
     await supabase
       .from("user_flow_state")
       .update({
         status: "in_progress",
         updated_at: new Date().toISOString(),
       })
-      .eq("id", existingState.id)
+      .eq("id", activeState.id)
 
-    const nextPos = existingState.current_node_position + 1
-    await executeNodes(botToken, chatId, nodes, nextPos, bot.id, targetFlow.id, telegramUserId)
+    const nextPos = activeState.current_node_position + 1
+    await executeNodes(botToken, chatId, nodes, nextPos, bot.id, currentFlowId, telegramUserId)
   }
 }
 
@@ -375,6 +402,109 @@ async function executeNodes(
         const actionText = (node.config?.text as string) || (node.config?.action_name as string) || node.label
         await sendTelegramMessage(botToken, chatId, `${actionText}`)
         await updateFunnelStep(botId, telegramUserId, 4)
+        break
+      }
+
+      case "redirect": {
+        const subVariant = (node.config?.subVariant as string) || ""
+        const targetFlowId = (node.config?.target_flow_id as string) || ""
+
+        if (subVariant === "end") {
+          // Encerrar conversa - marcar como completed e parar
+          await supabase
+            .from("user_flow_state")
+            .update({
+              current_node_position: node.position,
+              status: "completed",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("bot_id", botId)
+            .eq("flow_id", flowId)
+            .eq("telegram_user_id", telegramUserId)
+          return // Para aqui
+        }
+
+        if (subVariant === "restart") {
+          // Recomecar o mesmo fluxo do zero
+          await supabase
+            .from("user_flow_state")
+            .update({
+              current_node_position: 0,
+              status: "in_progress",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("bot_id", botId)
+            .eq("flow_id", flowId)
+            .eq("telegram_user_id", telegramUserId)
+
+          // Recarregar todos os nodes e executar do inicio
+          const { data: restartNodes } = await supabase
+            .from("flow_nodes")
+            .select("id, type, label, config, position")
+            .eq("flow_id", flowId)
+            .order("position", { ascending: true })
+
+          if (restartNodes && restartNodes.length > 0) {
+            await executeNodes(botToken, chatId, restartNodes, 0, botId, flowId, telegramUserId)
+          }
+          return
+        }
+
+        // Redirecionar para outro fluxo (goto_flow)
+        if (targetFlowId) {
+          // Marcar fluxo atual como completed
+          await supabase
+            .from("user_flow_state")
+            .update({
+              current_node_position: node.position,
+              status: "completed",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("bot_id", botId)
+            .eq("flow_id", flowId)
+            .eq("telegram_user_id", telegramUserId)
+
+          // Buscar nodes do fluxo destino
+          const { data: targetNodes } = await supabase
+            .from("flow_nodes")
+            .select("id, type, label, config, position")
+            .eq("flow_id", targetFlowId)
+            .order("position", { ascending: true })
+
+          if (!targetNodes || targetNodes.length === 0) break
+
+          // Criar/atualizar estado no fluxo destino
+          const { data: targetStates } = await supabase
+            .from("user_flow_state")
+            .select("id")
+            .eq("bot_id", botId)
+            .eq("flow_id", targetFlowId)
+            .eq("telegram_user_id", telegramUserId)
+
+          if (targetStates && targetStates.length > 0) {
+            await supabase
+              .from("user_flow_state")
+              .update({
+                current_node_position: 0,
+                status: "in_progress",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("id", targetStates[0].id)
+          } else {
+            await supabase.from("user_flow_state").insert({
+              bot_id: botId,
+              flow_id: targetFlowId,
+              telegram_user_id: telegramUserId,
+              chat_id: chatId,
+              current_node_position: 0,
+              status: "in_progress",
+            })
+          }
+
+          // Executar fluxo destino
+          await executeNodes(botToken, chatId, targetNodes, 0, botId, targetFlowId, telegramUserId)
+          return // Para execucao do fluxo atual
+        }
         break
       }
     }
