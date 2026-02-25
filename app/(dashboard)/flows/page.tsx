@@ -22,7 +22,9 @@ import {
   Star, Zap, RotateCcw, ShoppingBag, UserPlus, Mail, Target, Sparkles, Crown,
   Search, Settings2, Clock, Bell, Tag, Percent, Globe, FileText, Heart,
   Send, CalendarDays, Repeat, Filter, MessageCircle, AlertCircle,
-  ExternalLink, Workflow, CheckCircle2,
+  ExternalLink, Workflow, CheckCircle2, Hash, Unlink, UsersRound, Webhook,
+  CircleStop, RefreshCw, MousePointerClick,
+  ArrowDown,
 } from "lucide-react"
 import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
@@ -263,7 +265,7 @@ const statusStyles: Record<string, string> = {
 }
 
 // Available action templates
-const actionTemplates: { type: NodeType; label: string; description: string; configFields: { key: string; label: string; placeholder: string; inputType: "text" | "textarea" | "number" }[] }[] = [
+const actionTemplates: { type: NodeType; label: string; description: string; configFields: { key: string; label: string; placeholder: string; inputType: "text" | "textarea" | "number" }[]; subVariant?: string }[] = [
   {
     type: "trigger",
     label: "Usuario inicia bot",
@@ -272,14 +274,29 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
   },
   {
     type: "message",
-    label: "Mensagem",
-    description: "Enviar mensagem com midia e botoes",
+    label: "Mensagem de Texto",
+    description: "Enviar mensagem simples de texto",
     configFields: [],
+    subVariant: "text",
+  },
+  {
+    type: "message",
+    label: "Mensagem com Midia",
+    description: "Enviar foto ou video com texto",
+    configFields: [],
+    subVariant: "media",
+  },
+  {
+    type: "message",
+    label: "Mensagem com Botoes",
+    description: "Mensagem com botoes de link clicaveis",
+    configFields: [],
+    subVariant: "buttons",
   },
   {
     type: "delay",
-    label: "Delay",
-    description: "Aguardar um tempo antes da proxima acao",
+    label: "Aguardar Tempo",
+    description: "Esperar antes da proxima etapa",
     configFields: [
       { key: "seconds", label: "Tempo em segundos", placeholder: "300", inputType: "number" },
     ],
@@ -287,35 +304,106 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
   {
     type: "condition",
     label: "Condicao",
-    description: "Verificar uma condicao do usuario",
+    description: "Seguir caminho diferente conforme regra",
     configFields: [
       { key: "condition", label: "Condicao", placeholder: "Ex: Usuario respondeu?", inputType: "text" },
     ],
   },
   {
+    type: "condition",
+    label: "Verificar Pagamento",
+    description: "Checar se usuario ja pagou",
+    configFields: [
+      { key: "condition", label: "Condicao", placeholder: "Pagamento confirmado?", inputType: "text" },
+    ],
+    subVariant: "check_payment",
+  },
+  {
+    type: "condition",
+    label: "Verificar Tag",
+    description: "Checar se usuario possui uma tag",
+    configFields: [
+      { key: "condition", label: "Tag", placeholder: "Ex: lead-quente", inputType: "text" },
+    ],
+    subVariant: "check_tag",
+  },
+  {
     type: "payment",
-    label: "Pagamento",
-    description: "Gerar cobranca ou PIX",
+    label: "Gerar Cobranca",
+    description: "Criar cobranca PIX ou link de pagamento",
     configFields: [
       { key: "amount", label: "Valor (R$)", placeholder: "49.90", inputType: "text" },
       { key: "description", label: "Descricao", placeholder: "Pagamento do produto X", inputType: "text" },
     ],
+    subVariant: "charge",
+  },
+  {
+    type: "payment",
+    label: "Aguardar Pagamento",
+    description: "Pausar fluxo ate pagamento ser confirmado",
+    configFields: [
+      { key: "seconds", label: "Timeout (segundos)", placeholder: "1800", inputType: "number" },
+    ],
+    subVariant: "wait_payment",
   },
   {
     type: "action",
-    label: "Acao",
-    description: "Executar uma acao automatica",
+    label: "Adicionar Tag",
+    description: "Marcar usuario com uma tag de segmentacao",
     configFields: [
-      { key: "action_name", label: "Nome da acao", placeholder: "Ex: Adicionar ao grupo VIP", inputType: "text" },
+      { key: "action_name", label: "Nome da tag", placeholder: "Ex: lead-quente", inputType: "text" },
     ],
+    subVariant: "add_tag",
+  },
+  {
+    type: "action",
+    label: "Remover Tag",
+    description: "Remover tag do usuario",
+    configFields: [
+      { key: "action_name", label: "Nome da tag", placeholder: "Ex: inativo", inputType: "text" },
+    ],
+    subVariant: "remove_tag",
+  },
+  {
+    type: "action",
+    label: "Adicionar ao Grupo",
+    description: "Enviar usuario para um grupo ou canal",
+    configFields: [
+      { key: "action_name", label: "Link do grupo", placeholder: "https://t.me/grupo", inputType: "text" },
+    ],
+    subVariant: "add_group",
+  },
+  {
+    type: "action",
+    label: "Webhook Externo",
+    description: "Executar acao em sistema externo",
+    configFields: [
+      { key: "action_name", label: "URL do webhook", placeholder: "https://api.exemplo.com/hook", inputType: "text" },
+    ],
+    subVariant: "webhook",
   },
   {
     type: "redirect",
-    label: "Redirecionar para Fluxo",
-    description: "Enviar usuario para outro fluxo secundario",
+    label: "Ir para Outro Fluxo",
+    description: "Redirecionar para fluxo secundario",
     configFields: [
       { key: "target_flow_id", label: "Fluxo de destino", placeholder: "Selecione o fluxo...", inputType: "text" },
     ],
+    subVariant: "goto_flow",
+  },
+  {
+    type: "redirect",
+    label: "Recomecar Fluxo",
+    description: "Voltar ao inicio deste fluxo",
+    configFields: [],
+    subVariant: "restart",
+  },
+  {
+    type: "redirect",
+    label: "Encerrar Conversa",
+    description: "Finalizar interacao com o usuario",
+    configFields: [],
+    subVariant: "end",
   },
 ]
 
@@ -327,18 +415,22 @@ interface ActionGroup {
   icon: React.ElementType
   iconColor: string
   bgColor: string
+  borderAccent: string
   types: NodeType[]
+  subVariants?: string[]
 }
 
 const actionGroups: ActionGroup[] = [
   {
     id: "comunicacao",
     label: "Comunicacao",
-    description: "Enviar mensagens, midias e botoes",
+    description: "Mensagens, midias e botoes",
     icon: MessageSquare,
     iconColor: "text-blue-400",
-    bgColor: "bg-blue-500/10 border-blue-500/30",
+    bgColor: "bg-blue-500/10",
+    borderAccent: "border-blue-500/30",
     types: ["message"],
+    subVariants: ["text", "media", "buttons"],
   },
   {
     id: "logica",
@@ -346,8 +438,10 @@ const actionGroups: ActionGroup[] = [
     description: "Condicoes, delays e verificacoes",
     icon: Split,
     iconColor: "text-purple-400",
-    bgColor: "bg-purple-500/10 border-purple-500/30",
+    bgColor: "bg-purple-500/10",
+    borderAccent: "border-purple-500/30",
     types: ["delay", "condition"],
+    subVariants: undefined, // show all
   },
   {
     id: "monetizacao",
@@ -355,28 +449,52 @@ const actionGroups: ActionGroup[] = [
     description: "Cobrancas, pagamentos e PIX",
     icon: CreditCard,
     iconColor: "text-success",
-    bgColor: "bg-success/10 border-success/30",
+    bgColor: "bg-success/10",
+    borderAccent: "border-success/30",
     types: ["payment"],
+    subVariants: ["charge", "wait_payment"],
   },
   {
     id: "navegacao",
     label: "Navegacao",
-    description: "Redirecionar para outros fluxos",
+    description: "Redirecionar, recomecar ou encerrar",
     icon: ExternalLink,
     iconColor: "text-orange-400",
-    bgColor: "bg-orange-500/10 border-orange-500/30",
+    bgColor: "bg-orange-500/10",
+    borderAccent: "border-orange-500/30",
     types: ["redirect"],
+    subVariants: ["goto_flow", "restart", "end"],
   },
   {
     id: "automacao",
     label: "Automacao",
-    description: "Tags, grupos e acoes externas",
+    description: "Tags, grupos e webhooks",
     icon: Zap,
     iconColor: "text-cyan-400",
-    bgColor: "bg-cyan-500/10 border-cyan-500/30",
+    bgColor: "bg-cyan-500/10",
+    borderAccent: "border-cyan-500/30",
     types: ["action"],
+    subVariants: ["add_tag", "remove_tag", "add_group", "webhook"],
   },
 ]
+
+// SubVariant-specific icons for the dialog
+const subVariantIcons: Record<string, React.ElementType> = {
+  text: MessageSquare,
+  media: Image,
+  buttons: MousePointerClick,
+  check_payment: CreditCard,
+  check_tag: Hash,
+  charge: CreditCard,
+  wait_payment: Clock,
+  add_tag: Tag,
+  remove_tag: Unlink,
+  add_group: UsersRound,
+  webhook: Globe,
+  goto_flow: ExternalLink,
+  restart: RefreshCw,
+  end: CircleStop,
+}
 
 // ---- Component ----
 
@@ -724,7 +842,7 @@ export default function FlowsPage() {
     setIsAddingNode(true)
 
     let label = selectedTemplate.label
-    let config: Record<string, unknown> = { ...nodeConfigValues }
+    let config: Record<string, unknown> = { ...nodeConfigValues, subVariant: selectedTemplate.subVariant || "" }
 
     if (selectedTemplate.type === "message") {
       label = msgText ? (msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText) : "Mensagem"
@@ -734,6 +852,7 @@ export default function FlowsPage() {
         media_url: msgMediaType !== "none" ? msgMediaUrl : "",
         media_type: msgMediaType !== "none" ? msgMediaType : "",
         buttons: validButtons.length > 0 ? JSON.stringify(validButtons) : "",
+        subVariant: selectedTemplate.subVariant || "",
       }
     } else if (selectedTemplate.type === "delay" && nodeConfigValues.seconds) {
       const secs = parseInt(nodeConfigValues.seconds)
@@ -748,12 +867,19 @@ export default function FlowsPage() {
       label = nodeConfigValues.description
     } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
       label = nodeConfigValues.action_name
-    } else if (selectedTemplate.type === "redirect" && nodeConfigValues.target_flow_name) {
+    } else if (selectedTemplate.subVariant === "goto_flow" && nodeConfigValues.target_flow_name) {
       label = `Ir para: ${nodeConfigValues.target_flow_name}`
       config = {
         target_flow_id: nodeConfigValues.target_flow_id,
         target_flow_name: nodeConfigValues.target_flow_name,
+        subVariant: "goto_flow",
       }
+    } else if (selectedTemplate.subVariant === "restart") {
+      label = "Recomecar Fluxo"
+      config = { subVariant: "restart" }
+    } else if (selectedTemplate.subVariant === "end") {
+      label = "Encerrar Conversa"
+      config = { subVariant: "end" }
     }
 
     const newPosition = nodes.length
@@ -975,7 +1101,7 @@ export default function FlowsPage() {
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">Crie e gerencie fluxos de automacao</p>
+            <p className="text-sm text-muted-foreground">Construa jornadas de conversao para o seu bot</p>
             <Button
               className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
               onClick={() => {
@@ -1096,8 +1222,11 @@ export default function FlowsPage() {
                   {secondaryFlows.length === 0 ? (
                     <Card className="bg-card border-border border-dashed rounded-2xl">
                       <CardContent className="flex flex-col items-center justify-center py-10 gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/60 border border-border/50">
+                          <GitBranch className="h-4 w-4 text-muted-foreground/60" />
+                        </div>
                         <p className="text-sm text-muted-foreground text-center max-w-sm">
-                          Crie fluxos secundarios como remarketing, follow-up, pos-venda e mais.
+                          Crie fluxos secundarios: remarketing, follow-up, pos-venda e mais.
                         </p>
                         <Button
                           variant="outline"
@@ -1163,7 +1292,15 @@ export default function FlowsPage() {
 
               {/* ====== VISUAL BUILDER DO FLUXO ATIVO ====== */}
               {activeFlow && (
-                <Card className="bg-card border-border rounded-2xl">
+                <Card className="bg-card border-border rounded-2xl overflow-hidden">
+                  {/* Top accent bar matching category */}
+                  <div className={`h-1 ${activeFlow.is_primary ? "bg-accent" : (() => {
+                    const g = actionGroups.find((_g) => {
+                      const catConfig = getCategoryConfig(activeFlow.category)
+                      return catConfig.iconColor.includes("blue") ? _g.id === "comunicacao" : catConfig.iconColor.includes("orange") ? _g.id === "navegacao" : catConfig.iconColor.includes("purple") ? _g.id === "logica" : false
+                    })
+                    return g ? "bg-current" : "bg-border"
+                  })()}`} />
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1171,19 +1308,28 @@ export default function FlowsPage() {
                           const catConfig = getCategoryConfig(activeFlow.category)
                           const CatIcon = catConfig.icon
                           return (
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-lg border ${catConfig.color}`}>
-                              <CatIcon className={`h-4 w-4 ${catConfig.iconColor}`} />
+                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${catConfig.color}`}>
+                              <CatIcon className={`h-5 w-5 ${catConfig.iconColor}`} />
                             </div>
                           )
                         })()}
                         <div>
-                          <CardTitle className="text-sm font-medium text-foreground">
+                          <CardTitle className="text-sm font-semibold text-foreground">
                             {activeFlow.name}
                           </CardTitle>
-                          <p className="text-[11px] text-muted-foreground">
-                            {getCategoryConfig(activeFlow.category).label}
-                            {activeFlow.is_primary && " — Fluxo Principal"}
-                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <p className="text-[11px] text-muted-foreground">
+                              {getCategoryConfig(activeFlow.category).label}
+                            </p>
+                            {activeFlow.is_primary && (
+                              <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-bold px-1.5 py-0">
+                                PRINCIPAL
+                              </Badge>
+                            )}
+                            <span className="text-[10px] text-muted-foreground">
+                              {nodes.filter((n) => n.type !== "trigger").length} etapas
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1386,75 +1532,123 @@ export default function FlowsPage() {
                   )}
 
                   <CardContent>
+                    {/* Mini-Mapa do Fluxo */}
+                    {!isLoadingNodes && nodes.filter((n) => n.type !== "trigger").length > 2 && (
+                      <div className="mb-4 rounded-xl border border-border/50 bg-secondary/20 p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
+                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mini-mapa</span>
+                          <span className="text-[10px] text-muted-foreground ml-auto">{nodes.filter((n) => n.type !== "trigger").length} etapas</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+                          {/* Trigger dot */}
+                          <div className="flex items-center gap-1 shrink-0">
+                            <div className="h-5 w-5 rounded-md bg-accent/20 border border-accent/40 flex items-center justify-center" title="Gatilho Inicial">
+                              <Zap className="h-2.5 w-2.5 text-accent" />
+                            </div>
+                          </div>
+                          {nodes.filter((n) => n.type !== "trigger").map((node, idx) => {
+                            const group = actionGroups.find((g) => g.types.includes(node.type))
+                            const MiniIcon = nodeIcons[node.type]
+                            return (
+                              <div key={node.id} className="flex items-center gap-1.5 shrink-0">
+                                <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30" />
+                                <div
+                                  className={`h-5 w-5 rounded-md flex items-center justify-center border ${group ? `${group.bgColor} ${group.borderAccent}` : "bg-secondary border-border"}`}
+                                  title={node.label}
+                                >
+                                  <MiniIcon className={`h-2.5 w-2.5 ${group?.iconColor || "text-muted-foreground"}`} />
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     {isLoadingNodes ? (
                       <div className="flex items-center justify-center py-10">
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                       </div>
                     ) : (
                       <div className="flex flex-col gap-2">
-                        {nodes.length === 0 && (
-                          <div className="text-center py-8">
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Nenhuma etapa adicionada. Comece adicionando etapas ao fluxo.
+                        {nodes.filter((n) => n.type !== "trigger").length === 0 && (
+                          <div className="text-center py-6 mb-2">
+                            <div className="flex justify-center mb-3">
+                              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/60 border border-border/50">
+                                <Workflow className="h-5 w-5 text-muted-foreground/60" />
+                              </div>
+                            </div>
+                            <p className="text-sm font-medium text-muted-foreground mb-1">
+                              Monte a jornada do usuario
+                            </p>
+                            <p className="text-xs text-muted-foreground/70 max-w-[260px] mx-auto">
+                              Adicione etapas ao fluxo: mensagens, logica, pagamentos e mais.
                             </p>
                           </div>
                         )}
 
                         {/* Fixed trigger block */}
-                        <div className="flex flex-col gap-2">
-                          <div className="flex items-center gap-4 rounded-xl border-2 border-accent/40 bg-accent/5 px-4 py-3">
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/15 border border-accent/30">
-                              <Zap className="h-4 w-4 text-accent" />
+                        <div className="flex flex-col">
+                          <div className="relative flex items-center gap-4 rounded-2xl border-2 border-accent/40 bg-gradient-to-r from-accent/8 to-accent/3 px-4 py-4">
+                            {/* Left accent bar */}
+                            <div className="absolute left-0 top-3 bottom-3 w-1 rounded-full bg-accent/60" />
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 border border-accent/30 ml-1">
+                              <DragonTriggerIcon className="h-5 w-5" />
                             </div>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="text-sm font-semibold text-foreground">Gatilho Inicial</p>
-                                <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-semibold px-1.5 py-0">
-                                  FIXO
+                                <p className="text-sm font-bold text-foreground">Inicio do Fluxo</p>
+                                <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-bold px-1.5 py-0 uppercase tracking-wider">
+                                  Gatilho
                                 </Badge>
                               </div>
-                              <p className="text-[11px] text-muted-foreground">Usuario inicia o bot</p>
+                              <p className="text-[11px] text-muted-foreground mt-0.5">Usuario inicia o bot — ponto de entrada</p>
                             </div>
                           </div>
                           {nodes.filter((n) => n.type !== "trigger").length > 0 && (
-                            <div className="flex justify-center py-0.5">
-                              <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/50" />
+                            <div className="flex flex-col items-center py-1.5">
+                              <div className="w-px h-3 bg-border" />
+                              <ArrowDown className="h-3.5 w-3.5 text-muted-foreground/40" />
                             </div>
                           )}
                         </div>
 
                         {nodes.filter((n) => n.type !== "trigger").map((node, i, arr) => {
                           const Icon = nodeIcons[node.type]
-                          // Find the business group for this node type
                           const group = actionGroups.find((g) => g.types.includes(node.type))
                           return (
                             <div key={node.id}>
                               <div
-                                className={`group flex items-center gap-4 rounded-xl border px-4 py-3 transition-colors hover:bg-secondary/50 ${nodeColors[node.type]}`}
+                                className={`group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all hover:shadow-sm ${nodeColors[node.type]}`}
                               >
-                                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/50">
+                                {/* Left color bar */}
+                                {group && (
+                                  <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full ${group.iconColor === "text-blue-400" ? "bg-blue-400/60" : group.iconColor === "text-purple-400" ? "bg-purple-400/60" : group.iconColor === "text-success" ? "bg-emerald-400/60" : group.iconColor === "text-orange-400" ? "bg-orange-400/60" : "bg-cyan-400/60"}`} />
+                                )}
+                                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${group ? `${group.bgColor} border ${group.borderAccent}` : "bg-background/50"}`}>
                                   <Icon className={`h-4 w-4 ${nodeIconColors[node.type]}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2">
+                                  <div className="flex items-center gap-2 flex-wrap">
                                     <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
                                     {group && (
-                                      <span className={`text-[9px] font-medium px-1.5 py-0 rounded-full border ${group.bgColor} ${group.iconColor}`}>
+                                      <span className={`text-[9px] font-semibold px-1.5 py-0 rounded-full border ${group.bgColor} ${group.borderAccent} ${group.iconColor}`}>
                                         {group.label}
                                       </span>
                                     )}
                                   </div>
                                   {node.type === "message" && (
-                                    <div className="flex items-center gap-2 mt-0.5">
+                                    <div className="flex items-center gap-2.5 mt-1">
                                       {node.config?.media_type && node.config.media_type !== "" && (
-                                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
                                           {node.config.media_type === "photo" ? <Image className="h-3 w-3" /> : <Video className="h-3 w-3" />}
                                           {node.config.media_type === "photo" ? "Foto" : "Video"}
                                         </span>
                                       )}
                                       {node.config?.buttons && node.config.buttons !== "" && (
-                                        <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                                          <Link className="h-3 w-3" />
+                                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
+                                          <MousePointerClick className="h-3 w-3" />
                                           {(() => { try { return JSON.parse(node.config.buttons as string).length } catch { return 0 } })()}{" "}
                                           {"botao(es)"}
                                         </span>
@@ -1462,7 +1656,7 @@ export default function FlowsPage() {
                                     </div>
                                   )}
                                   {node.type === "redirect" && node.config?.target_flow_name && (
-                                    <div className="flex items-center gap-1.5 mt-0.5">
+                                    <div className="flex items-center gap-1.5 mt-1">
                                       <ExternalLink className="h-3 w-3 text-orange-400" />
                                       <span className="text-xs text-orange-400 font-medium">
                                         {node.config.target_flow_name as string}
@@ -1480,6 +1674,37 @@ export default function FlowsPage() {
                                         return null
                                       })()}
                                     </div>
+                                  )}
+                                  {node.type === "delay" && (
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                      <Clock className="h-3 w-3" /> Pausa no fluxo
+                                    </p>
+                                  )}
+                                  {node.type === "condition" && (
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                      <Split className="h-3 w-3" /> Verificacao logica
+                                    </p>
+                                  )}
+                                  {node.type === "action" && (
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                      <Zap className="h-3 w-3" /> Automacao
+                                    </p>
+                                  )}
+                                  {node.type === "payment" && (
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                      <CreditCard className="h-3 w-3" /> Monetizacao
+                                    </p>
+                                  )}
+                                  {node.type === "redirect" && !node.config?.target_flow_name && (
+                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+                                      {node.config?.subVariant === "restart" ? (
+                                        <><RefreshCw className="h-3 w-3" /> Volta ao inicio</>
+                                      ) : node.config?.subVariant === "end" ? (
+                                        <><CircleStop className="h-3 w-3" /> Finaliza interacao</>
+                                      ) : (
+                                        <><ExternalLink className="h-3 w-3" /> Navegacao</>
+                                      )}
+                                    </p>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1503,11 +1728,12 @@ export default function FlowsPage() {
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
-                                <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
+                                <GripVertical className="h-3 w-3 text-muted-foreground/40 shrink-0" />
                               </div>
                               {i < arr.length - 1 && (
-                                <div className="flex justify-center py-1">
-                                  <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/50" />
+                                <div className="flex flex-col items-center py-1">
+                                  <div className="w-px h-2 bg-border/60" />
+                                  <ArrowDown className="h-3 w-3 text-muted-foreground/30" />
                                 </div>
                               )}
                             </div>
@@ -1515,22 +1741,26 @@ export default function FlowsPage() {
                         })}
 
                         {nodes.filter((n) => n.type !== "trigger").length > 0 && (
-                          <div className="flex justify-center py-1">
-                            <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/50" />
+                          <div className="flex flex-col items-center py-1">
+                            <div className="w-px h-2 bg-border/60" />
+                            <ArrowDown className="h-3 w-3 text-muted-foreground/30" />
                           </div>
                         )}
-                        <Button
-                          variant="outline"
-                          className="w-full rounded-xl border-dashed border-border hover:border-accent hover:bg-accent/5 text-muted-foreground hover:text-accent transition-colors"
+                        <button
+                          className="group w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/60 hover:border-accent/50 bg-transparent hover:bg-accent/5 py-4 transition-all"
                           onClick={() => {
                             setSelectedTemplate(null)
                             setNodeConfigValues({})
                             setShowAddNodeDialog(true)
                           }}
                         >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Adicionar Etapa
-                        </Button>
+                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary/60 group-hover:bg-accent/15 transition-colors">
+                            <Plus className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+                          </div>
+                          <span className="text-sm font-medium text-muted-foreground group-hover:text-accent transition-colors">
+                            Adicionar Etapa
+                          </span>
+                        </button>
                       </div>
                     )}
                   </CardContent>
@@ -1702,67 +1932,103 @@ export default function FlowsPage() {
 
       {/* ---- Add Node Dialog ---- */}
       <Dialog open={showAddNodeDialog} onOpenChange={setShowAddNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Adicionar Etapa</DialogTitle>
-          </DialogHeader>
-
+        <DialogContent className="bg-card border-border rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto p-0">
           {!selectedTemplate ? (
-            <div className="flex flex-col gap-4 py-2">
-              <p className="text-sm text-muted-foreground">O que voce quer fazer nesta etapa?</p>
-              {actionGroups.map((group) => {
-                const GroupIcon = group.icon
-                const groupTemplates = actionTemplates.filter((tpl) => group.types.includes(tpl.type))
-                if (groupTemplates.length === 0) return null
+            <div className="flex flex-col">
+              {/* Header */}
+              <div className="sticky top-0 z-10 bg-card border-b border-border px-6 pt-6 pb-4 rounded-t-2xl">
+                <DialogHeader>
+                  <DialogTitle className="text-foreground text-base">Adicionar Etapa</DialogTitle>
+                </DialogHeader>
+                <p className="text-xs text-muted-foreground mt-1">O que voce quer fazer nesta etapa do fluxo?</p>
+              </div>
 
-                return (
-                  <div key={group.id} className="flex flex-col gap-1.5">
-                    <div className="flex items-center gap-2 px-1">
-                      <GroupIcon className={`h-4 w-4 ${group.iconColor}`} />
-                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{group.label}</span>
-                      <span className="text-[10px] text-muted-foreground">— {group.description}</span>
+              {/* Groups */}
+              <div className="flex flex-col gap-1 px-4 py-4">
+                {actionGroups.map((group) => {
+                  const GroupIcon = group.icon
+                  const groupTemplates = actionTemplates.filter((tpl) => {
+                    if (!group.types.includes(tpl.type)) return false
+                    if (group.subVariants && tpl.subVariant) return group.subVariants.includes(tpl.subVariant)
+                    if (group.subVariants && !tpl.subVariant) return false
+                    return tpl.type !== "trigger"
+                  })
+                  if (groupTemplates.length === 0) return null
+
+                  return (
+                    <div key={group.id} className="flex flex-col">
+                      {/* Group Header - clickable accordion style */}
+                      <div className={`flex items-center gap-3 px-3 py-3 rounded-xl ${group.bgColor} border ${group.borderAccent} mb-2`}>
+                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background/60`}>
+                          <GroupIcon className={`h-5 w-5 ${group.iconColor}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground">{group.label}</p>
+                          <p className="text-[11px] text-muted-foreground">{group.description}</p>
+                        </div>
+                        <span className="text-[10px] text-muted-foreground bg-background/50 rounded-full px-2 py-0.5 border border-border/50">
+                          {groupTemplates.length}
+                        </span>
+                      </div>
+
+                      {/* Group Items */}
+                      <div className="grid grid-cols-1 gap-1.5 pl-3 pr-1 pb-3">
+                        {groupTemplates.map((tpl, tplIdx) => {
+                          const SubIcon = tpl.subVariant ? (subVariantIcons[tpl.subVariant] || nodeIcons[tpl.type]) : nodeIcons[tpl.type]
+                          return (
+                            <button
+                              key={`${tpl.type}-${tpl.subVariant || tplIdx}`}
+                              className="flex items-center gap-3 rounded-xl border border-border/50 bg-secondary/20 px-3 py-2.5 text-left transition-all hover:bg-secondary/60 hover:border-border group"
+                              onClick={() => {
+                                setSelectedTemplate(tpl)
+                                setNodeConfigValues({})
+                                resetMessageConfig()
+                                // Pre-configure based on subVariant
+                                if (tpl.subVariant === "media") {
+                                  setMsgMediaType("photo")
+                                }
+                                if (tpl.subVariant === "buttons") {
+                                  setMsgHasButtons(true)
+                                  setMsgButtons([{ text: "", url: "" }])
+                                }
+                              }}
+                            >
+                              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${group.bgColor} border ${group.borderAccent}`}>
+                                <SubIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-xs font-medium text-foreground">{tpl.label}</p>
+                                <p className="text-[10px] text-muted-foreground leading-tight">{tpl.description}</p>
+                              </div>
+                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+                            </button>
+                          )
+                        })}
+                      </div>
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                      {groupTemplates.map((tpl) => {
-                        const Icon = nodeIcons[tpl.type]
-                        return (
-                          <button
-                            key={tpl.type}
-                            className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors hover:bg-secondary/50 ${nodeColors[tpl.type]}`}
-                            onClick={() => {
-                              setSelectedTemplate(tpl)
-                              setNodeConfigValues({})
-                              resetMessageConfig()
-                            }}
-                          >
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/50">
-                              <Icon className={`h-4 w-4 ${nodeIconColors[tpl.type]}`} />
-                            </div>
-                            <div>
-                              <p className="text-sm font-medium text-foreground">{tpl.label}</p>
-                              <p className="text-xs text-muted-foreground">{tpl.description}</p>
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )
-              })}
+                  )
+                })}
+              </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-4 px-6 py-4">
               <div className="flex items-center gap-3">
                 {(() => {
-                  const Icon = nodeIcons[selectedTemplate.type]
+                  const group = actionGroups.find((g) => g.types.includes(selectedTemplate.type))
+                  const SubIcon = selectedTemplate.subVariant ? (subVariantIcons[selectedTemplate.subVariant] || nodeIcons[selectedTemplate.type]) : nodeIcons[selectedTemplate.type]
                   return (
                     <>
-                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/50 border ${nodeColors[selectedTemplate.type]}`}>
-                        <Icon className={`h-4 w-4 ${nodeIconColors[selectedTemplate.type]}`} />
+                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${group ? `${group.bgColor} ${group.borderAccent}` : nodeColors[selectedTemplate.type]}`}>
+                        <SubIcon className={`h-5 w-5 ${group?.iconColor || nodeIconColors[selectedTemplate.type]}`} />
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">{selectedTemplate.label}</p>
+                        <p className="text-sm font-semibold text-foreground">{selectedTemplate.label}</p>
                         <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
+                        {group && (
+                          <span className={`inline-block text-[9px] font-semibold mt-0.5 px-1.5 py-0 rounded-full border ${group.bgColor} ${group.borderAccent} ${group.iconColor}`}>
+                            {group.label}
+                          </span>
+                        )}
                       </div>
                     </>
                   )
@@ -1784,7 +2050,7 @@ export default function FlowsPage() {
                   updateMsgButton={updateMsgButton}
                   removeMsgButton={removeMsgButton}
                 />
-              ) : selectedTemplate.type === "redirect" ? (
+              ) : selectedTemplate.type === "redirect" && selectedTemplate.subVariant === "goto_flow" ? (
                 <div className="flex flex-col gap-3">
                   <Label className="text-foreground">Selecione o fluxo de destino</Label>
                   <p className="text-xs text-muted-foreground -mt-1">
@@ -1874,7 +2140,7 @@ export default function FlowsPage() {
                 </Button>
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  disabled={isAddingNode || (selectedTemplate.type === "message" && !msgText.trim()) || (selectedTemplate.type === "redirect" && !nodeConfigValues.target_flow_id)}
+                  disabled={isAddingNode || (selectedTemplate.type === "message" && !msgText.trim()) || (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id)}
                   onClick={handleAddNode}
                 >
                   {isAddingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1890,7 +2156,7 @@ export default function FlowsPage() {
       <Dialog open={showEditNodeDialog} onOpenChange={setShowEditNodeDialog}>
         <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Editar Bloco</DialogTitle>
+            <DialogTitle className="text-foreground">Editar Etapa</DialogTitle>
           </DialogHeader>
           {editingNode && (
             <div className="flex flex-col gap-4 py-2">
@@ -2026,10 +2292,10 @@ export default function FlowsPage() {
       <Dialog open={showDeleteNodeDialog} onOpenChange={setShowDeleteNodeDialog}>
         <DialogContent className="bg-card border-border rounded-2xl">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Apagar Bloco</DialogTitle>
+            <DialogTitle className="text-foreground">Apagar Etapa</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
-            Tem certeza que deseja apagar o bloco{" "}
+            Tem certeza que deseja apagar a etapa{" "}
             <span className="font-medium text-foreground">{deletingNode?.label}</span>?
           </p>
           <DialogFooter>
@@ -2061,7 +2327,7 @@ export default function FlowsPage() {
           </DialogHeader>
           <p className="text-sm text-muted-foreground">
             Tem certeza que deseja apagar o fluxo{" "}
-            <span className="font-medium text-foreground">{activeFlow?.name}</span>? Todos os blocos serao removidos.
+            <span className="font-medium text-foreground">{activeFlow?.name}</span>? Todas as etapas serao removidas.
           </p>
           <DialogFooter>
             <Button
