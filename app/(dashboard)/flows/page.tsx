@@ -515,6 +515,30 @@ export default function FlowsPage() {
   const [newFlowCategory, setNewFlowCategory] = useState<FlowCategory>("personalizado")
   const [isCreatingFlow, setIsCreatingFlow] = useState(false)
 
+  // Flow creation mode: null = choosing, "basico" | "completo"
+  const [newFlowMode, setNewFlowMode] = useState<"basico" | "completo" | null>(null)
+
+  // Basic flow wizard fields
+  const [basicWelcomeMsg, setBasicWelcomeMsg] = useState("")
+  const [basicProductName, setBasicProductName] = useState("")
+  const [basicProductDesc, setBasicProductDesc] = useState("")
+  const [basicProductPrice, setBasicProductPrice] = useState("")
+  const [basicMediaUrl, setBasicMediaUrl] = useState("")
+  const [basicMediaType, setBasicMediaType] = useState<"photo" | "video" | "none">("none")
+  const [basicButtonText, setBasicButtonText] = useState("")
+  const [basicButtonUrl, setBasicButtonUrl] = useState("")
+
+  const resetBasicFlow = () => {
+    setBasicWelcomeMsg("")
+    setBasicProductName("")
+    setBasicProductDesc("")
+    setBasicProductPrice("")
+    setBasicMediaUrl("")
+    setBasicMediaType("none")
+    setBasicButtonText("")
+    setBasicButtonUrl("")
+  }
+
   // Add node dialog
   const [showAddNodeDialog, setShowAddNodeDialog] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<typeof actionTemplates[0] | null>(null)
@@ -710,6 +734,122 @@ export default function FlowsPage() {
     setActiveFlow(newFlow)
     setNewFlowName("")
     setNewFlowCategory("personalizado")
+    setShowNewFlowDialog(false)
+    setIsCreatingFlow(false)
+  }
+
+  // ---- Create BASIC flow (auto-generates nodes) ----
+  const handleCreateBasicFlow = async () => {
+    if (!selectedBot || !session || !basicProductName.trim()) return
+
+    setIsCreatingFlow(true)
+
+    const isFirst = flows.length === 0
+    const flowName = basicProductName.trim()
+
+    let insertPayload: Record<string, unknown> = {
+      bot_id: selectedBot.id,
+      user_id: session.userId,
+      name: flowName,
+      status: "ativo",
+      category: isFirst ? "inicial" : "personalizado",
+      is_primary: isFirst,
+    }
+
+    let { data, error } = await supabase
+      .from("flows")
+      .insert(insertPayload)
+      .select()
+      .single()
+
+    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.code === "42703")) {
+      insertPayload = {
+        bot_id: selectedBot.id,
+        user_id: session.userId,
+        name: flowName,
+        status: "ativo",
+      }
+      const retry = await supabase
+        .from("flows")
+        .insert(insertPayload)
+        .select()
+        .single()
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error || !data) {
+      console.error("Error creating basic flow:", error)
+      setIsCreatingFlow(false)
+      return
+    }
+
+    const newFlow = { ...data, category: (isFirst ? "inicial" : "personalizado") as FlowCategory, is_primary: isFirst } as Flow
+
+    // Save flow_mode = "basico" in localStorage
+    localStorage.setItem(`flow_mode_${newFlow.id}`, "basico")
+
+    // Auto-generate nodes for basic flow
+    const autoNodes: { type: NodeType; label: string; config: Record<string, unknown>; position: number }[] = []
+
+    // 1) Trigger
+    autoNodes.push({
+      type: "trigger",
+      label: "Usuario inicia bot",
+      config: {},
+      position: 0,
+    })
+
+    // 2) Welcome message with media + buttons
+    const welcomeText = basicWelcomeMsg.trim() || `Ola! Confira nosso produto: ${basicProductName.trim()}`
+    const fullText = basicProductDesc.trim()
+      ? `${welcomeText}\n\n${basicProductDesc.trim()}\n\nValor: R$ ${basicProductPrice.trim()}`
+      : `${welcomeText}\n\nValor: R$ ${basicProductPrice.trim()}`
+    
+    const buttons: InlineButton[] = []
+    if (basicButtonText.trim() && basicButtonUrl.trim()) {
+      buttons.push({ text: basicButtonText.trim(), url: basicButtonUrl.trim() })
+    }
+
+    autoNodes.push({
+      type: "message",
+      label: fullText.length > 40 ? fullText.slice(0, 40) + "..." : fullText,
+      config: {
+        text: fullText,
+        media_url: basicMediaType !== "none" ? basicMediaUrl : "",
+        media_type: basicMediaType !== "none" ? basicMediaType : "",
+        buttons: buttons.length > 0 ? JSON.stringify(buttons) : "",
+        subVariant: basicMediaType !== "none" ? "media" : "text",
+      },
+      position: 1,
+    })
+
+    // 3) Payment node if price is set
+    if (basicProductPrice.trim()) {
+      autoNodes.push({
+        type: "payment",
+        label: `Pagamento: ${basicProductName.trim()}`,
+        config: {
+          amount: basicProductPrice.trim(),
+          description: basicProductName.trim(),
+          subVariant: "charge",
+        },
+        position: 2,
+      })
+    }
+
+    // Insert all nodes
+    for (const node of autoNodes) {
+      await supabase
+        .from("flow_nodes")
+        .insert({ flow_id: newFlow.id, ...node })
+    }
+
+    setFlows((prev) => [...prev, newFlow])
+    setActiveFlow(newFlow)
+    resetBasicFlow()
+    setNewFlowName("")
+    setNewFlowMode(null)
     setShowNewFlowDialog(false)
     setIsCreatingFlow(false)
   }
@@ -1106,6 +1246,8 @@ export default function FlowsPage() {
               className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
               onClick={() => {
                 setNewFlowCategory(flows.length === 0 ? "inicial" : "personalizado")
+                setNewFlowMode(null)
+                resetBasicFlow()
                 setShowNewFlowDialog(true)
               }}
             >
@@ -1134,6 +1276,8 @@ export default function FlowsPage() {
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
                   onClick={() => {
                     setNewFlowCategory("inicial")
+                    setNewFlowMode(null)
+                    resetBasicFlow()
                     setShowNewFlowDialog(true)
                   }}
                 >
@@ -1233,6 +1377,8 @@ export default function FlowsPage() {
                           className="rounded-xl border-border text-foreground hover:border-accent hover:text-accent"
                           onClick={() => {
                             setNewFlowCategory("personalizado")
+                            setNewFlowMode(null)
+                            resetBasicFlow()
                             setShowNewFlowDialog(true)
                           }}
                         >
@@ -1772,88 +1918,407 @@ export default function FlowsPage() {
       </ScrollArea>
 
       {/* ---- New Flow Dialog ---- */}
-      <Dialog open={showNewFlowDialog} onOpenChange={setShowNewFlowDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">
-              {flows.length === 0 ? "Criar Fluxo Inicial" : "Novo Fluxo"}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="flow-name" className="text-foreground">Nome do fluxo</Label>
-              <Input
-                id="flow-name"
-                value={newFlowName}
-                onChange={(e) => setNewFlowName(e.target.value)}
-                placeholder={flows.length === 0 ? "Ex: Boas-vindas" : "Ex: Remarketing VIP"}
-                className="bg-secondary border-border rounded-xl text-foreground"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleCreateFlow()
-                }}
-              />
+      <Dialog open={showNewFlowDialog} onOpenChange={(open) => {
+        setShowNewFlowDialog(open)
+        if (!open) {
+          setNewFlowMode(null)
+          resetBasicFlow()
+          setNewFlowName("")
+        }
+      }}>
+        <DialogContent className="bg-card border-border rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto p-0">
+
+          {/* ===== STEP 1: Choose mode ===== */}
+          {newFlowMode === null && (
+            <div className="flex flex-col">
+              <div className="px-6 pt-6 pb-4 border-b border-border">
+                <DialogHeader>
+                  <DialogTitle className="text-foreground text-base">
+                    {flows.length === 0 ? "Criar Fluxo Inicial" : "Novo Fluxo"}
+                  </DialogTitle>
+                </DialogHeader>
+                <p className="text-xs text-muted-foreground mt-1">Como voce quer montar esse fluxo?</p>
+              </div>
+
+              <div className="flex flex-col gap-3 p-5">
+                {/* Basic Flow Option */}
+                <button
+                  className="group flex flex-col gap-3 rounded-2xl border-2 border-success/30 bg-success/5 p-5 text-left transition-all hover:border-success/60 hover:bg-success/10 hover:shadow-sm"
+                  onClick={() => setNewFlowMode("basico")}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-success/15 border border-success/30">
+                      <Zap className="h-5 w-5 text-success" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-foreground">Fluxo Basico</p>
+                        <Badge className="bg-success/15 text-success border-success/30 rounded-md text-[9px] font-bold px-1.5 py-0">
+                          RAPIDO
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">Pronto em segundos</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-success transition-colors" />
+                  </div>
+                  <div className="flex flex-col gap-1.5 pl-14">
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-success/60" />
+                      <span>Mensagem de boas-vindas com foto/video</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-success/60" />
+                      <span>Preco e cobranca gerada automaticamente</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-success/60" />
+                      <span>So preencher os campos e esta pronto</span>
+                    </div>
+                  </div>
+                  {/* Mini preview of what it generates */}
+                  <div className="flex items-center gap-1.5 pl-14 mt-1">
+                    <div className="flex items-center gap-1 text-[9px] text-success/70 bg-success/10 rounded-full px-2 py-0.5 border border-success/20">
+                      <Zap className="h-2.5 w-2.5" /> Gatilho
+                    </div>
+                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30" />
+                    <div className="flex items-center gap-1 text-[9px] text-blue-400/70 bg-blue-500/10 rounded-full px-2 py-0.5 border border-blue-500/20">
+                      <MessageSquare className="h-2.5 w-2.5" /> Mensagem
+                    </div>
+                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30" />
+                    <div className="flex items-center gap-1 text-[9px] text-success/70 bg-success/10 rounded-full px-2 py-0.5 border border-success/20">
+                      <CreditCard className="h-2.5 w-2.5" /> Pagamento
+                    </div>
+                  </div>
+                </button>
+
+                {/* Complete Flow Option */}
+                <button
+                  className="group flex flex-col gap-3 rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent/60 hover:bg-accent/10 hover:shadow-sm"
+                  onClick={() => setNewFlowMode("completo")}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/15 border border-accent/30">
+                      <Workflow className="h-5 w-5 text-accent" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-bold text-foreground">Fluxo Completo</p>
+                        <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-bold px-1.5 py-0">
+                          AVANCADO
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">Controle total sobre cada etapa</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-accent transition-colors" />
+                  </div>
+                  <div className="flex flex-col gap-1.5 pl-14">
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-accent/60" />
+                      <span>Monte o fluxo etapa por etapa</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-accent/60" />
+                      <span>Mensagens, logica, pagamentos, automacoes</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                      <CheckCircle2 className="h-3 w-3 text-accent/60" />
+                      <span>Para jornadas mais elaboradas</span>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
+          )}
 
-            {/* Category selection - only for secondary flows */}
-            {flows.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <Label className="text-foreground">Tipo de fluxo</Label>
-                <div className="grid grid-cols-2 gap-2">
-                  {flowCategories.filter((c) => c.value !== "inicial").map((cat) => {
-                    const CatIcon = cat.icon
-                    const isSelected = newFlowCategory === cat.value
-                    return (
-                      <button
-                        key={cat.value}
-                        className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all ${
-                          isSelected
-                            ? `${cat.color} ring-1 ring-accent`
-                            : "border-border bg-secondary/30 hover:bg-secondary/60"
-                        }`}
-                        onClick={() => setNewFlowCategory(cat.value)}
-                      >
-                        <CatIcon className={`h-4 w-4 shrink-0 ${isSelected ? cat.iconColor : "text-muted-foreground"}`} />
-                        <div className="min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
-                            {cat.label}
-                          </p>
-                        </div>
-                      </button>
-                    )
-                  })}
+          {/* ===== STEP 2A: Basic Flow Wizard ===== */}
+          {newFlowMode === "basico" && (
+            <div className="flex flex-col">
+              <div className="sticky top-0 z-10 bg-card border-b border-border px-6 pt-6 pb-4 rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <button
+                    className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors"
+                    onClick={() => setNewFlowMode(null)}
+                  >
+                    <ArrowRight className="h-4 w-4 text-muted-foreground rotate-180" />
+                  </button>
+                  <div>
+                    <DialogHeader>
+                      <DialogTitle className="text-foreground text-base">Fluxo Basico</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-xs text-muted-foreground mt-0.5">Preencha e seu bot estara pronto para vender</p>
+                  </div>
                 </div>
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {getCategoryConfig(newFlowCategory).description}
-                </p>
               </div>
-            )}
 
-            {flows.length === 0 && (
-              <div className="flex items-start gap-3 rounded-xl bg-accent/5 border border-accent/20 p-3">
-                <Zap className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground">
-                  Este sera o fluxo principal do seu bot. E o primeiro que seus usuarios vao ver ao interagir.
-                </p>
+              <div className="flex flex-col gap-5 p-5">
+                {/* Product info section */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent/10 border border-accent/20">
+                      <ShoppingBag className="h-3 w-3 text-accent" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Seu Produto</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3 pl-8">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-foreground text-xs">Nome do produto</Label>
+                      <Input
+                        value={basicProductName}
+                        onChange={(e) => setBasicProductName(e.target.value)}
+                        placeholder="Ex: Curso de Marketing Digital"
+                        className="bg-secondary border-border rounded-xl text-foreground"
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-foreground text-xs">Descricao curta <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                      <Textarea
+                        value={basicProductDesc}
+                        onChange={(e) => setBasicProductDesc(e.target.value)}
+                        placeholder="Ex: Aprenda do zero ao avancado em 30 dias"
+                        className="bg-secondary border-border rounded-xl text-foreground min-h-[60px] resize-none"
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-foreground text-xs">Preco (R$)</Label>
+                      <Input
+                        value={basicProductPrice}
+                        onChange={(e) => setBasicProductPrice(e.target.value)}
+                        placeholder="49.90"
+                        className="bg-secondary border-border rounded-xl text-foreground"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Message section */}
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/10 border border-blue-500/20">
+                      <MessageSquare className="h-3 w-3 text-blue-400" />
+                    </div>
+                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Mensagem</span>
+                  </div>
+
+                  <div className="flex flex-col gap-3 pl-8">
+                    <div className="flex flex-col gap-1.5">
+                      <Label className="text-foreground text-xs">Texto de boas-vindas <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                      <Textarea
+                        value={basicWelcomeMsg}
+                        onChange={(e) => setBasicWelcomeMsg(e.target.value)}
+                        placeholder="Ex: Opa! Que bom ter voce aqui. Olha so essa oportunidade:"
+                        className="bg-secondary border-border rounded-xl text-foreground min-h-[70px] resize-none"
+                        rows={3}
+                      />
+                      <p className="text-[10px] text-muted-foreground">Se vazio, usaremos uma mensagem padrao</p>
+                    </div>
+
+                    {/* Media toggle */}
+                    <div className="flex flex-col gap-2">
+                      <Label className="text-foreground text-xs">Midia <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                      <div className="flex gap-2">
+                        {(["none", "photo", "video"] as const).map((mt) => (
+                          <button
+                            key={mt}
+                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-all ${
+                              basicMediaType === mt
+                                ? "border-accent bg-accent/10 text-accent font-medium"
+                                : "border-border bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+                            }`}
+                            onClick={() => setBasicMediaType(mt)}
+                          >
+                            {mt === "none" && <X className="h-3 w-3" />}
+                            {mt === "photo" && <Image className="h-3 w-3" />}
+                            {mt === "video" && <Video className="h-3 w-3" />}
+                            {mt === "none" ? "Sem midia" : mt === "photo" ? "Foto" : "Video"}
+                          </button>
+                        ))}
+                      </div>
+                      {basicMediaType !== "none" && (
+                        <Input
+                          value={basicMediaUrl}
+                          onChange={(e) => setBasicMediaUrl(e.target.value)}
+                          placeholder={basicMediaType === "photo" ? "URL da foto do produto" : "URL do video"}
+                          className="bg-secondary border-border rounded-xl text-foreground"
+                        />
+                      )}
+                    </div>
+
+                    {/* Optional button */}
+                    <div className="flex flex-col gap-2">
+                      <Label className="text-foreground text-xs">Botao de link <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={basicButtonText}
+                          onChange={(e) => setBasicButtonText(e.target.value)}
+                          placeholder="Texto do botao"
+                          className="bg-secondary border-border rounded-xl text-foreground flex-1"
+                        />
+                        <Input
+                          value={basicButtonUrl}
+                          onChange={(e) => setBasicButtonUrl(e.target.value)}
+                          placeholder="https://..."
+                          className="bg-secondary border-border rounded-xl text-foreground flex-1"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Preview of what will be generated */}
+                <div className="rounded-xl border border-border/50 bg-secondary/20 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
+                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Preview do fluxo gerado</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1 text-[10px] text-accent bg-accent/10 rounded-lg px-2 py-1 border border-accent/20">
+                      <Zap className="h-3 w-3" /> Inicio
+                    </div>
+                    <ArrowRight className="h-3 w-3 text-muted-foreground/30" />
+                    <div className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 rounded-lg px-2 py-1 border border-blue-500/20">
+                      <MessageSquare className="h-3 w-3" />
+                      {basicProductName.trim() || "Mensagem"}
+                      {basicMediaType !== "none" && (
+                        <span className="text-[8px] bg-blue-500/20 rounded px-1">
+                          {basicMediaType === "photo" ? "foto" : "video"}
+                        </span>
+                      )}
+                    </div>
+                    {basicProductPrice.trim() && (
+                      <>
+                        <ArrowRight className="h-3 w-3 text-muted-foreground/30" />
+                        <div className="flex items-center gap-1 text-[10px] text-success bg-success/10 rounded-lg px-2 py-1 border border-success/20">
+                          <CreditCard className="h-3 w-3" /> R$ {basicProductPrice}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              className="rounded-xl border-border text-foreground"
-              onClick={() => setShowNewFlowDialog(false)}
-            >
-              Cancelar
-            </Button>
-            <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-              disabled={!newFlowName.trim() || isCreatingFlow}
-              onClick={handleCreateFlow}
-            >
-              {isCreatingFlow && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Criar
-            </Button>
-          </DialogFooter>
+
+              <div className="sticky bottom-0 bg-card border-t border-border px-5 py-4 flex justify-between items-center rounded-b-2xl">
+                <Button
+                  variant="ghost"
+                  className="rounded-xl text-muted-foreground"
+                  onClick={() => setNewFlowMode(null)}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  className="bg-success text-success-foreground hover:bg-success/90 rounded-xl"
+                  disabled={!basicProductName.trim() || !basicProductPrice.trim() || isCreatingFlow}
+                  onClick={handleCreateBasicFlow}
+                >
+                  {isCreatingFlow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                  Criar Fluxo
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* ===== STEP 2B: Complete Flow (existing form) ===== */}
+          {newFlowMode === "completo" && (
+            <div className="flex flex-col">
+              <div className="sticky top-0 z-10 bg-card border-b border-border px-6 pt-6 pb-4 rounded-t-2xl">
+                <div className="flex items-center gap-3">
+                  <button
+                    className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors"
+                    onClick={() => setNewFlowMode(null)}
+                  >
+                    <ArrowRight className="h-4 w-4 text-muted-foreground rotate-180" />
+                  </button>
+                  <div>
+                    <DialogHeader>
+                      <DialogTitle className="text-foreground text-base">Fluxo Completo</DialogTitle>
+                    </DialogHeader>
+                    <p className="text-xs text-muted-foreground mt-0.5">Monte etapa por etapa com controle total</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-4 p-5">
+                <div className="flex flex-col gap-2">
+                  <Label htmlFor="flow-name" className="text-foreground text-xs">Nome do fluxo</Label>
+                  <Input
+                    id="flow-name"
+                    value={newFlowName}
+                    onChange={(e) => setNewFlowName(e.target.value)}
+                    placeholder={flows.length === 0 ? "Ex: Boas-vindas" : "Ex: Remarketing VIP"}
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleCreateFlow()
+                    }}
+                  />
+                </div>
+
+                {/* Category selection - only for secondary flows */}
+                {flows.length > 0 && (
+                  <div className="flex flex-col gap-2">
+                    <Label className="text-foreground text-xs">Tipo de fluxo</Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {flowCategories.filter((c) => c.value !== "inicial").map((cat) => {
+                        const CatIcon = cat.icon
+                        const isSelected = newFlowCategory === cat.value
+                        return (
+                          <button
+                            key={cat.value}
+                            className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                              isSelected
+                                ? `${cat.color} ring-1 ring-accent`
+                                : "border-border bg-secondary/30 hover:bg-secondary/60"
+                            }`}
+                            onClick={() => setNewFlowCategory(cat.value)}
+                          >
+                            <CatIcon className={`h-4 w-4 shrink-0 ${isSelected ? cat.iconColor : "text-muted-foreground"}`} />
+                            <div className="min-w-0">
+                              <p className={`text-xs font-medium truncate ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
+                                {cat.label}
+                              </p>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {getCategoryConfig(newFlowCategory).description}
+                    </p>
+                  </div>
+                )}
+
+                {flows.length === 0 && (
+                  <div className="flex items-start gap-3 rounded-xl bg-accent/5 border border-accent/20 p-3">
+                    <Zap className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground">
+                      Este sera o fluxo principal do seu bot. E o primeiro que seus usuarios vao ver ao interagir.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="sticky bottom-0 bg-card border-t border-border px-5 py-4 flex justify-between items-center rounded-b-2xl">
+                <Button
+                  variant="ghost"
+                  className="rounded-xl text-muted-foreground"
+                  onClick={() => setNewFlowMode(null)}
+                >
+                  Voltar
+                </Button>
+                <Button
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
+                  disabled={!newFlowName.trim() || isCreatingFlow}
+                  onClick={handleCreateFlow}
+                >
+                  {isCreatingFlow && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Criar
+                </Button>
+              </div>
+            </div>
+          )}
+
         </DialogContent>
       </Dialog>
 
