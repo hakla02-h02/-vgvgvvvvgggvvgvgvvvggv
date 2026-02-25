@@ -29,7 +29,7 @@ import { Switch } from "@/components/ui/switch"
 
 // ---- Types ----
 
-type FlowCategory = "inicial" | "remarketing" | "followup" | "pos-venda" | "captacao" | "notificacao" | "seo" | "personalizado"
+type FlowCategory = "inicial" | "remarketing" | "followup" | "pos-venda" | "captacao" | "notificacao" | "personalizado"
 
 interface Flow {
   id: string
@@ -83,7 +83,6 @@ const flowCategories: { value: FlowCategory; label: string; description: string;
   { value: "pos-venda", label: "Pos-venda", description: "Fluxo para quem ja comprou", icon: ShoppingBag, color: "border-purple-500/30 bg-purple-500/10", iconColor: "text-purple-400" },
   { value: "captacao", label: "Captacao", description: "Captar novos leads e contatos", icon: UserPlus, color: "border-cyan-500/30 bg-cyan-500/10", iconColor: "text-cyan-400" },
   { value: "notificacao", label: "Notificacao", description: "Enviar avisos e alertas", icon: Mail, color: "border-yellow-500/30 bg-yellow-500/10", iconColor: "text-yellow-400" },
-  { value: "seo", label: "SEO", description: "Otimizacao e conteudo para buscadores", icon: Search, color: "border-emerald-500/30 bg-emerald-500/10", iconColor: "text-emerald-400" },
   { value: "personalizado", label: "Personalizado", description: "Crie seu proprio tipo de fluxo", icon: Sparkles, color: "border-pink-500/30 bg-pink-500/10", iconColor: "text-pink-400" },
 ]
 
@@ -217,24 +216,6 @@ const categoryConfigs: CategoryConfigDef[] = [
         { value: "media", label: "Media" },
         { value: "baixa", label: "Baixa" },
       ], description: "Nivel de urgencia" },
-    ],
-  },
-  {
-    category: "seo",
-    title: "Configuracoes de SEO",
-    description: "Otimize conteudo e fluxos para buscadores.",
-    fields: [
-      { key: "target_keywords", label: "Palavras-chave alvo", type: "textarea", placeholder: "chatbot, automacao, vendas online", icon: Search, description: "Keywords separadas por virgula" },
-      { key: "meta_title", label: "Meta titulo", type: "text", placeholder: "Melhor chatbot para vendas", icon: FileText, description: "Titulo para motores de busca" },
-      { key: "meta_description", label: "Meta descricao", type: "textarea", placeholder: "Descricao otimizada para SEO...", icon: FileText, description: "Descricao de ate 160 caracteres" },
-      { key: "content_type", label: "Tipo de conteudo", type: "select", icon: Globe, options: [
-        { value: "landing", label: "Landing Page" },
-        { value: "blog", label: "Blog Post" },
-        { value: "produto", label: "Pagina de Produto" },
-        { value: "faq", label: "FAQ / Perguntas" },
-      ], description: "Formato do conteudo gerado" },
-      { key: "auto_links", label: "Links internos automaticos", type: "toggle", icon: Link, description: "Gerar links internos nos textos" },
-      { key: "canonical_url", label: "URL canonica", type: "text", placeholder: "https://seusite.com/pagina", icon: Globe, description: "URL principal para indexacao" },
     ],
   },
   {
