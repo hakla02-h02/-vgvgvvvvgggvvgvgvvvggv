@@ -319,6 +319,65 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
   },
 ]
 
+// Business function groups for the "Add Step" dialog
+interface ActionGroup {
+  id: string
+  label: string
+  description: string
+  icon: React.ElementType
+  iconColor: string
+  bgColor: string
+  types: NodeType[]
+}
+
+const actionGroups: ActionGroup[] = [
+  {
+    id: "comunicacao",
+    label: "Comunicacao",
+    description: "Enviar mensagens, midias e botoes",
+    icon: MessageSquare,
+    iconColor: "text-blue-400",
+    bgColor: "bg-blue-500/10 border-blue-500/30",
+    types: ["message"],
+  },
+  {
+    id: "logica",
+    label: "Logica",
+    description: "Condicoes, delays e verificacoes",
+    icon: Split,
+    iconColor: "text-purple-400",
+    bgColor: "bg-purple-500/10 border-purple-500/30",
+    types: ["delay", "condition"],
+  },
+  {
+    id: "monetizacao",
+    label: "Monetizacao",
+    description: "Cobrancas, pagamentos e PIX",
+    icon: CreditCard,
+    iconColor: "text-success",
+    bgColor: "bg-success/10 border-success/30",
+    types: ["payment"],
+  },
+  {
+    id: "navegacao",
+    label: "Navegacao",
+    description: "Redirecionar para outros fluxos",
+    icon: ExternalLink,
+    iconColor: "text-orange-400",
+    bgColor: "bg-orange-500/10 border-orange-500/30",
+    types: ["redirect"],
+  },
+  {
+    id: "automacao",
+    label: "Automacao",
+    description: "Tags, grupos e acoes externas",
+    icon: Zap,
+    iconColor: "text-cyan-400",
+    bgColor: "bg-cyan-500/10 border-cyan-500/30",
+    types: ["action"],
+  },
+]
+
 // ---- Component ----
 
 export default function FlowsPage() {
@@ -986,7 +1045,7 @@ export default function FlowsPage() {
                             </Badge>
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            Fluxo inicial do bot — primeiro contato dos usuarios
+                            Jornada inicial do usuario — primeiro contato com o bot
                           </p>
                         </div>
                       </div>
@@ -1024,12 +1083,12 @@ export default function FlowsPage() {
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <GitBranch className="h-4 w-4 text-muted-foreground" />
+                      <GitBranch className="h-4 w-4 text-accent/60" />
                       <h2 className="text-sm font-semibold text-foreground">
                         Fluxos Secundarios
                       </h2>
-                      <span className="text-xs text-muted-foreground">
-                        ({secondaryFlows.length})
+                      <span className="text-[10px] text-muted-foreground bg-secondary rounded-full px-2 py-0.5">
+                        {secondaryFlows.length}
                       </span>
                     </div>
                   </div>
@@ -1336,13 +1395,38 @@ export default function FlowsPage() {
                         {nodes.length === 0 && (
                           <div className="text-center py-8">
                             <p className="text-sm text-muted-foreground mb-3">
-                              Nenhuma acao adicionada. Comece adicionando blocos ao fluxo.
+                              Nenhuma etapa adicionada. Comece adicionando etapas ao fluxo.
                             </p>
                           </div>
                         )}
 
-                        {nodes.map((node, i) => {
+                        {/* Fixed trigger block */}
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-4 rounded-xl border-2 border-accent/40 bg-accent/5 px-4 py-3">
+                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent/15 border border-accent/30">
+                              <Zap className="h-4 w-4 text-accent" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-sm font-semibold text-foreground">Gatilho Inicial</p>
+                                <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-semibold px-1.5 py-0">
+                                  FIXO
+                                </Badge>
+                              </div>
+                              <p className="text-[11px] text-muted-foreground">Usuario inicia o bot</p>
+                            </div>
+                          </div>
+                          {nodes.filter((n) => n.type !== "trigger").length > 0 && (
+                            <div className="flex justify-center py-0.5">
+                              <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/50" />
+                            </div>
+                          )}
+                        </div>
+
+                        {nodes.filter((n) => n.type !== "trigger").map((node, i, arr) => {
                           const Icon = nodeIcons[node.type]
+                          // Find the business group for this node type
+                          const group = actionGroups.find((g) => g.types.includes(node.type))
                           return (
                             <div key={node.id}>
                               <div
@@ -1352,7 +1436,14 @@ export default function FlowsPage() {
                                   <Icon className={`h-4 w-4 ${nodeIconColors[node.type]}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
+                                  <div className="flex items-center gap-2">
+                                    <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
+                                    {group && (
+                                      <span className={`text-[9px] font-medium px-1.5 py-0 rounded-full border ${group.bgColor} ${group.iconColor}`}>
+                                        {group.label}
+                                      </span>
+                                    )}
+                                  </div>
                                   {node.type === "message" && (
                                     <div className="flex items-center gap-2 mt-0.5">
                                       {node.config?.media_type && node.config.media_type !== "" && (
@@ -1414,7 +1505,7 @@ export default function FlowsPage() {
                                 </div>
                                 <GripVertical className="h-3 w-3 text-muted-foreground shrink-0" />
                               </div>
-                              {i < nodes.length - 1 && (
+                              {i < arr.length - 1 && (
                                 <div className="flex justify-center py-1">
                                   <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/50" />
                                 </div>
@@ -1423,7 +1514,7 @@ export default function FlowsPage() {
                           )
                         })}
 
-                        {nodes.length > 0 && (
+                        {nodes.filter((n) => n.type !== "trigger").length > 0 && (
                           <div className="flex justify-center py-1">
                             <ArrowRight className="h-4 w-4 rotate-90 text-muted-foreground/50" />
                           </div>
@@ -1438,7 +1529,7 @@ export default function FlowsPage() {
                           }}
                         >
                           <Plus className="mr-2 h-4 w-4" />
-                          Adicionar acao
+                          Adicionar Etapa
                         </Button>
                       </div>
                     )}
@@ -1613,32 +1704,49 @@ export default function FlowsPage() {
       <Dialog open={showAddNodeDialog} onOpenChange={setShowAddNodeDialog}>
         <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Adicionar Acao</DialogTitle>
+            <DialogTitle className="text-foreground">Adicionar Etapa</DialogTitle>
           </DialogHeader>
 
           {!selectedTemplate ? (
-            <div className="flex flex-col gap-2 py-2">
-              <p className="text-sm text-muted-foreground mb-2">Escolha o tipo de acao:</p>
-              {actionTemplates.map((tpl) => {
-                const Icon = nodeIcons[tpl.type]
+            <div className="flex flex-col gap-4 py-2">
+              <p className="text-sm text-muted-foreground">O que voce quer fazer nesta etapa?</p>
+              {actionGroups.map((group) => {
+                const GroupIcon = group.icon
+                const groupTemplates = actionTemplates.filter((tpl) => group.types.includes(tpl.type))
+                if (groupTemplates.length === 0) return null
+
                 return (
-                  <button
-                    key={tpl.type}
-                    className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors hover:bg-secondary/50 ${nodeColors[tpl.type]}`}
-                    onClick={() => {
-                      setSelectedTemplate(tpl)
-                      setNodeConfigValues({})
-                      resetMessageConfig()
-                    }}
-                  >
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/50">
-                      <Icon className={`h-4 w-4 ${nodeIconColors[tpl.type]}`} />
+                  <div key={group.id} className="flex flex-col gap-1.5">
+                    <div className="flex items-center gap-2 px-1">
+                      <GroupIcon className={`h-4 w-4 ${group.iconColor}`} />
+                      <span className="text-xs font-semibold text-foreground uppercase tracking-wider">{group.label}</span>
+                      <span className="text-[10px] text-muted-foreground">— {group.description}</span>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">{tpl.label}</p>
-                      <p className="text-xs text-muted-foreground">{tpl.description}</p>
+                    <div className="flex flex-col gap-1.5">
+                      {groupTemplates.map((tpl) => {
+                        const Icon = nodeIcons[tpl.type]
+                        return (
+                          <button
+                            key={tpl.type}
+                            className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-left transition-colors hover:bg-secondary/50 ${nodeColors[tpl.type]}`}
+                            onClick={() => {
+                              setSelectedTemplate(tpl)
+                              setNodeConfigValues({})
+                              resetMessageConfig()
+                            }}
+                          >
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background/50">
+                              <Icon className={`h-4 w-4 ${nodeIconColors[tpl.type]}`} />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{tpl.label}</p>
+                              <p className="text-xs text-muted-foreground">{tpl.description}</p>
+                            </div>
+                          </button>
+                        )
+                      })}
                     </div>
-                  </button>
+                  </div>
                 )
               })}
             </div>
