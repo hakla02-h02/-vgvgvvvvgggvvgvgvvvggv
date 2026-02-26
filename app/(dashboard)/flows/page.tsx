@@ -1323,7 +1323,8 @@ export default function FlowsPage() {
     let finalLabel = editNodeLabel
 
     if (editingNode.type === "message") {
-      const validButtons = msgButtons.filter((b) => b.text.trim() && b.url.trim())
+      // Only include buttons if the switch is ON and there are valid buttons
+      const validButtons = msgHasButtons ? msgButtons.filter((b) => b.text.trim() && b.url.trim()) : []
       finalConfig = {
         text: msgText,
         media_url: msgMediaType !== "none" ? msgMediaUrl : "",
@@ -1339,7 +1340,11 @@ export default function FlowsPage() {
       finalLabel = editNodeConfig.target_flow_name ? `Ir para: ${editNodeConfig.target_flow_name}` : "Redirecionar"
     }
 
-    const { error } = await supabase
+    console.log("[v0] handleSaveNode - editingNode.id:", editingNode.id, "type:", editingNode.type)
+    console.log("[v0] handleSaveNode - finalLabel:", finalLabel)
+    console.log("[v0] handleSaveNode - finalConfig:", JSON.stringify(finalConfig))
+
+    const { error, data, count, status, statusText } = await supabase
       .from("flow_nodes")
       .update({
         label: finalLabel,
@@ -1347,11 +1352,56 @@ export default function FlowsPage() {
         updated_at: new Date().toISOString(),
       })
       .eq("id", editingNode.id)
+      .select()
+
+    console.log("[v0] handleSaveNode - response status:", status, statusText)
+    console.log("[v0] handleSaveNode - response data:", JSON.stringify(data))
+    console.log("[v0] handleSaveNode - response error:", JSON.stringify(error))
+    console.log("[v0] handleSaveNode - response count:", count)
 
     if (error) {
-      console.error("Error updating node:", error)
+      console.error("[v0] Error updating node:", error)
       setIsSavingNode(false)
       return
+    }
+
+    // Check if the update actually affected a row
+    if (!data || data.length === 0) {
+      console.error("[v0] Update returned no rows - RLS policy may be blocking the update")
+      // Try alternative approach: delete and re-insert
+      console.log("[v0] Trying delete + insert approach...")
+      
+      const { error: deleteError } = await supabase
+        .from("flow_nodes")
+        .delete()
+        .eq("id", editingNode.id)
+      
+      if (deleteError) {
+        console.error("[v0] Delete also failed:", deleteError)
+        setIsSavingNode(false)
+        return
+      }
+
+      const { data: insertData, error: insertError } = await supabase
+        .from("flow_nodes")
+        .insert({
+          id: editingNode.id,
+          flow_id: editingNode.flow_id,
+          type: editingNode.type,
+          label: finalLabel,
+          config: finalConfig,
+          position: editingNode.position,
+        })
+        .select()
+        .single()
+      
+      if (insertError) {
+        console.error("[v0] Re-insert also failed:", insertError)
+        setIsSavingNode(false)
+        return
+      }
+      
+      console.log("[v0] Delete + insert succeeded:", insertData)
     }
 
     setNodes((prev) =>
