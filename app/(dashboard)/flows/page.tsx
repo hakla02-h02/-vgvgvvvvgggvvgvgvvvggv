@@ -549,157 +549,88 @@ function SortableNodeCard({
   const Icon = nodeIcons[node.type]
   const group = actionGroups.find((g) => g.types.includes(node.type))
 
+  // Helper to get subtitle
+  const getSubtitle = () => {
+    if (node.type === "message") {
+      const parts: string[] = []
+      if (node.config?.media_type && node.config.media_type !== "") parts.push(node.config.media_type === "photo" ? "Foto" : "Video")
+      if (node.config?.buttons && node.config.buttons !== "") {
+        try { parts.push(`${JSON.parse(node.config.buttons as string).length} botao(es)`) } catch { /* noop */ }
+      }
+      return parts.length > 0 ? parts.join(" · ") : "Mensagem"
+    }
+    if (node.type === "delay" && node.config?.seconds) {
+      const s = parseInt(node.config.seconds as string)
+      if (s >= 3600) return `${Math.floor(s / 3600)}h${Math.floor((s % 3600) / 60) > 0 ? ` ${Math.floor((s % 3600) / 60)}min` : ""}`
+      if (s >= 60) return `${Math.floor(s / 60)} min`
+      return `${s}s`
+    }
+    if (node.type === "condition") {
+      const sv = node.config?.subVariant as string
+      return sv === "check_payment" ? "Verificar pagamento" : sv === "check_tag" ? "Verificar tag" : "Condicao"
+    }
+    if (node.type === "action") {
+      const sv = node.config?.subVariant as string
+      return sv === "add_tag" ? "Adicionar tag" : sv === "remove_tag" ? "Remover tag" : sv === "add_group" ? "Adicionar ao grupo" : sv === "webhook" ? "Webhook" : "Automacao"
+    }
+    if (node.type === "payment") {
+      const sv = node.config?.subVariant as string
+      return sv === "charge" ? "Cobranca" : sv === "wait_payment" ? "Aguardar pagamento" : "Pagamento"
+    }
+    if (node.type === "redirect") {
+      if (node.config?.target_flow_name) return node.config.target_flow_name as string
+      const sv = node.config?.subVariant as string
+      return sv === "restart" ? "Volta ao inicio" : sv === "end" ? "Encerrar" : "Navegacao"
+    }
+    return ""
+  }
+
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all hover:shadow-sm ${nodeColors[node.type]} ${isDragging ? "opacity-50 shadow-lg ring-2 ring-accent/40" : ""}`}
+        className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${
+          isDragging 
+            ? "opacity-50 ring-1 ring-accent/30 bg-secondary/40 border-border" 
+            : "border-border/60 bg-transparent hover:bg-secondary/20 hover:border-border"
+        }`}
       >
-        {/* Left color bar */}
-        {group && (
-          <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full ${group.iconColor === "text-blue-400" ? "bg-blue-400/60" : group.iconColor === "text-purple-400" ? "bg-purple-400/60" : group.iconColor === "text-success" ? "bg-emerald-400/60" : group.iconColor === "text-orange-400" ? "bg-orange-400/60" : "bg-cyan-400/60"}`} />
-        )}
-        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${group ? `${group.bgColor} border ${group.borderAccent}` : "bg-background/50"}`}>
-          <Icon className={`h-4 w-4 ${nodeIconColors[node.type]}`} />
+        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
+          group ? "bg-secondary/50" : "bg-secondary/30"
+        }`}>
+          <Icon className={`h-3.5 w-3.5 ${nodeIconColors[node.type]}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
-            {group && (
-              <span className={`text-[9px] font-semibold px-1.5 py-0 rounded-full border ${group.bgColor} ${group.borderAccent} ${group.iconColor}`}>
-                {group.label}
-              </span>
-            )}
-          </div>
-          {node.type === "message" && (
-            <div className="flex items-center gap-2.5 mt-1">
-              {node.config?.media_type && node.config.media_type !== "" && (
-                <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
-                  {node.config.media_type === "photo" ? <Image className="h-3 w-3" /> : <Video className="h-3 w-3" />}
-                  {node.config.media_type === "photo" ? "Foto" : "Video"}
-                </span>
-              )}
-              {node.config?.buttons && node.config.buttons !== "" && (
-                <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
-                  <MousePointerClick className="h-3 w-3" />
-                  {(() => { try { return JSON.parse(node.config.buttons as string).length } catch { return 0 } })()}{" "}
-                  {"botao(es)"}
-                </span>
-              )}
-            </div>
-          )}
-          {node.type === "redirect" && node.config?.target_flow_name && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <ExternalLink className="h-3 w-3 text-orange-400" />
-              <span className="text-xs text-orange-400 font-medium">
-                {node.config.target_flow_name as string}
-              </span>
-              {(() => {
-                const targetFlow = flowsList.find((f) => f.id === node.config?.target_flow_id)
-                if (targetFlow) {
-                  const tCat = getCategoryConfig(targetFlow.category)
-                  return (
-                    <Badge variant="outline" className={`text-[9px] px-1 py-0 rounded ${tCat.color}`}>
-                      {tCat.label}
-                    </Badge>
-                  )
-                }
-                return null
-              })()}
-            </div>
-          )}
-          {node.type === "delay" && (
-            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <Clock className="h-3 w-3" /> {node.config?.seconds ? (() => {
-                const s = parseInt(node.config.seconds as string)
-                if (s >= 3600) return `Pausa de ${Math.floor(s / 3600)}h${Math.floor((s % 3600) / 60) > 0 ? ` ${Math.floor((s % 3600) / 60)}min` : ""}`
-                if (s >= 60) return `Pausa de ${Math.floor(s / 60)} min`
-                return `Pausa de ${s}s`
-              })() : "Pausa no fluxo"}
-            </p>
-          )}
-          {node.type === "condition" && (
-            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              {(node.config?.subVariant as string) === "check_payment" ? (
-                <><CreditCard className="h-3 w-3" /> Verificar pagamento</>
-              ) : (node.config?.subVariant as string) === "check_tag" ? (
-                <><Tag className="h-3 w-3" /> Verificar tag</>
-              ) : (
-                <><Split className="h-3 w-3" /> Verificacao logica</>
-              )}
-            </p>
-          )}
-          {node.type === "action" && (
-            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              {(node.config?.subVariant as string) === "add_tag" ? (
-                <><Tag className="h-3 w-3" /> Adicionar tag</>
-              ) : (node.config?.subVariant as string) === "remove_tag" ? (
-                <><Unlink className="h-3 w-3" /> Remover tag</>
-              ) : (node.config?.subVariant as string) === "add_group" ? (
-                <><UsersRound className="h-3 w-3" /> Adicionar ao grupo</>
-              ) : (node.config?.subVariant as string) === "webhook" ? (
-                <><Globe className="h-3 w-3" /> Webhook externo</>
-              ) : (
-                <><Zap className="h-3 w-3" /> Automacao</>
-              )}
-            </p>
-          )}
-          {node.type === "payment" && (
-            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              {(node.config?.subVariant as string) === "charge" ? (
-                <><CreditCard className="h-3 w-3" /> Cobrar pagamento</>
-              ) : (node.config?.subVariant as string) === "wait_payment" ? (
-                <><Clock className="h-3 w-3" /> Aguardar pagamento</>
-              ) : (
-                <><CreditCard className="h-3 w-3" /> Monetizacao</>
-              )}
-            </p>
-          )}
-          {node.type === "redirect" && !node.config?.target_flow_name && (
-            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              {node.config?.subVariant === "restart" ? (
-                <><RefreshCw className="h-3 w-3" /> Volta ao inicio</>
-              ) : node.config?.subVariant === "end" ? (
-                <><CircleStop className="h-3 w-3" /> Finaliza interacao</>
-              ) : (
-                <><ExternalLink className="h-3 w-3" /> Navegacao</>
-              )}
-            </p>
-          )}
+          <p className="text-xs font-medium text-foreground/90 truncate leading-tight">{node.label}</p>
+          <p className="text-[10px] text-muted-foreground/50 mt-px truncate">{getSubtitle()}</p>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+        <div className="flex items-center gap-0.5 shrink-0">
+          <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-secondary/60 transition-colors"
               onClick={() => onEdit(node)}
             >
-              <Pencil className="h-3.5 w-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              <Pencil className="h-3 w-3" />
+            </button>
+            <button
+              className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
               onClick={() => onDelete(node)}
             >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
+              <Trash2 className="h-3 w-3" />
+            </button>
           </div>
-          <div className="w-px h-5 bg-border/40 opacity-0 group-hover:opacity-100 transition-opacity" />
           <button
-            className="flex items-center justify-center w-7 h-7 rounded-md cursor-grab active:cursor-grabbing touch-none hover:bg-muted/50 transition-colors"
+            className="flex items-center justify-center w-6 h-6 rounded-md cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Arrastar para reordenar"
             {...attributes}
             {...listeners}
           >
-            <GripVertical className="h-4 w-4 text-muted-foreground/40 hover:text-muted-foreground transition-colors" />
+            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30" />
           </button>
         </div>
       </div>
       {!isLast && (
-        <div className="flex flex-col items-center py-1">
-          <div className="w-px h-2 bg-border/60" />
-          <ArrowDown className="h-3 w-3 text-muted-foreground/30" />
+        <div className="flex justify-center py-0.5">
+          <div className="w-px h-3 bg-border/30" />
         </div>
       )}
     </div>
@@ -1609,10 +1540,11 @@ export default function FlowsPage() {
       <DashboardHeader title="Fluxos" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-muted-foreground">Construa jornadas de conversao para o seu bot</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground/50">Monte jornadas de conversao</p>
             <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
+              size="sm"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg text-xs h-8"
               onClick={() => {
                 setNewFlowCategory(flows.length === 0 ? "inicial" : "personalizado")
                 setNewFlowMode(null)
@@ -1620,184 +1552,172 @@ export default function FlowsPage() {
                 setShowNewFlowDialog(true)
               }}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Novo Fluxo
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Novo fluxo
             </Button>
           </div>
 
           {isLoadingFlows ? (
             <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/30" />
             </div>
           ) : flows.length === 0 ? (
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex flex-col items-center justify-center py-16 gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
-                  <Zap className="h-6 w-6 text-accent" />
-                </div>
-                <div className="text-center">
-                  <h3 className="text-sm font-semibold text-foreground">Crie seu Fluxo Inicial</h3>
-                  <p className="text-xs text-muted-foreground mt-1 max-w-xs">
-                    O primeiro fluxo sera o ponto de entrada do seu bot. E ele que seus usuarios vao ver quando interagirem pela primeira vez.
-                  </p>
-                </div>
-                <Button
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  onClick={() => {
-                    setNewFlowCategory("inicial")
-                    setNewFlowMode(null)
-                    resetBasicFlow()
-                    setShowNewFlowDialog(true)
-                  }}
-                >
-                  <Zap className="mr-2 h-4 w-4" />
-                  Criar Fluxo Inicial
-                </Button>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center py-20 gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/40">
+                <Zap className="h-4 w-4 text-muted-foreground/40" />
+              </div>
+              <div className="text-center">
+                <h3 className="text-sm font-medium text-foreground">Comece aqui</h3>
+                <p className="text-xs text-muted-foreground/50 mt-1 max-w-[280px]">
+                  Crie seu primeiro fluxo. Ele sera o ponto de entrada do seu bot.
+                </p>
+              </div>
+              <Button
+                size="sm"
+                className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg text-xs h-8"
+                onClick={() => {
+                  setNewFlowCategory("inicial")
+                  setNewFlowMode(null)
+                  resetBasicFlow()
+                  setShowNewFlowDialog(true)
+                }}
+              >
+                Criar fluxo inicial
+              </Button>
+            </div>
           ) : (
             <div className="flex flex-col gap-6">
-              {/* ====== FLUXO PRINCIPAL (HERO CARD) ====== */}
+              {/* ====== FLUXO PRINCIPAL ====== */}
               {primaryFlow && (
-                <Card
-                  className={`relative overflow-hidden rounded-2xl border-2 transition-all cursor-pointer ${
+                <button
+                  className={`group relative w-full text-left rounded-2xl border transition-all ${
                     activeFlow?.id === primaryFlow.id
-                      ? "border-accent bg-accent/5 shadow-lg shadow-accent/5"
-                      : "border-accent/30 bg-card hover:border-accent/60"
+                      ? "border-accent/40 bg-accent/[0.04]"
+                      : "border-border bg-card hover:border-border/80 hover:bg-card/80"
                   }`}
                   onClick={() => setActiveFlow(primaryFlow)}
                 >
-                  {/* Accent glow stripe */}
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-accent" />
-
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/15 border border-accent/30">
-                          <Crown className="h-6 w-6 text-accent" />
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2 mb-0.5">
-                            <h3 className="text-base font-bold text-foreground">{primaryFlow.name}</h3>
-                            <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[10px] font-semibold px-1.5 py-0">
-                              PRINCIPAL
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground">
-                            Jornada inicial do usuario — primeiro contato com o bot
-                          </p>
-                        </div>
+                  <div className="flex items-center gap-4 p-4">
+                    <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                      activeFlow?.id === primaryFlow.id ? "bg-accent/10" : "bg-secondary/60"
+                    }`}>
+                      <Crown className={`h-4.5 w-4.5 ${activeFlow?.id === primaryFlow.id ? "text-accent" : "text-muted-foreground"}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm font-semibold text-foreground truncate">{primaryFlow.name}</h3>
+                        <span className="text-[10px] font-medium text-accent/70 bg-accent/[0.08] rounded px-1.5 py-px">
+                          Principal
+                        </span>
                       </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <Badge
-                          variant="outline"
-                          className={`rounded-lg cursor-pointer text-xs ${statusStyles[primaryFlow.status]}`}
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            toggleFlowStatus(primaryFlow)
-                          }}
-                        >
-                          {primaryFlow.status === "ativo" ? "Ativo" : "Pausado"}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setActiveFlow(primaryFlow)
-                            openEditFlow(primaryFlow)
-                          }}
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Jornada inicial do usuario
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <div
+                        className={`flex items-center gap-1.5 rounded-lg px-2 py-1 text-[11px] font-medium cursor-pointer transition-colors ${
+                          primaryFlow.status === "ativo" 
+                            ? "text-success/80 hover:text-success" 
+                            : "text-warning/80 hover:text-warning"
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          toggleFlowStatus(primaryFlow)
+                        }}
+                      >
+                        <div className={`h-1.5 w-1.5 rounded-full ${primaryFlow.status === "ativo" ? "bg-success" : "bg-warning"}`} />
+                        {primaryFlow.status === "ativo" ? "Ativo" : "Pausado"}
+                      </div>
+                      <div
+                        className="h-7 w-7 flex items-center justify-center rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-secondary/60 transition-colors opacity-0 group-hover:opacity-100"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveFlow(primaryFlow)
+                          openEditFlow(primaryFlow)
+                        }}
+                      >
+                        <Pencil className="h-3 w-3" />
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </button>
               )}
 
               {/* ====== FLUXOS SECUNDARIOS ====== */}
               {(secondaryFlows.length > 0 || primaryFlow) && (
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <GitBranch className="h-4 w-4 text-accent/60" />
-                      <h2 className="text-sm font-semibold text-foreground">
-                        Fluxos Secundarios
-                      </h2>
-                      <span className="text-[10px] text-muted-foreground bg-secondary rounded-full px-2 py-0.5">
-                        {secondaryFlows.length}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between px-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Sub Fluxos
+                    </p>
+                    {secondaryFlows.length > 0 && (
+                      <span className="text-[11px] text-muted-foreground/60">
+                        {secondaryFlows.length} fluxo{secondaryFlows.length > 1 ? "s" : ""}
                       </span>
-                    </div>
+                    )}
                   </div>
 
                   {secondaryFlows.length === 0 ? (
-                    <Card className="bg-card border-border border-dashed rounded-2xl">
-                      <CardContent className="flex flex-col items-center justify-center py-10 gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/60 border border-border/50">
-                          <GitBranch className="h-4 w-4 text-muted-foreground/60" />
-                        </div>
-                        <p className="text-sm text-muted-foreground text-center max-w-sm">
-                          Crie fluxos secundarios: remarketing, follow-up, pos-venda e mais.
-                        </p>
-                        <Button
-                          variant="outline"
-                          className="rounded-xl border-border text-foreground hover:border-accent hover:text-accent"
-                          onClick={() => {
-                            setNewFlowCategory("personalizado")
-                            setNewFlowMode(null)
-                            resetBasicFlow()
-                            setShowNewFlowDialog(true)
-                          }}
-                        >
-                          <Plus className="mr-2 h-4 w-4" />
-                          Criar Fluxo Secundario
-                        </Button>
-                      </CardContent>
-                    </Card>
+                    <button
+                      className="flex items-center gap-3 rounded-2xl border border-dashed border-border/60 hover:border-border bg-transparent hover:bg-secondary/20 p-4 transition-all text-left"
+                      onClick={() => {
+                        setNewFlowCategory("personalizado")
+                        setNewFlowMode(null)
+                        resetBasicFlow()
+                        setShowNewFlowDialog(true)
+                      }}
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/40">
+                        <Plus className="h-4 w-4 text-muted-foreground/60" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Criar sub fluxo</p>
+                        <p className="text-xs text-muted-foreground/60">Remarketing, follow-up, pos-venda</p>
+                      </div>
+                    </button>
                   ) : (
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="flex flex-col gap-1">
                       {secondaryFlows.map((fluxo) => {
                         const catConfig = getCategoryConfig(fluxo.category)
                         const CatIcon = catConfig.icon
                         const isActive = activeFlow?.id === fluxo.id
 
                         return (
-                          <Card
+                          <button
                             key={fluxo.id}
-                            className={`cursor-pointer rounded-2xl transition-all ${
+                            className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 transition-all text-left w-full ${
                               isActive
-                                ? `ring-1 ring-accent bg-secondary/50`
-                                : "bg-card border-border hover:bg-secondary/30"
+                                ? "bg-secondary/60 border border-border/80"
+                                : "bg-transparent border border-transparent hover:bg-secondary/30"
                             }`}
                             onClick={() => setActiveFlow(fluxo)}
                           >
-                            <CardContent className="flex items-center justify-between p-4">
-                              <div className="flex items-center gap-3 min-w-0">
-                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border shrink-0 ${catConfig.color}`}>
-                                  <CatIcon className={`h-4 w-4 ${catConfig.iconColor}`} />
-                                </div>
-                                <div className="min-w-0">
-                                  <h3 className="text-sm font-semibold text-foreground truncate">{fluxo.name}</h3>
-                                  <p className="text-[11px] text-muted-foreground">{catConfig.label}</p>
-                                </div>
+                            <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                              isActive ? "bg-accent/10" : "bg-secondary/50"
+                            }`}>
+                              <CatIcon className={`h-3.5 w-3.5 ${isActive ? catConfig.iconColor : "text-muted-foreground"}`} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className={`text-sm font-medium truncate ${isActive ? "text-foreground" : "text-foreground/80"}`}>{fluxo.name}</p>
+                              <p className="text-[11px] text-muted-foreground/60">{catConfig.label}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <div
+                                className={`flex items-center gap-1 text-[10px] font-medium cursor-pointer ${
+                                  fluxo.status === "ativo" ? "text-success/60" : "text-warning/60"
+                                }`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleFlowStatus(fluxo)
+                                }}
+                              >
+                                <div className={`h-1.5 w-1.5 rounded-full ${fluxo.status === "ativo" ? "bg-success/60" : "bg-warning/60"}`} />
+                                {fluxo.status}
                               </div>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <Badge
-                                  variant="outline"
-                                  className={`rounded-lg cursor-pointer text-[10px] ${statusStyles[fluxo.status]}`}
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    toggleFlowStatus(fluxo)
-                                  }}
-                                >
-                                  {fluxo.status}
-                                </Badge>
-                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                              </div>
-                            </CardContent>
-                          </Card>
+                              <ChevronRight className={`h-3.5 w-3.5 transition-colors ${isActive ? "text-muted-foreground/40" : "text-muted-foreground/20 group-hover:text-muted-foreground/40"}`} />
+                            </div>
+                          </button>
                         )
                       })}
                     </div>
@@ -1807,89 +1727,69 @@ export default function FlowsPage() {
 
               {/* ====== VISUAL BUILDER DO FLUXO ATIVO ====== */}
               {activeFlow && (
-                <Card className="bg-card border-border rounded-2xl overflow-hidden">
-                  {/* Top accent bar matching category */}
-                  <div className={`h-1 ${activeFlow.is_primary ? "bg-accent" : (() => {
-                    const g = actionGroups.find((_g) => {
-                      const catConfig = getCategoryConfig(activeFlow.category)
-                      return catConfig.iconColor.includes("blue") ? _g.id === "comunicacao" : catConfig.iconColor.includes("orange") ? _g.id === "navegacao" : catConfig.iconColor.includes("purple") ? _g.id === "logica" : false
-                    })
-                    return g ? "bg-current" : "bg-border"
-                  })()}`} />
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {(() => {
-                          const catConfig = getCategoryConfig(activeFlow.category)
-                          const CatIcon = catConfig.icon
-                          return (
-                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${catConfig.color}`}>
-                              <CatIcon className={`h-5 w-5 ${catConfig.iconColor}`} />
-                            </div>
-                          )
-                        })()}
-                        <div>
-                          <CardTitle className="text-sm font-semibold text-foreground">
-                            {activeFlow.name}
-                          </CardTitle>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <p className="text-[11px] text-muted-foreground">
-                              {getCategoryConfig(activeFlow.category).label}
-                            </p>
-                            {activeFlow.is_primary && (
-                              <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-bold px-1.5 py-0">
-                                PRINCIPAL
-                              </Badge>
-                            )}
-                            <span className="text-[10px] text-muted-foreground">
-                              {nodes.filter((n) => n.type !== "trigger").length} etapas
+                <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+                  {/* Builder Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-sm font-semibold text-foreground">{activeFlow.name}</h2>
+                          {activeFlow.is_primary && (
+                            <span className="text-[10px] font-medium text-accent/60 bg-accent/[0.06] rounded px-1.5 py-px">
+                              Principal
                             </span>
-                          </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-[11px] text-muted-foreground/60">
+                            {getCategoryConfig(activeFlow.category).label}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground/40">
+                            {nodes.filter((n) => n.type !== "trigger").length} etapa{nodes.filter((n) => n.type !== "trigger").length !== 1 ? "s" : ""}
+                          </span>
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={`rounded-lg ${statusStyles[activeFlow.status]}`}>
-                          {activeFlow.status}
-                        </Badge>
-                        {!activeFlow.is_primary && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 text-xs text-muted-foreground hover:text-accent"
-                            onClick={() => handleSetPrimary(activeFlow)}
-                          >
-                            <Star className="h-3.5 w-3.5 mr-1" />
-                            Tornar principal
-                          </Button>
-                        )}
-                        <Button
-                          variant={showCategoryConfig ? "default" : "ghost"}
-                          size="sm"
-                          className={`h-8 text-xs ${showCategoryConfig ? "bg-accent text-accent-foreground hover:bg-accent/90" : "text-muted-foreground hover:text-foreground"}`}
-                          onClick={() => setShowCategoryConfig(!showCategoryConfig)}
-                        >
-                          <Settings2 className="h-3.5 w-3.5 mr-1" />
-                          Config
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                          onClick={() => openEditFlow(activeFlow)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={() => setShowDeleteFlowDialog(true)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
                     </div>
-                  </CardHeader>
+                    <div className="flex items-center gap-1">
+                      {!activeFlow.is_primary && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-[11px] text-muted-foreground/60 hover:text-accent"
+                          onClick={() => handleSetPrimary(activeFlow)}
+                        >
+                          <Star className="h-3 w-3 mr-1" />
+                          Tornar principal
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={`h-7 w-7 ${showCategoryConfig ? "text-accent bg-accent/10" : "text-muted-foreground/50 hover:text-foreground"}`}
+                        onClick={() => setShowCategoryConfig(!showCategoryConfig)}
+                      >
+                        <Settings2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground/50 hover:text-foreground"
+                        onClick={() => openEditFlow(activeFlow)}
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground/50 hover:text-destructive"
+                        onClick={() => setShowDeleteFlowDialog(true)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-border/60" />
 
                   {/* ====== PAINEL DE CONFIGURACOES DO TIPO ====== */}
                   {showCategoryConfig && (
@@ -2046,85 +1946,59 @@ export default function FlowsPage() {
                     </div>
                   )}
 
-                  <CardContent>
-                    {/* Mini-Mapa do Fluxo */}
+                  <div>
+                    {/* Mini-mapa */}
                     {!isLoadingNodes && nodes.filter((n) => n.type !== "trigger").length > 2 && (
-                      <div className="mb-4 rounded-xl border border-border/50 bg-secondary/20 p-3">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
-                          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Mini-mapa</span>
-                          <span className="text-[10px] text-muted-foreground ml-auto">{nodes.filter((n) => n.type !== "trigger").length} etapas</span>
+                      <div className="mb-4 flex items-center gap-1.5 overflow-x-auto pb-1 px-1">
+                        <div className="h-5 w-5 rounded-md bg-accent/10 flex items-center justify-center shrink-0" title="Gatilho">
+                          <Zap className="h-2.5 w-2.5 text-accent/60" />
                         </div>
-                        <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
-                          {/* Trigger dot */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            <div className="h-5 w-5 rounded-md bg-accent/20 border border-accent/40 flex items-center justify-center" title="Gatilho Inicial">
-                              <Zap className="h-2.5 w-2.5 text-accent" />
-                            </div>
-                          </div>
-                          {nodes.filter((n) => n.type !== "trigger").map((node, idx) => {
-                            const group = actionGroups.find((g) => g.types.includes(node.type))
-                            const MiniIcon = nodeIcons[node.type]
-                            return (
-                              <div key={node.id} className="flex items-center gap-1.5 shrink-0">
-                                <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30" />
-                                <div
-                                  className={`h-5 w-5 rounded-md flex items-center justify-center border ${group ? `${group.bgColor} ${group.borderAccent}` : "bg-secondary border-border"}`}
-                                  title={node.label}
-                                >
-                                  <MiniIcon className={`h-2.5 w-2.5 ${group?.iconColor || "text-muted-foreground"}`} />
-                                </div>
+                        {nodes.filter((n) => n.type !== "trigger").map((node) => {
+                          const MiniIcon = nodeIcons[node.type]
+                          return (
+                            <div key={node.id} className="flex items-center gap-1.5 shrink-0">
+                              <div className="w-3 h-px bg-border/40" />
+                              <div
+                                className="h-5 w-5 rounded-md bg-secondary/40 flex items-center justify-center"
+                                title={node.label}
+                              >
+                                <MiniIcon className="h-2.5 w-2.5 text-muted-foreground/60" />
                               </div>
-                            )
-                          })}
-                        </div>
+                            </div>
+                          )
+                        })}
                       </div>
                     )}
 
                     {isLoadingNodes ? (
                       <div className="flex items-center justify-center py-10">
-                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
                       </div>
                     ) : (
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col">
                         {nodes.filter((n) => n.type !== "trigger").length === 0 && (
-                          <div className="text-center py-6 mb-2">
-                            <div className="flex justify-center mb-3">
-                              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/60 border border-border/50">
-                                <Workflow className="h-5 w-5 text-muted-foreground/60" />
-                              </div>
-                            </div>
-                            <p className="text-sm font-medium text-muted-foreground mb-1">
-                              Monte a jornada do usuario
-                            </p>
-                            <p className="text-xs text-muted-foreground/70 max-w-[260px] mx-auto">
-                              Adicione etapas ao fluxo: mensagens, logica, pagamentos e mais.
+                          <div className="text-center py-8 mb-2">
+                            <p className="text-sm text-muted-foreground/60">
+                              Adicione etapas ao fluxo
                             </p>
                           </div>
                         )}
 
-                        {/* Fixed trigger block */}
+                        {/* Trigger block */}
                         <div className="flex flex-col">
-                          <div className="relative flex items-center gap-4 rounded-2xl border-2 border-accent/40 bg-gradient-to-r from-accent/8 to-accent/3 px-4 py-4">
-                            {/* Left accent bar */}
-                            <div className="absolute left-0 top-3 bottom-3 w-1 rounded-full bg-accent/60" />
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/15 border border-accent/30 ml-1">
-                              <DragonTriggerIcon className="h-5 w-5" />
+                          <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/[0.03] px-3.5 py-3">
+                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                              <DragonTriggerIcon className="h-4 w-4" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <p className="text-sm font-bold text-foreground">Inicio do Fluxo</p>
-                                <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-bold px-1.5 py-0 uppercase tracking-wider">
-                                  Gatilho
-                                </Badge>
-                              </div>
-                              <p className="text-[11px] text-muted-foreground mt-0.5">Usuario inicia o bot — ponto de entrada</p>
+                              <p className="text-xs font-semibold text-foreground">Inicio do Fluxo</p>
+                              <p className="text-[11px] text-muted-foreground/50 mt-px">Ponto de entrada</p>
                             </div>
+                            <span className="text-[9px] font-medium text-accent/50 uppercase tracking-wider">Gatilho</span>
                           </div>
                           {nodes.filter((n) => n.type !== "trigger").length > 0 && (
-                            <div className="flex flex-col items-center py-1.5">
-                              <div className="w-px h-3 bg-border" />
-                              <ArrowDown className="h-3.5 w-3.5 text-muted-foreground/40" />
+                            <div className="flex justify-center py-1">
+                              <div className="w-px h-4 bg-border/40" />
                             </div>
                           )}
                         </div>
@@ -2156,30 +2030,27 @@ export default function FlowsPage() {
                         </DndContext>
 
                         {nodes.filter((n) => n.type !== "trigger").length > 0 && (
-                          <div className="flex flex-col items-center py-1">
-                            <div className="w-px h-2 bg-border/60" />
-                            <ArrowDown className="h-3 w-3 text-muted-foreground/30" />
+                          <div className="flex justify-center py-1">
+                            <div className="w-px h-3 bg-border/30" />
                           </div>
                         )}
                         <button
-                          className="group w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-border/60 hover:border-accent/50 bg-transparent hover:bg-accent/5 py-4 transition-all"
+                          className="group w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 hover:border-accent/30 bg-transparent hover:bg-accent/[0.03] py-3 transition-all"
                           onClick={() => {
                             setSelectedTemplate(null)
                             setNodeConfigValues({})
                             setShowAddNodeDialog(true)
                           }}
                         >
-                          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-secondary/60 group-hover:bg-accent/15 transition-colors">
-                            <Plus className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
-                          </div>
-                          <span className="text-sm font-medium text-muted-foreground group-hover:text-accent transition-colors">
-                            Adicionar Etapa
+                          <Plus className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-accent/60 transition-colors" />
+                          <span className="text-xs font-medium text-muted-foreground/40 group-hover:text-accent/60 transition-colors">
+                            Adicionar etapa
                           </span>
                         </button>
                       </div>
                     )}
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               )}
             </div>
           )}
@@ -2593,42 +2464,40 @@ export default function FlowsPage() {
 
       {/* ---- Edit Flow Dialog ---- */}
       <Dialog open={showEditFlowDialog} onOpenChange={setShowEditFlowDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-sm p-5">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Editar Fluxo</DialogTitle>
+            <DialogTitle className="text-foreground text-sm font-semibold">Editar fluxo</DialogTitle>
           </DialogHeader>
-          <div className="flex flex-col gap-4 py-2">
-            <div className="flex flex-col gap-2">
-              <Label className="text-foreground">Nome do fluxo</Label>
+          <div className="flex flex-col gap-4 pt-1">
+            <div className="flex flex-col gap-1.5">
+              <Label className="text-xs text-muted-foreground">Nome</Label>
               <Input
                 value={editFlowName}
                 onChange={(e) => setEditFlowName(e.target.value)}
-                className="bg-secondary border-border rounded-xl text-foreground"
+                className="bg-secondary/40 border-border/60 rounded-lg text-foreground text-sm h-9"
               />
             </div>
             {!activeFlow?.is_primary && (
               <div className="flex flex-col gap-2">
-                <Label className="text-foreground">Tipo de fluxo</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <Label className="text-xs text-muted-foreground">Tipo</Label>
+                <div className="grid grid-cols-2 gap-1.5">
                   {flowCategories.filter((c) => c.value !== "inicial").map((cat) => {
                     const CatIcon = cat.icon
                     const isSelected = editFlowCategory === cat.value
                     return (
                       <button
                         key={cat.value}
-                        className={`flex items-center gap-2.5 rounded-xl border px-3 py-2.5 text-left transition-all ${
+                        className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-left transition-all ${
                           isSelected
-                            ? `${cat.color} ring-1 ring-accent`
-                            : "border-border bg-secondary/30 hover:bg-secondary/60"
+                            ? "bg-secondary/60 border border-border"
+                            : "bg-transparent border border-transparent hover:bg-secondary/30"
                         }`}
                         onClick={() => setEditFlowCategory(cat.value)}
                       >
-                        <CatIcon className={`h-4 w-4 shrink-0 ${isSelected ? cat.iconColor : "text-muted-foreground"}`} />
-                        <div className="min-w-0">
-                          <p className={`text-xs font-medium truncate ${isSelected ? "text-foreground" : "text-muted-foreground"}`}>
-                            {cat.label}
-                          </p>
-                        </div>
+                        <CatIcon className={`h-3.5 w-3.5 shrink-0 ${isSelected ? cat.iconColor : "text-muted-foreground/50"}`} />
+                        <p className={`text-xs truncate ${isSelected ? "text-foreground font-medium" : "text-muted-foreground/70"}`}>
+                          {cat.label}
+                        </p>
                       </button>
                     )
                   })}
@@ -2636,50 +2505,51 @@ export default function FlowsPage() {
               </div>
             )}
             {activeFlow?.is_primary && (
-              <div className="flex items-start gap-3 rounded-xl bg-accent/5 border border-accent/20 p-3">
-                <Crown className="h-4 w-4 text-accent shrink-0 mt-0.5" />
-                <p className="text-xs text-muted-foreground">
-                  Este e o fluxo principal. Voce pode trocar o principal clicando em {"'Tornar principal'"} em outro fluxo.
-                </p>
-              </div>
+              <p className="text-[11px] text-muted-foreground/50">
+                Fluxo principal. Use {"'Tornar principal'"} em outro fluxo para trocar.
+              </p>
             )}
           </div>
-          <DialogFooter>
+          <div className="flex justify-end gap-2 pt-2">
             <Button
-              variant="outline"
-              className="rounded-xl border-border text-foreground"
+              variant="ghost"
+              size="sm"
+              className="rounded-lg text-xs text-muted-foreground"
               onClick={() => setShowEditFlowDialog(false)}
             >
               Cancelar
             </Button>
             <Button
-              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
+              size="sm"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg text-xs"
               disabled={!editFlowName.trim() || isSavingFlow}
               onClick={handleSaveFlow}
             >
-              {isSavingFlow && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSavingFlow && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
               Salvar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* ---- Add Node Dialog ---- */}
       <Dialog open={showAddNodeDialog} onOpenChange={setShowAddNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-lg max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
           {!selectedTemplate ? (
             <>
               {/* Header */}
-              <div className="shrink-0 bg-card border-b border-border px-6 pt-6 pb-4 rounded-t-2xl">
+              <div className="shrink-0 px-5 pt-5 pb-3">
                 <DialogHeader>
-                  <DialogTitle className="text-foreground text-base">Adicionar Etapa</DialogTitle>
+                  <DialogTitle className="text-foreground text-sm font-semibold">Adicionar etapa</DialogTitle>
                 </DialogHeader>
-                <p className="text-xs text-muted-foreground mt-1">O que voce quer fazer nesta etapa do fluxo?</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Escolha o tipo de acao para esta etapa.</p>
               </div>
 
-              {/* Groups - scrollable area */}
+              <div className="h-px bg-border/40 mx-5" />
+
+              {/* Groups */}
               <div className="flex-1 overflow-y-auto min-h-0">
-                <div className="flex flex-col gap-1 px-4 py-4">
+                <div className="flex flex-col gap-4 px-5 py-4">
                   {actionGroups.map((group) => {
                     const GroupIcon = group.icon
                     const groupTemplates = actionTemplates.filter((tpl) => {
@@ -2691,51 +2561,40 @@ export default function FlowsPage() {
                     if (groupTemplates.length === 0) return null
 
                     return (
-                      <div key={group.id} className="flex flex-col">
-                        {/* Group Header */}
-                        <div className={`flex items-center gap-3 px-3 py-3 rounded-xl ${group.bgColor} border ${group.borderAccent} mb-2`}>
-                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background/60`}>
-                            <GroupIcon className={`h-5 w-5 ${group.iconColor}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-foreground">{group.label}</p>
-                            <p className="text-[11px] text-muted-foreground">{group.description}</p>
-                          </div>
-                          <span className="text-[10px] text-muted-foreground bg-background/50 rounded-full px-2 py-0.5 border border-border/50">
-                            {groupTemplates.length}
-                          </span>
+                      <div key={group.id} className="flex flex-col gap-1.5">
+                        {/* Group label */}
+                        <div className="flex items-center gap-2 px-1">
+                          <GroupIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
+                          <p className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">{group.label}</p>
                         </div>
 
                         {/* Group Items */}
-                        <div className="grid grid-cols-1 gap-1.5 pl-3 pr-1 pb-3">
+                        <div className="flex flex-col gap-1">
                           {groupTemplates.map((tpl, tplIdx) => {
                             const SubIcon = tpl.subVariant ? (subVariantIcons[tpl.subVariant] || nodeIcons[tpl.type]) : nodeIcons[tpl.type]
                             return (
                               <button
                                 key={`${tpl.type}-${tpl.subVariant || tplIdx}`}
-                                className="flex items-center gap-3 rounded-xl border border-border/50 bg-secondary/20 px-3 py-2.5 text-left transition-all hover:bg-secondary/60 hover:border-border group"
+                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all hover:bg-secondary/40 group"
                                 onClick={() => {
                                   setSelectedTemplate(tpl)
                                   setNodeConfigValues({})
                                   resetMessageConfig()
-                                  // Pre-configure based on subVariant
-                                  if (tpl.subVariant === "media") {
-                                    setMsgMediaType("photo")
-                                  }
+                                  if (tpl.subVariant === "media") setMsgMediaType("photo")
                                   if (tpl.subVariant === "buttons") {
                                     setMsgHasButtons(true)
                                     setMsgButtons([{ text: "", url: "" }])
                                   }
                                 }}
                               >
-                                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${group.bgColor} border ${group.borderAccent}`}>
+                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary/40">
                                   <SubIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-foreground">{tpl.label}</p>
-                                  <p className="text-[10px] text-muted-foreground leading-tight">{tpl.description}</p>
+                                  <p className="text-xs font-medium text-foreground/90">{tpl.label}</p>
+                                  <p className="text-[10px] text-muted-foreground/50 leading-tight">{tpl.description}</p>
                                 </div>
-                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/20 group-hover:text-muted-foreground/40 transition-colors shrink-0" />
                               </button>
                             )
                           })}
@@ -2747,24 +2606,19 @@ export default function FlowsPage() {
               </div>
             </>
           ) : (
-            <div className="flex flex-col gap-4 px-6 py-4 overflow-y-auto min-h-0">
+            <div className="flex flex-col gap-4 px-5 py-4 overflow-y-auto min-h-0">
               <div className="flex items-center gap-3">
                 {(() => {
                   const group = actionGroups.find((g) => g.types.includes(selectedTemplate.type))
                   const SubIcon = selectedTemplate.subVariant ? (subVariantIcons[selectedTemplate.subVariant] || nodeIcons[selectedTemplate.type]) : nodeIcons[selectedTemplate.type]
                   return (
                     <>
-                      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${group ? `${group.bgColor} ${group.borderAccent}` : nodeColors[selectedTemplate.type]}`}>
-                        <SubIcon className={`h-5 w-5 ${group?.iconColor || nodeIconColors[selectedTemplate.type]}`} />
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/50">
+                        <SubIcon className={`h-4 w-4 ${group?.iconColor || nodeIconColors[selectedTemplate.type]}`} />
                       </div>
                       <div>
                         <p className="text-sm font-semibold text-foreground">{selectedTemplate.label}</p>
-                        <p className="text-xs text-muted-foreground">{selectedTemplate.description}</p>
-                        {group && (
-                          <span className={`inline-block text-[9px] font-semibold mt-0.5 px-1.5 py-0 rounded-full border ${group.bgColor} ${group.borderAccent} ${group.iconColor}`}>
-                            {group.label}
-                          </span>
-                        )}
+                        <p className="text-[11px] text-muted-foreground/50">{selectedTemplate.description}</p>
                       </div>
                     </>
                   )
@@ -2992,19 +2846,23 @@ export default function FlowsPage() {
                 ))
               )}
 
-              <DialogFooter className="gap-2">
+              <div className="h-px bg-border/40" />
+              <div className="flex justify-between gap-2 pt-2">
                 <Button
-                  variant="outline"
-                  className="rounded-xl border-border text-foreground"
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-lg text-xs text-muted-foreground"
                   onClick={() => {
                     setSelectedTemplate(null)
                     resetMessageConfig()
                   }}
                 >
+                  <ChevronRight className="h-3 w-3 mr-1 rotate-180" />
                   Voltar
                 </Button>
                 <Button
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
+                  size="sm"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg text-xs"
                   disabled={isAddingNode ||
                     (selectedTemplate.type === "message" && !msgText.trim()) ||
                     (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id) ||
@@ -3015,10 +2873,10 @@ export default function FlowsPage() {
                   }
                   onClick={handleAddNode}
                 >
-                  {isAddingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isAddingNode && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
                   Adicionar
                 </Button>
-              </DialogFooter>
+              </div>
             </div>
           )}
         </DialogContent>
@@ -3026,12 +2884,18 @@ export default function FlowsPage() {
 
       {/* ---- Edit Node Dialog ---- */}
       <Dialog open={showEditNodeDialog} onOpenChange={setShowEditNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-foreground">Editar Etapa</DialogTitle>
-          </DialogHeader>
+        <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+          <div className="px-5 pt-5 pb-3">
+            <DialogHeader>
+              <DialogTitle className="text-foreground text-sm font-semibold">Editar etapa</DialogTitle>
+            </DialogHeader>
+            {editingNode && (
+              <p className="text-[11px] text-muted-foreground/50 mt-1">{editingNode.label}</p>
+            )}
+          </div>
+          <div className="h-px bg-border/40 mx-5" />
           {editingNode && (
-            <div className="flex flex-col gap-4 py-2">
+            <div className="flex flex-col gap-4 px-5 py-4 overflow-y-auto min-h-0">
               {editingNode.type === "message" ? (
                 <MessageConfigForm
                   msgText={msgText}
@@ -3221,10 +3085,12 @@ export default function FlowsPage() {
                 </div>
               )}
 
-              <DialogFooter>
+              <div className="h-px bg-border/40" />
+              <div className="flex justify-end gap-2 pt-2">
                 <Button
-                  variant="outline"
-                  className="rounded-xl border-border text-foreground"
+                  variant="ghost"
+                  size="sm"
+                  className="rounded-lg text-xs text-muted-foreground"
                   onClick={() => {
                     resetMessageConfig()
                     setShowEditNodeDialog(false)
@@ -3233,7 +3099,8 @@ export default function FlowsPage() {
                   Cancelar
                 </Button>
                 <Button
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
+                  size="sm"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg text-xs"
                   disabled={isSavingNode || (
                     editingNode.type === "message" ? !msgText.trim() :
                     editingNode.type === "delay" ? !editNodeConfig.seconds || parseInt(editNodeConfig.seconds) <= 0 :
@@ -3246,10 +3113,10 @@ export default function FlowsPage() {
                   )}
                   onClick={handleSaveNode}
                 >
-                  {isSavingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSavingNode && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
                   Salvar
                 </Button>
-              </DialogFooter>
+              </div>
             </div>
           )}
         </DialogContent>
@@ -3257,63 +3124,65 @@ export default function FlowsPage() {
 
       {/* ---- Delete Node Dialog ---- */}
       <Dialog open={showDeleteNodeDialog} onOpenChange={setShowDeleteNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Apagar Etapa</DialogTitle>
+            <DialogTitle className="text-foreground text-sm font-semibold">Apagar etapa</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Tem certeza que deseja apagar a etapa{" "}
-            <span className="font-medium text-foreground">{deletingNode?.label}</span>?
+          <p className="text-xs text-muted-foreground">
+            Apagar <span className="font-medium text-foreground">{deletingNode?.label}</span>? Essa acao nao pode ser desfeita.
           </p>
-          <DialogFooter>
+          <div className="flex justify-end gap-2 pt-1">
             <Button
-              variant="outline"
-              className="rounded-xl border-border text-foreground"
+              variant="ghost"
+              size="sm"
+              className="rounded-lg text-xs text-muted-foreground"
               onClick={() => setShowDeleteNodeDialog(false)}
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
-              className="rounded-xl"
+              size="sm"
+              className="rounded-lg text-xs"
               disabled={isDeletingNode}
               onClick={handleDeleteNode}
             >
-              {isDeletingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isDeletingNode && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
               Apagar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 
       {/* ---- Delete Flow Dialog ---- */}
       <Dialog open={showDeleteFlowDialog} onOpenChange={setShowDeleteFlowDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Apagar Fluxo</DialogTitle>
+            <DialogTitle className="text-foreground text-sm font-semibold">Apagar fluxo</DialogTitle>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            Tem certeza que deseja apagar o fluxo{" "}
-            <span className="font-medium text-foreground">{activeFlow?.name}</span>? Todas as etapas serao removidas.
+          <p className="text-xs text-muted-foreground">
+            Apagar <span className="font-medium text-foreground">{activeFlow?.name}</span> e todas as suas etapas? Essa acao nao pode ser desfeita.
           </p>
-          <DialogFooter>
+          <div className="flex justify-end gap-2 pt-1">
             <Button
-              variant="outline"
-              className="rounded-xl border-border text-foreground"
+              variant="ghost"
+              size="sm"
+              className="rounded-lg text-xs text-muted-foreground"
               onClick={() => setShowDeleteFlowDialog(false)}
             >
               Cancelar
             </Button>
             <Button
               variant="destructive"
-              className="rounded-xl"
+              size="sm"
+              className="rounded-lg text-xs"
               disabled={isDeletingFlow}
               onClick={handleDeleteFlow}
             >
-              {isDeletingFlow && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isDeletingFlow && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
               Apagar
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
     </>
