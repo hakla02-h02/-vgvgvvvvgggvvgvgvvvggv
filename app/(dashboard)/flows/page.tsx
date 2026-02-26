@@ -2578,86 +2578,88 @@ export default function FlowsPage() {
 
       {/* ---- Add Node Dialog ---- */}
       <Dialog open={showAddNodeDialog} onOpenChange={setShowAddNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-lg max-h-[85vh] overflow-y-auto p-0">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-lg max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
           {!selectedTemplate ? (
-            <div className="flex flex-col">
+            <>
               {/* Header */}
-              <div className="sticky top-0 z-10 bg-card border-b border-border px-6 pt-6 pb-4 rounded-t-2xl">
+              <div className="shrink-0 bg-card border-b border-border px-6 pt-6 pb-4 rounded-t-2xl">
                 <DialogHeader>
                   <DialogTitle className="text-foreground text-base">Adicionar Etapa</DialogTitle>
                 </DialogHeader>
                 <p className="text-xs text-muted-foreground mt-1">O que voce quer fazer nesta etapa do fluxo?</p>
               </div>
 
-              {/* Groups */}
-              <div className="flex flex-col gap-1 px-4 py-4">
-                {actionGroups.map((group) => {
-                  const GroupIcon = group.icon
-                  const groupTemplates = actionTemplates.filter((tpl) => {
-                    if (!group.types.includes(tpl.type)) return false
-                    if (group.subVariants && tpl.subVariant) return group.subVariants.includes(tpl.subVariant)
-                    if (group.subVariants && !tpl.subVariant) return false
-                    return tpl.type !== "trigger"
-                  })
-                  if (groupTemplates.length === 0) return null
+              {/* Groups - scrollable area */}
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="flex flex-col gap-1 px-4 py-4">
+                  {actionGroups.map((group) => {
+                    const GroupIcon = group.icon
+                    const groupTemplates = actionTemplates.filter((tpl) => {
+                      if (!group.types.includes(tpl.type)) return false
+                      if (group.subVariants && tpl.subVariant) return group.subVariants.includes(tpl.subVariant)
+                      if (group.subVariants && !tpl.subVariant) return false
+                      return tpl.type !== "trigger"
+                    })
+                    if (groupTemplates.length === 0) return null
 
-                  return (
-                    <div key={group.id} className="flex flex-col">
-                      {/* Group Header - clickable accordion style */}
-                      <div className={`flex items-center gap-3 px-3 py-3 rounded-xl ${group.bgColor} border ${group.borderAccent} mb-2`}>
-                        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background/60`}>
-                          <GroupIcon className={`h-5 w-5 ${group.iconColor}`} />
+                    return (
+                      <div key={group.id} className="flex flex-col">
+                        {/* Group Header */}
+                        <div className={`flex items-center gap-3 px-3 py-3 rounded-xl ${group.bgColor} border ${group.borderAccent} mb-2`}>
+                          <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-background/60`}>
+                            <GroupIcon className={`h-5 w-5 ${group.iconColor}`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-foreground">{group.label}</p>
+                            <p className="text-[11px] text-muted-foreground">{group.description}</p>
+                          </div>
+                          <span className="text-[10px] text-muted-foreground bg-background/50 rounded-full px-2 py-0.5 border border-border/50">
+                            {groupTemplates.length}
+                          </span>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-foreground">{group.label}</p>
-                          <p className="text-[11px] text-muted-foreground">{group.description}</p>
-                        </div>
-                        <span className="text-[10px] text-muted-foreground bg-background/50 rounded-full px-2 py-0.5 border border-border/50">
-                          {groupTemplates.length}
-                        </span>
-                      </div>
 
-                      {/* Group Items */}
-                      <div className="grid grid-cols-1 gap-1.5 pl-3 pr-1 pb-3">
-                        {groupTemplates.map((tpl, tplIdx) => {
-                          const SubIcon = tpl.subVariant ? (subVariantIcons[tpl.subVariant] || nodeIcons[tpl.type]) : nodeIcons[tpl.type]
-                          return (
-                            <button
-                              key={`${tpl.type}-${tpl.subVariant || tplIdx}`}
-                              className="flex items-center gap-3 rounded-xl border border-border/50 bg-secondary/20 px-3 py-2.5 text-left transition-all hover:bg-secondary/60 hover:border-border group"
-                              onClick={() => {
-                                setSelectedTemplate(tpl)
-                                setNodeConfigValues({})
-                                resetMessageConfig()
-                                // Pre-configure based on subVariant
-                                if (tpl.subVariant === "media") {
-                                  setMsgMediaType("photo")
-                                }
-                                if (tpl.subVariant === "buttons") {
-                                  setMsgHasButtons(true)
-                                  setMsgButtons([{ text: "", url: "" }])
-                                }
-                              }}
-                            >
-                              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${group.bgColor} border ${group.borderAccent}`}>
-                                <SubIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-medium text-foreground">{tpl.label}</p>
-                                <p className="text-[10px] text-muted-foreground leading-tight">{tpl.description}</p>
-                              </div>
-                              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
-                            </button>
-                          )
-                        })}
+                        {/* Group Items */}
+                        <div className="grid grid-cols-1 gap-1.5 pl-3 pr-1 pb-3">
+                          {groupTemplates.map((tpl, tplIdx) => {
+                            const SubIcon = tpl.subVariant ? (subVariantIcons[tpl.subVariant] || nodeIcons[tpl.type]) : nodeIcons[tpl.type]
+                            return (
+                              <button
+                                key={`${tpl.type}-${tpl.subVariant || tplIdx}`}
+                                className="flex items-center gap-3 rounded-xl border border-border/50 bg-secondary/20 px-3 py-2.5 text-left transition-all hover:bg-secondary/60 hover:border-border group"
+                                onClick={() => {
+                                  setSelectedTemplate(tpl)
+                                  setNodeConfigValues({})
+                                  resetMessageConfig()
+                                  // Pre-configure based on subVariant
+                                  if (tpl.subVariant === "media") {
+                                    setMsgMediaType("photo")
+                                  }
+                                  if (tpl.subVariant === "buttons") {
+                                    setMsgHasButtons(true)
+                                    setMsgButtons([{ text: "", url: "" }])
+                                  }
+                                }}
+                              >
+                                <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-md ${group.bgColor} border ${group.borderAccent}`}>
+                                  <SubIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium text-foreground">{tpl.label}</p>
+                                  <p className="text-[10px] text-muted-foreground leading-tight">{tpl.description}</p>
+                                </div>
+                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors shrink-0" />
+                              </button>
+                            )
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
+            </>
           ) : (
-            <div className="flex flex-col gap-4 px-6 py-4">
+            <div className="flex flex-col gap-4 px-6 py-4 overflow-y-auto min-h-0">
               <div className="flex items-center gap-3">
                 {(() => {
                   const group = actionGroups.find((g) => g.types.includes(selectedTemplate.type))
