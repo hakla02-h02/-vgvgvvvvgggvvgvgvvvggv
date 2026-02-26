@@ -28,6 +28,34 @@ async function sendTelegramMessage(botToken: string, chatId: number, text: strin
 
 async function sendTelegramPhoto(botToken: string, chatId: number, photoUrl: string, caption: string, replyMarkup?: object) {
   const url = `https://api.telegram.org/bot${botToken}/sendPhoto`
+  
+  // If it's a base64 data URL, send as multipart/form-data with file upload
+  if (photoUrl.startsWith("data:")) {
+    const formData = new FormData()
+    formData.append("chat_id", String(chatId))
+    if (caption) formData.append("caption", caption)
+    formData.append("parse_mode", "HTML")
+    if (replyMarkup) formData.append("reply_markup", JSON.stringify(replyMarkup))
+
+    // Convert base64 data URL to Blob
+    const base64Match = photoUrl.match(/^data:([^;]+);base64,(.+)$/)
+    if (base64Match) {
+      const mimeType = base64Match[1]
+      const base64Data = base64Match[2]
+      const binaryStr = atob(base64Data)
+      const bytes = new Uint8Array(binaryStr.length)
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: mimeType })
+      formData.append("photo", blob, "photo.jpg")
+    }
+
+    const res = await fetch(url, { method: "POST", body: formData })
+    return res.json()
+  }
+
+  // Regular URL
   const body: Record<string, unknown> = { chat_id: chatId, photo: photoUrl, caption, parse_mode: "HTML" }
   if (replyMarkup) body.reply_markup = replyMarkup
   const res = await fetch(url, {
@@ -40,6 +68,34 @@ async function sendTelegramPhoto(botToken: string, chatId: number, photoUrl: str
 
 async function sendTelegramVideo(botToken: string, chatId: number, videoUrl: string, caption: string, replyMarkup?: object) {
   const url = `https://api.telegram.org/bot${botToken}/sendVideo`
+
+  // If it's a base64 data URL, send as multipart/form-data with file upload
+  if (videoUrl.startsWith("data:")) {
+    const formData = new FormData()
+    formData.append("chat_id", String(chatId))
+    if (caption) formData.append("caption", caption)
+    formData.append("parse_mode", "HTML")
+    if (replyMarkup) formData.append("reply_markup", JSON.stringify(replyMarkup))
+
+    // Convert base64 data URL to Blob
+    const base64Match = videoUrl.match(/^data:([^;]+);base64,(.+)$/)
+    if (base64Match) {
+      const mimeType = base64Match[1]
+      const base64Data = base64Match[2]
+      const binaryStr = atob(base64Data)
+      const bytes = new Uint8Array(binaryStr.length)
+      for (let i = 0; i < binaryStr.length; i++) {
+        bytes[i] = binaryStr.charCodeAt(i)
+      }
+      const blob = new Blob([bytes], { type: mimeType })
+      formData.append("video", blob, "video.mp4")
+    }
+
+    const res = await fetch(url, { method: "POST", body: formData })
+    return res.json()
+  }
+
+  // Regular URL
   const body: Record<string, unknown> = { chat_id: chatId, video: videoUrl, caption, parse_mode: "HTML" }
   if (replyMarkup) body.reply_markup = replyMarkup
   const res = await fetch(url, {
@@ -346,13 +402,31 @@ async function executeNodes(
           }
         }
 
-        // Send with media or text only
-        if (mediaType === "photo" && mediaUrl) {
-          await sendTelegramPhoto(botToken, chatId, mediaUrl, text, inlineKeyboard)
-        } else if (mediaType === "video" && mediaUrl) {
-          await sendTelegramVideo(botToken, chatId, mediaUrl, text, inlineKeyboard)
-        } else {
-          await sendTelegramMessage(botToken, chatId, text, inlineKeyboard)
+        try {
+          let sendResult: { ok?: boolean; description?: string } = { ok: false }
+
+          // Send with media or text only
+          if (mediaType === "photo" && mediaUrl) {
+            sendResult = await sendTelegramPhoto(botToken, chatId, mediaUrl, text, inlineKeyboard)
+          } else if (mediaType === "video" && mediaUrl) {
+            sendResult = await sendTelegramVideo(botToken, chatId, mediaUrl, text, inlineKeyboard)
+          } else {
+            sendResult = await sendTelegramMessage(botToken, chatId, text, inlineKeyboard)
+          }
+
+          // If media send failed, fallback to text-only with buttons
+          if (!sendResult.ok && mediaUrl) {
+            console.error("Media send failed, falling back to text:", sendResult.description)
+            await sendTelegramMessage(botToken, chatId, text, inlineKeyboard)
+          }
+        } catch (err) {
+          // If sending fails entirely, try text-only as last resort
+          console.error("Message send error, trying text fallback:", err)
+          try {
+            await sendTelegramMessage(botToken, chatId, text, inlineKeyboard)
+          } catch (fallbackErr) {
+            console.error("Even text fallback failed:", fallbackErr)
+          }
         }
 
         await updateFunnelStep(botId, telegramUserId, 2)
@@ -391,17 +465,25 @@ async function executeNodes(
       }
 
       case "payment": {
-        const amount = (node.config?.amount as string) || "0"
-        const description = (node.config?.description as string) || "Pagamento"
-        await sendTelegramMessage(botToken, chatId, `${description}\nValor: R$ ${amount}`)
-        await updateFunnelStep(botId, telegramUserId, 3)
+        try {
+          const amount = (node.config?.amount as string) || "0"
+          const description = (node.config?.description as string) || "Pagamento"
+          await sendTelegramMessage(botToken, chatId, `${description}\nValor: R$ ${amount}`)
+          await updateFunnelStep(botId, telegramUserId, 3)
+        } catch (err) {
+          console.error("Payment node error:", err)
+        }
         break
       }
 
       case "action": {
-        const actionText = (node.config?.text as string) || (node.config?.action_name as string) || node.label
-        await sendTelegramMessage(botToken, chatId, `${actionText}`)
-        await updateFunnelStep(botId, telegramUserId, 4)
+        try {
+          const actionText = (node.config?.text as string) || (node.config?.action_name as string) || node.label
+          await sendTelegramMessage(botToken, chatId, `${actionText}`)
+          await updateFunnelStep(botId, telegramUserId, 4)
+        } catch (err) {
+          console.error("Action node error:", err)
+        }
         break
       }
 
