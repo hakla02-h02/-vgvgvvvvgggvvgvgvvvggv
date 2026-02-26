@@ -28,6 +28,25 @@ import {
 } from "lucide-react"
 import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+  DragOverlay,
+} from "@dnd-kit/core"
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
 
 // ---- Types ----
 
@@ -496,6 +515,169 @@ const subVariantIcons: Record<string, React.ElementType> = {
   end: CircleStop,
 }
 
+// ---- Sortable Node Card ----
+
+function SortableNodeCard({
+  node,
+  isLast,
+  flows: flowsList,
+  onEdit,
+  onDelete,
+}: {
+  node: FlowNode
+  isLast: boolean
+  flows: Flow[]
+  onEdit: (node: FlowNode) => void
+  onDelete: (node: FlowNode) => void
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: node.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    position: "relative" as const,
+  }
+
+  const Icon = nodeIcons[node.type]
+  const group = actionGroups.find((g) => g.types.includes(node.type))
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <div
+        className={`group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all hover:shadow-sm ${nodeColors[node.type]} ${isDragging ? "opacity-50 shadow-lg ring-2 ring-accent/40" : ""}`}
+      >
+        {/* Drag handle */}
+        <button
+          className="absolute right-2 top-0 bottom-0 flex items-center justify-center w-6 cursor-grab active:cursor-grabbing touch-none"
+          aria-label="Arrastar para reordenar"
+          {...attributes}
+          {...listeners}
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
+        </button>
+
+        {/* Left color bar */}
+        {group && (
+          <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full ${group.iconColor === "text-blue-400" ? "bg-blue-400/60" : group.iconColor === "text-purple-400" ? "bg-purple-400/60" : group.iconColor === "text-success" ? "bg-emerald-400/60" : group.iconColor === "text-orange-400" ? "bg-orange-400/60" : "bg-cyan-400/60"}`} />
+        )}
+        <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${group ? `${group.bgColor} border ${group.borderAccent}` : "bg-background/50"}`}>
+          <Icon className={`h-4 w-4 ${nodeIconColors[node.type]}`} />
+        </div>
+        <div className="flex-1 min-w-0 pr-6">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
+            {group && (
+              <span className={`text-[9px] font-semibold px-1.5 py-0 rounded-full border ${group.bgColor} ${group.borderAccent} ${group.iconColor}`}>
+                {group.label}
+              </span>
+            )}
+          </div>
+          {node.type === "message" && (
+            <div className="flex items-center gap-2.5 mt-1">
+              {node.config?.media_type && node.config.media_type !== "" && (
+                <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
+                  {node.config.media_type === "photo" ? <Image className="h-3 w-3" /> : <Video className="h-3 w-3" />}
+                  {node.config.media_type === "photo" ? "Foto" : "Video"}
+                </span>
+              )}
+              {node.config?.buttons && node.config.buttons !== "" && (
+                <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
+                  <MousePointerClick className="h-3 w-3" />
+                  {(() => { try { return JSON.parse(node.config.buttons as string).length } catch { return 0 } })()}{" "}
+                  {"botao(es)"}
+                </span>
+              )}
+            </div>
+          )}
+          {node.type === "redirect" && node.config?.target_flow_name && (
+            <div className="flex items-center gap-1.5 mt-1">
+              <ExternalLink className="h-3 w-3 text-orange-400" />
+              <span className="text-xs text-orange-400 font-medium">
+                {node.config.target_flow_name as string}
+              </span>
+              {(() => {
+                const targetFlow = flowsList.find((f) => f.id === node.config?.target_flow_id)
+                if (targetFlow) {
+                  const tCat = getCategoryConfig(targetFlow.category)
+                  return (
+                    <Badge variant="outline" className={`text-[9px] px-1 py-0 rounded ${tCat.color}`}>
+                      {tCat.label}
+                    </Badge>
+                  )
+                }
+                return null
+              })()}
+            </div>
+          )}
+          {node.type === "delay" && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              <Clock className="h-3 w-3" /> Pausa no fluxo
+            </p>
+          )}
+          {node.type === "condition" && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              <Split className="h-3 w-3" /> Verificacao logica
+            </p>
+          )}
+          {node.type === "action" && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              <Zap className="h-3 w-3" /> Automacao
+            </p>
+          )}
+          {node.type === "payment" && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              <CreditCard className="h-3 w-3" /> Monetizacao
+            </p>
+          )}
+          {node.type === "redirect" && !node.config?.target_flow_name && (
+            <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
+              {node.config?.subVariant === "restart" ? (
+                <><RefreshCw className="h-3 w-3" /> Volta ao inicio</>
+              ) : node.config?.subVariant === "end" ? (
+                <><CircleStop className="h-3 w-3" /> Finaliza interacao</>
+              ) : (
+                <><ExternalLink className="h-3 w-3" /> Navegacao</>
+              )}
+            </p>
+          )}
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-foreground"
+            onClick={() => onEdit(node)}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+            onClick={() => onDelete(node)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      </div>
+      {!isLast && (
+        <div className="flex flex-col items-center py-1">
+          <div className="w-px h-2 bg-border/60" />
+          <ArrowDown className="h-3 w-3 text-muted-foreground/30" />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ---- Component ----
 
 export default function FlowsPage() {
@@ -598,6 +780,54 @@ export default function FlowsPage() {
   const [flowCategoryConfig, setFlowCategoryConfig] = useState<Record<string, string | boolean>>({})
   const [isSavingCategoryConfig, setIsSavingCategoryConfig] = useState(false)
   const [showCategoryConfig, setShowCategoryConfig] = useState(false)
+
+  // Drag and drop
+  const [activeNodeId, setActiveNodeId] = useState<string | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  )
+
+  const handleDragStart = (event: DragStartEvent) => {
+    setActiveNodeId(event.active.id as string)
+  }
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event
+    setActiveNodeId(null)
+
+    if (!over || active.id === over.id) return
+
+    const nonTriggerNodes = nodes.filter((n) => n.type !== "trigger")
+    const triggerNodes = nodes.filter((n) => n.type === "trigger")
+
+    const oldIndex = nonTriggerNodes.findIndex((n) => n.id === active.id)
+    const newIndex = nonTriggerNodes.findIndex((n) => n.id === over.id)
+
+    if (oldIndex === -1 || newIndex === -1) return
+
+    const reorderedNonTrigger = arrayMove(nonTriggerNodes, oldIndex, newIndex)
+    const allReordered = [...triggerNodes, ...reorderedNonTrigger].map((n, i) => ({
+      ...n,
+      position: i,
+    }))
+
+    // Optimistic update
+    setNodes(allReordered)
+
+    // Persist to DB
+    for (const node of allReordered) {
+      await supabase
+        .from("flow_nodes")
+        .update({ position: node.position })
+        .eq("id", node.id)
+    }
+  }
 
   // Derived: primary flow and secondary flows
   const primaryFlow = flows.find((f) => f.is_primary)
@@ -1760,131 +1990,31 @@ export default function FlowsPage() {
                           )}
                         </div>
 
-                        {nodes.filter((n) => n.type !== "trigger").map((node, i, arr) => {
-                          const Icon = nodeIcons[node.type]
-                          const group = actionGroups.find((g) => g.types.includes(node.type))
-                          return (
-                            <div key={node.id}>
-                              <div
-                                className={`group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all hover:shadow-sm ${nodeColors[node.type]}`}
-                              >
-                                {/* Left color bar */}
-                                {group && (
-                                  <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full ${group.iconColor === "text-blue-400" ? "bg-blue-400/60" : group.iconColor === "text-purple-400" ? "bg-purple-400/60" : group.iconColor === "text-success" ? "bg-emerald-400/60" : group.iconColor === "text-orange-400" ? "bg-orange-400/60" : "bg-cyan-400/60"}`} />
-                                )}
-                                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${group ? `${group.bgColor} border ${group.borderAccent}` : "bg-background/50"}`}>
-                                  <Icon className={`h-4 w-4 ${nodeIconColors[node.type]}`} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
-                                    {group && (
-                                      <span className={`text-[9px] font-semibold px-1.5 py-0 rounded-full border ${group.bgColor} ${group.borderAccent} ${group.iconColor}`}>
-                                        {group.label}
-                                      </span>
-                                    )}
-                                  </div>
-                                  {node.type === "message" && (
-                                    <div className="flex items-center gap-2.5 mt-1">
-                                      {node.config?.media_type && node.config.media_type !== "" && (
-                                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
-                                          {node.config.media_type === "photo" ? <Image className="h-3 w-3" /> : <Video className="h-3 w-3" />}
-                                          {node.config.media_type === "photo" ? "Foto" : "Video"}
-                                        </span>
-                                      )}
-                                      {node.config?.buttons && node.config.buttons !== "" && (
-                                        <span className="flex items-center gap-1 text-[11px] text-muted-foreground bg-secondary/60 rounded-md px-1.5 py-0.5">
-                                          <MousePointerClick className="h-3 w-3" />
-                                          {(() => { try { return JSON.parse(node.config.buttons as string).length } catch { return 0 } })()}{" "}
-                                          {"botao(es)"}
-                                        </span>
-                                      )}
-                                    </div>
-                                  )}
-                                  {node.type === "redirect" && node.config?.target_flow_name && (
-                                    <div className="flex items-center gap-1.5 mt-1">
-                                      <ExternalLink className="h-3 w-3 text-orange-400" />
-                                      <span className="text-xs text-orange-400 font-medium">
-                                        {node.config.target_flow_name as string}
-                                      </span>
-                                      {(() => {
-                                        const targetFlow = flows.find((f) => f.id === node.config?.target_flow_id)
-                                        if (targetFlow) {
-                                          const tCat = getCategoryConfig(targetFlow.category)
-                                          return (
-                                            <Badge variant="outline" className={`text-[9px] px-1 py-0 rounded ${tCat.color}`}>
-                                              {tCat.label}
-                                            </Badge>
-                                          )
-                                        }
-                                        return null
-                                      })()}
-                                    </div>
-                                  )}
-                                  {node.type === "delay" && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                                      <Clock className="h-3 w-3" /> Pausa no fluxo
-                                    </p>
-                                  )}
-                                  {node.type === "condition" && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                                      <Split className="h-3 w-3" /> Verificacao logica
-                                    </p>
-                                  )}
-                                  {node.type === "action" && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                                      <Zap className="h-3 w-3" /> Automacao
-                                    </p>
-                                  )}
-                                  {node.type === "payment" && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                                      <CreditCard className="h-3 w-3" /> Monetizacao
-                                    </p>
-                                  )}
-                                  {node.type === "redirect" && !node.config?.target_flow_name && (
-                                    <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-                                      {node.config?.subVariant === "restart" ? (
-                                        <><RefreshCw className="h-3 w-3" /> Volta ao inicio</>
-                                      ) : node.config?.subVariant === "end" ? (
-                                        <><CircleStop className="h-3 w-3" /> Finaliza interacao</>
-                                      ) : (
-                                        <><ExternalLink className="h-3 w-3" /> Navegacao</>
-                                      )}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                                    onClick={() => openEditNode(node)}
-                                  >
-                                    <Pencil className="h-3.5 w-3.5" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                    onClick={() => {
-                                      setDeletingNode(node)
-                                      setShowDeleteNodeDialog(true)
-                                    }}
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                                <GripVertical className="h-3 w-3 text-muted-foreground/40 shrink-0" />
-                              </div>
-                              {i < arr.length - 1 && (
-                                <div className="flex flex-col items-center py-1">
-                                  <div className="w-px h-2 bg-border/60" />
-                                  <ArrowDown className="h-3 w-3 text-muted-foreground/30" />
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={closestCenter}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
+                        >
+                          <SortableContext
+                            items={nodes.filter((n) => n.type !== "trigger").map((n) => n.id)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            {nodes.filter((n) => n.type !== "trigger").map((node, i, arr) => (
+                              <SortableNodeCard
+                                key={node.id}
+                                node={node}
+                                isLast={i === arr.length - 1}
+                                flows={flows}
+                                onEdit={openEditNode}
+                                onDelete={(n) => {
+                                  setDeletingNode(n)
+                                  setShowDeleteNodeDialog(true)
+                                }}
+                              />
+                            ))}
+                          </SortableContext>
+                        </DndContext>
 
                         {nodes.filter((n) => n.type !== "trigger").length > 0 && (
                           <div className="flex flex-col items-center py-1">
