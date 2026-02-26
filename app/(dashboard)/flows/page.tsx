@@ -2066,104 +2066,68 @@ export default function FlowsPage() {
           setNewFlowName("")
         }
       }}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-lg max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-[540px] max-h-[90vh] overflow-y-auto p-0">
 
           {/* ===== STEP 1: Choose mode ===== */}
           {newFlowMode === null && (
-            <div className="flex flex-col">
-              <div className="px-6 pt-6 pb-4 border-b border-border">
+            <div className="flex flex-col p-5 gap-4">
+              <div>
                 <DialogHeader>
-                  <DialogTitle className="text-foreground text-base">
-                    {flows.length === 0 ? "Criar Fluxo Inicial" : "Novo Fluxo"}
+                  <DialogTitle className="text-foreground text-sm font-semibold">
+                    {flows.length === 0 ? "Criar fluxo inicial" : "Novo fluxo"}
                   </DialogTitle>
                 </DialogHeader>
-                <p className="text-xs text-muted-foreground mt-1">Como voce quer montar esse fluxo?</p>
+                <p className="text-xs text-muted-foreground/50 mt-1">Escolha como montar seu fluxo.</p>
               </div>
 
-              <div className="flex flex-col gap-3 p-5">
+              <div className="grid grid-cols-2 gap-3">
                 {/* Basic Flow Option */}
                 <button
-                  className="group flex flex-col gap-3 rounded-2xl border-2 border-success/30 bg-success/5 p-5 text-left transition-all hover:border-success/60 hover:bg-success/10 hover:shadow-sm"
+                  className="group flex flex-col rounded-xl border border-border/60 bg-transparent p-4 text-left transition-all hover:bg-secondary/20 hover:border-border"
                   onClick={() => setNewFlowMode("basico")}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-success/15 border border-success/30">
-                      <Zap className="h-5 w-5 text-success" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-foreground">Fluxo Basico</p>
-                        <Badge className="bg-success/15 text-success border-success/30 rounded-md text-[9px] font-bold px-1.5 py-0">
-                          RAPIDO
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">Pronto em segundos</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-success transition-colors" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/50 mb-3">
+                    <Zap className="h-4 w-4 text-accent" />
                   </div>
-                  <div className="flex flex-col gap-1.5 pl-14">
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <CheckCircle2 className="h-3 w-3 text-success/60" />
-                      <span>Mensagem de boas-vindas com foto/video</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <CheckCircle2 className="h-3 w-3 text-success/60" />
-                      <span>Preco e cobranca gerada automaticamente</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <CheckCircle2 className="h-3 w-3 text-success/60" />
-                      <span>So preencher os campos e esta pronto</span>
-                    </div>
+                  <p className="text-xs font-semibold text-foreground">Basico</p>
+                  <p className="text-[11px] text-muted-foreground/50 mt-0.5 mb-3">Pronto em segundos</p>
+                  <div className="flex flex-col gap-1.5 mt-auto">
+                    <p className="text-[10px] text-muted-foreground/40">Boas-vindas + midia</p>
+                    <p className="text-[10px] text-muted-foreground/40">Cobranca automatica</p>
+                    <p className="text-[10px] text-muted-foreground/40">Preencha e pronto</p>
                   </div>
-                  {/* Mini preview of what it generates */}
-                  <div className="flex items-center gap-1.5 pl-14 mt-1">
-                    <div className="flex items-center gap-1 text-[9px] text-success/70 bg-success/10 rounded-full px-2 py-0.5 border border-success/20">
-                      <Zap className="h-2.5 w-2.5" /> Gatilho
-                    </div>
-                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30" />
-                    <div className="flex items-center gap-1 text-[9px] text-blue-400/70 bg-blue-500/10 rounded-full px-2 py-0.5 border border-blue-500/20">
-                      <MessageSquare className="h-2.5 w-2.5" /> Mensagem
-                    </div>
-                    <ArrowRight className="h-2.5 w-2.5 text-muted-foreground/30" />
-                    <div className="flex items-center gap-1 text-[9px] text-success/70 bg-success/10 rounded-full px-2 py-0.5 border border-success/20">
-                      <CreditCard className="h-2.5 w-2.5" /> Pagamento
-                    </div>
+                  <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
+                    <div className="h-1.5 w-1.5 rounded-full bg-accent/40" />
+                    <div className="w-3 h-px bg-border/40" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-blue-400/40" />
+                    <div className="w-3 h-px bg-border/40" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-emerald-400/40" />
                   </div>
                 </button>
 
                 {/* Complete Flow Option */}
                 <button
-                  className="group flex flex-col gap-3 rounded-2xl border-2 border-accent/30 bg-accent/5 p-5 text-left transition-all hover:border-accent/60 hover:bg-accent/10 hover:shadow-sm"
+                  className="group flex flex-col rounded-xl border border-border/60 bg-transparent p-4 text-left transition-all hover:bg-secondary/20 hover:border-border"
                   onClick={() => setNewFlowMode("completo")}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/15 border border-accent/30">
-                      <Workflow className="h-5 w-5 text-accent" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-bold text-foreground">Fluxo Completo</p>
-                        <Badge className="bg-accent/15 text-accent border-accent/30 rounded-md text-[9px] font-bold px-1.5 py-0">
-                          AVANCADO
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">Controle total sobre cada etapa</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-accent transition-colors" />
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/50 mb-3">
+                    <Workflow className="h-4 w-4 text-accent" />
                   </div>
-                  <div className="flex flex-col gap-1.5 pl-14">
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <CheckCircle2 className="h-3 w-3 text-accent/60" />
-                      <span>Monte o fluxo etapa por etapa</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <CheckCircle2 className="h-3 w-3 text-accent/60" />
-                      <span>Mensagens, logica, pagamentos, automacoes</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-                      <CheckCircle2 className="h-3 w-3 text-accent/60" />
-                      <span>Para jornadas mais elaboradas</span>
-                    </div>
+                  <p className="text-xs font-semibold text-foreground">Completo</p>
+                  <p className="text-[11px] text-muted-foreground/50 mt-0.5 mb-3">Controle total</p>
+                  <div className="flex flex-col gap-1.5 mt-auto">
+                    <p className="text-[10px] text-muted-foreground/40">Etapa por etapa</p>
+                    <p className="text-[10px] text-muted-foreground/40">Logica e automacoes</p>
+                    <p className="text-[10px] text-muted-foreground/40">Jornadas elaboradas</p>
+                  </div>
+                  <div className="flex items-center gap-1 mt-3 pt-3 border-t border-border/30">
+                    <div className="h-1.5 w-1.5 rounded-full bg-accent/40" />
+                    <div className="w-3 h-px bg-border/40" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-purple-400/40" />
+                    <div className="w-3 h-px bg-border/40" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-orange-400/40" />
+                    <div className="w-3 h-px bg-border/40" />
+                    <div className="h-1.5 w-1.5 rounded-full bg-cyan-400/40" />
                   </div>
                 </button>
               </div>
