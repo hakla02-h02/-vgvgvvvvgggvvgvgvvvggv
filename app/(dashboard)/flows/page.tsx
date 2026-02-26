@@ -630,12 +630,28 @@ function SortableNodeCard({
           )}
           {node.type === "action" && (
             <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <Zap className="h-3 w-3" /> Automacao
+              {(node.config?.subVariant as string) === "add_tag" ? (
+                <><Tag className="h-3 w-3" /> Adicionar tag</>
+              ) : (node.config?.subVariant as string) === "remove_tag" ? (
+                <><Unlink className="h-3 w-3" /> Remover tag</>
+              ) : (node.config?.subVariant as string) === "add_group" ? (
+                <><UsersRound className="h-3 w-3" /> Adicionar ao grupo</>
+              ) : (node.config?.subVariant as string) === "webhook" ? (
+                <><Globe className="h-3 w-3" /> Webhook externo</>
+              ) : (
+                <><Zap className="h-3 w-3" /> Automacao</>
+              )}
             </p>
           )}
           {node.type === "payment" && (
             <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <CreditCard className="h-3 w-3" /> Monetizacao
+              {(node.config?.subVariant as string) === "charge" ? (
+                <><CreditCard className="h-3 w-3" /> Cobrar pagamento</>
+              ) : (node.config?.subVariant as string) === "wait_payment" ? (
+                <><Clock className="h-3 w-3" /> Aguardar pagamento</>
+              ) : (
+                <><CreditCard className="h-3 w-3" /> Monetizacao</>
+              )}
             </p>
           )}
           {node.type === "redirect" && !node.config?.target_flow_name && (
@@ -1248,10 +1264,28 @@ export default function FlowsPage() {
       }
     } else if (selectedTemplate.type === "condition" && nodeConfigValues.condition) {
       label = nodeConfigValues.condition
-    } else if (selectedTemplate.type === "payment" && nodeConfigValues.description) {
-      label = nodeConfigValues.description
+    } else if (selectedTemplate.type === "payment") {
+      if (selectedTemplate.subVariant === "charge" && nodeConfigValues.amount) {
+        label = nodeConfigValues.description ? `R$${nodeConfigValues.amount} - ${nodeConfigValues.description}` : `Cobrar R$${nodeConfigValues.amount}`
+      } else if (selectedTemplate.subVariant === "wait_payment" && nodeConfigValues.seconds) {
+        const s = parseInt(nodeConfigValues.seconds)
+        label = s >= 60 ? `Aguardar ${Math.floor(s / 60)}min` : `Aguardar ${s}s`
+      } else if (nodeConfigValues.description) {
+        label = nodeConfigValues.description
+      }
     } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
-      label = nodeConfigValues.action_name
+      const actionVal = nodeConfigValues.action_name
+      if (selectedTemplate.subVariant === "add_tag") {
+        label = `Tag: ${actionVal}`
+      } else if (selectedTemplate.subVariant === "remove_tag") {
+        label = `Remover: ${actionVal}`
+      } else if (selectedTemplate.subVariant === "add_group") {
+        label = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
+      } else if (selectedTemplate.subVariant === "webhook") {
+        label = `Webhook: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
+      } else {
+        label = actionVal
+      }
     } else if (selectedTemplate.subVariant === "goto_flow" && nodeConfigValues.target_flow_name) {
       label = `Ir para: ${nodeConfigValues.target_flow_name}`
       config = {
@@ -1363,11 +1397,31 @@ export default function FlowsPage() {
       finalConfig = { condition: editNodeConfig.condition || "", subVariant: editingNode.config?.subVariant || "" }
       finalLabel = editNodeConfig.condition || "Condicao"
     } else if (editingNode.type === "payment") {
-      finalConfig = { ...editNodeConfig, subVariant: editingNode.config?.subVariant || "" }
-      finalLabel = editNodeConfig.description || editNodeLabel
+      const sv = editingNode.config?.subVariant || ""
+      finalConfig = { ...editNodeConfig, subVariant: sv }
+      if (sv === "charge" && editNodeConfig.amount) {
+        finalLabel = editNodeConfig.description ? `R$${editNodeConfig.amount} - ${editNodeConfig.description}` : `Cobrar R$${editNodeConfig.amount}`
+      } else if (sv === "wait_payment" && editNodeConfig.seconds) {
+        const s = parseInt(editNodeConfig.seconds)
+        finalLabel = s >= 60 ? `Aguardar ${Math.floor(s / 60)}min` : `Aguardar ${s}s`
+      } else {
+        finalLabel = editNodeConfig.description || editNodeLabel
+      }
     } else if (editingNode.type === "action") {
-      finalConfig = { ...editNodeConfig, subVariant: editingNode.config?.subVariant || "" }
-      finalLabel = editNodeConfig.action_name || editNodeLabel
+      const sv = editingNode.config?.subVariant || ""
+      finalConfig = { ...editNodeConfig, subVariant: sv }
+      const actionVal = editNodeConfig.action_name || ""
+      if (sv === "add_tag" && actionVal) {
+        finalLabel = `Tag: ${actionVal}`
+      } else if (sv === "remove_tag" && actionVal) {
+        finalLabel = `Remover: ${actionVal}`
+      } else if (sv === "add_group" && actionVal) {
+        finalLabel = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
+      } else if (sv === "webhook" && actionVal) {
+        finalLabel = `Webhook: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
+      } else {
+        finalLabel = actionVal || editNodeLabel
+      }
     } else if (editingNode.type === "redirect") {
       const sv = editingNode.config?.subVariant || ""
       if (sv === "restart") {
@@ -2777,6 +2831,135 @@ export default function FlowsPage() {
                     </div>
                   )}
                 </div>
+              ) : selectedTemplate.type === "delay" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Tempo em segundos</Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    Defina quanto tempo o fluxo deve aguardar antes de continuar.
+                  </p>
+                  <Input
+                    type="number"
+                    value={nodeConfigValues.seconds || ""}
+                    onChange={(e) =>
+                      setNodeConfigValues((prev) => ({ ...prev, seconds: e.target.value }))
+                    }
+                    placeholder="300"
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                  />
+                  {nodeConfigValues.seconds && parseInt(nodeConfigValues.seconds) > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const s = parseInt(nodeConfigValues.seconds)
+                        if (s >= 3600) return `= ${Math.floor(s / 3600)} hora${Math.floor(s / 3600) > 1 ? "s" : ""} e ${Math.floor((s % 3600) / 60)} min`
+                        if (s >= 60) return `= ${Math.floor(s / 60)} minuto${Math.floor(s / 60) > 1 ? "s" : ""}`
+                        return `= ${s} segundo${s > 1 ? "s" : ""}`
+                      })()}
+                    </p>
+                  )}
+                </div>
+              ) : selectedTemplate.type === "condition" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">
+                    {selectedTemplate.subVariant === "check_tag" ? "Tag" : selectedTemplate.subVariant === "check_payment" ? "Condicao de pagamento" : "Condicao"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    {selectedTemplate.subVariant === "check_tag"
+                      ? "Nome da tag para verificar no usuario."
+                      : selectedTemplate.subVariant === "check_payment"
+                        ? "Regra para verificar se o pagamento foi feito."
+                        : "Regra que define qual caminho o fluxo seguira."}
+                  </p>
+                  <Input
+                    type="text"
+                    value={nodeConfigValues.condition || ""}
+                    onChange={(e) =>
+                      setNodeConfigValues((prev) => ({ ...prev, condition: e.target.value }))
+                    }
+                    placeholder={
+                      selectedTemplate.subVariant === "check_tag"
+                        ? "Ex: lead-quente"
+                        : selectedTemplate.subVariant === "check_payment"
+                          ? "Pagamento confirmado?"
+                          : "Ex: Usuario respondeu?"
+                    }
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                  />
+                </div>
+              ) : selectedTemplate.type === "action" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">
+                    {selectedTemplate.subVariant === "add_tag" ? "Nome da tag" : selectedTemplate.subVariant === "remove_tag" ? "Tag a remover" : selectedTemplate.subVariant === "add_group" ? "Link do grupo" : selectedTemplate.subVariant === "webhook" ? "URL do webhook" : "Valor"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    {selectedTemplate.subVariant === "add_tag"
+                      ? "Adicione uma tag para segmentar e organizar seus usuarios."
+                      : selectedTemplate.subVariant === "remove_tag"
+                        ? "Remova uma tag do usuario neste ponto do fluxo."
+                        : selectedTemplate.subVariant === "add_group"
+                          ? "Envie o usuario para um grupo ou canal do Telegram."
+                          : selectedTemplate.subVariant === "webhook"
+                            ? "Envie dados para um sistema externo via HTTP POST."
+                            : "Configure a acao automatica."}
+                  </p>
+                  <Input
+                    type="text"
+                    value={nodeConfigValues.action_name || ""}
+                    onChange={(e) =>
+                      setNodeConfigValues((prev) => ({ ...prev, action_name: e.target.value }))
+                    }
+                    placeholder={
+                      selectedTemplate.subVariant === "add_tag" ? "Ex: lead-quente" : selectedTemplate.subVariant === "remove_tag" ? "Ex: inativo" : selectedTemplate.subVariant === "add_group" ? "https://t.me/meugrupo" : selectedTemplate.subVariant === "webhook" ? "https://api.exemplo.com/hook" : "Valor"
+                    }
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                  />
+                </div>
+              ) : selectedTemplate.type === "payment" ? (
+                <div className="flex flex-col gap-3">
+                  {selectedTemplate.subVariant === "wait_payment" ? (
+                    <>
+                      <Label className="text-foreground">Timeout (segundos)</Label>
+                      <p className="text-xs text-muted-foreground -mt-1">
+                        Tempo maximo para aguardar a confirmacao do pagamento.
+                      </p>
+                      <Input
+                        type="number"
+                        value={nodeConfigValues.seconds || ""}
+                        onChange={(e) =>
+                          setNodeConfigValues((prev) => ({ ...prev, seconds: e.target.value }))
+                        }
+                        placeholder="1800"
+                        className="bg-secondary border-border rounded-xl text-foreground"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-foreground">Valor (R$)</Label>
+                        <Input
+                          type="text"
+                          value={nodeConfigValues.amount || ""}
+                          onChange={(e) =>
+                            setNodeConfigValues((prev) => ({ ...prev, amount: e.target.value }))
+                          }
+                          placeholder="49.90"
+                          className="bg-secondary border-border rounded-xl text-foreground"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-foreground">Descricao</Label>
+                        <Input
+                          type="text"
+                          value={nodeConfigValues.description || ""}
+                          onChange={(e) =>
+                            setNodeConfigValues((prev) => ({ ...prev, description: e.target.value }))
+                          }
+                          placeholder="Pagamento do produto X"
+                          className="bg-secondary border-border rounded-xl text-foreground"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
               ) : selectedTemplate.configFields.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
                   Este bloco nao precisa de configuracao.
@@ -2826,7 +3009,9 @@ export default function FlowsPage() {
                     (selectedTemplate.type === "message" && !msgText.trim()) ||
                     (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id) ||
                     (selectedTemplate.type === "delay" && (!nodeConfigValues.seconds || parseInt(nodeConfigValues.seconds) <= 0)) ||
-                    (selectedTemplate.type === "condition" && !nodeConfigValues.condition?.trim())
+                    (selectedTemplate.type === "condition" && !nodeConfigValues.condition?.trim()) ||
+                    (selectedTemplate.type === "action" && !nodeConfigValues.action_name?.trim()) ||
+                    (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && !nodeConfigValues.amount?.trim())
                   }
                   onClick={handleAddNode}
                 >
@@ -3053,6 +3238,8 @@ export default function FlowsPage() {
                     editingNode.type === "message" ? !msgText.trim() :
                     editingNode.type === "delay" ? !editNodeConfig.seconds || parseInt(editNodeConfig.seconds) <= 0 :
                     editingNode.type === "condition" ? !editNodeConfig.condition?.trim() :
+                    editingNode.type === "action" ? !editNodeConfig.action_name?.trim() :
+                    editingNode.type === "payment" && (editingNode.config?.subVariant as string) === "charge" ? !editNodeConfig.amount?.trim() :
                     editingNode.type === "redirect" && (editingNode.config?.subVariant === "restart" || editingNode.config?.subVariant === "end") ? false :
                     editingNode.type === "redirect" ? !editNodeConfig.target_flow_id :
                     false
