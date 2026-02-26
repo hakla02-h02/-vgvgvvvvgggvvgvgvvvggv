@@ -1,11 +1,10 @@
-import { createClient } from "@supabase/supabase-js"
 import { NextRequest, NextResponse } from "next/server"
 
-const SUPABASE_URL = "https://dbtpnafcqfcllgoxdhxs.supabase.co"
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHBuYWZjcWZjbGxnb3hkaHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Nzg3MTQsImV4cCI6MjA4NzA1NDcxNH0.0MF5a1uAuxeHIVGNglWYbFHYRIECNVEVZN1MLH4Z26A"
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
 
 export async function POST(req: NextRequest) {
   try {
@@ -25,7 +24,7 @@ export async function POST(req: NextRequest) {
     if (!allAllowed.includes(file.type)) {
       return NextResponse.json(
         { error: "Tipo de arquivo nao suportado. Use JPG, PNG, GIF, WEBP, MP4, WEBM ou MOV." },
-        { status: 400 }
+        { status: 400 },
       )
     }
 
@@ -37,33 +36,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Selecione um arquivo de video valido." }, { status: 400 })
     }
 
-    // Max 50MB
-    if (file.size > 50 * 1024 * 1024) {
-      return NextResponse.json({ error: "Arquivo muito grande. Maximo 50MB." }, { status: 400 })
+    // Max 10MB para imagens, 20MB para videos (base64 aumenta ~33% o tamanho)
+    const maxSize = mediaType === "video" ? 20 * 1024 * 1024 : 10 * 1024 * 1024
+    const maxLabel = mediaType === "video" ? "20MB" : "10MB"
+
+    if (file.size > maxSize) {
+      return NextResponse.json(
+        { error: `Arquivo muito grande. Maximo ${maxLabel}.` },
+        { status: 400 },
+      )
     }
 
-    const ext = file.name.split(".").pop() || "bin"
-    const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`
-    const filePath = `${mediaType === "video" ? "videos" : "images"}/${fileName}`
-
+    // Converter para Base64 Data URL para salvar diretamente no banco
     const arrayBuffer = await file.arrayBuffer()
-    const buffer = new Uint8Array(arrayBuffer)
+    const uint8Array = new Uint8Array(arrayBuffer)
 
-    const { error: uploadError } = await supabase.storage
-      .from("flow-media")
-      .upload(filePath, buffer, {
-        contentType: file.type,
-        upsert: false,
-      })
-
-    if (uploadError) {
-      console.error("Upload error:", uploadError)
-      return NextResponse.json({ error: "Erro ao fazer upload: " + uploadError.message }, { status: 500 })
+    // Converter Uint8Array para string base64
+    let binary = ""
+    const chunkSize = 8192
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, i + chunkSize)
+      binary += String.fromCharCode(...chunk)
     }
+    const base64 = btoa(binary)
 
-    const { data: urlData } = supabase.storage.from("flow-media").getPublicUrl(filePath)
+    const dataUrl = `data:${file.type};base64,${base64}`
 
-    return NextResponse.json({ url: urlData.publicUrl })
+    return NextResponse.json({ url: dataUrl })
   } catch (err) {
     console.error("Upload route error:", err)
     return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
