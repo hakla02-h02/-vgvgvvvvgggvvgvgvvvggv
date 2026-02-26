@@ -609,12 +609,23 @@ function SortableNodeCard({
           )}
           {node.type === "delay" && (
             <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <Clock className="h-3 w-3" /> Pausa no fluxo
+              <Clock className="h-3 w-3" /> {node.config?.seconds ? (() => {
+                const s = parseInt(node.config.seconds as string)
+                if (s >= 3600) return `Pausa de ${Math.floor(s / 3600)}h${Math.floor((s % 3600) / 60) > 0 ? ` ${Math.floor((s % 3600) / 60)}min` : ""}`
+                if (s >= 60) return `Pausa de ${Math.floor(s / 60)} min`
+                return `Pausa de ${s}s`
+              })() : "Pausa no fluxo"}
             </p>
           )}
           {node.type === "condition" && (
             <p className="text-[11px] text-muted-foreground mt-0.5 flex items-center gap-1">
-              <Split className="h-3 w-3" /> Verificacao logica
+              {(node.config?.subVariant as string) === "check_payment" ? (
+                <><CreditCard className="h-3 w-3" /> Verificar pagamento</>
+              ) : (node.config?.subVariant as string) === "check_tag" ? (
+                <><Tag className="h-3 w-3" /> Verificar tag</>
+              ) : (
+                <><Split className="h-3 w-3" /> Verificacao logica</>
+              )}
             </p>
           )}
           {node.type === "action" && (
@@ -1227,7 +1238,10 @@ export default function FlowsPage() {
       }
     } else if (selectedTemplate.type === "delay" && nodeConfigValues.seconds) {
       const secs = parseInt(nodeConfigValues.seconds)
-      if (secs >= 60) {
+      if (secs >= 3600) {
+        const hours = Math.floor(secs / 3600)
+        label = `Esperar ${hours} hora${hours > 1 ? "s" : ""}`
+      } else if (secs >= 60) {
         label = `Esperar ${Math.floor(secs / 60)} minuto${Math.floor(secs / 60) > 1 ? "s" : ""}`
       } else {
         label = `Esperar ${secs} segundo${secs > 1 ? "s" : ""}`
@@ -1330,21 +1344,49 @@ export default function FlowsPage() {
         media_url: msgMediaType !== "none" ? msgMediaUrl : "",
         media_type: msgMediaType !== "none" ? msgMediaType : "",
         buttons: validButtons.length > 0 ? JSON.stringify(validButtons) : "",
+        subVariant: editingNode.config?.subVariant || "",
       }
       finalLabel = msgText ? (msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText) : "Mensagem"
-    } else if (editingNode.type === "redirect") {
-      finalConfig = {
-        target_flow_id: editNodeConfig.target_flow_id,
-        target_flow_name: editNodeConfig.target_flow_name,
+    } else if (editingNode.type === "delay") {
+      const secs = parseInt(editNodeConfig.seconds || "0")
+      finalConfig = { seconds: editNodeConfig.seconds || "0", subVariant: editingNode.config?.subVariant || "" }
+      if (secs >= 3600) {
+        const hours = Math.floor(secs / 3600)
+        finalLabel = `Esperar ${hours} hora${hours > 1 ? "s" : ""}`
+      } else if (secs >= 60) {
+        const mins = Math.floor(secs / 60)
+        finalLabel = `Esperar ${mins} minuto${mins > 1 ? "s" : ""}`
+      } else {
+        finalLabel = `Esperar ${secs} segundo${secs > 1 ? "s" : ""}`
       }
-      finalLabel = editNodeConfig.target_flow_name ? `Ir para: ${editNodeConfig.target_flow_name}` : "Redirecionar"
+    } else if (editingNode.type === "condition") {
+      finalConfig = { condition: editNodeConfig.condition || "", subVariant: editingNode.config?.subVariant || "" }
+      finalLabel = editNodeConfig.condition || "Condicao"
+    } else if (editingNode.type === "payment") {
+      finalConfig = { ...editNodeConfig, subVariant: editingNode.config?.subVariant || "" }
+      finalLabel = editNodeConfig.description || editNodeLabel
+    } else if (editingNode.type === "action") {
+      finalConfig = { ...editNodeConfig, subVariant: editingNode.config?.subVariant || "" }
+      finalLabel = editNodeConfig.action_name || editNodeLabel
+    } else if (editingNode.type === "redirect") {
+      const sv = editingNode.config?.subVariant || ""
+      if (sv === "restart") {
+        finalConfig = { subVariant: "restart" }
+        finalLabel = "Recomecar Fluxo"
+      } else if (sv === "end") {
+        finalConfig = { subVariant: "end" }
+        finalLabel = "Encerrar Conversa"
+      } else {
+        finalConfig = {
+          target_flow_id: editNodeConfig.target_flow_id,
+          target_flow_name: editNodeConfig.target_flow_name,
+          subVariant: "goto_flow",
+        }
+        finalLabel = editNodeConfig.target_flow_name ? `Ir para: ${editNodeConfig.target_flow_name}` : "Redirecionar"
+      }
     }
 
-    console.log("[v0] handleSaveNode - editingNode.id:", editingNode.id, "type:", editingNode.type)
-    console.log("[v0] handleSaveNode - finalLabel:", finalLabel)
-    console.log("[v0] handleSaveNode - finalConfig:", JSON.stringify(finalConfig))
-
-    const { error, data, count, status, statusText } = await supabase
+    const { error, data } = await supabase
       .from("flow_nodes")
       .update({
         label: finalLabel,
@@ -1354,22 +1396,14 @@ export default function FlowsPage() {
       .eq("id", editingNode.id)
       .select()
 
-    console.log("[v0] handleSaveNode - response status:", status, statusText)
-    console.log("[v0] handleSaveNode - response data:", JSON.stringify(data))
-    console.log("[v0] handleSaveNode - response error:", JSON.stringify(error))
-    console.log("[v0] handleSaveNode - response count:", count)
-
     if (error) {
-      console.error("[v0] Error updating node:", error)
+      console.error("Error updating node:", error)
       setIsSavingNode(false)
       return
     }
 
     // Check if the update actually affected a row
     if (!data || data.length === 0) {
-      console.error("[v0] Update returned no rows - RLS policy may be blocking the update")
-      // Try alternative approach: delete and re-insert
-      console.log("[v0] Trying delete + insert approach...")
       
       const { error: deleteError } = await supabase
         .from("flow_nodes")
@@ -1377,7 +1411,7 @@ export default function FlowsPage() {
         .eq("id", editingNode.id)
       
       if (deleteError) {
-        console.error("[v0] Delete also failed:", deleteError)
+        console.error("Delete also failed:", deleteError)
         setIsSavingNode(false)
         return
       }
@@ -1396,12 +1430,12 @@ export default function FlowsPage() {
         .single()
       
       if (insertError) {
-        console.error("[v0] Re-insert also failed:", insertError)
+        console.error("Re-insert also failed:", insertError)
         setIsSavingNode(false)
         return
       }
       
-      console.log("[v0] Delete + insert succeeded:", insertData)
+      // Delete + insert fallback succeeded
     }
 
     setNodes((prev) =>
@@ -2788,7 +2822,12 @@ export default function FlowsPage() {
                 </Button>
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  disabled={isAddingNode || (selectedTemplate.type === "message" && !msgText.trim()) || (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id)}
+                  disabled={isAddingNode ||
+                    (selectedTemplate.type === "message" && !msgText.trim()) ||
+                    (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id) ||
+                    (selectedTemplate.type === "delay" && (!nodeConfigValues.seconds || parseInt(nodeConfigValues.seconds) <= 0)) ||
+                    (selectedTemplate.type === "condition" && !nodeConfigValues.condition?.trim())
+                  }
                   onClick={handleAddNode}
                 >
                   {isAddingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -2868,47 +2907,133 @@ export default function FlowsPage() {
                     </div>
                   )}
                 </div>
-              ) : (
-                <>
-                  <div className="flex flex-col gap-2">
-                    <Label className="text-foreground">Label</Label>
-                    <Input
-                      value={editNodeLabel}
-                      onChange={(e) => setEditNodeLabel(e.target.value)}
-                      className="bg-secondary border-border rounded-xl text-foreground"
-                    />
-                  </div>
-
-                  {(() => {
-                    const tpl = actionTemplates.find((t) => t.type === editingNode.type)
-                    if (!tpl || tpl.configFields.length === 0) return null
-                    return tpl.configFields.map((field) => (
-                      <div key={field.key} className="flex flex-col gap-2">
-                        <Label className="text-foreground">{field.label}</Label>
-                        {field.inputType === "textarea" ? (
-                          <Textarea
-                            value={editNodeConfig[field.key] || ""}
-                            onChange={(e) =>
-                              setEditNodeConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
-                            }
-                            placeholder={field.placeholder}
-                            className="bg-secondary border-border rounded-xl text-foreground min-h-[80px]"
-                          />
-                        ) : (
-                          <Input
-                            type={field.inputType}
-                            value={editNodeConfig[field.key] || ""}
-                            onChange={(e) =>
-                              setEditNodeConfig((prev) => ({ ...prev, [field.key]: e.target.value }))
-                            }
-                            placeholder={field.placeholder}
-                            className="bg-secondary border-border rounded-xl text-foreground"
-                          />
-                        )}
+              ) : editingNode.type === "delay" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">Tempo em segundos</Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    Defina quanto tempo o fluxo deve aguardar antes de continuar.
+                  </p>
+                  <Input
+                    type="number"
+                    value={editNodeConfig.seconds || ""}
+                    onChange={(e) =>
+                      setEditNodeConfig((prev) => ({ ...prev, seconds: e.target.value }))
+                    }
+                    placeholder="300"
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                  />
+                  {editNodeConfig.seconds && parseInt(editNodeConfig.seconds) > 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const s = parseInt(editNodeConfig.seconds)
+                        if (s >= 3600) return `= ${Math.floor(s / 3600)} hora${Math.floor(s / 3600) > 1 ? "s" : ""} e ${Math.floor((s % 3600) / 60)} min`
+                        if (s >= 60) return `= ${Math.floor(s / 60)} minuto${Math.floor(s / 60) > 1 ? "s" : ""}`
+                        return `= ${s} segundo${s > 1 ? "s" : ""}`
+                      })()}
+                    </p>
+                  )}
+                </div>
+              ) : editingNode.type === "condition" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">
+                    {(editingNode.config?.subVariant as string) === "check_tag" ? "Tag" : (editingNode.config?.subVariant as string) === "check_payment" ? "Condicao de pagamento" : "Condicao"}
+                  </Label>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    {(editingNode.config?.subVariant as string) === "check_tag"
+                      ? "Nome da tag para verificar no usuario."
+                      : (editingNode.config?.subVariant as string) === "check_payment"
+                        ? "Regra para verificar se o pagamento foi feito."
+                        : "Regra que define qual caminho o fluxo seguira."}
+                  </p>
+                  <Input
+                    type="text"
+                    value={editNodeConfig.condition || ""}
+                    onChange={(e) =>
+                      setEditNodeConfig((prev) => ({ ...prev, condition: e.target.value }))
+                    }
+                    placeholder={
+                      (editingNode.config?.subVariant as string) === "check_tag"
+                        ? "Ex: lead-quente"
+                        : (editingNode.config?.subVariant as string) === "check_payment"
+                          ? "Pagamento confirmado?"
+                          : "Ex: Usuario respondeu?"
+                    }
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                  />
+                </div>
+              ) : editingNode.type === "payment" ? (
+                <div className="flex flex-col gap-3">
+                  {(editingNode.config?.subVariant as string) === "wait_payment" ? (
+                    <>
+                      <Label className="text-foreground">Timeout (segundos)</Label>
+                      <p className="text-xs text-muted-foreground -mt-1">
+                        Tempo maximo para aguardar a confirmacao do pagamento.
+                      </p>
+                      <Input
+                        type="number"
+                        value={editNodeConfig.seconds || ""}
+                        onChange={(e) =>
+                          setEditNodeConfig((prev) => ({ ...prev, seconds: e.target.value }))
+                        }
+                        placeholder="1800"
+                        className="bg-secondary border-border rounded-xl text-foreground"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-foreground">Valor (R$)</Label>
+                        <Input
+                          type="text"
+                          value={editNodeConfig.amount || ""}
+                          onChange={(e) =>
+                            setEditNodeConfig((prev) => ({ ...prev, amount: e.target.value }))
+                          }
+                          placeholder="49.90"
+                          className="bg-secondary border-border rounded-xl text-foreground"
+                        />
                       </div>
-                    ))
-                  })()}
-                </>
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-foreground">Descricao</Label>
+                        <Input
+                          type="text"
+                          value={editNodeConfig.description || ""}
+                          onChange={(e) =>
+                            setEditNodeConfig((prev) => ({ ...prev, description: e.target.value }))
+                          }
+                          placeholder="Pagamento do produto X"
+                          className="bg-secondary border-border rounded-xl text-foreground"
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : editingNode.type === "action" ? (
+                <div className="flex flex-col gap-3">
+                  <Label className="text-foreground">
+                    {(editingNode.config?.subVariant as string) === "add_tag" ? "Nome da tag" : (editingNode.config?.subVariant as string) === "remove_tag" ? "Nome da tag" : (editingNode.config?.subVariant as string) === "add_group" ? "Link do grupo" : (editingNode.config?.subVariant as string) === "webhook" ? "URL do webhook" : "Valor"}
+                  </Label>
+                  <Input
+                    type="text"
+                    value={editNodeConfig.action_name || ""}
+                    onChange={(e) =>
+                      setEditNodeConfig((prev) => ({ ...prev, action_name: e.target.value }))
+                    }
+                    placeholder={
+                      (editingNode.config?.subVariant as string) === "add_tag" ? "Ex: lead-quente" : (editingNode.config?.subVariant as string) === "remove_tag" ? "Ex: inativo" : (editingNode.config?.subVariant as string) === "add_group" ? "https://t.me/grupo" : (editingNode.config?.subVariant as string) === "webhook" ? "https://api.exemplo.com/hook" : "Valor"
+                    }
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                  />
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  <Label className="text-foreground">Label</Label>
+                  <Input
+                    value={editNodeLabel}
+                    onChange={(e) => setEditNodeLabel(e.target.value)}
+                    className="bg-secondary border-border rounded-xl text-foreground"
+                  />
+                </div>
               )}
 
               <DialogFooter>
@@ -2924,7 +3049,14 @@ export default function FlowsPage() {
                 </Button>
                 <Button
                   className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl"
-                  disabled={isSavingNode || (editingNode.type === "message" ? !msgText.trim() : !editNodeLabel.trim())}
+                  disabled={isSavingNode || (
+                    editingNode.type === "message" ? !msgText.trim() :
+                    editingNode.type === "delay" ? !editNodeConfig.seconds || parseInt(editNodeConfig.seconds) <= 0 :
+                    editingNode.type === "condition" ? !editNodeConfig.condition?.trim() :
+                    editingNode.type === "redirect" && (editingNode.config?.subVariant === "restart" || editingNode.config?.subVariant === "end") ? false :
+                    editingNode.type === "redirect" ? !editNodeConfig.target_flow_id :
+                    false
+                  )}
                   onClick={handleSaveNode}
                 >
                   {isSavingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
