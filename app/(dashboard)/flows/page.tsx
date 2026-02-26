@@ -554,16 +554,6 @@ function SortableNodeCard({
       <div
         className={`group relative flex items-center gap-4 rounded-2xl border px-4 py-3.5 transition-all hover:shadow-sm ${nodeColors[node.type]} ${isDragging ? "opacity-50 shadow-lg ring-2 ring-accent/40" : ""}`}
       >
-        {/* Drag handle */}
-        <button
-          className="absolute right-2 top-0 bottom-0 flex items-center justify-center w-6 cursor-grab active:cursor-grabbing touch-none"
-          aria-label="Arrastar para reordenar"
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground/60 hover:text-muted-foreground transition-colors" />
-        </button>
-
         {/* Left color bar */}
         {group && (
           <div className={`absolute left-0 top-3 bottom-3 w-0.5 rounded-full ${group.iconColor === "text-blue-400" ? "bg-blue-400/60" : group.iconColor === "text-purple-400" ? "bg-purple-400/60" : group.iconColor === "text-success" ? "bg-emerald-400/60" : group.iconColor === "text-orange-400" ? "bg-orange-400/60" : "bg-cyan-400/60"}`} />
@@ -571,7 +561,7 @@ function SortableNodeCard({
         <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${group ? `${group.bgColor} border ${group.borderAccent}` : "bg-background/50"}`}>
           <Icon className={`h-4 w-4 ${nodeIconColors[node.type]}`} />
         </div>
-        <div className="flex-1 min-w-0 pr-6">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <p className="text-sm font-medium text-foreground truncate">{node.label}</p>
             {group && (
@@ -649,23 +639,34 @@ function SortableNodeCard({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-foreground"
-            onClick={() => onEdit(node)}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => onEdit(node)}
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+              onClick={() => onDelete(node)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          <div className="w-px h-5 bg-border/40 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <button
+            className="flex items-center justify-center w-7 h-7 rounded-md cursor-grab active:cursor-grabbing touch-none hover:bg-muted/50 transition-colors"
+            aria-label="Arrastar para reordenar"
+            {...attributes}
+            {...listeners}
           >
-            <Pencil className="h-3.5 w-3.5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground hover:text-destructive"
-            onClick={() => onDelete(node)}
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </Button>
+            <GripVertical className="h-4 w-4 text-muted-foreground/40 hover:text-muted-foreground transition-colors" />
+          </button>
         </div>
       </div>
       {!isLast && (
