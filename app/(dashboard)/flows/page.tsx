@@ -588,49 +588,49 @@ function SortableNodeCard({
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all ${
+        className={`group flex items-center gap-4 rounded-2xl border px-4 py-4 transition-all ${
           isDragging 
-            ? "opacity-50 ring-1 ring-accent/30 bg-secondary/40 border-border" 
-            : "border-border/60 bg-transparent hover:bg-secondary/20 hover:border-border"
+            ? "opacity-50 ring-2 ring-accent/30 bg-secondary/40 border-border" 
+            : "border-border/60 bg-card hover:bg-secondary/30 hover:border-border"
         }`}
       >
-        <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg ${
-          group ? "bg-secondary/50" : "bg-secondary/30"
+        <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+          group ? `${group.bgColor} border ${group.borderAccent}` : "bg-secondary/50 border border-border/40"
         }`}>
-          <Icon className={`h-3.5 w-3.5 ${nodeIconColors[node.type]}`} />
+          <Icon className={`h-5 w-5 ${nodeIconColors[node.type]}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-foreground/90 truncate leading-tight">{node.label}</p>
-          <p className="text-[10px] text-muted-foreground/50 mt-px truncate">{getSubtitle()}</p>
+          <p className="text-sm font-semibold text-foreground truncate leading-tight">{node.label}</p>
+          <p className="text-xs text-muted-foreground/60 mt-0.5 truncate">{getSubtitle()}</p>
         </div>
-        <div className="flex items-center gap-0.5 shrink-0">
-          <div className="flex items-center gap-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
             <button
-              className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-foreground hover:bg-secondary/60 transition-colors"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground/40 hover:text-foreground hover:bg-secondary/60 transition-colors"
               onClick={() => onEdit(node)}
             >
-              <Pencil className="h-3 w-3" />
+              <Pencil className="h-4 w-4" />
             </button>
             <button
-              className="h-6 w-6 flex items-center justify-center rounded-md text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
+              className="h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors"
               onClick={() => onDelete(node)}
             >
-              <Trash2 className="h-3 w-3" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
           <button
-            className="flex items-center justify-center w-6 h-6 rounded-md cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover:opacity-100 transition-opacity"
+            className="flex items-center justify-center w-8 h-8 rounded-lg cursor-grab active:cursor-grabbing touch-none opacity-0 group-hover:opacity-100 transition-opacity"
             aria-label="Arrastar para reordenar"
             {...attributes}
             {...listeners}
           >
-            <GripVertical className="h-3.5 w-3.5 text-muted-foreground/30" />
+            <GripVertical className="h-4 w-4 text-muted-foreground/30" />
           </button>
         </div>
       </div>
       {!isLast && (
-        <div className="flex justify-center py-0.5">
-          <div className="w-px h-3 bg-border/30" />
+        <div className="flex justify-center py-1">
+          <div className="w-px h-5 bg-border/40" />
         </div>
       )}
     </div>
@@ -1727,64 +1727,64 @@ export default function FlowsPage() {
 
               {/* ====== VISUAL BUILDER DO FLUXO ATIVO ====== */}
               {activeFlow && (
-                <div className="flex flex-col gap-4 rounded-2xl border border-border bg-card p-5">
+                <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-6">
                   {/* Builder Header */}
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div>
-                        <div className="flex items-center gap-2">
-                          <h2 className="text-sm font-semibold text-foreground">{activeFlow.name}</h2>
+                        <div className="flex items-center gap-2.5">
+                          <h2 className="text-base font-bold text-foreground">{activeFlow.name}</h2>
                           {activeFlow.is_primary && (
-                            <span className="text-[10px] font-medium text-accent/60 bg-accent/[0.06] rounded px-1.5 py-px">
+                            <span className="text-xs font-semibold text-accent/70 bg-accent/[0.08] rounded-lg px-2 py-0.5">
                               Principal
                             </span>
                           )}
                         </div>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-[11px] text-muted-foreground/60">
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-xs text-muted-foreground/60">
                             {getCategoryConfig(activeFlow.category).label}
                           </span>
-                          <span className="text-[11px] text-muted-foreground/40">
+                          <span className="text-xs text-muted-foreground/40">
                             {nodes.filter((n) => n.type !== "trigger").length} etapa{nodes.filter((n) => n.type !== "trigger").length !== 1 ? "s" : ""}
                           </span>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5">
                       {!activeFlow.is_primary && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-7 text-[11px] text-muted-foreground/60 hover:text-accent"
+                          className="h-8 text-xs text-muted-foreground/60 hover:text-accent"
                           onClick={() => handleSetPrimary(activeFlow)}
                         >
-                          <Star className="h-3 w-3 mr-1" />
+                          <Star className="h-3.5 w-3.5 mr-1.5" />
                           Tornar principal
                         </Button>
                       )}
                       <Button
                         variant="ghost"
                         size="icon"
-                        className={`h-7 w-7 ${showCategoryConfig ? "text-accent bg-accent/10" : "text-muted-foreground/50 hover:text-foreground"}`}
+                        className={`h-8 w-8 ${showCategoryConfig ? "text-accent bg-accent/10" : "text-muted-foreground/50 hover:text-foreground"}`}
                         onClick={() => setShowCategoryConfig(!showCategoryConfig)}
                       >
-                        <Settings2 className="h-3.5 w-3.5" />
+                        <Settings2 className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground/50 hover:text-foreground"
+                        className="h-8 w-8 text-muted-foreground/50 hover:text-foreground"
                         onClick={() => openEditFlow(activeFlow)}
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-7 w-7 text-muted-foreground/50 hover:text-destructive"
+                        className="h-8 w-8 text-muted-foreground/50 hover:text-destructive"
                         onClick={() => setShowDeleteFlowDialog(true)}
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -1949,20 +1949,20 @@ export default function FlowsPage() {
                   <div>
                     {/* Mini-mapa */}
                     {!isLoadingNodes && nodes.filter((n) => n.type !== "trigger").length > 2 && (
-                      <div className="mb-4 flex items-center gap-1.5 overflow-x-auto pb-1 px-1">
-                        <div className="h-5 w-5 rounded-md bg-accent/10 flex items-center justify-center shrink-0" title="Gatilho">
-                          <Zap className="h-2.5 w-2.5 text-accent/60" />
+                      <div className="mb-5 flex items-center gap-2 overflow-x-auto pb-1 px-1">
+                        <div className="h-7 w-7 rounded-lg bg-accent/10 flex items-center justify-center shrink-0" title="Gatilho">
+                          <Zap className="h-3.5 w-3.5 text-accent/60" />
                         </div>
                         {nodes.filter((n) => n.type !== "trigger").map((node) => {
                           const MiniIcon = nodeIcons[node.type]
                           return (
-                            <div key={node.id} className="flex items-center gap-1.5 shrink-0">
-                              <div className="w-3 h-px bg-border/40" />
+                            <div key={node.id} className="flex items-center gap-2 shrink-0">
+                              <div className="w-4 h-px bg-border/40" />
                               <div
-                                className="h-5 w-5 rounded-md bg-secondary/40 flex items-center justify-center"
+                                className="h-7 w-7 rounded-lg bg-secondary/40 flex items-center justify-center"
                                 title={node.label}
                               >
-                                <MiniIcon className="h-2.5 w-2.5 text-muted-foreground/60" />
+                                <MiniIcon className="h-3.5 w-3.5 text-muted-foreground/60" />
                               </div>
                             </div>
                           )
@@ -1986,19 +1986,19 @@ export default function FlowsPage() {
 
                         {/* Trigger block */}
                         <div className="flex flex-col">
-                          <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/[0.03] px-3.5 py-3">
-                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent/10">
-                              <DragonTriggerIcon className="h-4 w-4" />
+                          <div className="flex items-center gap-4 rounded-2xl border border-accent/30 bg-accent/[0.04] px-5 py-4">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent/10 border border-accent/20">
+                              <DragonTriggerIcon className="h-5 w-5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <p className="text-xs font-semibold text-foreground">Inicio do Fluxo</p>
-                              <p className="text-[11px] text-muted-foreground/50 mt-px">Ponto de entrada</p>
+                              <p className="text-sm font-bold text-foreground">Inicio do Fluxo</p>
+                              <p className="text-xs text-muted-foreground/50 mt-0.5">Quando o usuario inicia a conversa</p>
                             </div>
-                            <span className="text-[9px] font-medium text-accent/50 uppercase tracking-wider">Gatilho</span>
+                            <span className="text-[10px] font-semibold text-accent/60 uppercase tracking-wider bg-accent/[0.08] px-2.5 py-1 rounded-lg">Gatilho</span>
                           </div>
                           {nodes.filter((n) => n.type !== "trigger").length > 0 && (
-                            <div className="flex justify-center py-1">
-                              <div className="w-px h-4 bg-border/40" />
+                            <div className="flex justify-center py-1.5">
+                              <div className="w-px h-6 bg-border/40" />
                             </div>
                           )}
                         </div>
@@ -2030,20 +2030,22 @@ export default function FlowsPage() {
                         </DndContext>
 
                         {nodes.filter((n) => n.type !== "trigger").length > 0 && (
-                          <div className="flex justify-center py-1">
-                            <div className="w-px h-3 bg-border/30" />
+                          <div className="flex justify-center py-1.5">
+                            <div className="w-px h-5 bg-border/30" />
                           </div>
                         )}
                         <button
-                          className="group w-full flex items-center justify-center gap-2 rounded-xl border border-dashed border-border/40 hover:border-accent/30 bg-transparent hover:bg-accent/[0.03] py-3 transition-all"
+                          className="group w-full flex items-center justify-center gap-2.5 rounded-2xl border-2 border-dashed border-border/40 hover:border-accent/40 bg-transparent hover:bg-accent/[0.04] py-5 transition-all"
                           onClick={() => {
                             setSelectedTemplate(null)
                             setNodeConfigValues({})
                             setShowAddNodeDialog(true)
                           }}
                         >
-                          <Plus className="h-3.5 w-3.5 text-muted-foreground/40 group-hover:text-accent/60 transition-colors" />
-                          <span className="text-xs font-medium text-muted-foreground/40 group-hover:text-accent/60 transition-colors">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-secondary/40 group-hover:bg-accent/10 transition-colors">
+                            <Plus className="h-4 w-4 text-muted-foreground/40 group-hover:text-accent/70 transition-colors" />
+                          </div>
+                          <span className="text-sm font-medium text-muted-foreground/40 group-hover:text-accent/70 transition-colors">
                             Adicionar etapa
                           </span>
                         </button>
@@ -2498,22 +2500,22 @@ export default function FlowsPage() {
 
       {/* ---- Add Node Dialog ---- */}
       <Dialog open={showAddNodeDialog} onOpenChange={setShowAddNodeDialog}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
+        <DialogContent className="bg-card border-border rounded-2xl max-w-lg max-h-[85vh] flex flex-col p-0 gap-0 overflow-hidden">
           {!selectedTemplate ? (
             <>
               {/* Header */}
-              <div className="shrink-0 px-5 pt-5 pb-3">
+              <div className="shrink-0 px-6 pt-6 pb-4">
                 <DialogHeader>
-                  <DialogTitle className="text-foreground text-sm font-semibold">Adicionar etapa</DialogTitle>
+                  <DialogTitle className="text-foreground text-base font-bold">Adicionar etapa</DialogTitle>
                 </DialogHeader>
-                <p className="text-xs text-muted-foreground/60 mt-1">Escolha o tipo de acao para esta etapa.</p>
+                <p className="text-sm text-muted-foreground/60 mt-1">Escolha o tipo de acao para esta etapa.</p>
               </div>
 
-              <div className="h-px bg-border/40 mx-5" />
+              <div className="h-px bg-border/40 mx-6" />
 
               {/* Groups */}
               <div className="flex-1 overflow-y-auto min-h-0">
-                <div className="flex flex-col gap-4 px-5 py-4">
+                <div className="flex flex-col gap-5 px-6 py-5">
                   {actionGroups.map((group) => {
                     const GroupIcon = group.icon
                     const groupTemplates = actionTemplates.filter((tpl) => {
@@ -2525,11 +2527,13 @@ export default function FlowsPage() {
                     if (groupTemplates.length === 0) return null
 
                     return (
-                      <div key={group.id} className="flex flex-col gap-1.5">
+                      <div key={group.id} className="flex flex-col gap-2">
                         {/* Group label */}
-                        <div className="flex items-center gap-2 px-1">
-                          <GroupIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
-                          <p className="text-[11px] font-semibold text-foreground/70 uppercase tracking-wider">{group.label}</p>
+                        <div className="flex items-center gap-2.5 px-1">
+                          <div className={`flex h-6 w-6 items-center justify-center rounded-md ${group.bgColor}`}>
+                            <GroupIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
+                          </div>
+                          <p className="text-xs font-bold text-foreground/80 uppercase tracking-wider">{group.label}</p>
                         </div>
 
                         {/* Group Items */}
@@ -2539,7 +2543,7 @@ export default function FlowsPage() {
                             return (
                               <button
                                 key={`${tpl.type}-${tpl.subVariant || tplIdx}`}
-                                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-all hover:bg-secondary/40 group"
+                                className="flex items-center gap-4 rounded-xl px-4 py-3.5 text-left transition-all hover:bg-secondary/40 group"
                                 onClick={() => {
                                   setSelectedTemplate(tpl)
                                   setNodeConfigValues({})
@@ -2551,14 +2555,14 @@ export default function FlowsPage() {
                                   }
                                 }}
                               >
-                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-secondary/40">
-                                  <SubIcon className={`h-3.5 w-3.5 ${group.iconColor}`} />
+                                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${group.bgColor} border ${group.borderAccent}`}>
+                                  <SubIcon className={`h-5 w-5 ${group.iconColor}`} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-foreground/90">{tpl.label}</p>
-                                  <p className="text-[10px] text-muted-foreground/50 leading-tight">{tpl.description}</p>
+                                  <p className="text-sm font-semibold text-foreground">{tpl.label}</p>
+                                  <p className="text-xs text-muted-foreground/50 mt-0.5 leading-snug">{tpl.description}</p>
                                 </div>
-                                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/20 group-hover:text-muted-foreground/40 transition-colors shrink-0" />
+                                <ChevronRight className="h-4 w-4 text-muted-foreground/20 group-hover:text-muted-foreground/50 transition-colors shrink-0" />
                               </button>
                             )
                           })}
@@ -2570,19 +2574,19 @@ export default function FlowsPage() {
               </div>
             </>
           ) : (
-            <div className="flex flex-col gap-4 px-5 py-4 overflow-y-auto min-h-0">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col gap-5 px-6 py-5 overflow-y-auto min-h-0">
+              <div className="flex items-center gap-4">
                 {(() => {
                   const group = actionGroups.find((g) => g.types.includes(selectedTemplate.type))
                   const SubIcon = selectedTemplate.subVariant ? (subVariantIcons[selectedTemplate.subVariant] || nodeIcons[selectedTemplate.type]) : nodeIcons[selectedTemplate.type]
                   return (
                     <>
-                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-secondary/50">
-                        <SubIcon className={`h-4 w-4 ${group?.iconColor || nodeIconColors[selectedTemplate.type]}`} />
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${group?.bgColor || "bg-secondary/50"} border ${group?.borderAccent || "border-border/40"}`}>
+                        <SubIcon className={`h-5 w-5 ${group?.iconColor || nodeIconColors[selectedTemplate.type]}`} />
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-foreground">{selectedTemplate.label}</p>
-                        <p className="text-[11px] text-muted-foreground/50">{selectedTemplate.description}</p>
+                        <p className="text-base font-bold text-foreground">{selectedTemplate.label}</p>
+                        <p className="text-sm text-muted-foreground/50">{selectedTemplate.description}</p>
                       </div>
                     </>
                   )
@@ -2606,8 +2610,8 @@ export default function FlowsPage() {
                 />
               ) : selectedTemplate.type === "redirect" && selectedTemplate.subVariant === "goto_flow" ? (
                 <div className="flex flex-col gap-3">
-                  <Label className="text-foreground">Selecione o fluxo de destino</Label>
-                  <p className="text-xs text-muted-foreground -mt-1">
+                  <Label className="text-foreground text-sm font-semibold">Selecione o fluxo de destino</Label>
+                  <p className="text-sm text-muted-foreground -mt-1">
                     O usuario sera redirecionado para este fluxo ao chegar nesta etapa.
                   </p>
                   {flows.filter((f) => f.id !== activeFlow?.id).length === 0 ? (
@@ -2651,8 +2655,8 @@ export default function FlowsPage() {
                 </div>
               ) : selectedTemplate.type === "delay" ? (
                 <div className="flex flex-col gap-3">
-                  <Label className="text-foreground">Tempo em segundos</Label>
-                  <p className="text-xs text-muted-foreground -mt-1">
+                  <Label className="text-foreground text-sm font-semibold">Tempo em segundos</Label>
+                  <p className="text-sm text-muted-foreground -mt-1">
                     Defina quanto tempo o fluxo deve aguardar antes de continuar.
                   </p>
                   <Input
@@ -2662,10 +2666,10 @@ export default function FlowsPage() {
                       setNodeConfigValues((prev) => ({ ...prev, seconds: e.target.value }))
                     }
                     placeholder="300"
-                    className="bg-secondary border-border rounded-xl text-foreground"
+                    className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                   />
                   {nodeConfigValues.seconds && parseInt(nodeConfigValues.seconds) > 0 && (
-                    <p className="text-xs text-muted-foreground">
+                    <p className="text-sm text-muted-foreground">
                       {(() => {
                         const s = parseInt(nodeConfigValues.seconds)
                         if (s >= 3600) return `= ${Math.floor(s / 3600)} hora${Math.floor(s / 3600) > 1 ? "s" : ""} e ${Math.floor((s % 3600) / 60)} min`
@@ -2677,10 +2681,10 @@ export default function FlowsPage() {
                 </div>
               ) : selectedTemplate.type === "condition" ? (
                 <div className="flex flex-col gap-3">
-                  <Label className="text-foreground">
+                  <Label className="text-foreground text-sm font-semibold">
                     {selectedTemplate.subVariant === "check_tag" ? "Tag" : selectedTemplate.subVariant === "check_payment" ? "Condicao de pagamento" : "Condicao"}
                   </Label>
-                  <p className="text-xs text-muted-foreground -mt-1">
+                  <p className="text-sm text-muted-foreground -mt-1">
                     {selectedTemplate.subVariant === "check_tag"
                       ? "Nome da tag para verificar no usuario."
                       : selectedTemplate.subVariant === "check_payment"
@@ -2700,15 +2704,15 @@ export default function FlowsPage() {
                           ? "Pagamento confirmado?"
                           : "Ex: Usuario respondeu?"
                     }
-                    className="bg-secondary border-border rounded-xl text-foreground"
+                    className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                   />
                 </div>
               ) : selectedTemplate.type === "action" ? (
                 <div className="flex flex-col gap-3">
-                  <Label className="text-foreground">
+                  <Label className="text-foreground text-sm font-semibold">
                     {selectedTemplate.subVariant === "add_tag" ? "Nome da tag" : selectedTemplate.subVariant === "remove_tag" ? "Tag a remover" : selectedTemplate.subVariant === "add_group" ? "Link do grupo" : selectedTemplate.subVariant === "webhook" ? "URL do webhook" : "Valor"}
                   </Label>
-                  <p className="text-xs text-muted-foreground -mt-1">
+                  <p className="text-sm text-muted-foreground -mt-1">
                     {selectedTemplate.subVariant === "add_tag"
                       ? "Adicione uma tag para segmentar e organizar seus usuarios."
                       : selectedTemplate.subVariant === "remove_tag"
@@ -2728,15 +2732,15 @@ export default function FlowsPage() {
                     placeholder={
                       selectedTemplate.subVariant === "add_tag" ? "Ex: lead-quente" : selectedTemplate.subVariant === "remove_tag" ? "Ex: inativo" : selectedTemplate.subVariant === "add_group" ? "https://t.me/meugrupo" : selectedTemplate.subVariant === "webhook" ? "https://api.exemplo.com/hook" : "Valor"
                     }
-                    className="bg-secondary border-border rounded-xl text-foreground"
+                    className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                   />
                 </div>
               ) : selectedTemplate.type === "payment" ? (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   {selectedTemplate.subVariant === "wait_payment" ? (
                     <>
-                      <Label className="text-foreground">Timeout (segundos)</Label>
-                      <p className="text-xs text-muted-foreground -mt-1">
+                      <Label className="text-foreground text-sm font-semibold">Timeout (segundos)</Label>
+                      <p className="text-sm text-muted-foreground -mt-2">
                         Tempo maximo para aguardar a confirmacao do pagamento.
                       </p>
                       <Input
@@ -2746,13 +2750,13 @@ export default function FlowsPage() {
                           setNodeConfigValues((prev) => ({ ...prev, seconds: e.target.value }))
                         }
                         placeholder="1800"
-                        className="bg-secondary border-border rounded-xl text-foreground"
+                        className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                       />
                     </>
                   ) : (
                     <>
                       <div className="flex flex-col gap-2">
-                        <Label className="text-foreground">Valor (R$)</Label>
+                        <Label className="text-foreground text-sm font-semibold">Valor (R$)</Label>
                         <Input
                           type="text"
                           value={nodeConfigValues.amount || ""}
@@ -2760,11 +2764,11 @@ export default function FlowsPage() {
                             setNodeConfigValues((prev) => ({ ...prev, amount: e.target.value }))
                           }
                           placeholder="49.90"
-                          className="bg-secondary border-border rounded-xl text-foreground"
+                          className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                         />
                       </div>
                       <div className="flex flex-col gap-2">
-                        <Label className="text-foreground">Descricao</Label>
+                        <Label className="text-foreground text-sm font-semibold">Descricao</Label>
                         <Input
                           type="text"
                           value={nodeConfigValues.description || ""}
@@ -2772,20 +2776,25 @@ export default function FlowsPage() {
                             setNodeConfigValues((prev) => ({ ...prev, description: e.target.value }))
                           }
                           placeholder="Pagamento do produto X"
-                          className="bg-secondary border-border rounded-xl text-foreground"
+                          className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                         />
                       </div>
                     </>
                   )}
                 </div>
               ) : selectedTemplate.configFields.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Este bloco nao precisa de configuracao.
-                </p>
+                <div className="flex flex-col items-center gap-3 py-6">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/40">
+                    <CheckCircle2 className="h-6 w-6 text-success/60" />
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Este bloco nao precisa de configuracao.
+                  </p>
+                </div>
               ) : (
                 selectedTemplate.configFields.map((field) => (
-                  <div key={field.key} className="flex flex-col gap-2">
-                    <Label className="text-foreground">{field.label}</Label>
+                  <div key={field.key} className="flex flex-col gap-2.5">
+                    <Label className="text-foreground text-sm font-semibold">{field.label}</Label>
                     {field.inputType === "textarea" ? (
                       <Textarea
                         value={nodeConfigValues[field.key] || ""}
@@ -2793,7 +2802,7 @@ export default function FlowsPage() {
                           setNodeConfigValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                         }
                         placeholder={field.placeholder}
-                        className="bg-secondary border-border rounded-xl text-foreground min-h-[80px]"
+                        className="bg-secondary border-border rounded-xl text-foreground min-h-[100px] text-sm"
                       />
                     ) : (
                       <Input
@@ -2803,30 +2812,28 @@ export default function FlowsPage() {
                           setNodeConfigValues((prev) => ({ ...prev, [field.key]: e.target.value }))
                         }
                         placeholder={field.placeholder}
-                        className="bg-secondary border-border rounded-xl text-foreground"
+                        className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                       />
                     )}
                   </div>
                 ))
               )}
 
-              <div className="h-px bg-border/40" />
-              <div className="flex justify-between gap-2 pt-2">
+              <div className="h-px bg-border/40 mt-2" />
+              <div className="flex justify-between gap-3 pt-4">
                 <Button
                   variant="ghost"
-                  size="sm"
-                  className="rounded-lg text-xs text-muted-foreground"
+                  className="rounded-xl text-sm text-muted-foreground h-10 px-4"
                   onClick={() => {
                     setSelectedTemplate(null)
                     resetMessageConfig()
                   }}
                 >
-                  <ChevronRight className="h-3 w-3 mr-1 rotate-180" />
+                  <ChevronRight className="h-4 w-4 mr-1.5 rotate-180" />
                   Voltar
                 </Button>
                 <Button
-                  size="sm"
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-lg text-xs"
+                  className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl text-sm h-10 px-6 font-semibold"
                   disabled={isAddingNode ||
                     (selectedTemplate.type === "message" && !msgText.trim()) ||
                     (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id) ||
@@ -2837,7 +2844,7 @@ export default function FlowsPage() {
                   }
                   onClick={handleAddNode}
                 >
-                  {isAddingNode && <Loader2 className="mr-1.5 h-3 w-3 animate-spin" />}
+                  {isAddingNode && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Adicionar
                 </Button>
               </div>
@@ -3219,22 +3226,22 @@ function MessageConfigForm({
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
       {/* Texto da mensagem */}
-      <div className="flex flex-col gap-2">
-        <Label className="text-foreground">Texto da mensagem</Label>
+      <div className="flex flex-col gap-2.5">
+        <Label className="text-foreground text-sm font-semibold">Texto da mensagem</Label>
         <Textarea
           value={msgText}
           onChange={(e) => setMsgText(e.target.value)}
           placeholder="Digite a mensagem que o bot vai enviar..."
-          className="bg-secondary border-border rounded-xl text-foreground min-h-[80px]"
+          className="bg-secondary border-border rounded-xl text-foreground min-h-[100px] text-sm"
         />
       </div>
 
       {/* Midia */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border p-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
         <div className="flex items-center justify-between">
-          <Label className="text-foreground text-sm">Midia (opcional)</Label>
+          <Label className="text-foreground text-sm font-semibold">Midia (opcional)</Label>
           <Select
             value={msgMediaType}
             onValueChange={(v) => {
@@ -3246,16 +3253,16 @@ function MessageConfigForm({
               }
             }}
           >
-            <SelectTrigger className="w-[140px] h-8 bg-secondary border-border rounded-lg text-foreground text-xs">
+            <SelectTrigger className="w-[150px] h-9 bg-secondary border-border rounded-lg text-foreground text-sm">
               <SelectValue />
             </SelectTrigger>
             <SelectContent className="bg-card border-border">
               <SelectItem value="none">Nenhuma</SelectItem>
               <SelectItem value="photo">
-                <span className="flex items-center gap-1.5"><Image className="h-3 w-3" /> Foto</span>
+                <span className="flex items-center gap-1.5"><Image className="h-4 w-4" /> Foto</span>
               </SelectItem>
               <SelectItem value="video">
-                <span className="flex items-center gap-1.5"><Video className="h-3 w-3" /> Video</span>
+                <span className="flex items-center gap-1.5"><Video className="h-4 w-4" /> Video</span>
               </SelectItem>
             </SelectContent>
           </Select>
@@ -3311,7 +3318,7 @@ function MessageConfigForm({
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleDrop}
                 onClick={() => !uploading && fileInputRef.current?.click()}
-                className={`flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed p-6 cursor-pointer transition-colors ${
+                className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-colors ${
                   uploading
                     ? "border-primary/50 bg-primary/5"
                     : "border-border hover:border-primary/40 hover:bg-secondary/50"
@@ -3319,16 +3326,16 @@ function MessageConfigForm({
               >
                 {uploading ? (
                   <>
-                    <Loader2 className="h-6 w-6 text-primary animate-spin" />
-                    <span className="text-xs text-muted-foreground">Enviando...</span>
+                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                    <span className="text-sm text-muted-foreground">Enviando...</span>
                   </>
                 ) : (
                   <>
-                    <Upload className="h-6 w-6 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground text-center">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground text-center">
                       Clique ou arraste {msgMediaType === "photo" ? "uma foto" : "um video"} aqui
                     </span>
-                    <span className="text-[10px] text-muted-foreground/60">
+                    <span className="text-xs text-muted-foreground/60">
                       {msgMediaType === "photo" ? "JPG, PNG, GIF, WEBP" : "MP4, WEBM, MOV"} - Max 50MB
                     </span>
                   </>
@@ -3344,11 +3351,11 @@ function MessageConfigForm({
       </div>
 
       {/* Botoes Inline */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border p-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Link className="h-4 w-4 text-muted-foreground" />
-            <Label className="text-foreground text-sm">Botoes com link</Label>
+          <div className="flex items-center gap-2.5">
+            <Link className="h-5 w-5 text-muted-foreground" />
+            <Label className="text-foreground text-sm font-semibold">Botoes com link</Label>
           </div>
           <Switch
             checked={msgHasButtons}
@@ -3362,45 +3369,44 @@ function MessageConfigForm({
         </div>
 
         {msgHasButtons && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-3">
             {msgButtons.map((btn, i) => (
-              <div key={i} className="flex items-start gap-2 rounded-lg border border-border/50 bg-secondary/30 p-2">
-                <div className="flex flex-1 flex-col gap-1.5">
+              <div key={i} className="flex items-start gap-2.5 rounded-xl border border-border/50 bg-secondary/30 p-3">
+                <div className="flex flex-1 flex-col gap-2">
                   <Input
                     value={btn.text}
                     onChange={(e) => updateMsgButton(i, "text", e.target.value)}
                     placeholder="Titulo do botao"
-                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-8"
+                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-10"
                   />
                   <Input
                     value={btn.url}
                     onChange={(e) => updateMsgButton(i, "url", e.target.value)}
                     placeholder="https://link-do-botao.com"
-                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-8"
+                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-10"
                   />
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                  className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => removeMsgButton(i)}
                 >
-                  <X className="h-3.5 w-3.5" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             ))}
             {msgButtons.length < 6 && (
               <Button
                 variant="outline"
-                size="sm"
-                className="w-full rounded-lg border-dashed border-border text-muted-foreground text-xs"
+                className="w-full rounded-xl border-dashed border-border text-muted-foreground text-sm h-10"
                 onClick={addMsgButton}
               >
-                <Plus className="mr-1.5 h-3 w-3" />
+                <Plus className="mr-2 h-4 w-4" />
                 Adicionar botao
               </Button>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Maximo de 6 botoes. Cada botao aparece abaixo da mensagem no Telegram.
             </p>
           </div>
