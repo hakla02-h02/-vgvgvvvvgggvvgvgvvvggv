@@ -301,10 +301,8 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
   {
     type: "condition",
     label: "Condicao",
-    description: "Seguir caminho diferente conforme regra",
-    configFields: [
-      { key: "condition", label: "Condicao", placeholder: "Ex: Usuario respondeu?", inputType: "text" },
-    ],
+    description: "Ramificar fluxo com base na resposta do usuario",
+    configFields: [],
   },
   {
     type: "condition",
@@ -506,7 +504,7 @@ function SortableNodeCard({
     }
     if (node.type === "condition") {
       const sv = node.config?.subVariant as string
-      return sv === "check_payment" ? "Verificar pagamento" : "Condicao"
+      return sv === "check_payment" ? "Verificar pagamento" : "Condicao de resposta"
     }
     if (node.type === "action") {
       const sv = node.config?.subVariant as string
@@ -1158,8 +1156,19 @@ export default function FlowsPage() {
       } else {
         label = `Esperar ${secs} segundo${secs > 1 ? "s" : ""}`
       }
-    } else if (selectedTemplate.type === "condition" && nodeConfigValues.condition) {
-      label = nodeConfigValues.condition
+    } else if (selectedTemplate.type === "condition") {
+      if (selectedTemplate.subVariant === "check_payment" && nodeConfigValues.condition) {
+        label = nodeConfigValues.condition
+      } else if (!selectedTemplate.subVariant) {
+        const msg = nodeConfigValues.condition_message || "Condicao"
+        label = msg.length > 35 ? msg.slice(0, 35) + "..." : msg
+        config = {
+          condition_message: nodeConfigValues.condition_message || "",
+          response_type: nodeConfigValues.response_type || "buttons",
+          condition_branches: nodeConfigValues.condition_branches || "[]",
+          subVariant: "",
+        }
+      }
     } else if (selectedTemplate.type === "payment") {
       if (selectedTemplate.subVariant === "charge" && nodeConfigValues.amount) {
         label = nodeConfigValues.description ? `R$${nodeConfigValues.amount} - ${nodeConfigValues.description}` : `Cobrar R$${nodeConfigValues.amount}`
@@ -1284,8 +1293,20 @@ export default function FlowsPage() {
         finalLabel = `Esperar ${secs} segundo${secs > 1 ? "s" : ""}`
       }
     } else if (editingNode.type === "condition") {
-      finalConfig = { condition: editNodeConfig.condition || "", subVariant: editingNode.config?.subVariant || "" }
-      finalLabel = editNodeConfig.condition || "Condicao"
+      const sv = editingNode.config?.subVariant || ""
+      if (sv === "check_payment") {
+        finalConfig = { condition: editNodeConfig.condition || "", subVariant: sv }
+        finalLabel = editNodeConfig.condition || "Condicao"
+      } else {
+        const msg = editNodeConfig.condition_message || "Condicao"
+        finalLabel = msg.length > 35 ? msg.slice(0, 35) + "..." : msg
+        finalConfig = {
+          condition_message: editNodeConfig.condition_message || "",
+          response_type: editNodeConfig.response_type || "buttons",
+          condition_branches: editNodeConfig.condition_branches || "[]",
+          subVariant: "",
+        }
+      }
     } else if (editingNode.type === "payment") {
       const sv = editingNode.config?.subVariant || ""
       finalConfig = { ...editNodeConfig, subVariant: sv }
@@ -2628,28 +2649,219 @@ export default function FlowsPage() {
                   )}
                 </div>
               ) : selectedTemplate.type === "condition" ? (
-                <div className="flex flex-col gap-3">
-                  <Label className="text-foreground text-sm font-semibold">
-                    {selectedTemplate.subVariant === "check_payment" ? "Condicao de pagamento" : "Condicao"}
-                  </Label>
-                  <p className="text-sm text-muted-foreground -mt-1">
-              {selectedTemplate.subVariant === "check_payment"
-                        ? "Regra para verificar se o pagamento foi feito."
-                        : "Regra que define qual caminho o fluxo seguira."}
-                  </p>
-                  <Input
-                    type="text"
-                    value={nodeConfigValues.condition || ""}
-                    onChange={(e) =>
-                      setNodeConfigValues((prev) => ({ ...prev, condition: e.target.value }))
-                    }
-                    placeholder={
-                selectedTemplate.subVariant === "check_payment"
-                          ? "Pagamento confirmado?"
-                          : "Ex: Usuario respondeu?"
-                    }
-                    className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
-                  />
+                <div className="flex flex-col gap-4">
+                  {selectedTemplate.subVariant === "check_payment" ? (
+                    <>
+                      <Label className="text-foreground text-sm font-semibold">Condicao de pagamento</Label>
+                      <p className="text-sm text-muted-foreground -mt-2">Regra para verificar se o pagamento foi feito.</p>
+                      <Input
+                        type="text"
+                        value={nodeConfigValues.condition || ""}
+                        onChange={(e) =>
+                          setNodeConfigValues((prev) => ({ ...prev, condition: e.target.value }))
+                        }
+                        placeholder="Pagamento confirmado?"
+                        className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* 1. Mensagem/Pergunta */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem / Pergunta</Label>
+                        <Textarea
+                          value={nodeConfigValues.condition_message || ""}
+                          onChange={(e) =>
+                            setNodeConfigValues((prev) => ({ ...prev, condition_message: e.target.value }))
+                          }
+                          placeholder="Ex: Voce gostaria de continuar?"
+                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground min-h-[70px] text-sm focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all resize-none"
+                        />
+                      </div>
+
+                      {/* 2. Formato de resposta */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Formato de resposta</Label>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNodeConfigValues((prev) => ({
+                                ...prev,
+                                response_type: "buttons",
+                                condition_branches: prev.condition_branches && (prev.response_type === "buttons" || !prev.response_type)
+                                  ? prev.condition_branches
+                                  : JSON.stringify([
+                                      { label: "Sim", keywords: [] },
+                                      { label: "Nao", keywords: [] },
+                                    ]),
+                              }))
+                            }
+                            className={`flex-1 flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 transition-all ${
+                              (!nodeConfigValues.response_type || nodeConfigValues.response_type === "buttons")
+                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border/50 bg-secondary/20 hover:border-border hover:bg-secondary/40"
+                            }`}
+                          >
+                            <MousePointerClick className={`h-5 w-5 ${(!nodeConfigValues.response_type || nodeConfigValues.response_type === "buttons") ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`text-xs font-medium ${(!nodeConfigValues.response_type || nodeConfigValues.response_type === "buttons") ? "text-primary" : "text-muted-foreground"}`}>Botoes</span>
+                            <span className="text-[10px] text-muted-foreground/70">Opcoes clicaveis</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNodeConfigValues((prev) => ({
+                                ...prev,
+                                response_type: "text",
+                                condition_branches: prev.condition_branches && prev.response_type === "text"
+                                  ? prev.condition_branches
+                                  : JSON.stringify([
+                                      { label: "Resposta 1", keywords: ["eu quero", "sim", "quero"] },
+                                      { label: "Resposta 2", keywords: ["nao", "nao quero"] },
+                                    ]),
+                              }))
+                            }
+                            className={`flex-1 flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 transition-all ${
+                              nodeConfigValues.response_type === "text"
+                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border/50 bg-secondary/20 hover:border-border hover:bg-secondary/40"
+                            }`}
+                          >
+                            <MessageCircle className={`h-5 w-5 ${nodeConfigValues.response_type === "text" ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`text-xs font-medium ${nodeConfigValues.response_type === "text" ? "text-primary" : "text-muted-foreground"}`}>Texto livre</span>
+                            <span className="text-[10px] text-muted-foreground/70">Palavras-chave</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 3. Branches / Respostas */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Respostas</Label>
+                        <div className="flex flex-col gap-2">
+                          {(() => {
+                            const branchesRaw = nodeConfigValues.condition_branches
+                            let branches: { label: string; keywords: string[] }[] = []
+                            try { branches = branchesRaw ? JSON.parse(branchesRaw) : [] } catch { branches = [] }
+                            if (branches.length === 0) {
+                              branches = (!nodeConfigValues.response_type || nodeConfigValues.response_type === "buttons")
+                                ? [{ label: "Sim", keywords: [] }, { label: "Nao", keywords: [] }]
+                                : [{ label: "Resposta 1", keywords: ["eu quero", "sim"] }, { label: "Resposta 2", keywords: ["nao"] }]
+                              setTimeout(() => {
+                                setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(branches) }))
+                              }, 0)
+                            }
+                            const isButtonMode = !nodeConfigValues.response_type || nodeConfigValues.response_type === "buttons"
+
+                            const updateBranch = (idx: number, field: string, value: string | string[]) => {
+                              const updated = [...branches]
+                              ;(updated[idx] as Record<string, string | string[]>)[field] = value
+                              setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const removeBranch = (idx: number) => {
+                              const updated = branches.filter((_, i) => i !== idx)
+                              setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const addBranch = () => {
+                              if (branches.length >= 3 && isButtonMode) return
+                              const updated = [...branches, { label: "", keywords: [] }]
+                              setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+
+                            const colors = [
+                              { bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-400", dot: "bg-emerald-400" },
+                              { bg: "bg-rose-500/10", border: "border-rose-500/30", text: "text-rose-400", dot: "bg-rose-400" },
+                              { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", dot: "bg-amber-400" },
+                            ]
+
+                            return (
+                              <>
+                                {branches.map((branch, idx) => {
+                                  const color = colors[idx % colors.length]
+                                  return (
+                                    <div key={idx} className={`flex flex-col gap-2 rounded-xl border ${color.border} ${color.bg} p-3`}>
+                                      <div className="flex items-center gap-2">
+                                        <div className={`h-2.5 w-2.5 rounded-full ${color.dot} shrink-0`} />
+                                        <Input
+                                          value={branch.label}
+                                          onChange={(e) => updateBranch(idx, "label", e.target.value)}
+                                          placeholder={isButtonMode ? `Texto do botao ${idx + 1}` : `Nome da resposta ${idx + 1}`}
+                                          className="bg-transparent border-0 p-0 h-auto text-sm font-medium text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+                                        />
+                                        {branches.length > 2 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removeBranch(idx)}
+                                            className="text-muted-foreground/50 hover:text-destructive transition-colors"
+                                          >
+                                            <X className="h-3.5 w-3.5" />
+                                          </button>
+                                        )}
+                                      </div>
+
+                                      {/* Palavras-chave (so no modo texto) */}
+                                      {!isButtonMode && (
+                                        <div className="flex flex-col gap-1.5">
+                                          <span className="text-[10px] text-muted-foreground/70 font-medium uppercase tracking-wide">Variacoes / Palavras-chave</span>
+                                          <div className="flex flex-wrap gap-1">
+                                            {branch.keywords.map((kw, kwIdx) => (
+                                              <span key={kwIdx} className={`inline-flex items-center gap-1 rounded-md ${color.bg} border ${color.border} px-2 py-0.5 text-[11px] ${color.text}`}>
+                                                {kw}
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const newKws = branch.keywords.filter((_, i) => i !== kwIdx)
+                                                    updateBranch(idx, "keywords", newKws)
+                                                  }}
+                                                  className="hover:text-destructive ml-0.5"
+                                                >
+                                                  <X className="h-2.5 w-2.5" />
+                                                </button>
+                                              </span>
+                                            ))}
+                                            <input
+                                              type="text"
+                                              placeholder="+ adicionar"
+                                              className="bg-transparent border-0 text-[11px] text-foreground w-[70px] outline-none placeholder:text-muted-foreground/40"
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === ",") {
+                                                  e.preventDefault()
+                                                  const val = (e.target as HTMLInputElement).value.trim()
+                                                  if (val) {
+                                                    updateBranch(idx, "keywords", [...branch.keywords, val])
+                                                    ;(e.target as HTMLInputElement).value = ""
+                                                  }
+                                                }
+                                              }}
+                                            />
+                                          </div>
+                                          <span className="text-[9px] text-muted-foreground/50">Pressione Enter para adicionar</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+
+                                {((isButtonMode && branches.length < 3) || (!isButtonMode && branches.length < 5)) && (
+                                  <button
+                                    type="button"
+                                    onClick={addBranch}
+                                    className="flex items-center justify-center gap-1.5 w-full rounded-xl border border-dashed border-border/50 text-muted-foreground text-xs py-2.5 hover:bg-secondary/30 transition-colors"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                    Adicionar resposta
+                                  </button>
+                                )}
+
+                                {isButtonMode && (
+                                  <p className="text-[10px] text-muted-foreground/60">Max. 3 botoes por condicao</p>
+                                )}
+                              </>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : selectedTemplate.type === "action" ? (
                 <div className="flex flex-col gap-3">
@@ -2997,7 +3209,8 @@ export default function FlowsPage() {
                     (selectedTemplate.type === "message" && !msgText.trim()) ||
                     (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id) ||
                     (selectedTemplate.type === "delay" && (!nodeConfigValues.seconds || parseInt(nodeConfigValues.seconds) <= 0)) ||
-                    (selectedTemplate.type === "condition" && !nodeConfigValues.condition?.trim()) ||
+                    (selectedTemplate.type === "condition" && selectedTemplate.subVariant === "check_payment" && !nodeConfigValues.condition?.trim()) ||
+                    (selectedTemplate.type === "condition" && !selectedTemplate.subVariant && !nodeConfigValues.condition_message?.trim()) ||
                     (selectedTemplate.type === "action" && !nodeConfigValues.action_name?.trim()) ||
                     (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && !nodeConfigValues.amount?.trim())
                   }
@@ -3113,28 +3326,218 @@ export default function FlowsPage() {
                   )}
                 </div>
               ) : editingNode.type === "condition" ? (
-                <div className="flex flex-col gap-3">
-                  <Label className="text-foreground">
-                    {(editingNode.config?.subVariant as string) === "check_payment" ? "Condicao de pagamento" : "Condicao"}
-                  </Label>
-                  <p className="text-xs text-muted-foreground -mt-1">
-              {(editingNode.config?.subVariant as string) === "check_payment"
-                        ? "Regra para verificar se o pagamento foi feito."
-                        : "Regra que define qual caminho o fluxo seguira."}
-                  </p>
-                  <Input
-                    type="text"
-                    value={editNodeConfig.condition || ""}
-                    onChange={(e) =>
-                      setEditNodeConfig((prev) => ({ ...prev, condition: e.target.value }))
-                    }
-                    placeholder={
-              (editingNode.config?.subVariant as string) === "check_payment"
-                          ? "Pagamento confirmado?"
-                          : "Ex: Usuario respondeu?"
-                    }
-                    className="bg-secondary border-border rounded-xl text-foreground"
-                  />
+                <div className="flex flex-col gap-4">
+                  {(editingNode.config?.subVariant as string) === "check_payment" ? (
+                    <>
+                      <Label className="text-foreground">Condicao de pagamento</Label>
+                      <p className="text-xs text-muted-foreground -mt-2">Regra para verificar se o pagamento foi feito.</p>
+                      <Input
+                        type="text"
+                        value={editNodeConfig.condition || ""}
+                        onChange={(e) =>
+                          setEditNodeConfig((prev) => ({ ...prev, condition: e.target.value }))
+                        }
+                        placeholder="Pagamento confirmado?"
+                        className="bg-secondary border-border rounded-xl text-foreground"
+                      />
+                    </>
+                  ) : (
+                    <>
+                      {/* 1. Mensagem */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem / Pergunta</Label>
+                        <Textarea
+                          value={editNodeConfig.condition_message || ""}
+                          onChange={(e) =>
+                            setEditNodeConfig((prev) => ({ ...prev, condition_message: e.target.value }))
+                          }
+                          placeholder="Ex: Voce gostaria de continuar?"
+                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground min-h-[70px] text-sm focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all resize-none"
+                        />
+                      </div>
+
+                      {/* 2. Formato */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Formato de resposta</Label>
+                        <div className="flex gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditNodeConfig((prev) => ({
+                                ...prev,
+                                response_type: "buttons",
+                                condition_branches: prev.condition_branches && (prev.response_type === "buttons" || !prev.response_type)
+                                  ? prev.condition_branches
+                                  : JSON.stringify([
+                                      { label: "Sim", keywords: [] },
+                                      { label: "Nao", keywords: [] },
+                                    ]),
+                              }))
+                            }
+                            className={`flex-1 flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 transition-all ${
+                              (!editNodeConfig.response_type || editNodeConfig.response_type === "buttons")
+                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border/50 bg-secondary/20 hover:border-border hover:bg-secondary/40"
+                            }`}
+                          >
+                            <MousePointerClick className={`h-5 w-5 ${(!editNodeConfig.response_type || editNodeConfig.response_type === "buttons") ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`text-xs font-medium ${(!editNodeConfig.response_type || editNodeConfig.response_type === "buttons") ? "text-primary" : "text-muted-foreground"}`}>Botoes</span>
+                            <span className="text-[10px] text-muted-foreground/70">Opcoes clicaveis</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setEditNodeConfig((prev) => ({
+                                ...prev,
+                                response_type: "text",
+                                condition_branches: prev.condition_branches && prev.response_type === "text"
+                                  ? prev.condition_branches
+                                  : JSON.stringify([
+                                      { label: "Resposta 1", keywords: ["eu quero", "sim", "quero"] },
+                                      { label: "Resposta 2", keywords: ["nao", "nao quero"] },
+                                    ]),
+                              }))
+                            }
+                            className={`flex-1 flex flex-col items-center gap-1.5 rounded-xl border px-3 py-3 transition-all ${
+                              editNodeConfig.response_type === "text"
+                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border/50 bg-secondary/20 hover:border-border hover:bg-secondary/40"
+                            }`}
+                          >
+                            <MessageCircle className={`h-5 w-5 ${editNodeConfig.response_type === "text" ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`text-xs font-medium ${editNodeConfig.response_type === "text" ? "text-primary" : "text-muted-foreground"}`}>Texto livre</span>
+                            <span className="text-[10px] text-muted-foreground/70">Palavras-chave</span>
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* 3. Branches */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Respostas</Label>
+                        <div className="flex flex-col gap-2">
+                          {(() => {
+                            const branchesRaw = editNodeConfig.condition_branches
+                            let branches: { label: string; keywords: string[] }[] = []
+                            try { branches = branchesRaw ? JSON.parse(branchesRaw) : [] } catch { branches = [] }
+                            if (branches.length === 0) {
+                              branches = (!editNodeConfig.response_type || editNodeConfig.response_type === "buttons")
+                                ? [{ label: "Sim", keywords: [] }, { label: "Nao", keywords: [] }]
+                                : [{ label: "Resposta 1", keywords: ["eu quero", "sim"] }, { label: "Resposta 2", keywords: ["nao"] }]
+                              setTimeout(() => {
+                                setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(branches) }))
+                              }, 0)
+                            }
+                            const isButtonMode = !editNodeConfig.response_type || editNodeConfig.response_type === "buttons"
+
+                            const updateBranch = (idx: number, field: string, value: string | string[]) => {
+                              const updated = [...branches]
+                              ;(updated[idx] as Record<string, string | string[]>)[field] = value
+                              setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const removeBranch = (idx: number) => {
+                              const updated = branches.filter((_, i) => i !== idx)
+                              setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const addBranch = () => {
+                              if (branches.length >= 3 && isButtonMode) return
+                              const updated = [...branches, { label: "", keywords: [] }]
+                              setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+
+                            const colors = [
+                              { bg: "bg-emerald-500/10", border: "border-emerald-500/30", text: "text-emerald-400", dot: "bg-emerald-400" },
+                              { bg: "bg-rose-500/10", border: "border-rose-500/30", text: "text-rose-400", dot: "bg-rose-400" },
+                              { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", dot: "bg-amber-400" },
+                            ]
+
+                            return (
+                              <>
+                                {branches.map((branch, idx) => {
+                                  const color = colors[idx % colors.length]
+                                  return (
+                                    <div key={idx} className={`flex flex-col gap-2 rounded-xl border ${color.border} ${color.bg} p-3`}>
+                                      <div className="flex items-center gap-2">
+                                        <div className={`h-2.5 w-2.5 rounded-full ${color.dot} shrink-0`} />
+                                        <Input
+                                          value={branch.label}
+                                          onChange={(e) => updateBranch(idx, "label", e.target.value)}
+                                          placeholder={isButtonMode ? `Texto do botao ${idx + 1}` : `Nome da resposta ${idx + 1}`}
+                                          className="bg-transparent border-0 p-0 h-auto text-sm font-medium text-foreground focus-visible:ring-0 focus-visible:ring-offset-0 flex-1"
+                                        />
+                                        {branches.length > 2 && (
+                                          <button
+                                            type="button"
+                                            onClick={() => removeBranch(idx)}
+                                            className="text-muted-foreground/50 hover:text-destructive transition-colors"
+                                          >
+                                            <X className="h-3.5 w-3.5" />
+                                          </button>
+                                        )}
+                                      </div>
+
+                                      {!isButtonMode && (
+                                        <div className="flex flex-col gap-1.5">
+                                          <span className="text-[10px] text-muted-foreground/70 font-medium uppercase tracking-wide">Variacoes / Palavras-chave</span>
+                                          <div className="flex flex-wrap gap-1">
+                                            {branch.keywords.map((kw, kwIdx) => (
+                                              <span key={kwIdx} className={`inline-flex items-center gap-1 rounded-md ${color.bg} border ${color.border} px-2 py-0.5 text-[11px] ${color.text}`}>
+                                                {kw}
+                                                <button
+                                                  type="button"
+                                                  onClick={() => {
+                                                    const newKws = branch.keywords.filter((_, i) => i !== kwIdx)
+                                                    updateBranch(idx, "keywords", newKws)
+                                                  }}
+                                                  className="hover:text-destructive ml-0.5"
+                                                >
+                                                  <X className="h-2.5 w-2.5" />
+                                                </button>
+                                              </span>
+                                            ))}
+                                            <input
+                                              type="text"
+                                              placeholder="+ adicionar"
+                                              className="bg-transparent border-0 text-[11px] text-foreground w-[70px] outline-none placeholder:text-muted-foreground/40"
+                                              onKeyDown={(e) => {
+                                                if (e.key === "Enter" || e.key === ",") {
+                                                  e.preventDefault()
+                                                  const val = (e.target as HTMLInputElement).value.trim()
+                                                  if (val) {
+                                                    updateBranch(idx, "keywords", [...branch.keywords, val])
+                                                    ;(e.target as HTMLInputElement).value = ""
+                                                  }
+                                                }
+                                              }}
+                                            />
+                                          </div>
+                                          <span className="text-[9px] text-muted-foreground/50">Pressione Enter para adicionar</span>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )
+                                })}
+
+                                {((isButtonMode && branches.length < 3) || (!isButtonMode && branches.length < 5)) && (
+                                  <button
+                                    type="button"
+                                    onClick={addBranch}
+                                    className="flex items-center justify-center gap-1.5 w-full rounded-xl border border-dashed border-border/50 text-muted-foreground text-xs py-2.5 hover:bg-secondary/30 transition-colors"
+                                  >
+                                    <Plus className="h-3 w-3" />
+                                    Adicionar resposta
+                                  </button>
+                                )}
+
+                                {isButtonMode && (
+                                  <p className="text-[10px] text-muted-foreground/60">Max. 3 botoes por condicao</p>
+                                )}
+                              </>
+                            )
+                          })()}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ) : editingNode.type === "payment" ? (
                 <div className="flex flex-col gap-4">
@@ -3451,7 +3854,8 @@ export default function FlowsPage() {
                   disabled={isSavingNode || (
                     editingNode.type === "message" ? !msgText.trim() :
                     editingNode.type === "delay" ? !editNodeConfig.seconds || parseInt(editNodeConfig.seconds) <= 0 :
-                    editingNode.type === "condition" ? !editNodeConfig.condition?.trim() :
+                    editingNode.type === "condition" && (editingNode.config?.subVariant as string) === "check_payment" ? !editNodeConfig.condition?.trim() :
+                    editingNode.type === "condition" && (editingNode.config?.subVariant as string) !== "check_payment" ? !editNodeConfig.condition_message?.trim() :
                     editingNode.type === "action" ? !editNodeConfig.action_name?.trim() :
                     editingNode.type === "payment" && (editingNode.config?.subVariant as string) === "charge" ? !editNodeConfig.amount?.trim() :
                     editingNode.type === "redirect" && (editingNode.config?.subVariant === "restart" || editingNode.config?.subVariant === "end") ? false :
