@@ -24,7 +24,7 @@ import {
   Send, CalendarDays, Repeat, Filter, MessageCircle, AlertCircle,
   ExternalLink, Workflow, CheckCircle2, Hash, Unlink, UsersRound, Webhook,
   CircleStop, RefreshCw, MousePointerClick,
-  ArrowDown,
+  ArrowDown, TrendingUp, TrendingDown,
 } from "lucide-react"
 import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
@@ -1147,8 +1147,6 @@ export default function FlowsPage() {
       const actionVal = nodeConfigValues.action_name
       if (selectedTemplate.subVariant === "add_group") {
         label = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
-      } else if (selectedTemplate.subVariant === "webhook") {
-        label = `Webhook: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
       } else {
         label = actionVal
       }
@@ -1279,8 +1277,6 @@ export default function FlowsPage() {
       const actionVal = editNodeConfig.action_name || ""
       if (sv === "add_group" && actionVal) {
         finalLabel = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
-      } else if (sv === "webhook" && actionVal) {
-        finalLabel = `Webhook: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
       } else {
         finalLabel = actionVal || editNodeLabel
       }
@@ -2637,9 +2633,7 @@ export default function FlowsPage() {
                   <p className="text-sm text-muted-foreground -mt-1">
               {selectedTemplate.subVariant === "add_group"
                           ? "Envie o usuario para um grupo ou canal do Telegram."
-                          : selectedTemplate.subVariant === "webhook"
-                            ? "Envie dados para um sistema externo via HTTP POST."
-                            : "Configure a acao automatica."}
+                          : "Configure a acao automatica."}
                   </p>
                   <Input
                     type="text"
@@ -2673,29 +2667,196 @@ export default function FlowsPage() {
                     </>
                   ) : (
                     <>
+                      {/* Plano principal pre-preenchido */}
                       <div className="flex flex-col gap-2">
-                        <Label className="text-foreground text-sm font-semibold">Valor (R$)</Label>
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Cobranca principal</Label>
+                        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-secondary/20 px-3.5 py-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 shrink-0">
+                            <CreditCard className="h-4 w-4 text-green-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <Input
+                              type="text"
+                              value={nodeConfigValues.description || ""}
+                              onChange={(e) =>
+                                setNodeConfigValues((prev) => ({ ...prev, description: e.target.value }))
+                              }
+                              placeholder="Nome do produto"
+                              className="bg-transparent border-0 p-0 h-auto text-sm font-medium text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-xs text-muted-foreground">R$</span>
+                            <Input
+                              type="text"
+                              value={nodeConfigValues.amount || ""}
+                              onChange={(e) =>
+                                setNodeConfigValues((prev) => ({ ...prev, amount: e.target.value }))
+                              }
+                              placeholder="0,00"
+                              className="bg-transparent border-0 p-0 h-auto w-[70px] text-sm font-semibold text-foreground text-right focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Texto do botao */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Texto do botao</Label>
                         <Input
                           type="text"
-                          value={nodeConfigValues.amount || ""}
+                          value={nodeConfigValues.button_text || ""}
                           onChange={(e) =>
-                            setNodeConfigValues((prev) => ({ ...prev, amount: e.target.value }))
+                            setNodeConfigValues((prev) => ({ ...prev, button_text: e.target.value }))
                           }
-                          placeholder="49.90"
-                          className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
+                          placeholder="Pagar agora"
+                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground h-9 text-sm"
                         />
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-foreground text-sm font-semibold">Descricao</Label>
-                        <Input
-                          type="text"
-                          value={nodeConfigValues.description || ""}
-                          onChange={(e) =>
-                            setNodeConfigValues((prev) => ({ ...prev, description: e.target.value }))
-                          }
-                          placeholder="Pagamento do produto X"
-                          className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
-                        />
+
+                      {/* Switches compactos para upsell/downsell/order bump */}
+                      <div className="flex flex-col gap-0 rounded-xl border border-border/60 overflow-hidden">
+                        {/* Order Bump */}
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                                <Plus className="h-3.5 w-3.5 text-amber-400" />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-foreground">Order Bump</span>
+                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta adicional no checkout</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={nodeConfigValues.has_order_bump === "true"}
+                              onCheckedChange={(checked) =>
+                                setNodeConfigValues((prev) => ({ ...prev, has_order_bump: checked ? "true" : "false" }))
+                              }
+                            />
+                          </div>
+                          {nodeConfigValues.has_order_bump === "true" && (
+                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
+                              <Input
+                                type="text"
+                                value={nodeConfigValues.order_bump_desc || ""}
+                                onChange={(e) =>
+                                  setNodeConfigValues((prev) => ({ ...prev, order_bump_desc: e.target.value }))
+                                }
+                                placeholder="Nome do produto extra"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">R$</span>
+                                <Input
+                                  type="text"
+                                  value={nodeConfigValues.order_bump_amount || ""}
+                                  onChange={(e) =>
+                                    setNodeConfigValues((prev) => ({ ...prev, order_bump_amount: e.target.value }))
+                                  }
+                                  placeholder="0,00"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="h-px bg-border/40" />
+
+                        {/* Upsell */}
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
+                                <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-foreground">Upsell</span>
+                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta de upgrade apos pagamento</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={nodeConfigValues.has_upsell === "true"}
+                              onCheckedChange={(checked) =>
+                                setNodeConfigValues((prev) => ({ ...prev, has_upsell: checked ? "true" : "false" }))
+                              }
+                            />
+                          </div>
+                          {nodeConfigValues.has_upsell === "true" && (
+                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
+                              <Input
+                                type="text"
+                                value={nodeConfigValues.upsell_desc || ""}
+                                onChange={(e) =>
+                                  setNodeConfigValues((prev) => ({ ...prev, upsell_desc: e.target.value }))
+                                }
+                                placeholder="Nome do upsell"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">R$</span>
+                                <Input
+                                  type="text"
+                                  value={nodeConfigValues.upsell_amount || ""}
+                                  onChange={(e) =>
+                                    setNodeConfigValues((prev) => ({ ...prev, upsell_amount: e.target.value }))
+                                  }
+                                  placeholder="0,00"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="h-px bg-border/40" />
+
+                        {/* Downsell */}
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10">
+                                <TrendingDown className="h-3.5 w-3.5 text-rose-400" />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-foreground">Downsell</span>
+                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta menor se recusar upsell</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={nodeConfigValues.has_downsell === "true"}
+                              onCheckedChange={(checked) =>
+                                setNodeConfigValues((prev) => ({ ...prev, has_downsell: checked ? "true" : "false" }))
+                              }
+                            />
+                          </div>
+                          {nodeConfigValues.has_downsell === "true" && (
+                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
+                              <Input
+                                type="text"
+                                value={nodeConfigValues.downsell_desc || ""}
+                                onChange={(e) =>
+                                  setNodeConfigValues((prev) => ({ ...prev, downsell_desc: e.target.value }))
+                                }
+                                placeholder="Nome do downsell"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">R$</span>
+                                <Input
+                                  type="text"
+                                  value={nodeConfigValues.downsell_amount || ""}
+                                  onChange={(e) =>
+                                    setNodeConfigValues((prev) => ({ ...prev, downsell_amount: e.target.value }))
+                                  }
+                                  placeholder="0,00"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}
@@ -2896,7 +3057,7 @@ export default function FlowsPage() {
                   />
                 </div>
               ) : editingNode.type === "payment" ? (
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-4">
                   {(editingNode.config?.subVariant as string) === "wait_payment" ? (
                     <>
                       <Label className="text-foreground">Timeout (segundos)</Label>
@@ -2915,29 +3076,196 @@ export default function FlowsPage() {
                     </>
                   ) : (
                     <>
+                      {/* Cobranca principal */}
                       <div className="flex flex-col gap-2">
-                        <Label className="text-foreground">Valor (R$)</Label>
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Cobranca principal</Label>
+                        <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-secondary/20 px-3.5 py-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-green-500/10 shrink-0">
+                            <CreditCard className="h-4 w-4 text-green-400" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <Input
+                              type="text"
+                              value={editNodeConfig.description || ""}
+                              onChange={(e) =>
+                                setEditNodeConfig((prev) => ({ ...prev, description: e.target.value }))
+                              }
+                              placeholder="Nome do produto"
+                              className="bg-transparent border-0 p-0 h-auto text-sm font-medium text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-xs text-muted-foreground">R$</span>
+                            <Input
+                              type="text"
+                              value={editNodeConfig.amount || ""}
+                              onChange={(e) =>
+                                setEditNodeConfig((prev) => ({ ...prev, amount: e.target.value }))
+                              }
+                              placeholder="0,00"
+                              className="bg-transparent border-0 p-0 h-auto w-[70px] text-sm font-semibold text-foreground text-right focus-visible:ring-0 focus-visible:ring-offset-0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Texto do botao */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Texto do botao</Label>
                         <Input
                           type="text"
-                          value={editNodeConfig.amount || ""}
+                          value={editNodeConfig.button_text || ""}
                           onChange={(e) =>
-                            setEditNodeConfig((prev) => ({ ...prev, amount: e.target.value }))
+                            setEditNodeConfig((prev) => ({ ...prev, button_text: e.target.value }))
                           }
-                          placeholder="49.90"
-                          className="bg-secondary border-border rounded-xl text-foreground"
+                          placeholder="Pagar agora"
+                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground h-9 text-sm"
                         />
                       </div>
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-foreground">Descricao</Label>
-                        <Input
-                          type="text"
-                          value={editNodeConfig.description || ""}
-                          onChange={(e) =>
-                            setEditNodeConfig((prev) => ({ ...prev, description: e.target.value }))
-                          }
-                          placeholder="Pagamento do produto X"
-                          className="bg-secondary border-border rounded-xl text-foreground"
-                        />
+
+                      {/* Switches */}
+                      <div className="flex flex-col gap-0 rounded-xl border border-border/60 overflow-hidden">
+                        {/* Order Bump */}
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                                <Plus className="h-3.5 w-3.5 text-amber-400" />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-foreground">Order Bump</span>
+                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta adicional no checkout</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={editNodeConfig.has_order_bump === "true"}
+                              onCheckedChange={(checked) =>
+                                setEditNodeConfig((prev) => ({ ...prev, has_order_bump: checked ? "true" : "false" }))
+                              }
+                            />
+                          </div>
+                          {editNodeConfig.has_order_bump === "true" && (
+                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
+                              <Input
+                                type="text"
+                                value={editNodeConfig.order_bump_desc || ""}
+                                onChange={(e) =>
+                                  setEditNodeConfig((prev) => ({ ...prev, order_bump_desc: e.target.value }))
+                                }
+                                placeholder="Nome do produto extra"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">R$</span>
+                                <Input
+                                  type="text"
+                                  value={editNodeConfig.order_bump_amount || ""}
+                                  onChange={(e) =>
+                                    setEditNodeConfig((prev) => ({ ...prev, order_bump_amount: e.target.value }))
+                                  }
+                                  placeholder="0,00"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="h-px bg-border/40" />
+
+                        {/* Upsell */}
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
+                                <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-foreground">Upsell</span>
+                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta de upgrade apos pagamento</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={editNodeConfig.has_upsell === "true"}
+                              onCheckedChange={(checked) =>
+                                setEditNodeConfig((prev) => ({ ...prev, has_upsell: checked ? "true" : "false" }))
+                              }
+                            />
+                          </div>
+                          {editNodeConfig.has_upsell === "true" && (
+                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
+                              <Input
+                                type="text"
+                                value={editNodeConfig.upsell_desc || ""}
+                                onChange={(e) =>
+                                  setEditNodeConfig((prev) => ({ ...prev, upsell_desc: e.target.value }))
+                                }
+                                placeholder="Nome do upsell"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">R$</span>
+                                <Input
+                                  type="text"
+                                  value={editNodeConfig.upsell_amount || ""}
+                                  onChange={(e) =>
+                                    setEditNodeConfig((prev) => ({ ...prev, upsell_amount: e.target.value }))
+                                  }
+                                  placeholder="0,00"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="h-px bg-border/40" />
+
+                        {/* Downsell */}
+                        <div className="flex flex-col">
+                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+                            <div className="flex items-center gap-2.5">
+                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10">
+                                <TrendingDown className="h-3.5 w-3.5 text-rose-400" />
+                              </div>
+                              <div>
+                                <span className="text-sm font-medium text-foreground">Downsell</span>
+                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta menor se recusar upsell</p>
+                              </div>
+                            </div>
+                            <Switch
+                              checked={editNodeConfig.has_downsell === "true"}
+                              onCheckedChange={(checked) =>
+                                setEditNodeConfig((prev) => ({ ...prev, has_downsell: checked ? "true" : "false" }))
+                              }
+                            />
+                          </div>
+                          {editNodeConfig.has_downsell === "true" && (
+                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
+                              <Input
+                                type="text"
+                                value={editNodeConfig.downsell_desc || ""}
+                                onChange={(e) =>
+                                  setEditNodeConfig((prev) => ({ ...prev, downsell_desc: e.target.value }))
+                                }
+                                placeholder="Nome do downsell"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                              />
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">R$</span>
+                                <Input
+                                  type="text"
+                                  value={editNodeConfig.downsell_amount || ""}
+                                  onChange={(e) =>
+                                    setEditNodeConfig((prev) => ({ ...prev, downsell_amount: e.target.value }))
+                                  }
+                                  placeholder="0,00"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}
