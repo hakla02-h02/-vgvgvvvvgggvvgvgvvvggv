@@ -286,23 +286,9 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
   {
     type: "message",
     label: "Mensagem de Texto",
-    description: "Enviar mensagem simples de texto",
+    description: "Enviar mensagem com texto, midia e botoes",
     configFields: [],
     subVariant: "text",
-  },
-  {
-    type: "message",
-    label: "Mensagem com Midia",
-    description: "Enviar foto ou video com texto",
-    configFields: [],
-    subVariant: "media",
-  },
-  {
-    type: "message",
-    label: "Mensagem com Botoes",
-    description: "Mensagem com botoes de link clicaveis",
-    configFields: [],
-    subVariant: "buttons",
   },
   {
     type: "delay",
@@ -435,13 +421,13 @@ const actionGroups: ActionGroup[] = [
   {
     id: "comunicacao",
     label: "Comunicacao",
-    description: "Mensagens, midias e botoes",
+    description: "Enviar mensagens de texto",
     icon: MessageSquare,
     iconColor: "text-blue-400",
     bgColor: "bg-blue-500/10",
     borderAccent: "border-blue-500/30",
     types: ["message"],
-    subVariants: ["text", "media", "buttons"],
+    subVariants: ["text"],
   },
   {
     id: "logica",
@@ -2540,11 +2526,6 @@ export default function FlowsPage() {
                                   setSelectedTemplate(tpl)
                                   setNodeConfigValues({})
                                   resetMessageConfig()
-                                  if (tpl.subVariant === "media") setMsgMediaType("photo")
-                                  if (tpl.subVariant === "buttons") {
-                                    setMsgHasButtons(true)
-                                    setMsgButtons([{ text: "", url: "" }])
-                                  }
                                 }}
                               >
                                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${group.bgColor} border ${group.borderAccent}`}>
@@ -3217,192 +3198,218 @@ function MessageConfigForm({
     if (file) handleFileUpload(file)
   }
 
+  const mediaEnabled = msgMediaType !== "none"
+
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       {/* Texto da mensagem */}
-      <div className="flex flex-col gap-2.5">
-        <Label className="text-foreground text-sm font-semibold">Texto da mensagem</Label>
+      <div className="flex flex-col gap-2">
+        <Label className="text-foreground text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem</Label>
         <Textarea
           value={msgText}
           onChange={(e) => setMsgText(e.target.value)}
           placeholder="Digite a mensagem que o bot vai enviar..."
-          className="bg-secondary border-border rounded-xl text-foreground min-h-[100px] text-sm"
+          className="bg-secondary/50 border-border/60 rounded-xl text-foreground min-h-[90px] text-sm focus:border-primary/40 focus:ring-1 focus:ring-primary/20 transition-all resize-none"
         />
       </div>
 
-      {/* Midia */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
-        <div className="flex items-center justify-between">
-          <Label className="text-foreground text-sm font-semibold">Midia (opcional)</Label>
-          <Select
-            value={msgMediaType}
-            onValueChange={(v) => {
-              setMsgMediaType(v as "photo" | "video" | "none")
-              if (v === "none") {
-                setMsgMediaUrl("")
-                setFileName("")
-                setUploadError("")
-              }
-            }}
-          >
-            <SelectTrigger className="w-[150px] h-9 bg-secondary border-border rounded-lg text-foreground text-sm">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card border-border">
-              <SelectItem value="none">Nenhuma</SelectItem>
-              <SelectItem value="photo">
-                <span className="flex items-center gap-1.5"><Image className="h-4 w-4" /> Foto</span>
-              </SelectItem>
-              <SelectItem value="video">
-                <span className="flex items-center gap-1.5"><Video className="h-4 w-4" /> Video</span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        {msgMediaType !== "none" && (
-          <div className="flex flex-col gap-2">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={msgMediaType === "photo" ? "image/jpeg,image/png,image/gif,image/webp" : "video/mp4,video/webm,video/quicktime"}
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handleFileUpload(file)
-                e.target.value = ""
+      {/* Switches compactos */}
+      <div className="flex flex-col gap-0 rounded-xl border border-border/60 overflow-hidden">
+        {/* Switch Midia */}
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
+                <Image className="h-3.5 w-3.5 text-blue-400" />
+              </div>
+              <div>
+                <span className="text-sm font-medium text-foreground">Midia</span>
+                <p className="text-[10px] text-muted-foreground/70 leading-tight">Anexar foto ou video</p>
+              </div>
+            </div>
+            <Switch
+              checked={mediaEnabled}
+              onCheckedChange={(checked) => {
+                if (checked) {
+                  setMsgMediaType("photo")
+                } else {
+                  setMsgMediaType("none")
+                  setMsgMediaUrl("")
+                  setFileName("")
+                  setUploadError("")
+                }
               }}
             />
+          </div>
 
-            {msgMediaUrl ? (
-              <div className="flex flex-col gap-2">
-                {msgMediaType === "photo" ? (
-                  <div className="relative rounded-lg overflow-hidden border border-border bg-secondary">
-                    <img src={msgMediaUrl} alt="Preview" className="w-full max-h-[160px] object-cover" />
+          {mediaEnabled && (
+            <div className="flex flex-col gap-2.5 px-3.5 pb-3 pt-1">
+              <div className="flex gap-1.5">
+                <button
+                  onClick={() => setMsgMediaType("photo")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                    msgMediaType === "photo"
+                      ? "bg-primary/15 text-primary border border-primary/30"
+                      : "bg-secondary/50 text-muted-foreground border border-border/40 hover:bg-secondary"
+                  }`}
+                >
+                  <Image className="h-3 w-3" /> Foto
+                </button>
+                <button
+                  onClick={() => setMsgMediaType("video")}
+                  className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                    msgMediaType === "video"
+                      ? "bg-primary/15 text-primary border border-primary/30"
+                      : "bg-secondary/50 text-muted-foreground border border-border/40 hover:bg-secondary"
+                  }`}
+                >
+                  <Video className="h-3 w-3" /> Video
+                </button>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept={msgMediaType === "photo" ? "image/jpeg,image/png,image/gif,image/webp" : "video/mp4,video/webm,video/quicktime"}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) handleFileUpload(file)
+                  e.target.value = ""
+                }}
+              />
+
+              {msgMediaUrl ? (
+                <div className="flex flex-col gap-1.5">
+                  {msgMediaType === "photo" ? (
+                    <div className="relative rounded-lg overflow-hidden border border-border/50 bg-secondary/30">
+                      <img src={msgMediaUrl} alt="Preview" className="w-full max-h-[120px] object-cover" />
+                    </div>
+                  ) : (
+                    <div className="relative rounded-lg overflow-hidden border border-border/50 bg-secondary/30">
+                      <video src={msgMediaUrl} className="w-full max-h-[120px] object-cover" controls />
+                    </div>
+                  )}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <FileCheck className="h-3 w-3 text-green-500 shrink-0" />
+                      <span className="text-[11px] text-muted-foreground truncate">{fileName || "Arquivo enviado"}</span>
+                    </div>
+                    <button
+                      className="text-[11px] text-muted-foreground hover:text-destructive transition-colors"
+                      onClick={() => {
+                        setMsgMediaUrl("")
+                        setFileName("")
+                      }}
+                    >
+                      Remover
+                    </button>
                   </div>
-                ) : (
-                  <div className="relative rounded-lg overflow-hidden border border-border bg-secondary">
-                    <video src={msgMediaUrl} className="w-full max-h-[160px] object-cover" controls />
-                  </div>
-                )}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileCheck className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                    <span className="text-xs text-muted-foreground truncate">
-                      {fileName || "Arquivo enviado"}
-                    </span>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs text-muted-foreground hover:text-destructive shrink-0"
-                    onClick={() => {
-                      setMsgMediaUrl("")
-                      setFileName("")
-                    }}
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Remover
-                  </Button>
                 </div>
-              </div>
-            ) : (
-              <div
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={handleDrop}
-                onClick={() => !uploading && fileInputRef.current?.click()}
-                className={`flex flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed p-8 cursor-pointer transition-colors ${
-                  uploading
-                    ? "border-primary/50 bg-primary/5"
-                    : "border-border hover:border-primary/40 hover:bg-secondary/50"
-                }`}
-              >
-                {uploading ? (
-                  <>
-                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                    <span className="text-sm text-muted-foreground">Enviando...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="h-8 w-8 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground text-center">
-                      Clique ou arraste {msgMediaType === "photo" ? "uma foto" : "um video"} aqui
-                    </span>
-                    <span className="text-xs text-muted-foreground/60">
-                      {msgMediaType === "photo" ? "JPG, PNG, GIF, WEBP" : "MP4, WEBM, MOV"} - Max 50MB
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
+              ) : (
+                <div
+                  onDragOver={(e) => e.preventDefault()}
+                  onDrop={handleDrop}
+                  onClick={() => !uploading && fileInputRef.current?.click()}
+                  className={`flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed p-5 cursor-pointer transition-all ${
+                    uploading
+                      ? "border-primary/50 bg-primary/5"
+                      : "border-border/50 hover:border-primary/30 hover:bg-secondary/30"
+                  }`}
+                >
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                      <span className="text-xs text-muted-foreground">Enviando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="h-5 w-5 text-muted-foreground/60" />
+                      <span className="text-xs text-muted-foreground text-center">
+                        Clique ou arraste {msgMediaType === "photo" ? "uma foto" : "um video"}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground/50">
+                        {msgMediaType === "photo" ? "JPG, PNG, GIF, WEBP" : "MP4, WEBM, MOV"} - Max 50MB
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
 
-            {uploadError && (
-              <p className="text-xs text-destructive">{uploadError}</p>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Botoes Inline */}
-      <div className="flex flex-col gap-3 rounded-xl border border-border p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Link className="h-5 w-5 text-muted-foreground" />
-            <Label className="text-foreground text-sm font-semibold">Botoes com link</Label>
-          </div>
-          <Switch
-            checked={msgHasButtons}
-            onCheckedChange={(checked) => {
-              setMsgHasButtons(checked)
-              if (checked && msgButtons.length === 0) {
-                addMsgButton()
-              }
-            }}
-          />
+              {uploadError && (
+                <p className="text-[11px] text-destructive">{uploadError}</p>
+              )}
+            </div>
+          )}
         </div>
 
-        {msgHasButtons && (
-          <div className="flex flex-col gap-3">
-            {msgButtons.map((btn, i) => (
-              <div key={i} className="flex items-start gap-2.5 rounded-xl border border-border/50 bg-secondary/30 p-3">
-                <div className="flex flex-1 flex-col gap-2">
-                  <Input
-                    value={btn.text}
-                    onChange={(e) => updateMsgButton(i, "text", e.target.value)}
-                    placeholder="Titulo do botao"
-                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-10"
-                  />
-                  <Input
-                    value={btn.url}
-                    onChange={(e) => updateMsgButton(i, "url", e.target.value)}
-                    placeholder="https://link-do-botao.com"
-                    className="bg-secondary border-border rounded-lg text-foreground text-sm h-10"
-                  />
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => removeMsgButton(i)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+        {/* Divisor */}
+        <div className="h-px bg-border/40" />
+
+        {/* Switch Botoes */}
+        <div className="flex flex-col">
+          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-500/10">
+                <Link className="h-3.5 w-3.5 text-purple-400" />
               </div>
-            ))}
-            {msgButtons.length < 6 && (
-              <Button
-                variant="outline"
-                className="w-full rounded-xl border-dashed border-border text-muted-foreground text-sm h-10"
-                onClick={addMsgButton}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Adicionar botao
-              </Button>
-            )}
-            <p className="text-sm text-muted-foreground">
-              Maximo de 6 botoes. Cada botao aparece abaixo da mensagem no Telegram.
-            </p>
+              <div>
+                <span className="text-sm font-medium text-foreground">Botoes</span>
+                <p className="text-[10px] text-muted-foreground/70 leading-tight">Adicionar botoes com link</p>
+              </div>
+            </div>
+            <Switch
+              checked={msgHasButtons}
+              onCheckedChange={(checked) => {
+                setMsgHasButtons(checked)
+                if (checked && msgButtons.length === 0) {
+                  addMsgButton()
+                }
+              }}
+            />
           </div>
-        )}
+
+          {msgHasButtons && (
+            <div className="flex flex-col gap-2.5 px-3.5 pb-3 pt-1">
+              {msgButtons.map((btn, i) => (
+                <div key={i} className="flex items-start gap-2 rounded-lg border border-border/40 bg-secondary/20 p-2.5">
+                  <div className="flex flex-1 flex-col gap-1.5">
+                    <Input
+                      value={btn.text}
+                      onChange={(e) => updateMsgButton(i, "text", e.target.value)}
+                      placeholder="Titulo do botao"
+                      className="bg-secondary/50 border-border/50 rounded-lg text-foreground text-xs h-8"
+                    />
+                    <Input
+                      value={btn.url}
+                      onChange={(e) => updateMsgButton(i, "url", e.target.value)}
+                      placeholder="https://link-do-botao.com"
+                      className="bg-secondary/50 border-border/50 rounded-lg text-foreground text-xs h-8"
+                    />
+                  </div>
+                  <button
+                    className="mt-1 text-muted-foreground/60 hover:text-destructive transition-colors"
+                    onClick={() => removeMsgButton(i)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ))}
+              {msgButtons.length < 6 && (
+                <button
+                  className="flex items-center justify-center gap-1.5 w-full rounded-lg border border-dashed border-border/40 text-muted-foreground text-xs py-2 hover:bg-secondary/30 transition-colors"
+                  onClick={addMsgButton}
+                >
+                  <Plus className="h-3 w-3" />
+                  Adicionar botao
+                </button>
+              )}
+              <p className="text-[10px] text-muted-foreground/60">
+                Max. 6 botoes por mensagem
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   )
