@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getSupabase } from "@/lib/supabase-server"
+import { getSupabase } from "@/lib/supabase"
 
 // Test endpoint to debug webhook and flow configuration
 // GET /api/telegram/test?token=BOT_TOKEN
