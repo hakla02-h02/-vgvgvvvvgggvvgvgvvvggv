@@ -132,18 +132,11 @@ const categoryConfigs: CategoryConfigDef[] = [
   {
     category: "inicial",
     title: "Configuracoes do Fluxo Inicial",
-    description: "O primeiro contato do usuario com o bot. Configure a experiencia de boas-vindas e vincule fluxos secundarios.",
+    description: "O primeiro contato do usuario com o bot. Configure o comportamento padrao do fluxo.",
     fields: [
-      { key: "welcome_message", label: "Mensagem de boas-vindas", type: "textarea", placeholder: "Ola! Bem-vindo ao nosso bot...", icon: MessageCircle, description: "Mensagem exibida ao iniciar" },
       { key: "auto_start", label: "Iniciar automaticamente", type: "toggle", icon: Zap, description: "Dispara ao primeiro contato" },
-      { key: "collect_name", label: "Coletar nome do usuario", type: "toggle", icon: UserPlus, description: "Pedir nome antes de prosseguir" },
-      { key: "collect_email", label: "Coletar e-mail", type: "toggle", icon: Mail, description: "Pedir e-mail antes de prosseguir" },
-      { key: "main_menu_enabled", label: "Exibir menu principal", type: "toggle", icon: GitBranch, description: "Mostra opcoes apos boas-vindas" },
+      { key: "default_delay_sec", label: "Delay padrao entre mensagens (seg)", type: "number", placeholder: "2", icon: Clock, description: "Tempo de espera padrao entre cada mensagem enviada" },
       { key: "fallback_message", label: "Mensagem de fallback", type: "textarea", placeholder: "Desculpe, nao entendi. Tente novamente.", icon: AlertCircle, description: "Quando o bot nao entende o usuario" },
-      { key: "inactivity_timeout_min", label: "Timeout de inatividade (min)", type: "number", placeholder: "10", icon: Clock, description: "Minutos sem resposta para encerrar" },
-      { key: "inactivity_message", label: "Mensagem de inatividade", type: "textarea", placeholder: "Parece que voce saiu. Se precisar, e so me chamar!", icon: Timer, description: "Enviada ao expirar o timeout" },
-      { key: "show_typing", label: "Simular digitando", type: "toggle", icon: MessageCircle, description: "Exibir 'digitando...' antes das respostas" },
-      { key: "typing_delay_sec", label: "Delay de digitacao (seg)", type: "number", placeholder: "2", icon: Clock, description: "Tempo do indicador de digitacao" },
     ],
   },
   {
