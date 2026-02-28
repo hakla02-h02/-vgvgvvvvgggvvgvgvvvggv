@@ -64,7 +64,7 @@ interface Flow {
   updated_at: string
 }
 
-type NodeType = "trigger" | "message" | "delay" | "condition" | "payment" | "action" | "redirect"
+type NodeType = "trigger" | "message" | "delay" | "condition" | "payment" | "action"
 
 interface InlineButton {
   text: string
@@ -343,7 +343,7 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     subVariant: "add_group",
   },
   {
-    type: "redirect",
+    type: "action",
     label: "Ir para Outro Fluxo",
     description: "Redirecionar para fluxo secundario",
     configFields: [
@@ -352,14 +352,14 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     subVariant: "goto_flow",
   },
   {
-    type: "redirect",
+    type: "action",
     label: "Recomecar Fluxo",
     description: "Voltar ao inicio deste fluxo",
     configFields: [],
     subVariant: "restart",
   },
   {
-    type: "redirect",
+    type: "action",
     label: "Encerrar Conversa",
     description: "Finalizar interacao com o usuario",
     configFields: [],
@@ -422,7 +422,7 @@ const actionGroups: ActionGroup[] = [
     iconColor: "text-orange-400",
     bgColor: "bg-orange-500/10",
     borderAccent: "border-orange-500/30",
-    types: ["redirect"],
+    types: ["action"],
     subVariants: ["goto_flow", "restart", "end"],
   },
   {
@@ -506,18 +506,19 @@ function SortableNodeCard({
       const sv = node.config?.subVariant as string
       return sv === "check_payment" ? "Verificar pagamento" : "Condicao de resposta"
     }
-    if (node.type === "action") {
-      const sv = node.config?.subVariant as string
-      return sv === "add_group" ? "Adicionar ao grupo" : "Automacao"
-    }
     if (node.type === "payment") {
       const sv = node.config?.subVariant as string
       return sv === "charge" ? "Cobranca" : sv === "wait_payment" ? "Aguardar pagamento" : "Pagamento"
     }
-    if (node.type === "redirect") {
-      if (node.config?.target_flow_name) return node.config.target_flow_name as string
+    if (node.type === "action") {
       const sv = node.config?.subVariant as string
-      return sv === "restart" ? "Volta ao inicio" : sv === "end" ? "Encerrar" : "Navegacao"
+      if (sv === "goto_flow") {
+        if (node.config?.target_flow_name) return node.config.target_flow_name as string
+        return "Ir para outro fluxo"
+      }
+      if (sv === "restart") return "Volta ao inicio"
+      if (sv === "end") return "Encerrar"
+      return sv === "add_group" ? "Adicionar ao grupo" : "Automacao"
     }
     return ""
   }
@@ -1320,28 +1321,28 @@ export default function FlowsPage() {
       }
     } else if (editingNode.type === "action") {
       const sv = editingNode.config?.subVariant || ""
-      finalConfig = { ...editNodeConfig, subVariant: sv }
-      const actionVal = editNodeConfig.action_name || ""
-      if (sv === "add_group" && actionVal) {
-        finalLabel = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
-      } else {
-        finalLabel = actionVal || editNodeLabel
-      }
-    } else if (editingNode.type === "redirect") {
-      const sv = editingNode.config?.subVariant || ""
       if (sv === "restart") {
         finalConfig = { subVariant: "restart" }
         finalLabel = "Recomecar Fluxo"
       } else if (sv === "end") {
         finalConfig = { subVariant: "end" }
         finalLabel = "Encerrar Conversa"
-      } else {
+      } else if (sv === "goto_flow") {
         finalConfig = {
           target_flow_id: editNodeConfig.target_flow_id,
           target_flow_name: editNodeConfig.target_flow_name,
           subVariant: "goto_flow",
         }
         finalLabel = editNodeConfig.target_flow_name ? `Ir para: ${editNodeConfig.target_flow_name}` : "Redirecionar"
+      } else {
+        // add_group ou outros
+        finalConfig = { ...editNodeConfig, subVariant: sv }
+        const actionVal = editNodeConfig.action_name || ""
+        if (sv === "add_group" && actionVal) {
+          finalLabel = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
+        } else {
+          finalLabel = actionVal || editNodeLabel
+        }
       }
     }
 
@@ -1797,17 +1798,17 @@ export default function FlowsPage() {
                                   <Workflow className="h-4 w-4 text-orange-400" />
                                   <h4 className="text-xs font-semibold text-foreground">Fluxos Vinculados</h4>
                                   <span className="text-[10px] text-muted-foreground">
-                                    ({nodes.filter((n) => n.type === "redirect").length} conectados)
+                                    ({nodes.filter((n) => n.type === "action" && n.config?.subVariant === "goto_flow").length} conectados)
                                   </span>
                                 </div>
                                 <p className="text-[10px] text-muted-foreground mb-2.5">
-                                  Fluxos secundarios que o usuario pode ser redirecionado a partir deste fluxo. Adicione um bloco "Redirecionar para Fluxo" no builder abaixo.
+                                  Fluxos secundarios que o usuario pode ser redirecionado a partir deste fluxo. Adicione um bloco "Ir para Outro Fluxo" no builder abaixo.
                                 </p>
                                 <div className="flex flex-col gap-1.5">
                                   {secondaryFlows.map((sf) => {
                                     const sfCat = getCategoryConfig(sf.category)
                                     const SFIcon = sfCat.icon
-                                    const isLinked = nodes.some((n) => n.type === "redirect" && n.config?.target_flow_id === sf.id)
+                                    const isLinked = nodes.some((n) => n.type === "action" && n.config?.subVariant === "goto_flow" && n.config?.target_flow_id === sf.id)
                                     return (
                                       <div
                                         key={sf.id}
@@ -2577,7 +2578,7 @@ export default function FlowsPage() {
                   updateMsgButton={updateMsgButton}
                   removeMsgButton={removeMsgButton}
                 />
-              ) : selectedTemplate.type === "redirect" && selectedTemplate.subVariant === "goto_flow" ? (
+              ) : selectedTemplate.type === "action" && selectedTemplate.subVariant === "goto_flow" ? (
                 <div className="flex flex-col gap-3">
                   <Label className="text-foreground text-sm font-semibold">Selecione o fluxo de destino</Label>
                   <p className="text-sm text-muted-foreground -mt-1">
@@ -3192,7 +3193,7 @@ export default function FlowsPage() {
                   updateMsgButton={updateMsgButton}
                   removeMsgButton={removeMsgButton}
                 />
-              ) : editingNode.type === "redirect" ? (
+              ) : editingNode.type === "action" && editingNode.config?.subVariant === "goto_flow" ? (
                 <div className="flex flex-col gap-3">
                   <Label className="text-foreground">Selecione o fluxo de destino</Label>
                   {flows.filter((f) => f.id !== activeFlow?.id).length === 0 ? (
@@ -3733,10 +3734,10 @@ export default function FlowsPage() {
                     editingNode.type === "delay" ? !editNodeConfig.seconds || parseInt(editNodeConfig.seconds) <= 0 :
                     editingNode.type === "condition" && (editingNode.config?.subVariant as string) === "check_payment" ? !editNodeConfig.condition?.trim() :
                     editingNode.type === "condition" && (editingNode.config?.subVariant as string) !== "check_payment" ? !editNodeConfig.condition_message?.trim() :
-                    editingNode.type === "action" ? !editNodeConfig.action_name?.trim() :
+                    editingNode.type === "action" && (editingNode.config?.subVariant === "restart" || editingNode.config?.subVariant === "end") ? false :
+                    editingNode.type === "action" && editingNode.config?.subVariant === "goto_flow" ? !editNodeConfig.target_flow_id :
+                    editingNode.type === "action" && editingNode.config?.subVariant === "add_group" ? !editNodeConfig.action_name?.trim() :
                     editingNode.type === "payment" && (editingNode.config?.subVariant as string) === "charge" ? !editNodeConfig.amount?.trim() :
-                    editingNode.type === "redirect" && (editingNode.config?.subVariant === "restart" || editingNode.config?.subVariant === "end") ? false :
-                    editingNode.type === "redirect" ? !editNodeConfig.target_flow_id :
                     false
                   )}
                   onClick={handleSaveNode}
