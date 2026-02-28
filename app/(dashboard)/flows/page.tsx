@@ -2692,8 +2692,8 @@ export default function FlowsPage() {
                                 condition_branches: prev.condition_branches && (prev.response_type === "buttons" || !prev.response_type)
                                   ? prev.condition_branches
                                   : JSON.stringify([
-                                      { label: "Sim", keywords: [] },
-                                      { label: "Nao", keywords: [] },
+                                      { label: "", keywords: [], sub_nodes: [] },
+                                      { label: "", keywords: [], sub_nodes: [] },
                                     ]),
                               }))
                             }
@@ -2716,8 +2716,8 @@ export default function FlowsPage() {
                                 condition_branches: prev.condition_branches && prev.response_type === "text"
                                   ? prev.condition_branches
                                   : JSON.stringify([
-                                      { label: "Resposta 1", keywords: ["eu quero", "sim", "quero"] },
-                                      { label: "Resposta 2", keywords: ["nao", "nao quero"] },
+                                      { label: "", keywords: [], sub_nodes: [] },
+                                      { label: "", keywords: [], sub_nodes: [] },
                                     ]),
                               }))
                             }
@@ -2740,21 +2740,22 @@ export default function FlowsPage() {
                         <div className="flex flex-col gap-2">
                           {(() => {
                             const branchesRaw = nodeConfigValues.condition_branches
-                            let branches: { label: string; keywords: string[] }[] = []
+                            let branches: { label: string; keywords: string[]; sub_nodes: { type: string; label: string }[] }[] = []
                             try { branches = branchesRaw ? JSON.parse(branchesRaw) : [] } catch { branches = [] }
                             if (branches.length === 0) {
-                              branches = (!nodeConfigValues.response_type || nodeConfigValues.response_type === "buttons")
-                                ? [{ label: "Sim", keywords: [] }, { label: "Nao", keywords: [] }]
-                                : [{ label: "Resposta 1", keywords: ["eu quero", "sim"] }, { label: "Resposta 2", keywords: ["nao"] }]
+                              branches = [
+                                { label: "", keywords: [], sub_nodes: [] },
+                                { label: "", keywords: [], sub_nodes: [] },
+                              ]
                               setTimeout(() => {
                                 setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(branches) }))
                               }, 0)
                             }
                             const isButtonMode = !nodeConfigValues.response_type || nodeConfigValues.response_type === "buttons"
 
-                            const updateBranch = (idx: number, field: string, value: string | string[]) => {
+                            const updateBranch = (idx: number, field: string, value: string | string[] | { type: string; label: string }[]) => {
                               const updated = [...branches]
-                              ;(updated[idx] as Record<string, string | string[]>)[field] = value
+                              ;(updated[idx] as Record<string, unknown>)[field] = value
                               setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
                             }
                             const removeBranch = (idx: number) => {
@@ -2763,7 +2764,17 @@ export default function FlowsPage() {
                             }
                             const addBranch = () => {
                               if (branches.length >= 3 && isButtonMode) return
-                              const updated = [...branches, { label: "", keywords: [] }]
+                              const updated = [...branches, { label: "", keywords: [], sub_nodes: [] }]
+                              setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const addSubNode = (branchIdx: number, type: string, label: string) => {
+                              const updated = [...branches]
+                              updated[branchIdx].sub_nodes = [...(updated[branchIdx].sub_nodes || []), { type, label }]
+                              setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const removeSubNode = (branchIdx: number, subIdx: number) => {
+                              const updated = [...branches]
+                              updated[branchIdx].sub_nodes = updated[branchIdx].sub_nodes.filter((_, i) => i !== subIdx)
                               setNodeConfigValues((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
                             }
 
@@ -2773,12 +2784,19 @@ export default function FlowsPage() {
                               { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", dot: "bg-amber-400" },
                             ]
 
+                            const subNodeOptions = [
+                              { type: "message", label: "Mensagem", icon: "msg" },
+                              { type: "payment", label: "Cobranca", icon: "pay" },
+                              { type: "condition", label: "Condicao", icon: "cond" },
+                            ]
+
                             return (
                               <>
                                 {branches.map((branch, idx) => {
                                   const color = colors[idx % colors.length]
                                   return (
-                                    <div key={idx} className={`flex flex-col gap-2 rounded-xl border ${color.border} ${color.bg} p-3`}>
+                                    <div key={idx} className={`flex flex-col gap-2.5 rounded-xl border ${color.border} ${color.bg} p-3`}>
+                                      {/* Branch header */}
                                       <div className="flex items-center gap-2">
                                         <div className={`h-2.5 w-2.5 rounded-full ${color.dot} shrink-0`} />
                                         <Input
@@ -2803,7 +2821,7 @@ export default function FlowsPage() {
                                         <div className="flex flex-col gap-1.5">
                                           <span className="text-[10px] text-muted-foreground/70 font-medium uppercase tracking-wide">Variacoes / Palavras-chave</span>
                                           <div className="flex flex-wrap gap-1">
-                                            {branch.keywords.map((kw, kwIdx) => (
+                                            {(branch.keywords || []).map((kw, kwIdx) => (
                                               <span key={kwIdx} className={`inline-flex items-center gap-1 rounded-md ${color.bg} border ${color.border} px-2 py-0.5 text-[11px] ${color.text}`}>
                                                 {kw}
                                                 <button
@@ -2827,7 +2845,7 @@ export default function FlowsPage() {
                                                   e.preventDefault()
                                                   const val = (e.target as HTMLInputElement).value.trim()
                                                   if (val) {
-                                                    updateBranch(idx, "keywords", [...branch.keywords, val])
+                                                    updateBranch(idx, "keywords", [...(branch.keywords || []), val])
                                                     ;(e.target as HTMLInputElement).value = ""
                                                   }
                                                 }
@@ -2837,6 +2855,45 @@ export default function FlowsPage() {
                                           <span className="text-[9px] text-muted-foreground/50">Pressione Enter para adicionar</span>
                                         </div>
                                       )}
+
+                                      {/* Sub-fluxo */}
+                                      <div className="flex flex-col gap-1.5 mt-0.5">
+                                        <span className="text-[10px] text-muted-foreground/70 font-medium uppercase tracking-wide">Sub-fluxo</span>
+                                        {(branch.sub_nodes || []).length > 0 && (
+                                          <div className="flex flex-col gap-1">
+                                            {branch.sub_nodes.map((sn, snIdx) => (
+                                              <div key={snIdx} className="flex items-center gap-2 rounded-lg border border-border/30 bg-background/30 px-2.5 py-1.5">
+                                                <div className="flex h-5 w-5 items-center justify-center rounded bg-muted/50 shrink-0">
+                                                  {sn.type === "message" && <MessageCircle className="h-3 w-3 text-blue-400" />}
+                                                  {sn.type === "payment" && <CreditCard className="h-3 w-3 text-green-400" />}
+                                                  {sn.type === "condition" && <GitBranch className="h-3 w-3 text-orange-400" />}
+                                                </div>
+                                                <span className="text-[11px] text-foreground flex-1 truncate">{sn.label || sn.type}</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => removeSubNode(idx, snIdx)}
+                                                  className="text-muted-foreground/40 hover:text-destructive transition-colors"
+                                                >
+                                                  <X className="h-3 w-3" />
+                                                </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        <div className="flex gap-1">
+                                          {subNodeOptions.map((opt) => (
+                                            <button
+                                              key={opt.type}
+                                              type="button"
+                                              onClick={() => addSubNode(idx, opt.type, opt.label)}
+                                              className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-dashed border-border/40 py-1.5 text-[10px] text-muted-foreground hover:bg-secondary/30 hover:text-foreground transition-colors"
+                                            >
+                                              <Plus className="h-2.5 w-2.5" />
+                                              {opt.label}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
                                     </div>
                                   )
                                 })}
@@ -2852,9 +2909,9 @@ export default function FlowsPage() {
                                   </button>
                                 )}
 
-                                {isButtonMode && (
-                                  <p className="text-[10px] text-muted-foreground/60">Max. 3 botoes por condicao</p>
-                                )}
+                                <p className="text-[10px] text-muted-foreground/60">
+                                  {isButtonMode ? "Max. 3 botoes por condicao" : "Max. 5 respostas por condicao"}
+                                </p>
                               </>
                             )
                           })()}
@@ -3369,8 +3426,8 @@ export default function FlowsPage() {
                                 condition_branches: prev.condition_branches && (prev.response_type === "buttons" || !prev.response_type)
                                   ? prev.condition_branches
                                   : JSON.stringify([
-                                      { label: "Sim", keywords: [] },
-                                      { label: "Nao", keywords: [] },
+                                      { label: "", keywords: [], sub_nodes: [] },
+                                      { label: "", keywords: [], sub_nodes: [] },
                                     ]),
                               }))
                             }
@@ -3393,8 +3450,8 @@ export default function FlowsPage() {
                                 condition_branches: prev.condition_branches && prev.response_type === "text"
                                   ? prev.condition_branches
                                   : JSON.stringify([
-                                      { label: "Resposta 1", keywords: ["eu quero", "sim", "quero"] },
-                                      { label: "Resposta 2", keywords: ["nao", "nao quero"] },
+                                      { label: "", keywords: [], sub_nodes: [] },
+                                      { label: "", keywords: [], sub_nodes: [] },
                                     ]),
                               }))
                             }
@@ -3417,21 +3474,22 @@ export default function FlowsPage() {
                         <div className="flex flex-col gap-2">
                           {(() => {
                             const branchesRaw = editNodeConfig.condition_branches
-                            let branches: { label: string; keywords: string[] }[] = []
+                            let branches: { label: string; keywords: string[]; sub_nodes: { type: string; label: string }[] }[] = []
                             try { branches = branchesRaw ? JSON.parse(branchesRaw) : [] } catch { branches = [] }
                             if (branches.length === 0) {
-                              branches = (!editNodeConfig.response_type || editNodeConfig.response_type === "buttons")
-                                ? [{ label: "Sim", keywords: [] }, { label: "Nao", keywords: [] }]
-                                : [{ label: "Resposta 1", keywords: ["eu quero", "sim"] }, { label: "Resposta 2", keywords: ["nao"] }]
+                              branches = [
+                                { label: "", keywords: [], sub_nodes: [] },
+                                { label: "", keywords: [], sub_nodes: [] },
+                              ]
                               setTimeout(() => {
                                 setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(branches) }))
                               }, 0)
                             }
                             const isButtonMode = !editNodeConfig.response_type || editNodeConfig.response_type === "buttons"
 
-                            const updateBranch = (idx: number, field: string, value: string | string[]) => {
+                            const updateBranch = (idx: number, field: string, value: string | string[] | { type: string; label: string }[]) => {
                               const updated = [...branches]
-                              ;(updated[idx] as Record<string, string | string[]>)[field] = value
+                              ;(updated[idx] as Record<string, unknown>)[field] = value
                               setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
                             }
                             const removeBranch = (idx: number) => {
@@ -3440,7 +3498,17 @@ export default function FlowsPage() {
                             }
                             const addBranch = () => {
                               if (branches.length >= 3 && isButtonMode) return
-                              const updated = [...branches, { label: "", keywords: [] }]
+                              const updated = [...branches, { label: "", keywords: [], sub_nodes: [] }]
+                              setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const addSubNode = (branchIdx: number, type: string, label: string) => {
+                              const updated = [...branches]
+                              updated[branchIdx].sub_nodes = [...(updated[branchIdx].sub_nodes || []), { type, label }]
+                              setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
+                            }
+                            const removeSubNode = (branchIdx: number, subIdx: number) => {
+                              const updated = [...branches]
+                              updated[branchIdx].sub_nodes = updated[branchIdx].sub_nodes.filter((_, i) => i !== subIdx)
                               setEditNodeConfig((prev) => ({ ...prev, condition_branches: JSON.stringify(updated) }))
                             }
 
@@ -3450,12 +3518,19 @@ export default function FlowsPage() {
                               { bg: "bg-amber-500/10", border: "border-amber-500/30", text: "text-amber-400", dot: "bg-amber-400" },
                             ]
 
+                            const subNodeOptions = [
+                              { type: "message", label: "Mensagem", icon: "msg" },
+                              { type: "payment", label: "Cobranca", icon: "pay" },
+                              { type: "condition", label: "Condicao", icon: "cond" },
+                            ]
+
                             return (
                               <>
                                 {branches.map((branch, idx) => {
                                   const color = colors[idx % colors.length]
                                   return (
-                                    <div key={idx} className={`flex flex-col gap-2 rounded-xl border ${color.border} ${color.bg} p-3`}>
+                                    <div key={idx} className={`flex flex-col gap-2.5 rounded-xl border ${color.border} ${color.bg} p-3`}>
+                                      {/* Branch header */}
                                       <div className="flex items-center gap-2">
                                         <div className={`h-2.5 w-2.5 rounded-full ${color.dot} shrink-0`} />
                                         <Input
@@ -3475,11 +3550,12 @@ export default function FlowsPage() {
                                         )}
                                       </div>
 
+                                      {/* Palavras-chave (so no modo texto) */}
                                       {!isButtonMode && (
                                         <div className="flex flex-col gap-1.5">
                                           <span className="text-[10px] text-muted-foreground/70 font-medium uppercase tracking-wide">Variacoes / Palavras-chave</span>
                                           <div className="flex flex-wrap gap-1">
-                                            {branch.keywords.map((kw, kwIdx) => (
+                                            {(branch.keywords || []).map((kw, kwIdx) => (
                                               <span key={kwIdx} className={`inline-flex items-center gap-1 rounded-md ${color.bg} border ${color.border} px-2 py-0.5 text-[11px] ${color.text}`}>
                                                 {kw}
                                                 <button
@@ -3503,7 +3579,7 @@ export default function FlowsPage() {
                                                   e.preventDefault()
                                                   const val = (e.target as HTMLInputElement).value.trim()
                                                   if (val) {
-                                                    updateBranch(idx, "keywords", [...branch.keywords, val])
+                                                    updateBranch(idx, "keywords", [...(branch.keywords || []), val])
                                                     ;(e.target as HTMLInputElement).value = ""
                                                   }
                                                 }
@@ -3513,6 +3589,45 @@ export default function FlowsPage() {
                                           <span className="text-[9px] text-muted-foreground/50">Pressione Enter para adicionar</span>
                                         </div>
                                       )}
+
+                                      {/* Sub-fluxo */}
+                                      <div className="flex flex-col gap-1.5 mt-0.5">
+                                        <span className="text-[10px] text-muted-foreground/70 font-medium uppercase tracking-wide">Sub-fluxo</span>
+                                        {(branch.sub_nodes || []).length > 0 && (
+                                          <div className="flex flex-col gap-1">
+                                            {branch.sub_nodes.map((sn, snIdx) => (
+                                              <div key={snIdx} className="flex items-center gap-2 rounded-lg border border-border/30 bg-background/30 px-2.5 py-1.5">
+                                                <div className="flex h-5 w-5 items-center justify-center rounded bg-muted/50 shrink-0">
+                                                  {sn.type === "message" && <MessageCircle className="h-3 w-3 text-blue-400" />}
+                                                  {sn.type === "payment" && <CreditCard className="h-3 w-3 text-green-400" />}
+                                                  {sn.type === "condition" && <GitBranch className="h-3 w-3 text-orange-400" />}
+                                                </div>
+                                                <span className="text-[11px] text-foreground flex-1 truncate">{sn.label || sn.type}</span>
+                                                <button
+                                                  type="button"
+                                                  onClick={() => removeSubNode(idx, snIdx)}
+                                                  className="text-muted-foreground/40 hover:text-destructive transition-colors"
+                                                >
+                                                  <X className="h-3 w-3" />
+                                                </button>
+                                              </div>
+                                            ))}
+                                          </div>
+                                        )}
+                                        <div className="flex gap-1">
+                                          {subNodeOptions.map((opt) => (
+                                            <button
+                                              key={opt.type}
+                                              type="button"
+                                              onClick={() => addSubNode(idx, opt.type, opt.label)}
+                                              className="flex-1 flex items-center justify-center gap-1 rounded-lg border border-dashed border-border/40 py-1.5 text-[10px] text-muted-foreground hover:bg-secondary/30 hover:text-foreground transition-colors"
+                                            >
+                                              <Plus className="h-2.5 w-2.5" />
+                                              {opt.label}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
                                     </div>
                                   )
                                 })}
@@ -3528,9 +3643,9 @@ export default function FlowsPage() {
                                   </button>
                                 )}
 
-                                {isButtonMode && (
-                                  <p className="text-[10px] text-muted-foreground/60">Max. 3 botoes por condicao</p>
-                                )}
+                                <p className="text-[10px] text-muted-foreground/60">
+                                  {isButtonMode ? "Max. 3 botoes por condicao" : "Max. 5 respostas por condicao"}
+                                </p>
                               </>
                             )
                           })()}
