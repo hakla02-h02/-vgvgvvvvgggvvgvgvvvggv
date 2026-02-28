@@ -297,6 +297,7 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     configFields: [
       { key: "seconds", label: "Tempo em segundos", placeholder: "300", inputType: "number" },
     ],
+    subVariant: "wait_time",
   },
   {
     type: "condition",
@@ -384,7 +385,7 @@ const actionGroups: ActionGroup[] = [
     bgColor: "bg-purple-500/10",
     borderAccent: "border-purple-500/30",
     types: ["delay", "condition"],
-    subVariants: ["response_condition"],
+    subVariants: ["wait_time", "response_condition"],
   },
   {
     id: "monetizacao",
@@ -426,6 +427,9 @@ const subVariantIcons: Record<string, React.ElementType> = {
   text: MessageSquare,
   media: Image,
   buttons: MousePointerClick,
+
+  wait_time: Timer,
+  response_condition: Split,
 
   charge: CreditCard,
 
