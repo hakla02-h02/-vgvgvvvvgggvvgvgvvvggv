@@ -186,6 +186,8 @@ async function processWebhook({
   isStart: boolean
   fromData: Record<string, string>
 }) {
+  console.log("[v0] processWebhook started", { chatId, messageText, isStart, telegramUserId })
+  
   // 1. Database-based deduplication using update_id
   // We store processed update_ids in user_flow_state metadata or check via a simple approach:
   // For /start commands, we use the flow state lock. For other messages, we check state status.
@@ -196,10 +198,18 @@ async function processWebhook({
     .select("id, token, status")
     .eq("token", botToken)
 
-  if (botError) return
+  console.log("[v0] Bot query result", { bots, botError })
+
+  if (botError) {
+    console.log("[v0] Bot error, returning early")
+    return
+  }
 
   const bot = bots?.[0]
-  if (!bot || bot.status !== "active") return
+  if (!bot || bot.status !== "active") {
+    console.log("[v0] Bot not found or not active", { bot })
+    return
+  }
 
   // 3. Salvar/atualizar o usuario
   const { data: existingUsers } = await supabase
@@ -237,17 +247,23 @@ async function processWebhook({
   }
 
   // 4. Buscar fluxo principal (is_primary=true) OU o mais antigo
-  const { data: allFlows } = await supabase
+  const { data: allFlows, error: flowsError } = await supabase
     .from("flows")
-    .select("id, name, is_primary, category")
+    .select("id, name, is_primary, category, status")
     .eq("bot_id", bot.id)
     .eq("status", "ativo")
     .order("created_at", { ascending: true })
 
-  if (!allFlows || allFlows.length === 0) return
+  console.log("[v0] Flows query result", { allFlows, flowsError, botId: bot.id })
+
+  if (!allFlows || allFlows.length === 0) {
+    console.log("[v0] No active flows found, returning early")
+    return
+  }
 
   // Encontrar fluxo principal
   const primaryFlow = allFlows.find((f) => f.is_primary) || allFlows[0]
+  console.log("[v0] Primary flow selected", { primaryFlow })
 
   // 5. Buscar estado ATUAL do usuario (pode estar em qualquer fluxo)
   const { data: allStates } = await supabase
@@ -262,17 +278,24 @@ async function processWebhook({
   const currentFlowId = activeState?.flow_id || primaryFlow.id
 
   // 6. Buscar nodes do fluxo atual
-  const { data: nodes } = await supabase
+  const { data: nodes, error: nodesError } = await supabase
     .from("flow_nodes")
     .select("id, type, label, config, position")
     .eq("flow_id", currentFlowId)
     .order("position", { ascending: true })
 
-  if (!nodes || nodes.length === 0) return
+  console.log("[v0] Nodes query result", { nodes, nodesError, currentFlowId, nodeCount: nodes?.length })
+
+  if (!nodes || nodes.length === 0) {
+    console.log("[v0] No nodes found for flow, returning early")
+    return
+  }
 
   // 7. Se /start => resetar TODOS os estados e executar fluxo principal do zero
   if (isStart) {
+    console.log("[v0] Processing /start command", { activeState, isLocked: isFlowLocked(activeState) })
     if (isFlowLocked(activeState)) {
+      console.log("[v0] Flow is locked, returning early")
       return
     }
 
@@ -300,7 +323,12 @@ async function processWebhook({
       primaryNodes = pNodes || []
     }
 
-    if (primaryNodes.length === 0) return
+    if (primaryNodes.length === 0) {
+      console.log("[v0] Primary nodes empty, returning early")
+      return
+    }
+
+    console.log("[v0] About to execute nodes", { primaryNodesCount: primaryNodes.length, primaryNodes: primaryNodes.map(n => ({ id: n.id, type: n.type, position: n.position })) })
 
     // Criar/atualizar estado no fluxo principal
     const existingPrimaryState = allStates?.find((s) => s.flow_id === primaryFlow.id)
@@ -365,10 +393,13 @@ async function executeNodes(
   flowId: string,
   telegramUserId: number
 ) {
+  console.log("[v0] executeNodes called", { startPosition, nodesCount: nodes.length, flowId })
   const supabase = getSupabase()
   const remainingNodes = nodes.filter((n) => n.position >= startPosition)
+  console.log("[v0] Remaining nodes to execute", { count: remainingNodes.length, nodes: remainingNodes.map(n => ({ type: n.type, position: n.position })) })
 
   for (const node of remainingNodes) {
+    console.log("[v0] Executing node", { type: node.type, position: node.position, label: node.label })
     // Update current position and keep refreshing the lock timestamp
     await supabase
       .from("user_flow_state")
