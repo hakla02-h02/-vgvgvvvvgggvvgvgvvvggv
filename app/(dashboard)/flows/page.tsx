@@ -303,6 +303,7 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     label: "Condicao",
     description: "Ramificar fluxo com base na resposta do usuario",
     configFields: [],
+    subVariant: "response_condition",
   },
   {
     type: "payment",
