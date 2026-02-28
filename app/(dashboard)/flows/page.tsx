@@ -134,7 +134,6 @@ const categoryConfigs: CategoryConfigDef[] = [
     title: "Configuracoes do Fluxo Inicial",
     description: "O primeiro contato do usuario com o bot. Configure o comportamento padrao do fluxo.",
     fields: [
-      { key: "auto_start", label: "Iniciar automaticamente", type: "toggle", icon: Zap, description: "Dispara ao primeiro contato" },
       { key: "default_delay_sec", label: "Delay padrao entre mensagens (seg)", type: "number", placeholder: "2", icon: Clock, description: "Tempo de espera padrao entre cada mensagem enviada" },
       { key: "fallback_message", label: "Mensagem de fallback", type: "textarea", placeholder: "Desculpe, nao entendi. Tente novamente.", icon: AlertCircle, description: "Quando o bot nao entende o usuario" },
     ],
