@@ -314,15 +314,7 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     ],
     subVariant: "charge",
   },
-  {
-    type: "payment",
-    label: "Aguardar Pagamento",
-    description: "Pausar fluxo ate pagamento ser confirmado",
-    configFields: [
-      { key: "seconds", label: "Timeout (segundos)", placeholder: "1800", inputType: "number" },
-    ],
-    subVariant: "wait_payment",
-  },
+
   {
     type: "action",
     label: "Adicionar ao Grupo",
@@ -402,7 +394,7 @@ const actionGroups: ActionGroup[] = [
     bgColor: "bg-success/10",
     borderAccent: "border-success/30",
     types: ["payment"],
-    subVariants: ["charge", "wait_payment"],
+    subVariants: ["charge"],
   },
   {
     id: "navegacao",
@@ -435,7 +427,7 @@ const subVariantIcons: Record<string, React.ElementType> = {
   buttons: MousePointerClick,
 
   charge: CreditCard,
-  wait_payment: Clock,
+
   add_group: UsersRound,
   goto_flow: ExternalLink,
   restart: RefreshCw,
@@ -496,8 +488,7 @@ function SortableNodeCard({
       return "Condicao de resposta"
     }
     if (node.type === "payment") {
-      const sv = node.config?.subVariant as string
-      return sv === "charge" ? "Cobranca" : sv === "wait_payment" ? "Aguardar pagamento" : "Pagamento"
+      return "Cobranca"
     }
     if (node.type === "action") {
       const sv = node.config?.subVariant as string
@@ -1157,12 +1148,7 @@ export default function FlowsPage() {
     } else if (selectedTemplate.type === "payment") {
       if (selectedTemplate.subVariant === "charge" && nodeConfigValues.amount) {
         label = nodeConfigValues.description ? `R$${nodeConfigValues.amount} - ${nodeConfigValues.description}` : `Cobrar R$${nodeConfigValues.amount}`
-      } else if (selectedTemplate.subVariant === "wait_payment" && nodeConfigValues.seconds) {
-        const s = parseInt(nodeConfigValues.seconds)
-        label = s >= 60 ? `Aguardar ${Math.floor(s / 60)}min` : `Aguardar ${s}s`
-      } else if (nodeConfigValues.description) {
-        label = nodeConfigValues.description
-      }
+    }
     } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
       const actionVal = nodeConfigValues.action_name
       if (selectedTemplate.subVariant === "add_group") {
@@ -1290,12 +1276,7 @@ export default function FlowsPage() {
       finalConfig = { ...editNodeConfig, subVariant: sv }
       if (sv === "charge" && editNodeConfig.amount) {
         finalLabel = editNodeConfig.description ? `R$${editNodeConfig.amount} - ${editNodeConfig.description}` : `Cobrar R$${editNodeConfig.amount}`
-      } else if (sv === "wait_payment" && editNodeConfig.seconds) {
-        const s = parseInt(editNodeConfig.seconds)
-        finalLabel = s >= 60 ? `Aguardar ${Math.floor(s / 60)}min` : `Aguardar ${s}s`
-      } else {
-        finalLabel = editNodeConfig.description || editNodeLabel
-      }
+    }
     } else if (editingNode.type === "action") {
       const sv = editingNode.config?.subVariant || ""
       if (sv === "restart") {
@@ -2785,24 +2766,6 @@ export default function FlowsPage() {
                 </div>
               ) : selectedTemplate.type === "payment" ? (
                 <div className="flex flex-col gap-4">
-                  {selectedTemplate.subVariant === "wait_payment" ? (
-                    <>
-                      <Label className="text-foreground text-sm font-semibold">Timeout (segundos)</Label>
-                      <p className="text-sm text-muted-foreground -mt-2">
-                        Tempo maximo para aguardar a confirmacao do pagamento.
-                      </p>
-                      <Input
-                        type="number"
-                        value={nodeConfigValues.seconds || ""}
-                        onChange={(e) =>
-                          setNodeConfigValues((prev) => ({ ...prev, seconds: e.target.value }))
-                        }
-                        placeholder="1800"
-                        className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
-                      />
-                    </>
-                  ) : (
-                    <>
                       {/* Selecionar plano do bot */}
                       <div className="flex flex-col gap-2">
                         <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Plano do bot</Label>
@@ -3048,8 +3011,6 @@ export default function FlowsPage() {
                           )}
                         </div>
                       </div>
-                    </>
-                  )}
                 </div>
               ) : selectedTemplate.configFields.length === 0 ? (
                 <div className="flex flex-col items-center gap-3 py-6">
@@ -3359,24 +3320,6 @@ export default function FlowsPage() {
                 </div>
               ) : editingNode.type === "payment" ? (
                 <div className="flex flex-col gap-4">
-                  {(editingNode.config?.subVariant as string) === "wait_payment" ? (
-                    <>
-                      <Label className="text-foreground">Timeout (segundos)</Label>
-                      <p className="text-xs text-muted-foreground -mt-1">
-                        Tempo maximo para aguardar a confirmacao do pagamento.
-                      </p>
-                      <Input
-                        type="number"
-                        value={editNodeConfig.seconds || ""}
-                        onChange={(e) =>
-                          setEditNodeConfig((prev) => ({ ...prev, seconds: e.target.value }))
-                        }
-                        placeholder="1800"
-                        className="bg-secondary border-border rounded-xl text-foreground"
-                      />
-                    </>
-                  ) : (
-                    <>
                       {/* Selecionar plano do bot */}
                       <div className="flex flex-col gap-2">
                         <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Plano do bot</Label>
@@ -3622,8 +3565,6 @@ export default function FlowsPage() {
                           )}
                         </div>
                       </div>
-                    </>
-                  )}
                 </div>
               ) : editingNode.type === "action" ? (
                 <div className="flex flex-col gap-3">
