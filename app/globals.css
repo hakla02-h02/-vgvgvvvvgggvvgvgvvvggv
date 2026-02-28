@@ -58,3 +58,12 @@
     text-wrap: balance;
   }
 }
+
+/* Hide scrollbar but keep scroll functionality */
+* {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+*::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
