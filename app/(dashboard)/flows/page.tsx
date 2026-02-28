@@ -315,15 +315,7 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     ],
     subVariant: "check_payment",
   },
-  {
-    type: "condition",
-    label: "Verificar Tag",
-    description: "Checar se usuario possui uma tag",
-    configFields: [
-      { key: "condition", label: "Tag", placeholder: "Ex: lead-quente", inputType: "text" },
-    ],
-    subVariant: "check_tag",
-  },
+
   {
     type: "payment",
     label: "Gerar Cobranca",
@@ -345,39 +337,12 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
   },
   {
     type: "action",
-    label: "Adicionar Tag",
-    description: "Marcar usuario com uma tag de segmentacao",
-    configFields: [
-      { key: "action_name", label: "Nome da tag", placeholder: "Ex: lead-quente", inputType: "text" },
-    ],
-    subVariant: "add_tag",
-  },
-  {
-    type: "action",
-    label: "Remover Tag",
-    description: "Remover tag do usuario",
-    configFields: [
-      { key: "action_name", label: "Nome da tag", placeholder: "Ex: inativo", inputType: "text" },
-    ],
-    subVariant: "remove_tag",
-  },
-  {
-    type: "action",
     label: "Adicionar ao Grupo",
     description: "Enviar usuario para um grupo ou canal",
     configFields: [
       { key: "action_name", label: "Link do grupo", placeholder: "https://t.me/grupo", inputType: "text" },
     ],
     subVariant: "add_group",
-  },
-  {
-    type: "action",
-    label: "Webhook Externo",
-    description: "Executar acao em sistema externo",
-    configFields: [
-      { key: "action_name", label: "URL do webhook", placeholder: "https://api.exemplo.com/hook", inputType: "text" },
-    ],
-    subVariant: "webhook",
   },
   {
     type: "redirect",
@@ -465,13 +430,13 @@ const actionGroups: ActionGroup[] = [
   {
     id: "automacao",
     label: "Automacao",
-    description: "Tags, grupos e webhooks",
+    description: "Adicionar usuarios a grupos",
     icon: Zap,
     iconColor: "text-cyan-400",
     bgColor: "bg-cyan-500/10",
     borderAccent: "border-cyan-500/30",
     types: ["action"],
-    subVariants: ["add_tag", "remove_tag", "add_group", "webhook"],
+    subVariants: ["add_group"],
   },
 ]
 
@@ -481,13 +446,9 @@ const subVariantIcons: Record<string, React.ElementType> = {
   media: Image,
   buttons: MousePointerClick,
   check_payment: CreditCard,
-  check_tag: Hash,
   charge: CreditCard,
   wait_payment: Clock,
-  add_tag: Tag,
-  remove_tag: Unlink,
   add_group: UsersRound,
-  webhook: Globe,
   goto_flow: ExternalLink,
   restart: RefreshCw,
   end: CircleStop,
@@ -545,11 +506,11 @@ function SortableNodeCard({
     }
     if (node.type === "condition") {
       const sv = node.config?.subVariant as string
-      return sv === "check_payment" ? "Verificar pagamento" : sv === "check_tag" ? "Verificar tag" : "Condicao"
+      return sv === "check_payment" ? "Verificar pagamento" : "Condicao"
     }
     if (node.type === "action") {
       const sv = node.config?.subVariant as string
-      return sv === "add_tag" ? "Adicionar tag" : sv === "remove_tag" ? "Remover tag" : sv === "add_group" ? "Adicionar ao grupo" : sv === "webhook" ? "Webhook" : "Automacao"
+      return sv === "add_group" ? "Adicionar ao grupo" : "Automacao"
     }
     if (node.type === "payment") {
       const sv = node.config?.subVariant as string
@@ -1184,11 +1145,7 @@ export default function FlowsPage() {
       }
     } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
       const actionVal = nodeConfigValues.action_name
-      if (selectedTemplate.subVariant === "add_tag") {
-        label = `Tag: ${actionVal}`
-      } else if (selectedTemplate.subVariant === "remove_tag") {
-        label = `Remover: ${actionVal}`
-      } else if (selectedTemplate.subVariant === "add_group") {
+      if (selectedTemplate.subVariant === "add_group") {
         label = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
       } else if (selectedTemplate.subVariant === "webhook") {
         label = `Webhook: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
@@ -1320,11 +1277,7 @@ export default function FlowsPage() {
       const sv = editingNode.config?.subVariant || ""
       finalConfig = { ...editNodeConfig, subVariant: sv }
       const actionVal = editNodeConfig.action_name || ""
-      if (sv === "add_tag" && actionVal) {
-        finalLabel = `Tag: ${actionVal}`
-      } else if (sv === "remove_tag" && actionVal) {
-        finalLabel = `Remover: ${actionVal}`
-      } else if (sv === "add_group" && actionVal) {
+      if (sv === "add_group" && actionVal) {
         finalLabel = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
       } else if (sv === "webhook" && actionVal) {
         finalLabel = `Webhook: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
@@ -2655,12 +2608,10 @@ export default function FlowsPage() {
               ) : selectedTemplate.type === "condition" ? (
                 <div className="flex flex-col gap-3">
                   <Label className="text-foreground text-sm font-semibold">
-                    {selectedTemplate.subVariant === "check_tag" ? "Tag" : selectedTemplate.subVariant === "check_payment" ? "Condicao de pagamento" : "Condicao"}
+                    {selectedTemplate.subVariant === "check_payment" ? "Condicao de pagamento" : "Condicao"}
                   </Label>
                   <p className="text-sm text-muted-foreground -mt-1">
-                    {selectedTemplate.subVariant === "check_tag"
-                      ? "Nome da tag para verificar no usuario."
-                      : selectedTemplate.subVariant === "check_payment"
+              {selectedTemplate.subVariant === "check_payment"
                         ? "Regra para verificar se o pagamento foi feito."
                         : "Regra que define qual caminho o fluxo seguira."}
                   </p>
@@ -2671,9 +2622,7 @@ export default function FlowsPage() {
                       setNodeConfigValues((prev) => ({ ...prev, condition: e.target.value }))
                     }
                     placeholder={
-                      selectedTemplate.subVariant === "check_tag"
-                        ? "Ex: lead-quente"
-                        : selectedTemplate.subVariant === "check_payment"
+                selectedTemplate.subVariant === "check_payment"
                           ? "Pagamento confirmado?"
                           : "Ex: Usuario respondeu?"
                     }
@@ -2683,14 +2632,10 @@ export default function FlowsPage() {
               ) : selectedTemplate.type === "action" ? (
                 <div className="flex flex-col gap-3">
                   <Label className="text-foreground text-sm font-semibold">
-                    {selectedTemplate.subVariant === "add_tag" ? "Nome da tag" : selectedTemplate.subVariant === "remove_tag" ? "Tag a remover" : selectedTemplate.subVariant === "add_group" ? "Link do grupo" : selectedTemplate.subVariant === "webhook" ? "URL do webhook" : "Valor"}
+                    {selectedTemplate.subVariant === "add_group" ? "Link do grupo" : "Valor"}
                   </Label>
                   <p className="text-sm text-muted-foreground -mt-1">
-                    {selectedTemplate.subVariant === "add_tag"
-                      ? "Adicione uma tag para segmentar e organizar seus usuarios."
-                      : selectedTemplate.subVariant === "remove_tag"
-                        ? "Remova uma tag do usuario neste ponto do fluxo."
-                        : selectedTemplate.subVariant === "add_group"
+              {selectedTemplate.subVariant === "add_group"
                           ? "Envie o usuario para um grupo ou canal do Telegram."
                           : selectedTemplate.subVariant === "webhook"
                             ? "Envie dados para um sistema externo via HTTP POST."
@@ -2703,7 +2648,7 @@ export default function FlowsPage() {
                       setNodeConfigValues((prev) => ({ ...prev, action_name: e.target.value }))
                     }
                     placeholder={
-                      selectedTemplate.subVariant === "add_tag" ? "Ex: lead-quente" : selectedTemplate.subVariant === "remove_tag" ? "Ex: inativo" : selectedTemplate.subVariant === "add_group" ? "https://t.me/meugrupo" : selectedTemplate.subVariant === "webhook" ? "https://api.exemplo.com/hook" : "Valor"
+                      selectedTemplate.subVariant === "add_group" ? "https://t.me/meugrupo" : "Valor"
                     }
                     className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
                   />
@@ -2929,12 +2874,10 @@ export default function FlowsPage() {
               ) : editingNode.type === "condition" ? (
                 <div className="flex flex-col gap-3">
                   <Label className="text-foreground">
-                    {(editingNode.config?.subVariant as string) === "check_tag" ? "Tag" : (editingNode.config?.subVariant as string) === "check_payment" ? "Condicao de pagamento" : "Condicao"}
+                    {(editingNode.config?.subVariant as string) === "check_payment" ? "Condicao de pagamento" : "Condicao"}
                   </Label>
                   <p className="text-xs text-muted-foreground -mt-1">
-                    {(editingNode.config?.subVariant as string) === "check_tag"
-                      ? "Nome da tag para verificar no usuario."
-                      : (editingNode.config?.subVariant as string) === "check_payment"
+              {(editingNode.config?.subVariant as string) === "check_payment"
                         ? "Regra para verificar se o pagamento foi feito."
                         : "Regra que define qual caminho o fluxo seguira."}
                   </p>
@@ -2945,9 +2888,7 @@ export default function FlowsPage() {
                       setEditNodeConfig((prev) => ({ ...prev, condition: e.target.value }))
                     }
                     placeholder={
-                      (editingNode.config?.subVariant as string) === "check_tag"
-                        ? "Ex: lead-quente"
-                        : (editingNode.config?.subVariant as string) === "check_payment"
+              (editingNode.config?.subVariant as string) === "check_payment"
                           ? "Pagamento confirmado?"
                           : "Ex: Usuario respondeu?"
                     }
@@ -3004,7 +2945,7 @@ export default function FlowsPage() {
               ) : editingNode.type === "action" ? (
                 <div className="flex flex-col gap-3">
                   <Label className="text-foreground">
-                    {(editingNode.config?.subVariant as string) === "add_tag" ? "Nome da tag" : (editingNode.config?.subVariant as string) === "remove_tag" ? "Nome da tag" : (editingNode.config?.subVariant as string) === "add_group" ? "Link do grupo" : (editingNode.config?.subVariant as string) === "webhook" ? "URL do webhook" : "Valor"}
+                    {(editingNode.config?.subVariant as string) === "add_group" ? "Link do grupo" : "Valor"}
                   </Label>
                   <Input
                     type="text"
@@ -3013,7 +2954,7 @@ export default function FlowsPage() {
                       setEditNodeConfig((prev) => ({ ...prev, action_name: e.target.value }))
                     }
                     placeholder={
-                      (editingNode.config?.subVariant as string) === "add_tag" ? "Ex: lead-quente" : (editingNode.config?.subVariant as string) === "remove_tag" ? "Ex: inativo" : (editingNode.config?.subVariant as string) === "add_group" ? "https://t.me/grupo" : (editingNode.config?.subVariant as string) === "webhook" ? "https://api.exemplo.com/hook" : "Valor"
+                      (editingNode.config?.subVariant as string) === "add_group" ? "https://t.me/grupo" : "Valor"
                     }
                     className="bg-secondary border-border rounded-xl text-foreground"
                   />
