@@ -305,16 +305,6 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     configFields: [],
   },
   {
-    type: "condition",
-    label: "Verificar Pagamento",
-    description: "Checar se usuario ja pagou",
-    configFields: [
-      { key: "condition", label: "Condicao", placeholder: "Pagamento confirmado?", inputType: "text" },
-    ],
-    subVariant: "check_payment",
-  },
-
-  {
     type: "payment",
     label: "Gerar Cobranca",
     description: "Criar cobranca PIX ou link de pagamento",
@@ -401,7 +391,7 @@ const actionGroups: ActionGroup[] = [
     bgColor: "bg-purple-500/10",
     borderAccent: "border-purple-500/30",
     types: ["delay", "condition"],
-    subVariants: undefined, // show all
+    subVariants: ["response_condition"],
   },
   {
     id: "monetizacao",
@@ -443,7 +433,7 @@ const subVariantIcons: Record<string, React.ElementType> = {
   text: MessageSquare,
   media: Image,
   buttons: MousePointerClick,
-  check_payment: CreditCard,
+
   charge: CreditCard,
   wait_payment: Clock,
   add_group: UsersRound,
@@ -503,8 +493,7 @@ function SortableNodeCard({
       return `${s}s`
     }
     if (node.type === "condition") {
-      const sv = node.config?.subVariant as string
-      return sv === "check_payment" ? "Verificar pagamento" : "Condicao de resposta"
+      return "Condicao de resposta"
     }
     if (node.type === "payment") {
       const sv = node.config?.subVariant as string
@@ -1158,17 +1147,12 @@ export default function FlowsPage() {
         label = `Esperar ${secs} segundo${secs > 1 ? "s" : ""}`
       }
     } else if (selectedTemplate.type === "condition") {
-      if (selectedTemplate.subVariant === "check_payment" && nodeConfigValues.condition) {
-        label = nodeConfigValues.condition
-      } else if (!selectedTemplate.subVariant) {
-        const msg = nodeConfigValues.condition_message || "Condicao"
-        label = msg.length > 35 ? msg.slice(0, 35) + "..." : msg
-        config = {
-          condition_message: nodeConfigValues.condition_message || "",
-          response_type: nodeConfigValues.response_type || "buttons",
-          condition_branches: nodeConfigValues.condition_branches || "[]",
-          subVariant: "",
-        }
+      const msg = nodeConfigValues.condition_message || "Condicao"
+      label = msg.length > 35 ? msg.slice(0, 35) + "..." : msg
+      config = {
+        condition_message: nodeConfigValues.condition_message || "",
+        condition_branches: nodeConfigValues.condition_branches || "[]",
+        subVariant: "response_condition",
       }
     } else if (selectedTemplate.type === "payment") {
       if (selectedTemplate.subVariant === "charge" && nodeConfigValues.amount) {
@@ -1294,19 +1278,12 @@ export default function FlowsPage() {
         finalLabel = `Esperar ${secs} segundo${secs > 1 ? "s" : ""}`
       }
     } else if (editingNode.type === "condition") {
-      const sv = editingNode.config?.subVariant || ""
-      if (sv === "check_payment") {
-        finalConfig = { condition: editNodeConfig.condition || "", subVariant: sv }
-        finalLabel = editNodeConfig.condition || "Condicao"
-      } else {
-        const msg = editNodeConfig.condition_message || "Condicao"
-        finalLabel = msg.length > 35 ? msg.slice(0, 35) + "..." : msg
-        finalConfig = {
-          condition_message: editNodeConfig.condition_message || "",
-          response_type: editNodeConfig.response_type || "buttons",
-          condition_branches: editNodeConfig.condition_branches || "[]",
-          subVariant: "",
-        }
+      const msg = editNodeConfig.condition_message || "Condicao"
+      finalLabel = msg.length > 35 ? msg.slice(0, 35) + "..." : msg
+      finalConfig = {
+        condition_message: editNodeConfig.condition_message || "",
+        condition_branches: editNodeConfig.condition_branches || "[]",
+        subVariant: "response_condition",
       }
     } else if (editingNode.type === "payment") {
       const sv = editingNode.config?.subVariant || ""
@@ -2651,22 +2628,6 @@ export default function FlowsPage() {
                 </div>
               ) : selectedTemplate.type === "condition" ? (
                 <div className="flex flex-col gap-4">
-                  {selectedTemplate.subVariant === "check_payment" ? (
-                    <>
-                      <Label className="text-foreground text-sm font-semibold">Condicao de pagamento</Label>
-                      <p className="text-sm text-muted-foreground -mt-2">Regra para verificar se o pagamento foi feito.</p>
-                      <Input
-                        type="text"
-                        value={nodeConfigValues.condition || ""}
-                        onChange={(e) =>
-                          setNodeConfigValues((prev) => ({ ...prev, condition: e.target.value }))
-                        }
-                        placeholder="Pagamento confirmado?"
-                        className="bg-secondary border-border rounded-xl text-foreground h-11 text-sm"
-                      />
-                    </>
-                  ) : (
-                    <>
                       {/* 1. Mensagem/Pergunta */}
                       <div className="flex flex-col gap-2">
                         <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem / Pergunta</Label>
@@ -2799,8 +2760,6 @@ export default function FlowsPage() {
                           })()}
                         </div>
                       </div>
-                    </>
-                  )}
                 </div>
               ) : selectedTemplate.type === "action" ? (
                 <div className="flex flex-col gap-3">
@@ -3148,9 +3107,8 @@ export default function FlowsPage() {
                     (selectedTemplate.type === "message" && !msgText.trim()) ||
                     (selectedTemplate.subVariant === "goto_flow" && !nodeConfigValues.target_flow_id) ||
                     (selectedTemplate.type === "delay" && (!nodeConfigValues.seconds || parseInt(nodeConfigValues.seconds) <= 0)) ||
-                    (selectedTemplate.type === "condition" && selectedTemplate.subVariant === "check_payment" && !nodeConfigValues.condition?.trim()) ||
-                    (selectedTemplate.type === "condition" && !selectedTemplate.subVariant && !nodeConfigValues.condition_message?.trim()) ||
-                    (selectedTemplate.type === "action" && !nodeConfigValues.action_name?.trim()) ||
+                    (selectedTemplate.type === "condition" && !nodeConfigValues.condition_message?.trim()) ||
+                    (selectedTemplate.type === "action" && selectedTemplate.subVariant === "add_group" && !nodeConfigValues.action_name?.trim()) ||
                     (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && !nodeConfigValues.amount?.trim())
                   }
                   onClick={handleAddNode}
@@ -3266,22 +3224,6 @@ export default function FlowsPage() {
                 </div>
               ) : editingNode.type === "condition" ? (
                 <div className="flex flex-col gap-4">
-                  {(editingNode.config?.subVariant as string) === "check_payment" ? (
-                    <>
-                      <Label className="text-foreground">Condicao de pagamento</Label>
-                      <p className="text-xs text-muted-foreground -mt-2">Regra para verificar se o pagamento foi feito.</p>
-                      <Input
-                        type="text"
-                        value={editNodeConfig.condition || ""}
-                        onChange={(e) =>
-                          setEditNodeConfig((prev) => ({ ...prev, condition: e.target.value }))
-                        }
-                        placeholder="Pagamento confirmado?"
-                        className="bg-secondary border-border rounded-xl text-foreground"
-                      />
-                    </>
-                  ) : (
-                    <>
                       {/* 1. Mensagem */}
                       <div className="flex flex-col gap-2">
                         <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem / Pergunta</Label>
@@ -3414,8 +3356,6 @@ export default function FlowsPage() {
                           })()}
                         </div>
                       </div>
-                    </>
-                  )}
                 </div>
               ) : editingNode.type === "payment" ? (
                 <div className="flex flex-col gap-4">
@@ -3732,8 +3672,7 @@ export default function FlowsPage() {
                   disabled={isSavingNode || (
                     editingNode.type === "message" ? !msgText.trim() :
                     editingNode.type === "delay" ? !editNodeConfig.seconds || parseInt(editNodeConfig.seconds) <= 0 :
-                    editingNode.type === "condition" && (editingNode.config?.subVariant as string) === "check_payment" ? !editNodeConfig.condition?.trim() :
-                    editingNode.type === "condition" && (editingNode.config?.subVariant as string) !== "check_payment" ? !editNodeConfig.condition_message?.trim() :
+                    editingNode.type === "condition" ? !editNodeConfig.condition_message?.trim() :
                     editingNode.type === "action" && (editingNode.config?.subVariant === "restart" || editingNode.config?.subVariant === "end") ? false :
                     editingNode.type === "action" && editingNode.config?.subVariant === "goto_flow" ? !editNodeConfig.target_flow_id :
                     editingNode.type === "action" && editingNode.config?.subVariant === "add_group" ? !editNodeConfig.action_name?.trim() :
