@@ -21,24 +21,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(data)
     }
 
-    // Register webhook
-    // Use VERCEL_PROJECT_PRODUCTION_URL (set automatically by Vercel) or NEXT_PUBLIC_APP_URL
-    // This ensures the webhook always points to the production URL, not preview URLs
-    const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
-      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-      : process.env.NEXT_PUBLIC_APP_URL || null
-    
-    // Fallback to constructing from request headers if no env var is set
-    let baseUrl = productionUrl
+    // Register webhook - MUST use production URL, never preview URLs
+    // Priority: NEXT_PUBLIC_APP_URL > VERCEL_PROJECT_PRODUCTION_URL > error
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "")
+      || (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : null)
+
     if (!baseUrl) {
-      const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, "") || ""
-      if (origin && !origin.includes("vusercontent.net") && !origin.includes("localhost")) {
-        baseUrl = origin
-      } else {
-        const host = req.headers.get("host") || "localhost:3000"
-        const proto = host.includes("localhost") ? "http" : "https"
-        baseUrl = `${proto}://${host}`
-      }
+      return NextResponse.json(
+        { error: "NEXT_PUBLIC_APP_URL nao configurada. Configure nas variaveis de ambiente com a URL de producao (ex: https://meu-app.vercel.app)." },
+        { status: 400 }
+      )
     }
 
     const webhookUrl = `${baseUrl}/api/telegram/webhook?token=${encodeURIComponent(botToken)}`

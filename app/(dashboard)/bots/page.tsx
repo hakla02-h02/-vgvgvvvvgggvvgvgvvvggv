@@ -37,6 +37,12 @@ import {
   Save,
   X,
   Loader2,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  AlertTriangle,
+  CheckCircle2,
+  ExternalLink,
 } from "lucide-react"
 import {
   DropdownMenu,
@@ -82,6 +88,11 @@ export default function BotsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [showToken, setShowToken] = useState(false)
 
+  // Webhook status
+  const [webhookInfo, setWebhookInfo] = useState<Record<string, unknown> | null>(null)
+  const [webhookLoading, setWebhookLoading] = useState(false)
+  const [webhookRegistering, setWebhookRegistering] = useState(false)
+
   // Plans
   const [plans, setPlans] = useState<BotPlan[]>([])
   const [loadingPlans, setLoadingPlans] = useState(false)
@@ -116,11 +127,44 @@ export default function BotsPage() {
     setLoadingPlans(false)
   }, [])
 
+  const fetchWebhookInfo = useCallback(async (token: string) => {
+    setWebhookLoading(true)
+    setWebhookInfo(null)
+    try {
+      const res = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`)
+      const data = await res.json()
+      setWebhookInfo(data?.result || null)
+    } catch {
+      setWebhookInfo(null)
+    }
+    setWebhookLoading(false)
+  }, [])
+
+  async function handleReregisterWebhook() {
+    if (!configBot) return
+    setWebhookRegistering(true)
+    try {
+      const res = await fetch("/api/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ botToken: configBot.token, action: "register" }),
+      })
+      const data = await res.json()
+      console.log("[v0] Re-register webhook result:", data)
+      // Refresh webhook info after registering
+      await fetchWebhookInfo(configBot.token)
+    } catch {
+      // handled
+    }
+    setWebhookRegistering(false)
+  }
+
   useEffect(() => {
     if (configBot) {
       fetchPlans(configBot.id)
+      fetchWebhookInfo(configBot.token)
     }
-  }, [configBot, fetchPlans])
+  }, [configBot, fetchPlans, fetchWebhookInfo])
 
   function openConfig(bot: Bot) {
     setConfigBot(bot)
@@ -363,6 +407,100 @@ export default function BotsPage() {
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               {isSaving ? "Salvando..." : "Salvar Configuracoes"}
             </Button>
+
+            {/* Webhook Status */}
+            <section className="rounded-2xl border border-border bg-card overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                <div className="flex items-center gap-3">
+                  {webhookInfo?.url ? (
+                    <Wifi className="h-4 w-4 text-success" />
+                  ) : (
+                    <WifiOff className="h-4 w-4 text-destructive" />
+                  )}
+                  <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">Webhook do Telegram</h3>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleReregisterWebhook}
+                  disabled={webhookRegistering}
+                  className="gap-2"
+                >
+                  {webhookRegistering ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+                  {webhookRegistering ? "Registrando..." : "Re-registrar Webhook"}
+                </Button>
+              </div>
+              <div className="p-6 flex flex-col gap-3">
+                {webhookLoading ? (
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Verificando status do webhook...
+                  </div>
+                ) : webhookInfo ? (
+                  <>
+                    <div className="flex items-start gap-3">
+                      {(webhookInfo.url as string) ? (
+                        <CheckCircle2 className="h-5 w-5 text-success mt-0.5 shrink-0" />
+                      ) : (
+                        <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground">
+                          {(webhookInfo.url as string) ? "Webhook registrado" : "Webhook NAO registrado"}
+                        </p>
+                        {(webhookInfo.url as string) && (
+                          <p className="text-xs text-muted-foreground font-mono break-all mt-1">
+                            {webhookInfo.url as string}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    {(webhookInfo.url as string) && (
+                      <>
+                        {((webhookInfo.url as string).includes("vusercontent.net") || (webhookInfo.url as string).includes("localhost")) && (
+                          <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                            <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium text-destructive">URL incorreta!</p>
+                              <p className="text-xs text-destructive/80 mt-1">
+                                O webhook esta apontando para uma URL de preview/local que o Telegram nao consegue acessar. 
+                                Clique em &quot;Re-registrar Webhook&quot; para corrigir.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        {(webhookInfo.last_error_message as string) && (
+                          <div className="flex items-start gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+                            <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+                            <div>
+                              <p className="text-sm font-medium text-destructive">Ultimo erro do Telegram</p>
+                              <p className="text-xs text-destructive/80 mt-1">{webhookInfo.last_error_message as string}</p>
+                              {(webhookInfo.last_error_date as number) && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  Em {new Date((webhookInfo.last_error_date as number) * 1000).toLocaleString("pt-BR")}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                        {(webhookInfo.pending_update_count as number) > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            {webhookInfo.pending_update_count as number} mensagem(ns) pendente(s)
+                          </p>
+                        )}
+                      </>
+                    )}
+                    {!(webhookInfo.url as string) && (
+                      <p className="text-xs text-muted-foreground">
+                        O webhook precisa estar registrado para o bot receber mensagens. Clique em &quot;Re-registrar Webhook&quot;.
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Nao foi possivel verificar o status do webhook.</p>
+                )}
+              </div>
+            </section>
 
             {/* ── PLANS ── */}
             <section className="rounded-2xl border border-border bg-card overflow-hidden">
