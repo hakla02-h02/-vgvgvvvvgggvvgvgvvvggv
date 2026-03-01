@@ -300,11 +300,11 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     subVariant: "wait_time",
   },
   {
-    type: "condition",
-    label: "Condicao",
-    description: "Ramificar fluxo com base na resposta do usuario",
-    configFields: [],
-    subVariant: "response_condition",
+  type: "condition",
+  label: "Condição",
+  description: "Ramificar fluxo com base na resposta do usuario",
+  configFields: [],
+  subVariant: "response_condition",
   },
   {
     type: "payment",
@@ -2462,6 +2462,7 @@ export default function FlowsPage() {
                       if (group.subVariants && !tpl.subVariant) return false
                       return tpl.type !== "trigger"
                     })
+                    console.log("[v0] Group filter:", group.id, "templates:", groupTemplates.map(t => t.label))
                     if (groupTemplates.length === 0) return null
 
                     return (
