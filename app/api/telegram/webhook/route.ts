@@ -122,19 +122,26 @@ function isFlowLocked(state: { status: string; updated_at: string } | null): boo
 }
 
 export async function POST(req: NextRequest) {
+  console.log("[v0] WEBHOOK POST RECEIVED")
+  
   // Parse everything we need BEFORE returning the response
   const supabase = getSupabase()
 
   const { searchParams } = new URL(req.url)
   const botToken = searchParams.get("token")
+  console.log("[v0] Bot token present:", !!botToken)
+  
   if (!botToken) {
     return NextResponse.json({ error: "Missing token" }, { status: 400 })
   }
 
   const update = await req.json()
+  console.log("[v0] Update received:", JSON.stringify(update).slice(0, 500))
+  
   const updateId = update?.update_id
   const message = update?.message
   if (!message) {
+    console.log("[v0] No message in update, returning early")
     return NextResponse.json({ ok: true })
   }
 
@@ -143,27 +150,27 @@ export async function POST(req: NextRequest) {
   const messageText = (message.text || "").trim()
   const isStart = messageText === "/start" || messageText.startsWith("/start ")
   const fromData = message.from || {}
+  
+  console.log("[v0] Processing message:", { chatId, telegramUserId, messageText, isStart })
 
-  // Respond to Telegram IMMEDIATELY with 200 to prevent retries
-  // Then process the flow in background using after()
-  after(async () => {
-    try {
-      await processWebhook({
-        supabase,
-        botToken,
-        updateId,
-        chatId,
-        telegramUserId,
-        messageText,
-        isStart,
-        fromData,
-      })
-    } catch (err) {
-      console.error("webhook background processing error:", err)
-    }
-  })
+  // Process webhook SYNCHRONOUSLY instead of using after() to ensure it runs
+  try {
+    await processWebhook({
+      supabase,
+      botToken,
+      updateId,
+      chatId,
+      telegramUserId,
+      messageText,
+      isStart,
+      fromData,
+    })
+    console.log("[v0] processWebhook completed successfully")
+  } catch (err) {
+    console.error("[v0] webhook processing error:", err)
+  }
 
-  // Return 200 immediately so Telegram does NOT retry
+  // Return 200 so Telegram does NOT retry
   return NextResponse.json({ ok: true })
 }
 
