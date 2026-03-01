@@ -41,15 +41,12 @@ async function sendTelegramMessage(
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`
   const body: Record<string, unknown> = { chat_id: chatId, text, parse_mode: "HTML" }
   if (replyMarkup) body.reply_markup = replyMarkup
-  console.log("[v0] sendTelegramMessage to chatId:", chatId, "text:", text.slice(0, 100))
   const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
-  const result = await res.json()
-  console.log("[v0] sendTelegramMessage response:", JSON.stringify(result).slice(0, 200))
-  return result
+  return res.json()
 }
 
 async function sendTelegramPhoto(
@@ -354,15 +351,11 @@ export async function POST(req: NextRequest) {
   try {
     update = await req.json()
   } catch {
-    console.log("[v0] Webhook received invalid JSON")
-    return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
+    return NextResponse.json({ ok: true })
   }
-
-  console.log("[v0] Webhook received update:", JSON.stringify(update).slice(0, 500))
 
   const message = update?.message as Record<string, unknown> | undefined
   if (!message) {
-    console.log("[v0] No message in update, ignoring")
     return NextResponse.json({ ok: true })
   }
 
@@ -373,13 +366,10 @@ export async function POST(req: NextRequest) {
   const messageText = ((message.text as string) || "").trim()
   const isStart = messageText === "/start" || messageText.startsWith("/start ")
 
-  console.log("[v0] Processing message:", { chatId, telegramUserId, messageText, isStart })
-
   try {
     await processWebhook({ botToken, chatId, telegramUserId, messageText, isStart, fromData: from })
-    console.log("[v0] processWebhook completed successfully")
-  } catch (err) {
-    console.error("[v0] Webhook processing error:", err)
+  } catch {
+    // Always return 200 to Telegram
   }
 
   return NextResponse.json({ ok: true })
@@ -413,20 +403,12 @@ async function processWebhook({
     .eq("token", botToken)
     .limit(1)
 
-  console.log("[v0] Bot query result:", { bots, botError })
-  if (botError || !bots?.length) {
-    console.log("[v0] Bot not found or error, stopping")
-    return
-  }
+  if (botError || !bots?.length) return
   const bot = bots[0]
-  if (bot.status !== "active") {
-    console.log("[v0] Bot not active, status:", bot.status)
-    return
-  }
+  if (bot.status !== "active") return
 
   // 2. Upsert user
   await upsertBotUser(bot.id, telegramUserId, chatId, fromData)
-  console.log("[v0] User upserted")
 
   // 3. Find active flows
   const { data: allFlows } = await supabase
@@ -436,11 +418,7 @@ async function processWebhook({
     .eq("status", "ativo")
     .order("created_at", { ascending: true })
 
-  console.log("[v0] Active flows:", JSON.stringify(allFlows))
-  if (!allFlows || allFlows.length === 0) {
-    console.log("[v0] No active flows found, stopping")
-    return
-  }
+  if (!allFlows || allFlows.length === 0) return
   const primaryFlow = allFlows[0]
 
   // 4. Get user states
@@ -460,15 +438,10 @@ async function processWebhook({
   // /start  –  Reset everything and run the primary flow from scratch
   // ------------------------------------------------------------------
   if (isStart) {
-    console.log("[v0] /start detected, running primary flow:", primaryFlow.id, primaryFlow.name)
     await completeAllStates(bot.id, telegramUserId)
 
     const nodes = await fetchNodes(primaryFlow.id)
-    console.log("[v0] Nodes fetched for primary flow:", nodes.length, "nodes:", nodes.map(n => ({ type: n.type, label: n.label, pos: n.position })))
-    if (nodes.length === 0) {
-      console.log("[v0] No nodes in primary flow, stopping")
-      return
-    }
+    if (nodes.length === 0) return
 
     await setFlowState(bot.id, primaryFlow.id, telegramUserId, chatId, 0, "in_progress")
     await executeNodes(botToken, chatId, nodes, 0, bot.id, primaryFlow.id, telegramUserId)
@@ -551,11 +524,7 @@ async function executeNodes(
   const supabase = getSupabase()
   const remaining = nodes.filter((n) => n.position >= startPosition)
 
-  console.log("[v0] executeNodes starting at position", startPosition, "with", remaining.length, "remaining nodes")
-
   for (const node of remaining) {
-    console.log("[v0] Executing node:", { type: node.type, label: node.label, position: node.position, config: JSON.stringify(node.config).slice(0, 300) })
-
     // Update position & refresh lock
     await supabase
       .from("user_flow_state")
