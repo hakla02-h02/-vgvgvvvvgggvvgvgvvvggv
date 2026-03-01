@@ -124,6 +124,45 @@ export async function GET(req: NextRequest) {
     if (webhookData.result?.last_error_message) {
       problems.push("Ultimo erro do webhook: " + webhookData.result.last_error_message)
     }
+
+    // 5. Testar se o webhook responde corretamente
+    if (webhookData.result?.url) {
+      try {
+        const testPayload = {
+          update_id: 999999999,
+          message: {
+            message_id: 1,
+            from: { id: 123456, is_bot: false, first_name: "Test" },
+            chat: { id: 123456, type: "private" },
+            date: Math.floor(Date.now() / 1000),
+            text: "/start"
+          }
+        }
+        
+        const webhookTestRes = await fetch(webhookData.result.url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(testPayload)
+        })
+        
+        results.webhookTest = {
+          status: webhookTestRes.status,
+          statusText: webhookTestRes.statusText,
+          ok: webhookTestRes.ok,
+          redirected: webhookTestRes.redirected,
+          url: webhookTestRes.url
+        }
+        
+        if (webhookTestRes.status === 302 || webhookTestRes.redirected) {
+          problems.push("Webhook esta retornando redirect (302). Isso impede o Telegram de receber a resposta.")
+        } else if (!webhookTestRes.ok) {
+          problems.push(`Webhook retornou erro ${webhookTestRes.status}: ${webhookTestRes.statusText}`)
+        }
+      } catch (testErr) {
+        results.webhookTestError = testErr instanceof Error ? testErr.message : "Erro desconhecido"
+        problems.push("Erro ao testar webhook: " + (testErr instanceof Error ? testErr.message : "Erro desconhecido"))
+      }
+    }
   } catch (e) {
     results.telegramWebhookError = e instanceof Error ? e.message : "Erro desconhecido"
     problems.push("Erro ao verificar webhook do Telegram")
