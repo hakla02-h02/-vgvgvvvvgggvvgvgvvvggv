@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+// No App Router, body parsing is automatic for formData
 
 export async function POST(req: NextRequest) {
   try {
+    console.log("[v0] Upload media request received")
+    
     const formData = await req.formData()
     const file = formData.get("file") as File | null
     const mediaType = formData.get("mediaType") as string | null
+
+    console.log("[v0] File:", file?.name, file?.type, file?.size, "mediaType:", mediaType)
 
     if (!file) {
       return NextResponse.json({ error: "Nenhum arquivo enviado" }, { status: 400 })
@@ -62,9 +62,10 @@ export async function POST(req: NextRequest) {
 
     const dataUrl = `data:${file.type};base64,${base64}`
 
+    console.log("[v0] Upload successful, dataUrl length:", dataUrl.length)
     return NextResponse.json({ url: dataUrl })
   } catch (err) {
-    console.error("Upload route error:", err)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("[v0] Upload route error:", err)
+    return NextResponse.json({ error: "Erro interno do servidor: " + (err instanceof Error ? err.message : String(err)) }, { status: 500 })
   }
 }

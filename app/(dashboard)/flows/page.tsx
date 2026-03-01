@@ -3742,12 +3742,17 @@ function MessageConfigForm({
     setUploading(true)
     setUploadError("")
     try {
+      console.log("[v0] Starting upload for file:", file.name, file.type, file.size)
+      
       const formData = new FormData()
       formData.append("file", file)
       formData.append("mediaType", msgMediaType)
 
       const res = await fetch("/api/upload-media", { method: "POST", body: formData })
+      console.log("[v0] Upload response status:", res.status)
+      
       const data = await res.json()
+      console.log("[v0] Upload response data:", data)
 
       if (!res.ok) {
         setUploadError(data.error || "Erro ao fazer upload")
@@ -3756,8 +3761,9 @@ function MessageConfigForm({
 
       setMsgMediaUrl(data.url)
       setFileName(file.name)
-    } catch {
-      setUploadError("Erro de conexao ao fazer upload")
+    } catch (err) {
+      console.error("[v0] Upload error:", err)
+      setUploadError("Erro de conexao ao fazer upload: " + (err instanceof Error ? err.message : ""))
     } finally {
       setUploading(false)
     }
