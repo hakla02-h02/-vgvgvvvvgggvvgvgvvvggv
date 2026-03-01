@@ -85,9 +85,54 @@ export async function GET(req: NextRequest) {
     const webhookInfo = await fetch(`https://api.telegram.org/bot${botToken}/getWebhookInfo`)
     const webhookData = await webhookInfo.json()
 
+    // 5. Analyze potential problems
+    const problems: string[] = []
+    
+    const webhookUrl = webhookData?.result?.url || ""
+    if (!webhookUrl) {
+      problems.push("CRITICO: Webhook nao esta registrado no Telegram! Va em Bots > clique no bot > registrar webhook.")
+    } else if (webhookUrl.includes("vusercontent.net") || webhookUrl.includes("localhost")) {
+      problems.push(`CRITICO: Webhook aponta para URL de preview/local (${webhookUrl}). Precisa apontar para a URL de producao do Vercel.`)
+    }
+    
+    if (webhookData?.result?.last_error_message) {
+      problems.push(`Telegram reportou erro no webhook: ${webhookData.result.last_error_message} (em ${webhookData.result.last_error_date ? new Date(webhookData.result.last_error_date * 1000).toISOString() : "?"})`)
+    }
+
+    const firstNode = nodes[0]
+    if (firstNode?.type !== "trigger") {
+      problems.push(`Primeiro node nao e trigger, e sim '${firstNode?.type}'. O fluxo pode nao iniciar corretamente.`)
+    }
+    
+    const messageNodes = nodes.filter(n => n.type === "message")
+    for (const mn of messageNodes) {
+      const cfg = mn.config as Record<string, unknown>
+      if (!cfg?.text && !cfg?.media_url) {
+        problems.push(`Node '${mn.label}' (pos ${mn.position}) e do tipo message mas nao tem texto nem midia.`)
+      }
+    }
+
+    // 6. Optional: send test message directly
+    const testChatId = req.nextUrl.searchParams.get("chat_id")
+    let testMessageResult = null
+    if (testChatId) {
+      const testRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: parseInt(testChatId),
+          text: "Teste de conexao do bot - se voce recebeu isso, o token esta funcionando!",
+        }),
+      })
+      testMessageResult = await testRes.json()
+    }
+
     return NextResponse.json({
-      status: "OK",
-      message: "All checks passed! The bot should be working.",
+      status: problems.length > 0 ? "PROBLEMAS ENCONTRADOS" : "OK",
+      message: problems.length > 0 
+        ? `Encontrados ${problems.length} problema(s) que podem impedir o bot de funcionar.`
+        : "Todos os checks passaram! O bot deve estar funcionando.",
+      problems,
       bot: {
         id: bot.id,
         name: bot.name,
@@ -103,10 +148,12 @@ export async function GET(req: NextRequest) {
         id: n.id,
         type: n.type,
         label: n.label,
-        position: n.position
+        position: n.position,
+        configKeys: n.config ? Object.keys(n.config as Record<string, unknown>) : [],
+        configPreview: n.config ? JSON.stringify(n.config).slice(0, 200) : null,
       })),
       webhookInfo: webhookData,
-      results
+      testMessageResult,
     })
 
   } catch (err) {
