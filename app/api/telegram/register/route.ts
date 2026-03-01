@@ -22,15 +22,23 @@ export async function POST(req: NextRequest) {
     }
 
     // Register webhook
-    // Build the webhook URL dynamically based on the request origin
-    const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, "") || ""
+    // Use VERCEL_PROJECT_PRODUCTION_URL (set automatically by Vercel) or NEXT_PUBLIC_APP_URL
+    // This ensures the webhook always points to the production URL, not preview URLs
+    const productionUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL 
+      ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+      : process.env.NEXT_PUBLIC_APP_URL || null
     
-    // Use the origin or fall back to constructing from host
-    let baseUrl = origin
+    // Fallback to constructing from request headers if no env var is set
+    let baseUrl = productionUrl
     if (!baseUrl) {
-      const host = req.headers.get("host") || "localhost:3000"
-      const proto = host.includes("localhost") ? "http" : "https"
-      baseUrl = `${proto}://${host}`
+      const origin = req.headers.get("origin") || req.headers.get("referer")?.replace(/\/$/, "") || ""
+      if (origin && !origin.includes("vusercontent.net") && !origin.includes("localhost")) {
+        baseUrl = origin
+      } else {
+        const host = req.headers.get("host") || "localhost:3000"
+        const proto = host.includes("localhost") ? "http" : "https"
+        baseUrl = `${proto}://${host}`
+      }
     }
 
     const webhookUrl = `${baseUrl}/api/telegram/webhook?token=${encodeURIComponent(botToken)}`
