@@ -246,10 +246,10 @@ async function processWebhook({
       })
   }
 
-  // 4. Buscar fluxo principal (is_primary=true) OU o mais antigo
+  // 4. Buscar fluxo ativo (o mais antigo com status ativo)
   const { data: allFlows, error: flowsError } = await supabase
     .from("flows")
-    .select("id, name, is_primary, category, status")
+    .select("id, name, category, status")
     .eq("bot_id", bot.id)
     .eq("status", "ativo")
     .order("created_at", { ascending: true })
@@ -261,8 +261,8 @@ async function processWebhook({
     return
   }
 
-  // Encontrar fluxo principal
-  const primaryFlow = allFlows.find((f) => f.is_primary) || allFlows[0]
+  // Usar o primeiro fluxo ativo (mais antigo)
+  const primaryFlow = allFlows[0]
   console.log("[v0] Primary flow selected", { primaryFlow })
 
   // 5. Buscar estado ATUAL do usuario (pode estar em qualquer fluxo)

@@ -42,15 +42,16 @@ export async function GET(req: NextRequest) {
   // 2. Verificar fluxos ativos
   const { data: flows, error: flowsError } = await supabase
     .from("flows")
-    .select("id, name, status, is_primary, created_at")
+    .select("id, name, status, created_at")
     .eq("bot_id", bot.id)
+    .order("created_at", { ascending: true })
   
   if (flowsError) {
     results.flowsError = flowsError.message
   }
   
   const activeFlows = flows?.filter(f => f.status === "ativo") || []
-  const primaryFlow = activeFlows.find(f => f.is_primary) || activeFlows[0]
+  const primaryFlow = activeFlows[0] // Primeiro fluxo ativo (mais antigo)
   
   results.flows = {
     total: flows?.length || 0,
@@ -58,13 +59,11 @@ export async function GET(req: NextRequest) {
     primaryFlow: primaryFlow ? {
       id: primaryFlow.id,
       name: primaryFlow.name,
-      isPrimary: primaryFlow.is_primary
     } : null,
     allFlows: flows?.map(f => ({
       id: f.id,
       name: f.name,
       status: f.status,
-      isPrimary: f.is_primary
     }))
   }
   
