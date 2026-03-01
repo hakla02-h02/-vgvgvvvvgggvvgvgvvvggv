@@ -1,11 +1,100 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 
-export async function GET(req: NextRequest) {
+// POST: Limpar estados e re-registrar webhook (RESET COMPLETO)
+export async function POST(req: NextRequest) {
   const token = req.nextUrl.searchParams.get("token")
   
   if (!token) {
+    return NextResponse.json({ error: "Token obrigatorio" }, { status: 400 })
+  }
+
+  const supabase = getSupabase()
+
+  // Buscar bot pelo token
+  const { data: bot } = await supabase
+    .from("bots")
+    .select("id")
+    .eq("token", token)
+    .single()
+
+  if (!bot) {
+    return NextResponse.json({ error: "Bot nao encontrado" }, { status: 404 })
+  }
+
+  // 1. Deletar todos os estados de fluxo deste bot
+  const { count: statesDeleted } = await supabase
+    .from("user_flow_state")
+    .delete()
+    .eq("bot_id", bot.id)
+
+  // 2. Re-registrar o webhook com a URL correta
+  const webhookUrl = `${req.nextUrl.origin}/api/telegram/webhook?token=${encodeURIComponent(token)}`
+  
+  // Primeiro deletar webhook antigo
+  await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`)
+  
+  // Depois registrar novo
+  const registerRes = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}&drop_pending_updates=true`)
+  const registerData = await registerRes.json()
+
+  // 3. Verificar se funcionou
+  const infoRes = await fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`)
+  const infoData = await infoRes.json()
+
+  return NextResponse.json({ 
+    success: registerData.ok,
+    message: registerData.ok ? "RESET COMPLETO! Estados limpos e webhook re-registrado. Tente /start agora!" : "Erro ao registrar webhook",
+    details: {
+      statesDeleted: statesDeleted || 0,
+      webhookUrl,
+      telegramResponse: registerData,
+      currentWebhook: infoData.result
+    }
+  })
+}
+
+export async function GET(req: NextRequest) {
+  const token = req.nextUrl.searchParams.get("token")
+  const reset = req.nextUrl.searchParams.get("reset") === "true"
+  
+  if (!token) {
     return NextResponse.json({ error: "Token do bot nao fornecido. Use ?token=SEU_TOKEN" }, { status: 400 })
+  }
+
+  // Se reset=true, fazer reset completo
+  if (reset) {
+    const supabase = getSupabase()
+
+    const { data: bot } = await supabase
+      .from("bots")
+      .select("id")
+      .eq("token", token)
+      .single()
+
+    if (!bot) {
+      return NextResponse.json({ error: "Bot nao encontrado" }, { status: 404 })
+    }
+
+    // Deletar estados
+    const { count } = await supabase
+      .from("user_flow_state")
+      .delete()
+      .eq("bot_id", bot.id)
+
+    // Re-registrar webhook
+    const webhookUrl = `${req.nextUrl.origin}/api/telegram/webhook?token=${encodeURIComponent(token)}`
+    await fetch(`https://api.telegram.org/bot${token}/deleteWebhook`)
+    const registerRes = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}&drop_pending_updates=true`)
+    const registerData = await registerRes.json()
+
+    return NextResponse.json({ 
+      success: registerData.ok,
+      message: "RESET COMPLETO! Estados limpos e webhook re-registrado. Tente /start agora!",
+      statesDeleted: count || 0,
+      webhookUrl,
+      telegramOk: registerData.ok
+    })
   }
 
   const supabase = getSupabase()
