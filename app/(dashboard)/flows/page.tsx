@@ -60,6 +60,7 @@ interface Flow {
   status: "ativo" | "pausado"
   category: FlowCategory
   is_primary: boolean
+  flow_type: "basic" | "complete"
   created_at: string
   updated_at: string
 }
@@ -779,6 +780,7 @@ export default function FlowsPage() {
       ...f,
       is_primary: hasPrimary ? !!f.is_primary : i === 0 && fetched.length > 0,
       category: (f.category || (i === 0 && !hasPrimary ? "inicial" : "personalizado")) as FlowCategory,
+      flow_type: (f.flow_type || "complete") as "basic" | "complete",
     }))
 
     setFlows(normalized)
@@ -843,6 +845,7 @@ export default function FlowsPage() {
       status: "ativo",
       category,
       is_primary: isFirst,
+      flow_type: "complete",
     }
 
     let { data, error } = await supabase
@@ -852,7 +855,7 @@ export default function FlowsPage() {
       .single()
 
     // If columns don't exist yet, retry without them
-    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.code === "42703")) {
+    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.message?.includes("flow_type") || error.code === "42703")) {
       insertPayload = {
         bot_id: selectedBot.id,
         user_id: session.userId,
@@ -874,7 +877,7 @@ export default function FlowsPage() {
       return
     }
 
-    const newFlow = { ...data, category, is_primary: isFirst } as Flow
+    const newFlow = { ...data, category, is_primary: isFirst, flow_type: "complete" } as Flow
     setFlows((prev) => [...prev, newFlow])
     setActiveFlow(newFlow)
     setNewFlowName("")
@@ -899,6 +902,7 @@ export default function FlowsPage() {
       status: "ativo",
       category: isFirst ? "inicial" : "personalizado",
       is_primary: isFirst,
+      flow_type: "basic",
     }
 
     let { data, error } = await supabase
@@ -907,7 +911,7 @@ export default function FlowsPage() {
       .select()
       .single()
 
-    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.code === "42703")) {
+    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.message?.includes("flow_type") || error.code === "42703")) {
       insertPayload = {
         bot_id: selectedBot.id,
         user_id: session.userId,
@@ -929,10 +933,7 @@ export default function FlowsPage() {
       return
     }
 
-    const newFlow = { ...data, category: (isFirst ? "inicial" : "personalizado") as FlowCategory, is_primary: isFirst } as Flow
-
-    // Save flow_mode = "basico" in localStorage
-    localStorage.setItem(`flow_mode_${newFlow.id}`, "basico")
+    const newFlow = { ...data, category: (isFirst ? "inicial" : "personalizado") as FlowCategory, is_primary: isFirst, flow_type: "basic" } as Flow
 
     // Auto-generate nodes for basic flow
     const autoNodes: { type: NodeType; label: string; config: Record<string, unknown>; position: number }[] = []
@@ -1548,9 +1549,14 @@ if (sv === "end") {
                         <span className="text-[10px] font-medium text-accent/70 bg-accent/[0.08] rounded px-1.5 py-px">
                           Principal
                         </span>
+                        {primaryFlow.flow_type === "basic" && (
+                          <span className="text-[10px] font-medium text-blue-400/70 bg-blue-500/10 rounded px-1.5 py-px">
+                            Basico
+                          </span>
+                        )}
                       </div>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Jornada inicial do usuario
+                        {primaryFlow.flow_type === "basic" ? "Mensagem de boas-vindas" : "Jornada inicial do usuario"}
                       </p>
                     </div>
                     <div className="flex items-center gap-2 shrink-0">
@@ -1583,8 +1589,8 @@ if (sv === "end") {
                 </button>
               )}
 
-              {/* ====== FLUXOS SECUNDARIOS ====== */}
-              {(secondaryFlows.length > 0 || primaryFlow) && (
+              {/* ====== FLUXOS SECUNDARIOS (esconder para fluxo basico) ====== */}
+              {(secondaryFlows.length > 0 || primaryFlow) && activeFlow?.flow_type !== "basic" && (
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between px-1">
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
@@ -1665,7 +1671,195 @@ if (sv === "end") {
               )}
 
               {/* ====== VISUAL BUILDER DO FLUXO ATIVO ====== */}
-              {activeFlow && (
+              {activeFlow && activeFlow.flow_type === "basic" ? (
+                /* ====== PAINEL SIMPLIFICADO PARA FLUXO BASICO ====== */
+                <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-6">
+                  {/* Header basico */}
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="flex items-center gap-2.5">
+                        <h2 className="text-base font-bold text-foreground">{activeFlow.name}</h2>
+                        <span className="text-[10px] font-semibold text-accent/70 bg-accent/[0.08] rounded-lg px-2 py-0.5">
+                          Fluxo Basico
+                        </span>
+                      </div>
+                      <p className="text-xs text-muted-foreground/60 mt-1">
+                        Mensagem enviada quando o usuario inicia o bot
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground/50 hover:text-foreground"
+                        onClick={() => openEditFlow(activeFlow)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground/50 hover:text-destructive"
+                        onClick={() => setShowDeleteFlowDialog(true)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-border/60" />
+
+                  {/* Conteudo do Fluxo Basico: Editor + Preview lado a lado */}
+                  <div className="flex gap-6">
+                    {/* Editor simplificado */}
+                    <div className="flex-1 flex flex-col gap-4">
+                      {isLoadingNodes ? (
+                        <div className="flex items-center justify-center py-10">
+                          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground/40" />
+                        </div>
+                      ) : (
+                        <>
+                          {/* Mensagem principal */}
+                          {nodes.filter(n => n.type === "message").map((msgNode) => (
+                            <div key={msgNode.id} className="flex flex-col gap-3 p-4 rounded-xl border border-border/50 bg-secondary/10">
+                              <div className="flex items-center gap-2">
+                                <MessageSquare className="h-4 w-4 text-blue-400" />
+                                <span className="text-sm font-medium text-foreground">Mensagem de boas-vindas</span>
+                              </div>
+                              <div className="text-xs text-muted-foreground/80 bg-background/50 rounded-lg p-3 whitespace-pre-wrap">
+                                {(msgNode.config?.text as string) || "Sem mensagem definida"}
+                              </div>
+                              {(msgNode.config?.media_url as string) && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                                  {(msgNode.config?.media_type as string) === "photo" ? (
+                                    <Image className="h-3.5 w-3.5" />
+                                  ) : (
+                                    <Video className="h-3.5 w-3.5" />
+                                  )}
+                                  <span>Midia anexada</span>
+                                </div>
+                              )}
+                              {(msgNode.config?.buttons as string) && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground/60">
+                                  <Link className="h-3.5 w-3.5" />
+                                  <span>Botao de link</span>
+                                </div>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-fit text-xs"
+                                onClick={() => openEditNode(msgNode)}
+                              >
+                                <Pencil className="h-3 w-3 mr-1.5" />
+                                Editar mensagem
+                              </Button>
+                            </div>
+                          ))}
+
+                          {/* Pagamento */}
+                          {nodes.filter(n => n.type === "payment").map((payNode) => (
+                            <div key={payNode.id} className="flex flex-col gap-3 p-4 rounded-xl border border-success/20 bg-success/5">
+                              <div className="flex items-center gap-2">
+                                <CreditCard className="h-4 w-4 text-success" />
+                                <span className="text-sm font-medium text-foreground">Cobranca PIX</span>
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-muted-foreground/80">{payNode.config?.description as string || "Produto"}</span>
+                                <span className="text-sm font-bold text-success">R$ {payNode.config?.amount as string || "0"}</span>
+                              </div>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="w-fit text-xs"
+                                onClick={() => openEditNode(payNode)}
+                              >
+                                <Pencil className="h-3 w-3 mr-1.5" />
+                                Editar valor
+                              </Button>
+                            </div>
+                          ))}
+
+                          {nodes.filter(n => n.type !== "trigger").length === 0 && (
+                            <div className="text-center py-6 text-muted-foreground/50 text-sm">
+                              Nenhuma mensagem configurada
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+
+                    {/* Preview do Telegram */}
+                    <div className="w-[240px] shrink-0 flex flex-col">
+                      <div className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider mb-2 text-center">
+                        Preview no Telegram
+                      </div>
+                      <div className="flex-1 bg-[#0e1621] rounded-xl p-3 flex flex-col min-h-[300px]">
+                        {/* Telegram header */}
+                        <div className="flex items-center gap-2 pb-2 border-b border-white/5 mb-3">
+                          <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center">
+                            <Zap className="h-4 w-4 text-accent" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-medium text-white truncate">{selectedBot?.name || "Seu Bot"}</p>
+                            <p className="text-[10px] text-white/40">online</p>
+                          </div>
+                        </div>
+
+                        {/* Chat messages */}
+                        <div className="flex-1 flex flex-col gap-2 overflow-y-auto">
+                          {nodes.filter(n => n.type === "message").map((msgNode) => {
+                            const mediaUrl = msgNode.config?.media_url as string
+                            const mediaType = msgNode.config?.media_type as string
+                            const buttonsStr = msgNode.config?.buttons as string
+                            let buttons: InlineButton[] = []
+                            try {
+                              if (buttonsStr) buttons = JSON.parse(buttonsStr)
+                            } catch { /* ignore */ }
+                            
+                            return (
+                              <div key={msgNode.id} className="flex flex-col gap-1.5">
+                                {mediaUrl && (
+                                  <div className="bg-[#182533] rounded-lg p-1.5">
+                                    <div className="bg-[#0d1318] rounded h-24 flex items-center justify-center">
+                                      {mediaType === "photo" ? (
+                                        <Image className="h-8 w-8 text-white/20" />
+                                      ) : (
+                                        <Video className="h-8 w-8 text-white/20" />
+                                      )}
+                                    </div>
+                                  </div>
+                                )}
+                                <div className="bg-[#182533] rounded-lg p-2.5">
+                                  <p className="text-[11px] text-white/90 whitespace-pre-wrap break-words leading-relaxed">
+                                    {(msgNode.config?.text as string) || "Mensagem..."}
+                                  </p>
+                                </div>
+                                {buttons.map((btn, i) => (
+                                  <div key={i} className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
+                                    <span className="text-[10px] text-white font-medium">{btn.text}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            )
+                          })}
+
+                          {nodes.filter(n => n.type === "payment").map((payNode) => (
+                            <div key={payNode.id} className="bg-[#182533] rounded-lg p-2.5 border border-green-500/20">
+                              <div className="flex items-center gap-1.5 mb-1.5">
+                                <CreditCard className="h-3 w-3 text-green-400" />
+                                <span className="text-[10px] text-green-400 font-medium">Pagamento PIX</span>
+                              </div>
+                              <p className="text-[10px] text-white/70">{payNode.config?.description as string || "Produto"}</p>
+                              <p className="text-xs text-white font-bold mt-0.5">R$ {payNode.config?.amount as string || "0"}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : activeFlow && (
                 <div className="flex flex-col gap-5 rounded-2xl border border-border bg-card p-6">
                   {/* Builder Header */}
                   <div className="flex items-center justify-between">
