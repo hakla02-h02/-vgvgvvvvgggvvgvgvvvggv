@@ -340,22 +340,30 @@ async function completeAllStates(botId: string, telegramUserId: number) {
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
+  console.log("[v0] Webhook POST recebido")
+  
   const { searchParams } = new URL(req.url)
   const botToken = searchParams.get("token")
 
   if (!botToken) {
+    console.log("[v0] Token ausente na URL")
     return NextResponse.json({ error: "Missing token" }, { status: 400 })
   }
+
+  console.log("[v0] Token encontrado:", botToken.substring(0, 10) + "...")
 
   let update: Record<string, unknown>
   try {
     update = await req.json()
-  } catch {
+    console.log("[v0] Update recebido:", JSON.stringify(update).substring(0, 200))
+  } catch (e) {
+    console.log("[v0] Erro ao parsear JSON:", e)
     return NextResponse.json({ ok: true })
   }
 
   const message = update?.message as Record<string, unknown> | undefined
   if (!message) {
+    console.log("[v0] Nenhuma mensagem no update")
     return NextResponse.json({ ok: true })
   }
 
@@ -366,9 +374,13 @@ export async function POST(req: NextRequest) {
   const messageText = ((message.text as string) || "").trim()
   const isStart = messageText === "/start" || messageText.startsWith("/start ")
 
+  console.log("[v0] Mensagem:", messageText, "| chatId:", chatId, "| isStart:", isStart)
+
   try {
     await processWebhook({ botToken, chatId, telegramUserId, messageText, isStart, fromData: from })
-  } catch {
+    console.log("[v0] processWebhook executado com sucesso")
+  } catch (err) {
+    console.log("[v0] Erro no processWebhook:", err)
     // Always return 200 to Telegram
   }
 
@@ -396,6 +408,8 @@ async function processWebhook({
 }) {
   const supabase = getSupabase()
 
+  console.log("[v0] processWebhook iniciado")
+
   // 1. Find bot
   const { data: bots, error: botError } = await supabase
     .from("bots")
@@ -403,23 +417,40 @@ async function processWebhook({
     .eq("token", botToken)
     .limit(1)
 
-  if (botError || !bots?.length) return
+  console.log("[v0] Busca bot - bots:", bots?.length, "erro:", botError?.message)
+
+  if (botError || !bots?.length) {
+    console.log("[v0] Bot nao encontrado no banco de dados")
+    return
+  }
   const bot = bots[0]
-  if (bot.status !== "active") return
+  console.log("[v0] Bot encontrado:", bot.id, "status:", bot.status)
+  
+  if (bot.status !== "active") {
+    console.log("[v0] Bot nao esta ativo")
+    return
+  }
 
   // 2. Upsert user
   await upsertBotUser(bot.id, telegramUserId, chatId, fromData)
+  console.log("[v0] Usuario atualizado/criado")
 
   // 3. Find active flows
-  const { data: allFlows } = await supabase
+  const { data: allFlows, error: flowError } = await supabase
     .from("flows")
     .select("id, name, category, status")
     .eq("bot_id", bot.id)
     .eq("status", "ativo")
     .order("created_at", { ascending: true })
 
-  if (!allFlows || allFlows.length === 0) return
+  console.log("[v0] Busca flows - flows:", allFlows?.length, "erro:", flowError?.message)
+
+  if (!allFlows || allFlows.length === 0) {
+    console.log("[v0] Nenhum fluxo ativo encontrado para o bot")
+    return
+  }
   const primaryFlow = allFlows[0]
+  console.log("[v0] Fluxo primario:", primaryFlow.id, "nome:", primaryFlow.name)
 
   // 4. Get user states
   const { data: allStates } = await supabase
