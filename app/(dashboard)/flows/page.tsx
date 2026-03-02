@@ -643,7 +643,8 @@ export default function FlowsPage() {
     try {
       const formData = new FormData()
       formData.append("file", file)
-      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      formData.append("mediaType", file.type.startsWith("video") ? "video" : "photo")
+      const res = await fetch("/api/upload-media", { method: "POST", body: formData })
       
       // Check if response is OK before parsing
       if (!res.ok) {
