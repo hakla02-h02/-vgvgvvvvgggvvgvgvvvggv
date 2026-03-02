@@ -327,9 +327,10 @@ async function completeAllStates(botId: string, telegramUserId: number) {
 
   if (states && states.length > 0) {
     for (const s of states) {
+      // Mark as "finished" to indicate flow ended (not "completed" which is for explicit ends)
       await supabase
         .from("user_flow_state")
-        .update({ status: "completed", updated_at: new Date().toISOString() })
+        .update({ status: "finished", updated_at: new Date().toISOString() })
         .eq("id", s.id)
     }
   }
@@ -429,6 +430,8 @@ async function processWebhook({
     .eq("telegram_user_id", telegramUserId)
     .order("updated_at", { ascending: false })
 
+  // Find active state - only "in_progress" or "waiting_response" are considered active
+  // "completed" and "finished" mean the flow has ended and should NOT restart
   const activeState = allStates?.find(
     (s: Record<string, unknown>) =>
       s.status === "in_progress" || s.status === "waiting_response",
@@ -451,7 +454,14 @@ if (isStart) {
   // ------------------------------------------------------------------
   // Normal message – only matters if we're waiting for a response
   // ------------------------------------------------------------------
-  if (!activeState || activeState.status === "completed" || activeState.status === "in_progress") {
+  // If there's no active state, or the flow has completed/finished, or it's in_progress
+  // (meaning it's still executing), we should NOT process the message.
+  // "finished" = flow ended naturally (no more messages to send)
+  // "completed" = flow was explicitly ended (e.g., by "end" action or condition redirect)
+  if (!activeState || 
+      activeState.status === "completed" || 
+      activeState.status === "finished" || 
+      activeState.status === "in_progress") {
     return
   }
 
@@ -665,10 +675,15 @@ async function executeNodes(
     }
   }
 
-  // All nodes executed – mark flow as completed
+  // All nodes executed – mark flow as completed (finished naturally)
+  // When a flow ends naturally (no more messages), mark it as "finished" 
+  // so it won't restart or loop infinitely
   if (remaining.length > 0) {
     const lastNode = remaining[remaining.length - 1]
-    await setFlowState(botId, flowId, telegramUserId, chatId, lastNode.position, "completed")
+    await setFlowState(botId, flowId, telegramUserId, chatId, lastNode.position, "finished")
+  } else {
+    // No remaining nodes means flow is done - mark as finished
+    await setFlowState(botId, flowId, telegramUserId, chatId, startPosition, "finished")
   }
 }
 
