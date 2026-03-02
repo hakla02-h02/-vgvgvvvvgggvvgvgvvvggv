@@ -45,6 +45,21 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
+    // Try to create bucket if it doesn't exist
+    const { data: buckets } = await supabase.storage.listBuckets()
+    const bucketExists = buckets?.some(b => b.name === 'media')
+    
+    if (!bucketExists) {
+      const { error: createError } = await supabase.storage.createBucket('media', {
+        public: true,
+        fileSizeLimit: 52428800, // 50MB
+      })
+      if (createError && !createError.message.includes('already exists')) {
+        console.error('Failed to create bucket:', createError)
+        return NextResponse.json({ error: 'Storage not configured. Contact admin.' }, { status: 500 })
+      }
+    }
+
     // Upload to Supabase Storage (bucket: media)
     const { data, error } = await supabase.storage
       .from('media')
@@ -55,7 +70,14 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase upload error:', error)
-      return NextResponse.json({ error: 'Upload failed: ' + error.message }, { status: 500 })
+      // Check for specific errors
+      if (error.message.includes('Bucket not found')) {
+        return NextResponse.json({ error: 'Bucket de storage nao existe. Crie o bucket "media" no Supabase.' }, { status: 500 })
+      }
+      if (error.message.includes('row-level security') || error.message.includes('permission')) {
+        return NextResponse.json({ error: 'Sem permissao para upload. Verifique as policies do bucket.' }, { status: 500 })
+      }
+      return NextResponse.json({ error: 'Upload falhou: ' + error.message }, { status: 500 })
     }
 
     // Get public URL
