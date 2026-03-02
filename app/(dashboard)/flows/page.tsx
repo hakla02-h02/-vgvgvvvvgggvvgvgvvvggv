@@ -601,6 +601,7 @@ export default function FlowsPage() {
   const [newFlowMode, setNewFlowMode] = useState<"basico" | "completo" | null>(null)
 
   // Basic flow wizard fields
+  const [basicWizardStep, setBasicWizardStep] = useState(1)
   const [basicWelcomeMsg, setBasicWelcomeMsg] = useState("")
   const [basicProductName, setBasicProductName] = useState("")
   const [basicProductDesc, setBasicProductDesc] = useState("")
@@ -611,6 +612,7 @@ export default function FlowsPage() {
   const [basicButtonUrl, setBasicButtonUrl] = useState("")
 
   const resetBasicFlow = () => {
+    setBasicWizardStep(1)
     setBasicWelcomeMsg("")
     setBasicProductName("")
     setBasicProductDesc("")
@@ -619,6 +621,19 @@ export default function FlowsPage() {
     setBasicMediaType("none")
     setBasicButtonText("")
     setBasicButtonUrl("")
+  }
+
+  // Basic wizard has 5 steps
+  const BASIC_WIZARD_TOTAL_STEPS = 5
+  const canGoNextBasicStep = () => {
+    switch (basicWizardStep) {
+      case 1: return basicProductName.trim().length > 0
+      case 2: return basicProductPrice.trim().length > 0
+      case 3: return true // Welcome message is optional
+      case 4: return true // Media is optional
+      case 5: return true // Button is optional (final step)
+      default: return false
+    }
   }
 
   // Add node dialog
@@ -1992,7 +2007,9 @@ if (sv === "end") {
           setNewFlowName("")
         }
       }}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-[540px] max-h-[90vh] overflow-y-auto p-0">
+        <DialogContent className={`bg-card border-border rounded-2xl max-h-[90vh] overflow-y-auto p-0 transition-all ${
+          newFlowMode === "basico" ? "max-w-[680px]" : "max-w-[540px]"
+        }`}>
 
           {/* ===== STEP 1: Choose mode ===== */}
           {newFlowMode === null && (
@@ -2060,192 +2077,291 @@ if (sv === "end") {
             </div>
           )}
 
-          {/* ===== STEP 2A: Basic Flow Wizard ===== */}
+          {/* ===== STEP 2A: Basic Flow Wizard (Step by Step) ===== */}
           {newFlowMode === "basico" && (
-            <div className="flex flex-col">
-              <div className="sticky top-0 z-10 bg-card border-b border-border px-6 pt-6 pb-4 rounded-t-2xl">
-                <div className="flex items-center gap-3">
-                  <button
-                    className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary/60 transition-colors"
-                    onClick={() => setNewFlowMode(null)}
-                  >
-                    <ArrowRight className="h-4 w-4 text-muted-foreground rotate-180" />
-                  </button>
-                  <div>
-                    <DialogHeader>
-                      <DialogTitle className="text-foreground text-base">Fluxo Basico</DialogTitle>
-                    </DialogHeader>
-                    <p className="text-xs text-muted-foreground mt-0.5">Preencha e seu bot estara pronto para vender</p>
-                  </div>
+            <div className="flex flex-col h-full">
+              {/* Progress indicator */}
+              <div className="px-6 pt-5 pb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-accent font-bold text-sm">{basicWizardStep}</span>
+                  <span className="text-muted-foreground/50 text-sm">/ {BASIC_WIZARD_TOTAL_STEPS}</span>
+                </div>
+                <div className="flex gap-1">
+                  {Array.from({ length: BASIC_WIZARD_TOTAL_STEPS }).map((_, i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-all ${
+                        i < basicWizardStep ? "bg-accent" : "bg-border/50"
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
 
-              <div className="flex flex-col gap-5 p-5">
-                {/* Product info section */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent/10 border border-accent/20">
-                      <ShoppingBag className="h-3 w-3 text-accent" />
-                    </div>
-                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Seu Produto</span>
-                  </div>
-                  
-                  <div className="flex flex-col gap-3 pl-8">
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-foreground text-xs">Nome do produto</Label>
+              {/* Two column layout: Question + Preview */}
+              <div className="flex flex-1 gap-4 px-6 pb-4 min-h-0">
+                {/* Left: Question */}
+                <div className="flex-1 flex flex-col">
+                  {/* Step 1: Product Name */}
+                  {basicWizardStep === 1 && (
+                    <div className="flex flex-col gap-4 py-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Nome do produto</h3>
+                        <p className="text-sm text-muted-foreground">O que voce vai vender?</p>
+                      </div>
                       <Input
+                        autoFocus
                         value={basicProductName}
                         onChange={(e) => setBasicProductName(e.target.value)}
                         placeholder="Ex: Curso de Marketing Digital"
-                        className="bg-secondary border-border rounded-xl text-foreground"
+                        className="bg-secondary/50 border-border rounded-xl text-foreground h-12 text-base"
+                        onKeyDown={(e) => e.key === "Enter" && canGoNextBasicStep() && setBasicWizardStep(2)}
                       />
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {["Ebook", "Curso Online", "Mentoria", "Consultoria", "Produto Digital"].map((sug) => (
+                          <button
+                            key={sug}
+                            className="px-3 py-1.5 text-xs rounded-lg border border-border/60 bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:border-border transition-all"
+                            onClick={() => setBasicProductName(sug)}
+                          >
+                            {sug}
+                          </button>
+                        ))}
+                      </div>
                     </div>
+                  )}
 
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-foreground text-xs">Descricao curta <span className="text-muted-foreground font-normal">(opcional)</span></Label>
+                  {/* Step 2: Price */}
+                  {basicWizardStep === 2 && (
+                    <div className="flex flex-col gap-4 py-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Qual o valor?</h3>
+                        <p className="text-sm text-muted-foreground">Preco do {basicProductName || "produto"}</p>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-accent font-semibold">R$</span>
+                        <Input
+                          autoFocus
+                          type="text"
+                          value={basicProductPrice}
+                          onChange={(e) => setBasicProductPrice(e.target.value.replace(/[^\d.,]/g, ""))}
+                          placeholder="0,00"
+                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12 text-base pl-12"
+                          onKeyDown={(e) => e.key === "Enter" && canGoNextBasicStep() && setBasicWizardStep(3)}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {["27", "47", "97", "197", "297", "497"].map((price) => (
+                          <button
+                            key={price}
+                            className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
+                              basicProductPrice === price
+                                ? "border-accent bg-accent/10 text-accent"
+                                : "border-border/60 bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:border-border"
+                            }`}
+                            onClick={() => setBasicProductPrice(price)}
+                          >
+                            R$ {price}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3: Welcome Message */}
+                  {basicWizardStep === 3 && (
+                    <div className="flex flex-col gap-4 py-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Mensagem de boas-vindas</h3>
+                        <p className="text-sm text-muted-foreground">O que o bot dira quando alguem iniciar? <span className="text-muted-foreground/50">(opcional)</span></p>
+                      </div>
                       <Textarea
-                        value={basicProductDesc}
-                        onChange={(e) => setBasicProductDesc(e.target.value)}
-                        placeholder="Ex: Aprenda do zero ao avancado em 30 dias"
-                        className="bg-secondary border-border rounded-xl text-foreground min-h-[60px] resize-none"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-foreground text-xs">Preco (R$)</Label>
-                      <Input
-                        value={basicProductPrice}
-                        onChange={(e) => setBasicProductPrice(e.target.value)}
-                        placeholder="49.90"
-                        className="bg-secondary border-border rounded-xl text-foreground"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Message section */}
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/10 border border-blue-500/20">
-                      <MessageSquare className="h-3 w-3 text-blue-400" />
-                    </div>
-                    <span className="text-xs font-semibold text-foreground uppercase tracking-wider">Mensagem</span>
-                  </div>
-
-                  <div className="flex flex-col gap-3 pl-8">
-                    <div className="flex flex-col gap-1.5">
-                      <Label className="text-foreground text-xs">Texto de boas-vindas <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                      <Textarea
+                        autoFocus
                         value={basicWelcomeMsg}
                         onChange={(e) => setBasicWelcomeMsg(e.target.value)}
                         placeholder="Ex: Opa! Que bom ter voce aqui. Olha so essa oportunidade:"
-                        className="bg-secondary border-border rounded-xl text-foreground min-h-[70px] resize-none"
-                        rows={3}
+                        className="bg-secondary/50 border-border rounded-xl text-foreground min-h-[100px] resize-none text-base"
+                        rows={4}
                       />
-                      <p className="text-[10px] text-muted-foreground">Se vazio, usaremos uma mensagem padrao</p>
+                      <p className="text-xs text-muted-foreground/60">Se deixar vazio, usaremos: "Ola! Confira nosso produto: {basicProductName}"</p>
                     </div>
+                  )}
 
-                    {/* Media toggle */}
-                    <div className="flex flex-col gap-2">
-                      <Label className="text-foreground text-xs">Midia <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                      <div className="flex gap-2">
+                  {/* Step 4: Media */}
+                  {basicWizardStep === 4 && (
+                    <div className="flex flex-col gap-4 py-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Adicionar midia?</h3>
+                        <p className="text-sm text-muted-foreground">Uma foto ou video do produto <span className="text-muted-foreground/50">(opcional)</span></p>
+                      </div>
+                      <div className="flex gap-3">
                         {(["none", "photo", "video"] as const).map((mt) => (
                           <button
                             key={mt}
-                            className={`flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs transition-all ${
+                            className={`flex-1 flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
                               basicMediaType === mt
-                                ? "border-accent bg-accent/10 text-accent font-medium"
-                                : "border-border bg-secondary/30 text-muted-foreground hover:bg-secondary/60"
+                                ? "border-accent bg-accent/10"
+                                : "border-border/60 bg-secondary/30 hover:bg-secondary/60 hover:border-border"
                             }`}
                             onClick={() => setBasicMediaType(mt)}
                           >
-                            {mt === "none" && <X className="h-3 w-3" />}
-                            {mt === "photo" && <Image className="h-3 w-3" />}
-                            {mt === "video" && <Video className="h-3 w-3" />}
-                            {mt === "none" ? "Sem midia" : mt === "photo" ? "Foto" : "Video"}
+                            {mt === "none" && <X className={`h-6 w-6 ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`} />}
+                            {mt === "photo" && <Image className={`h-6 w-6 ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`} />}
+                            {mt === "video" && <Video className={`h-6 w-6 ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`} />}
+                            <span className={`text-xs font-medium ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`}>
+                              {mt === "none" ? "Sem midia" : mt === "photo" ? "Foto" : "Video"}
+                            </span>
                           </button>
                         ))}
                       </div>
                       {basicMediaType !== "none" && (
                         <Input
+                          autoFocus
                           value={basicMediaUrl}
                           onChange={(e) => setBasicMediaUrl(e.target.value)}
                           placeholder={basicMediaType === "photo" ? "URL da foto do produto" : "URL do video"}
-                          className="bg-secondary border-border rounded-xl text-foreground"
+                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12"
                         />
                       )}
                     </div>
+                  )}
 
-                    {/* Optional button */}
-                    <div className="flex flex-col gap-2">
-                      <Label className="text-foreground text-xs">Botao de link <span className="text-muted-foreground font-normal">(opcional)</span></Label>
-                      <div className="flex gap-2">
+                  {/* Step 5: Button (optional) */}
+                  {basicWizardStep === 5 && (
+                    <div className="flex flex-col gap-4 py-4">
+                      <div>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Botao de link</h3>
+                        <p className="text-sm text-muted-foreground">Adicione um botao na mensagem <span className="text-muted-foreground/50">(opcional)</span></p>
+                      </div>
+                      <div className="flex flex-col gap-3">
                         <Input
+                          autoFocus
                           value={basicButtonText}
                           onChange={(e) => setBasicButtonText(e.target.value)}
-                          placeholder="Texto do botao"
-                          className="bg-secondary border-border rounded-xl text-foreground flex-1"
+                          placeholder="Texto do botao (ex: Comprar agora)"
+                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12"
                         />
                         <Input
                           value={basicButtonUrl}
                           onChange={(e) => setBasicButtonUrl(e.target.value)}
-                          placeholder="https://..."
-                          className="bg-secondary border-border rounded-xl text-foreground flex-1"
+                          placeholder="Link (https://...)"
+                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12"
                         />
                       </div>
+                      <p className="text-xs text-muted-foreground/60">Se nao quiser botao, pode deixar vazio e clicar em "Criar"</p>
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Preview of what will be generated */}
-                <div className="rounded-xl border border-border/50 bg-secondary/20 p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Workflow className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Preview do fluxo gerado</span>
+                {/* Right: Telegram Preview */}
+                <div className="w-[220px] shrink-0 flex flex-col">
+                  <div className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2 text-center">
+                    Preview no Telegram
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="flex items-center gap-1 text-[10px] text-accent bg-accent/10 rounded-lg px-2 py-1 border border-accent/20">
-                      <Zap className="h-3 w-3" /> Inicio
+                  <div className="flex-1 bg-[#0e1621] rounded-xl p-3 flex flex-col">
+                    {/* Telegram header */}
+                    <div className="flex items-center gap-2 pb-2 border-b border-white/5 mb-3">
+                      <div className="h-7 w-7 rounded-full bg-accent/20 flex items-center justify-center">
+                        <Zap className="h-3.5 w-3.5 text-accent" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[11px] font-medium text-white truncate">{selectedBot?.name || "Seu Bot"}</p>
+                        <p className="text-[9px] text-white/40">online</p>
+                      </div>
                     </div>
-                    <ArrowRight className="h-3 w-3 text-muted-foreground/30" />
-                    <div className="flex items-center gap-1 text-[10px] text-blue-400 bg-blue-500/10 rounded-lg px-2 py-1 border border-blue-500/20">
-                      <MessageSquare className="h-3 w-3" />
-                      {basicProductName.trim() || "Mensagem"}
-                      {basicMediaType !== "none" && (
-                        <span className="text-[8px] bg-blue-500/20 rounded px-1">
-                          {basicMediaType === "photo" ? "foto" : "video"}
-                        </span>
+
+                    {/* Chat messages */}
+                    <div className="flex-1 flex flex-col gap-2 overflow-hidden">
+                      {/* Media preview if exists */}
+                      {basicMediaType !== "none" && basicMediaUrl && (
+                        <div className="bg-[#182533] rounded-lg p-1.5 max-w-full">
+                          <div className="bg-[#0d1318] rounded h-20 flex items-center justify-center">
+                            {basicMediaType === "photo" ? (
+                              <Image className="h-6 w-6 text-white/20" />
+                            ) : (
+                              <Video className="h-6 w-6 text-white/20" />
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Message bubble */}
+                      <div className="bg-[#182533] rounded-lg p-2 max-w-full">
+                        <p className="text-[10px] text-white/90 whitespace-pre-wrap break-words leading-relaxed">
+                          {basicWelcomeMsg.trim() || (basicProductName ? `Ola! Confira nosso produto: ${basicProductName}` : "Ola! Confira nosso produto")}
+                          {basicProductDesc && (
+                            <>
+                              {"\n\n"}
+                              {basicProductDesc}
+                            </>
+                          )}
+                          {basicProductPrice && (
+                            <>
+                              {"\n\n"}
+                              <span className="font-semibold">Valor: R$ {basicProductPrice}</span>
+                            </>
+                          )}
+                        </p>
+                      </div>
+
+                      {/* Button preview */}
+                      {basicButtonText && basicButtonUrl && (
+                        <div className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
+                          <span className="text-[10px] text-white font-medium">{basicButtonText}</span>
+                        </div>
+                      )}
+
+                      {/* Payment preview */}
+                      {basicProductPrice && (
+                        <div className="bg-[#182533] rounded-lg p-2 border border-green-500/20">
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <CreditCard className="h-3 w-3 text-green-400" />
+                            <span className="text-[9px] text-green-400 font-medium">Pagamento PIX</span>
+                          </div>
+                          <p className="text-[10px] text-white/70">{basicProductName || "Produto"}</p>
+                          <p className="text-[11px] text-white font-bold">R$ {basicProductPrice}</p>
+                        </div>
                       )}
                     </div>
-                    {basicProductPrice.trim() && (
-                      <>
-                        <ArrowRight className="h-3 w-3 text-muted-foreground/30" />
-                        <div className="flex items-center gap-1 text-[10px] text-success bg-success/10 rounded-lg px-2 py-1 border border-success/20">
-                          <CreditCard className="h-3 w-3" /> R$ {basicProductPrice}
-                        </div>
-                      </>
-                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="sticky bottom-0 bg-card border-t border-border px-5 py-4 flex justify-between items-center rounded-b-2xl">
+              {/* Footer navigation */}
+              <div className="border-t border-border px-6 py-4 flex justify-between items-center">
                 <Button
                   variant="ghost"
                   className="rounded-xl text-muted-foreground"
-                  onClick={() => setNewFlowMode(null)}
+                  onClick={() => {
+                    if (basicWizardStep === 1) {
+                      setNewFlowMode(null)
+                    } else {
+                      setBasicWizardStep((s) => s - 1)
+                    }
+                  }}
                 >
                   Voltar
                 </Button>
-                <Button
-                  className="bg-success text-success-foreground hover:bg-success/90 rounded-xl"
-                  disabled={!basicProductName.trim() || !basicProductPrice.trim() || isCreatingFlow}
-                  onClick={handleCreateBasicFlow}
-                >
-                  {isCreatingFlow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
-                  Criar Fluxo
-                </Button>
+
+                {basicWizardStep < BASIC_WIZARD_TOTAL_STEPS ? (
+                  <Button
+                    className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl min-w-[120px]"
+                    disabled={!canGoNextBasicStep()}
+                    onClick={() => setBasicWizardStep((s) => s + 1)}
+                  >
+                    Proximo
+                    <ChevronRight className="ml-1 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button
+                    className="bg-success text-success-foreground hover:bg-success/90 rounded-xl min-w-[120px]"
+                    disabled={!basicProductName.trim() || !basicProductPrice.trim() || isCreatingFlow}
+                    onClick={handleCreateBasicFlow}
+                  >
+                    {isCreatingFlow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
+                    Criar Fluxo
+                  </Button>
+                )}
               </div>
             </div>
           )}
