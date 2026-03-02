@@ -551,7 +551,14 @@ async function executeNodes(
   botId: string,
   flowId: string,
   telegramUserId: number,
+  depth: number = 0,
 ) {
+  // Proteção contra loop infinito (max 5 restarts por execução)
+  if (depth > 5) {
+    console.log("[v0] Loop infinito detectado - profundidade excedeu 5")
+    return
+  }
+  
   const supabase = getSupabase()
   const remaining = nodes.filter((n) => n.position >= startPosition)
 
@@ -647,7 +654,7 @@ async function executeNodes(
             await setFlowState(botId, flowId, telegramUserId, chatId, 0, "in_progress")
             const restartNodes = await fetchNodes(flowId)
             if (restartNodes.length > 0) {
-              await executeNodes(botToken, chatId, restartNodes, 0, botId, flowId, telegramUserId)
+              await executeNodes(botToken, chatId, restartNodes, 0, botId, flowId, telegramUserId, depth + 1)
             }
             return // STOP (recursive call handles the rest)
           }
@@ -665,7 +672,7 @@ async function executeNodes(
             if (targetNodes.length === 0) return
 
             await setFlowState(botId, targetFlowId, telegramUserId, chatId, 0, "in_progress")
-            await executeNodes(botToken, chatId, targetNodes, 0, botId, targetFlowId, telegramUserId)
+            await executeNodes(botToken, chatId, targetNodes, 0, botId, targetFlowId, telegramUserId, depth + 1)
             return // STOP
           }
 

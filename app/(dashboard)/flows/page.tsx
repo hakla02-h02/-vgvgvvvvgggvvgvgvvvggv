@@ -2483,7 +2483,32 @@ export default function FlowsPage() {
                               <button
                                 key={`${tpl.type}-${tpl.subVariant || tplIdx}`}
                                 className="flex items-center gap-4 rounded-xl px-4 py-3.5 text-left transition-all hover:bg-secondary/40 group"
-                                onClick={() => {
+                                onClick={async () => {
+                                  // Para nós que não precisam de configuração, adiciona direto
+                                  if (tpl.subVariant === "restart" || tpl.subVariant === "end") {
+                                    if (!activeFlow) return
+                                    setIsAddingNode(true)
+                                    const label = tpl.subVariant === "restart" ? "Recomecar Fluxo" : "Encerrar Conversa"
+                                    const config = { subVariant: tpl.subVariant }
+                                    const newPosition = nodes.length
+                                    const { data, error } = await supabase
+                                      .from("flow_nodes")
+                                      .insert({
+                                        flow_id: activeFlow.id,
+                                        type: tpl.type,
+                                        label,
+                                        config,
+                                        position: newPosition,
+                                      })
+                                      .select()
+                                      .single()
+                                    if (!error && data) {
+                                      setNodes((prev) => [...prev, data as FlowNode])
+                                    }
+                                    setShowAddNodeDialog(false)
+                                    setIsAddingNode(false)
+                                    return
+                                  }
                                   setSelectedTemplate(tpl)
                                   setNodeConfigValues({})
                                   resetMessageConfig()
