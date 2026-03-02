@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js"
 
-const SUPABASE_URL = "https://dbtpnafcqfcllgoxdhxs.supabase.co"
+const SUPABASE_URL = "https://rqgzgnknaklzlxlpuwwh.supabase.co"
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRidHBuYWZjcWZjbGxnb3hkaHhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE0Nzg3MTQsImV4cCI6MjA4NzA1NDcxNH0.0MF5a1uAuxeHIVGNglWYbFHYRIECNVEVZN1MLH4Z26A"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJxZ3pnbmtuYWtsemx4bHB1d3doIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MjgwNTUsImV4cCI6MjA4ODAwNDA1NX0.Nv2Pz-kvREBMNglkiKoRs4GyNqKXosdIMSfzTXHCkQs"
 
 let _supabase: ReturnType<typeof createClient> | null = null
 
