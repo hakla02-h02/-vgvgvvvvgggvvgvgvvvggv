@@ -619,19 +619,45 @@ export default function FlowsPage() {
     setBasicMediaUrl("")
     setBasicMediaType("photo")
     setBasicIsUploading(false)
+    setBasicUploadError(null)
     setBasicWelcomeMsg("")
     setBasicHasButtons(false)
     setBasicButtons([])
   }
 
   // Upload media file
+  const [basicUploadError, setBasicUploadError] = useState<string | null>(null)
   const handleBasicMediaUpload = async (file: File) => {
     setBasicIsUploading(true)
+    setBasicUploadError(null)
+    
+    // Validate file size client-side (max 10MB for images, 50MB for videos)
+    const isVideo = file.type.startsWith("video")
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      setBasicUploadError(isVideo ? "Video muito grande (max 50MB)" : "Imagem muito grande (max 10MB)")
+      setBasicIsUploading(false)
+      return
+    }
+    
     try {
       const formData = new FormData()
       formData.append("file", file)
       const res = await fetch("/api/upload", { method: "POST", body: formData })
+      
+      // Check if response is OK before parsing
+      if (!res.ok) {
+        const text = await res.text()
+        console.error("Upload failed:", res.status, text)
+        setBasicUploadError("Falha no upload. Tente um arquivo menor.")
+        return
+      }
+      
       const data = await res.json()
+      if (data.error) {
+        setBasicUploadError(data.error)
+        return
+      }
       if (data.url) {
         setBasicMediaUrl(data.url)
         setBasicMediaType(file.type.startsWith("video") ? "video" : "photo")
@@ -639,6 +665,7 @@ export default function FlowsPage() {
       }
     } catch (err) {
       console.error("Upload error:", err)
+      setBasicUploadError("Erro ao enviar arquivo")
     } finally {
       setBasicIsUploading(false)
     }
@@ -2333,29 +2360,34 @@ if (sv === "end") {
                       {basicHasMedia && (
                         <div className="flex flex-col gap-3">
                           {!basicMediaUrl ? (
-                            <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-border/60 bg-secondary/10 cursor-pointer hover:bg-secondary/20 hover:border-accent/30 transition-all">
-                              <input
-                                type="file"
-                                accept="image/*,video/*"
-                                className="hidden"
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0]
-                                  if (file) handleBasicMediaUpload(file)
-                                }}
-                              />
-                              {basicIsUploading ? (
-                                <>
-                                  <Loader2 className="h-8 w-8 text-accent animate-spin" />
-                                  <p className="text-sm text-muted-foreground">Enviando...</p>
-                                </>
-                              ) : (
-                                <>
-                                  <Upload className="h-8 w-8 text-muted-foreground/50" />
-                                  <p className="text-sm text-muted-foreground">Clique para enviar foto ou video</p>
-                                  <p className="text-xs text-muted-foreground/50">JPG, PNG, GIF, MP4 (max 50MB)</p>
-                                </>
+                            <>
+                              <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-border/60 bg-secondary/10 cursor-pointer hover:bg-secondary/20 hover:border-accent/30 transition-all">
+                                <input
+                                  type="file"
+                                  accept="image/*,video/*"
+                                  className="hidden"
+                                  onChange={(e) => {
+                                    const file = e.target.files?.[0]
+                                    if (file) handleBasicMediaUpload(file)
+                                  }}
+                                />
+                                {basicIsUploading ? (
+                                  <>
+                                    <Loader2 className="h-8 w-8 text-accent animate-spin" />
+                                    <p className="text-sm text-muted-foreground">Enviando...</p>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Upload className="h-8 w-8 text-muted-foreground/50" />
+                                    <p className="text-sm text-muted-foreground">Clique para enviar foto ou video</p>
+                                    <p className="text-xs text-muted-foreground/50">JPG, PNG, GIF, MP4 (max 10MB)</p>
+                                  </>
+                                )}
+                              </label>
+                              {basicUploadError && (
+                                <p className="text-xs text-destructive">{basicUploadError}</p>
                               )}
-                            </label>
+                            </>
                           ) : (
                             <div className="flex items-center gap-3 p-3 rounded-xl border border-accent/30 bg-accent/5">
                               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">

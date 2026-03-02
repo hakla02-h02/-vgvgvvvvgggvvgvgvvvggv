@@ -1,6 +1,17 @@
 import { type NextRequest, NextResponse } from 'next/server'
 import { getSupabase } from '@/lib/supabase'
 
+// Configure max body size for uploads (50MB)
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
+// For App Router: set max duration and size
+export const runtime = 'nodejs'
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData()
