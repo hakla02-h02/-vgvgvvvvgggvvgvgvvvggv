@@ -934,7 +934,7 @@ export default function FlowsPage() {
 
   // ---- Create BASIC flow (auto-generates nodes) ----
   const handleCreateBasicFlow = async () => {
-    if (!selectedBot || !session || !basicProductName.trim()) return
+    if (!selectedBot || !session || !basicWelcomeMsg.trim()) return
 
     setIsCreatingFlow(true)
 
