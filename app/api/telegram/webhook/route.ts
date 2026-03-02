@@ -317,46 +317,6 @@ async function setFlowState(
   }
 }
 
-async function getAndIncrementRestartCount(
-  botId: string,
-  flowId: string,
-  telegramUserId: number,
-): Promise<number> {
-  const supabase = getSupabase()
-  
-  const { data: existing } = await supabase
-    .from("user_flow_state")
-    .select("id, restart_count")
-    .eq("bot_id", botId)
-    .eq("flow_id", flowId)
-    .eq("telegram_user_id", telegramUserId)
-    .limit(1)
-
-  if (existing && existing.length > 0) {
-    const currentCount = (existing[0].restart_count || 0) + 1
-    await supabase
-      .from("user_flow_state")
-      .update({ restart_count: currentCount, updated_at: new Date().toISOString() })
-      .eq("id", existing[0].id)
-    return currentCount
-  }
-  return 1
-}
-
-async function resetRestartCount(
-  botId: string,
-  flowId: string,
-  telegramUserId: number,
-) {
-  const supabase = getSupabase()
-  await supabase
-    .from("user_flow_state")
-    .update({ restart_count: 0, updated_at: new Date().toISOString() })
-    .eq("bot_id", botId)
-    .eq("flow_id", flowId)
-    .eq("telegram_user_id", telegramUserId)
-}
-
 async function completeAllStates(botId: string, telegramUserId: number) {
   const supabase = getSupabase()
   const { data: states } = await supabase
@@ -479,7 +439,6 @@ async function processWebhook({
   // ------------------------------------------------------------------
 if (isStart) {
   await completeAllStates(bot.id, telegramUserId)
-  await resetRestartCount(bot.id, primaryFlow.id, telegramUserId)
   
   const nodes = await fetchNodes(primaryFlow.id)
   if (nodes.length === 0) return
@@ -654,26 +613,6 @@ async function executeNodes(
           case "end": {
             await setFlowState(botId, flowId, telegramUserId, chatId, node.position, "completed")
             return // STOP
-          }
-
-          // -- Restart this flow from position 0 --
-          case "restart": {
-            const maxRestarts = parseInt((node.config?.max_restarts as string) || "0") || 0
-            const currentRestartCount = await getAndIncrementRestartCount(botId, flowId, telegramUserId)
-            
-            // Se tem limite e ja atingiu, nao reinicia mais
-            if (maxRestarts > 0 && currentRestartCount > maxRestarts) {
-              // Encerra o fluxo ao inves de reiniciar
-              await setFlowState(botId, flowId, telegramUserId, chatId, node.position, "completed")
-              return // STOP - limite de restarts atingido
-            }
-            
-            await setFlowState(botId, flowId, telegramUserId, chatId, 0, "in_progress")
-            const restartNodes = await fetchNodes(flowId)
-            if (restartNodes.length > 0) {
-              await executeNodes(botToken, chatId, restartNodes, 0, botId, flowId, telegramUserId, depth + 1)
-            }
-            return // STOP (recursive call handles the rest)
           }
 
           // -- Go to another flow --
