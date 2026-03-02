@@ -1,8 +1,5 @@
-import { createClient } from '@supabase/supabase-js'
 import { type NextRequest, NextResponse } from 'next/server'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+import { getSupabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,8 +27,8 @@ export async function POST(request: NextRequest) {
     const ext = file.name.split('.').pop()
     const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`
 
-    // Create Supabase client with service role key
-    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    // Get Supabase client
+    const supabase = getSupabase()
 
     // Convert File to ArrayBuffer then to Buffer for upload
     const arrayBuffer = await file.arrayBuffer()
