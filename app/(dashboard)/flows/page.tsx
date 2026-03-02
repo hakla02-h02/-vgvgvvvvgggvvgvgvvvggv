@@ -601,38 +601,56 @@ export default function FlowsPage() {
   // Flow creation mode: null = choosing, "basico" | "completo"
   const [newFlowMode, setNewFlowMode] = useState<"basico" | "completo" | null>(null)
 
-  // Basic flow wizard fields
+  // Basic flow wizard fields (simplified: media -> text -> buttons)
   const [basicWizardStep, setBasicWizardStep] = useState(1)
-  const [basicWelcomeMsg, setBasicWelcomeMsg] = useState("")
-  const [basicProductName, setBasicProductName] = useState("")
-  const [basicProductDesc, setBasicProductDesc] = useState("")
-  const [basicProductPrice, setBasicProductPrice] = useState("")
+  const [basicHasMedia, setBasicHasMedia] = useState(false)
+  const [basicMediaFile, setBasicMediaFile] = useState<File | null>(null)
   const [basicMediaUrl, setBasicMediaUrl] = useState("")
-  const [basicMediaType, setBasicMediaType] = useState<"photo" | "video" | "none">("none")
-  const [basicButtonText, setBasicButtonText] = useState("")
-  const [basicButtonUrl, setBasicButtonUrl] = useState("")
+  const [basicMediaType, setBasicMediaType] = useState<"photo" | "video">("photo")
+  const [basicIsUploading, setBasicIsUploading] = useState(false)
+  const [basicWelcomeMsg, setBasicWelcomeMsg] = useState("")
+  const [basicHasButtons, setBasicHasButtons] = useState(false)
+  const [basicButtons, setBasicButtons] = useState<{ text: string; url: string }[]>([])
 
   const resetBasicFlow = () => {
     setBasicWizardStep(1)
-    setBasicWelcomeMsg("")
-    setBasicProductName("")
-    setBasicProductDesc("")
-    setBasicProductPrice("")
+    setBasicHasMedia(false)
+    setBasicMediaFile(null)
     setBasicMediaUrl("")
-    setBasicMediaType("none")
-    setBasicButtonText("")
-    setBasicButtonUrl("")
+    setBasicMediaType("photo")
+    setBasicIsUploading(false)
+    setBasicWelcomeMsg("")
+    setBasicHasButtons(false)
+    setBasicButtons([])
   }
 
-  // Basic wizard has 5 steps
-  const BASIC_WIZARD_TOTAL_STEPS = 5
+  // Upload media file
+  const handleBasicMediaUpload = async (file: File) => {
+    setBasicIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      const data = await res.json()
+      if (data.url) {
+        setBasicMediaUrl(data.url)
+        setBasicMediaType(file.type.startsWith("video") ? "video" : "photo")
+        setBasicMediaFile(file)
+      }
+    } catch (err) {
+      console.error("Upload error:", err)
+    } finally {
+      setBasicIsUploading(false)
+    }
+  }
+
+  // Basic wizard has 3 steps
+  const BASIC_WIZARD_TOTAL_STEPS = 3
   const canGoNextBasicStep = () => {
     switch (basicWizardStep) {
-      case 1: return basicProductName.trim().length > 0
-      case 2: return basicProductPrice.trim().length > 0
-      case 3: return true // Welcome message is optional
-      case 4: return true // Media is optional
-      case 5: return true // Button is optional (final step)
+      case 1: return true // Media is optional
+      case 2: return basicWelcomeMsg.trim().length > 0 // Text is required
+      case 3: return true // Buttons are optional (final step)
       default: return false
     }
   }
@@ -893,7 +911,8 @@ export default function FlowsPage() {
     setIsCreatingFlow(true)
 
     const isFirst = flows.length === 0
-    const flowName = basicProductName.trim()
+    // Generate flow name from first words of message or default
+    const flowName = basicWelcomeMsg.trim().split(" ").slice(0, 3).join(" ") || "Boas-vindas"
 
     let insertPayload: Record<string, unknown> = {
       bot_id: selectedBot.id,
@@ -947,42 +966,25 @@ export default function FlowsPage() {
     })
 
     // 2) Welcome message with media + buttons
-    const welcomeText = basicWelcomeMsg.trim() || `Ola! Confira nosso produto: ${basicProductName.trim()}`
-    const fullText = basicProductDesc.trim()
-      ? `${welcomeText}\n\n${basicProductDesc.trim()}\n\nValor: R$ ${basicProductPrice.trim()}`
-      : `${welcomeText}\n\nValor: R$ ${basicProductPrice.trim()}`
+    const msgText = basicWelcomeMsg.trim()
     
-    const buttons: InlineButton[] = []
-    if (basicButtonText.trim() && basicButtonUrl.trim()) {
-      buttons.push({ text: basicButtonText.trim(), url: basicButtonUrl.trim() })
-    }
+    // Build buttons array from basicButtons
+    const buttons: InlineButton[] = basicButtons
+      .filter(b => b.text.trim() && b.url.trim())
+      .map(b => ({ text: b.text.trim(), url: b.url.trim() }))
 
     autoNodes.push({
       type: "message",
-      label: fullText.length > 40 ? fullText.slice(0, 40) + "..." : fullText,
+      label: msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText,
       config: {
-        text: fullText,
-        media_url: basicMediaType !== "none" ? basicMediaUrl : "",
-        media_type: basicMediaType !== "none" ? basicMediaType : "",
+        text: msgText,
+        media_url: basicHasMedia ? basicMediaUrl : "",
+        media_type: basicHasMedia ? basicMediaType : "",
         buttons: buttons.length > 0 ? JSON.stringify(buttons) : "",
-        subVariant: basicMediaType !== "none" ? "media" : "text",
+        subVariant: basicHasMedia ? "media" : "text",
       },
       position: 1,
     })
-
-    // 3) Payment node if price is set
-    if (basicProductPrice.trim()) {
-      autoNodes.push({
-        type: "payment",
-        label: `Pagamento: ${basicProductName.trim()}`,
-        config: {
-          amount: basicProductPrice.trim(),
-          description: basicProductName.trim(),
-          subVariant: "charge",
-        },
-        position: 2,
-      })
-    }
 
     // Insert all nodes
     for (const node of autoNodes) {
@@ -2296,153 +2298,201 @@ if (sv === "end") {
               <div className="flex flex-1 gap-4 px-6 pb-4 min-h-0">
                 {/* Left: Question */}
                 <div className="flex-1 flex flex-col">
-                  {/* Step 1: Product Name */}
+                  {/* Step 1: Media (optional) */}
                   {basicWizardStep === 1 && (
                     <div className="flex flex-col gap-4 py-4">
                       <div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">Nome do produto</h3>
-                        <p className="text-sm text-muted-foreground">O que voce vai vender?</p>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Midia</h3>
+                        <p className="text-sm text-muted-foreground">Quer enviar uma foto ou video antes da mensagem?</p>
                       </div>
-                      <Input
-                        autoFocus
-                        value={basicProductName}
-                        onChange={(e) => setBasicProductName(e.target.value)}
-                        placeholder="Ex: Curso de Marketing Digital"
-                        className="bg-secondary/50 border-border rounded-xl text-foreground h-12 text-base"
-                        onKeyDown={(e) => e.key === "Enter" && canGoNextBasicStep() && setBasicWizardStep(2)}
-                      />
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {["Ebook", "Curso Online", "Mentoria", "Consultoria", "Produto Digital"].map((sug) => (
-                          <button
-                            key={sug}
-                            className="px-3 py-1.5 text-xs rounded-lg border border-border/60 bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:border-border transition-all"
-                            onClick={() => setBasicProductName(sug)}
-                          >
-                            {sug}
-                          </button>
-                        ))}
+                      
+                      {/* Toggle midia */}
+                      <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-secondary/20">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-500/10 border border-blue-500/20">
+                            <Image className="h-5 w-5 text-blue-400" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Anexar foto ou video</p>
+                            <p className="text-xs text-muted-foreground/60">Opcional</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={basicHasMedia}
+                          onCheckedChange={(checked) => {
+                            setBasicHasMedia(checked)
+                            if (!checked) {
+                              setBasicMediaFile(null)
+                              setBasicMediaUrl("")
+                            }
+                          }}
+                        />
                       </div>
+
+                      {/* Upload area */}
+                      {basicHasMedia && (
+                        <div className="flex flex-col gap-3">
+                          {!basicMediaUrl ? (
+                            <label className="flex flex-col items-center justify-center gap-2 p-6 rounded-xl border-2 border-dashed border-border/60 bg-secondary/10 cursor-pointer hover:bg-secondary/20 hover:border-accent/30 transition-all">
+                              <input
+                                type="file"
+                                accept="image/*,video/*"
+                                className="hidden"
+                                onChange={(e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file) handleBasicMediaUpload(file)
+                                }}
+                              />
+                              {basicIsUploading ? (
+                                <>
+                                  <Loader2 className="h-8 w-8 text-accent animate-spin" />
+                                  <p className="text-sm text-muted-foreground">Enviando...</p>
+                                </>
+                              ) : (
+                                <>
+                                  <Upload className="h-8 w-8 text-muted-foreground/50" />
+                                  <p className="text-sm text-muted-foreground">Clique para enviar foto ou video</p>
+                                  <p className="text-xs text-muted-foreground/50">JPG, PNG, GIF, MP4 (max 50MB)</p>
+                                </>
+                              )}
+                            </label>
+                          ) : (
+                            <div className="flex items-center gap-3 p-3 rounded-xl border border-accent/30 bg-accent/5">
+                              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-accent/10">
+                                {basicMediaType === "photo" ? (
+                                  <Image className="h-6 w-6 text-accent" />
+                                ) : (
+                                  <Video className="h-6 w-6 text-accent" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {basicMediaFile?.name || "Arquivo enviado"}
+                                </p>
+                                <p className="text-xs text-muted-foreground/60">
+                                  {basicMediaType === "photo" ? "Foto" : "Video"}
+                                </p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => {
+                                  setBasicMediaFile(null)
+                                  setBasicMediaUrl("")
+                                }}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
-                  {/* Step 2: Price */}
+                  {/* Step 2: Message Text */}
                   {basicWizardStep === 2 && (
                     <div className="flex flex-col gap-4 py-4">
                       <div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">Qual o valor?</h3>
-                        <p className="text-sm text-muted-foreground">Preco do {basicProductName || "produto"}</p>
-                      </div>
-                      <div className="relative">
-                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-accent font-semibold">R$</span>
-                        <Input
-                          autoFocus
-                          type="text"
-                          value={basicProductPrice}
-                          onChange={(e) => setBasicProductPrice(e.target.value.replace(/[^\d.,]/g, ""))}
-                          placeholder="0,00"
-                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12 text-base pl-12"
-                          onKeyDown={(e) => e.key === "Enter" && canGoNextBasicStep() && setBasicWizardStep(3)}
-                        />
-                      </div>
-                      <div className="flex flex-wrap gap-2 mt-2">
-                        {["27", "47", "97", "197", "297", "497"].map((price) => (
-                          <button
-                            key={price}
-                            className={`px-3 py-1.5 text-xs rounded-lg border transition-all ${
-                              basicProductPrice === price
-                                ? "border-accent bg-accent/10 text-accent"
-                                : "border-border/60 bg-secondary/30 text-muted-foreground hover:bg-secondary/60 hover:border-border"
-                            }`}
-                            onClick={() => setBasicProductPrice(price)}
-                          >
-                            R$ {price}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Step 3: Welcome Message */}
-                  {basicWizardStep === 3 && (
-                    <div className="flex flex-col gap-4 py-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">Mensagem de boas-vindas</h3>
-                        <p className="text-sm text-muted-foreground">O que o bot dira quando alguem iniciar? <span className="text-muted-foreground/50">(opcional)</span></p>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Mensagem</h3>
+                        <p className="text-sm text-muted-foreground">O que o bot vai enviar quando alguem iniciar?</p>
                       </div>
                       <Textarea
                         autoFocus
                         value={basicWelcomeMsg}
                         onChange={(e) => setBasicWelcomeMsg(e.target.value)}
-                        placeholder="Ex: Opa! Que bom ter voce aqui. Olha so essa oportunidade:"
-                        className="bg-secondary/50 border-border rounded-xl text-foreground min-h-[100px] resize-none text-base"
-                        rows={4}
+                        placeholder="Ex: Opa! Que bom ter voce aqui. Olha so essa oportunidade..."
+                        className="bg-secondary/50 border-border rounded-xl text-foreground min-h-[140px] resize-none text-base"
+                        rows={5}
                       />
-                      <p className="text-xs text-muted-foreground/60">Se deixar vazio, usaremos: "Ola! Confira nosso produto: {basicProductName}"</p>
                     </div>
                   )}
 
-                  {/* Step 4: Media */}
-                  {basicWizardStep === 4 && (
+                  {/* Step 3: Buttons (optional) */}
+                  {basicWizardStep === 3 && (
                     <div className="flex flex-col gap-4 py-4">
                       <div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">Adicionar midia?</h3>
-                        <p className="text-sm text-muted-foreground">Uma foto ou video do produto <span className="text-muted-foreground/50">(opcional)</span></p>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Botoes</h3>
+                        <p className="text-sm text-muted-foreground">Quer adicionar botoes de link na mensagem?</p>
                       </div>
-                      <div className="flex gap-3">
-                        {(["none", "photo", "video"] as const).map((mt) => (
-                          <button
-                            key={mt}
-                            className={`flex-1 flex flex-col items-center gap-2 rounded-xl border p-4 transition-all ${
-                              basicMediaType === mt
-                                ? "border-accent bg-accent/10"
-                                : "border-border/60 bg-secondary/30 hover:bg-secondary/60 hover:border-border"
-                            }`}
-                            onClick={() => setBasicMediaType(mt)}
-                          >
-                            {mt === "none" && <X className={`h-6 w-6 ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`} />}
-                            {mt === "photo" && <Image className={`h-6 w-6 ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`} />}
-                            {mt === "video" && <Video className={`h-6 w-6 ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`} />}
-                            <span className={`text-xs font-medium ${basicMediaType === mt ? "text-accent" : "text-muted-foreground"}`}>
-                              {mt === "none" ? "Sem midia" : mt === "photo" ? "Foto" : "Video"}
-                            </span>
-                          </button>
-                        ))}
-                      </div>
-                      {basicMediaType !== "none" && (
-                        <Input
-                          autoFocus
-                          value={basicMediaUrl}
-                          onChange={(e) => setBasicMediaUrl(e.target.value)}
-                          placeholder={basicMediaType === "photo" ? "URL da foto do produto" : "URL do video"}
-                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12"
+
+                      {/* Toggle buttons */}
+                      <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-secondary/20">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
+                            <Link className="h-5 w-5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-foreground">Adicionar botoes</p>
+                            <p className="text-xs text-muted-foreground/60">Opcional</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={basicHasButtons}
+                          onCheckedChange={(checked) => {
+                            setBasicHasButtons(checked)
+                            if (checked && basicButtons.length === 0) {
+                              setBasicButtons([{ text: "", url: "" }])
+                            } else if (!checked) {
+                              setBasicButtons([])
+                            }
+                          }}
                         />
+                      </div>
+
+                      {/* Buttons list */}
+                      {basicHasButtons && (
+                        <div className="flex flex-col gap-3">
+                          {basicButtons.map((btn, i) => (
+                            <div key={i} className="flex gap-2 items-start">
+                              <div className="flex-1 flex flex-col gap-2">
+                                <Input
+                                  value={btn.text}
+                                  onChange={(e) => {
+                                    const updated = [...basicButtons]
+                                    updated[i].text = e.target.value
+                                    setBasicButtons(updated)
+                                  }}
+                                  placeholder="Texto do botao"
+                                  className="bg-secondary/50 border-border rounded-xl text-foreground h-10"
+                                />
+                                <Input
+                                  value={btn.url}
+                                  onChange={(e) => {
+                                    const updated = [...basicButtons]
+                                    updated[i].url = e.target.value
+                                    setBasicButtons(updated)
+                                  }}
+                                  placeholder="https://..."
+                                  className="bg-secondary/50 border-border rounded-xl text-foreground h-10"
+                                />
+                              </div>
+                              {basicButtons.length > 1 && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-10 w-10 text-muted-foreground hover:text-destructive shrink-0"
+                                  onClick={() => setBasicButtons(basicButtons.filter((_, j) => j !== i))}
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          ))}
+                          {basicButtons.length < 3 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="w-fit text-xs"
+                              onClick={() => setBasicButtons([...basicButtons, { text: "", url: "" }])}
+                            >
+                              <Plus className="h-3 w-3 mr-1.5" />
+                              Adicionar botao
+                            </Button>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
-
-                  {/* Step 5: Button (optional) */}
-                  {basicWizardStep === 5 && (
-                    <div className="flex flex-col gap-4 py-4">
-                      <div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">Botao de link</h3>
-                        <p className="text-sm text-muted-foreground">Adicione um botao na mensagem <span className="text-muted-foreground/50">(opcional)</span></p>
-                      </div>
-                      <div className="flex flex-col gap-3">
-                        <Input
-                          autoFocus
-                          value={basicButtonText}
-                          onChange={(e) => setBasicButtonText(e.target.value)}
-                          placeholder="Texto do botao (ex: Comprar agora)"
-                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12"
-                        />
-                        <Input
-                          value={basicButtonUrl}
-                          onChange={(e) => setBasicButtonUrl(e.target.value)}
-                          placeholder="Link (https://...)"
-                          className="bg-secondary/50 border-border rounded-xl text-foreground h-12"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground/60">Se nao quiser botao, pode deixar vazio e clicar em "Criar"</p>
                     </div>
                   )}
                 </div>
@@ -2467,11 +2517,15 @@ if (sv === "end") {
                     {/* Chat messages */}
                     <div className="flex-1 flex flex-col gap-2 overflow-hidden">
                       {/* Media preview if exists */}
-                      {basicMediaType !== "none" && basicMediaUrl && (
+                      {basicHasMedia && basicMediaUrl && (
                         <div className="bg-[#182533] rounded-lg p-1.5 max-w-full">
-                          <div className="bg-[#0d1318] rounded h-20 flex items-center justify-center">
+                          <div className="bg-[#0d1318] rounded h-20 flex items-center justify-center overflow-hidden">
                             {basicMediaType === "photo" ? (
-                              <Image className="h-6 w-6 text-white/20" />
+                              basicMediaUrl.startsWith("http") ? (
+                                <img src={basicMediaUrl} alt="Preview" className="w-full h-full object-cover" />
+                              ) : (
+                                <Image className="h-6 w-6 text-white/20" />
+                              )
                             ) : (
                               <Video className="h-6 w-6 text-white/20" />
                             )}
@@ -2482,40 +2536,16 @@ if (sv === "end") {
                       {/* Message bubble */}
                       <div className="bg-[#182533] rounded-lg p-2 max-w-full">
                         <p className="text-[10px] text-white/90 whitespace-pre-wrap break-words leading-relaxed">
-                          {basicWelcomeMsg.trim() || (basicProductName ? `Ola! Confira nosso produto: ${basicProductName}` : "Ola! Confira nosso produto")}
-                          {basicProductDesc && (
-                            <>
-                              {"\n\n"}
-                              {basicProductDesc}
-                            </>
-                          )}
-                          {basicProductPrice && (
-                            <>
-                              {"\n\n"}
-                              <span className="font-semibold">Valor: R$ {basicProductPrice}</span>
-                            </>
-                          )}
+                          {basicWelcomeMsg.trim() || "Sua mensagem aqui..."}
                         </p>
                       </div>
 
-                      {/* Button preview */}
-                      {basicButtonText && basicButtonUrl && (
-                        <div className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
-                          <span className="text-[10px] text-white font-medium">{basicButtonText}</span>
+                      {/* Button previews */}
+                      {basicHasButtons && basicButtons.filter(b => b.text).map((btn, i) => (
+                        <div key={i} className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
+                          <span className="text-[10px] text-white font-medium">{btn.text}</span>
                         </div>
-                      )}
-
-                      {/* Payment preview */}
-                      {basicProductPrice && (
-                        <div className="bg-[#182533] rounded-lg p-2 border border-green-500/20">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <CreditCard className="h-3 w-3 text-green-400" />
-                            <span className="text-[9px] text-green-400 font-medium">Pagamento PIX</span>
-                          </div>
-                          <p className="text-[10px] text-white/70">{basicProductName || "Produto"}</p>
-                          <p className="text-[11px] text-white font-bold">R$ {basicProductPrice}</p>
-                        </div>
-                      )}
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -2549,7 +2579,7 @@ if (sv === "end") {
                 ) : (
                   <Button
                     className="bg-success text-success-foreground hover:bg-success/90 rounded-xl min-w-[120px]"
-                    disabled={!basicProductName.trim() || !basicProductPrice.trim() || isCreatingFlow}
+                    disabled={!basicWelcomeMsg.trim() || isCreatingFlow}
                     onClick={handleCreateBasicFlow}
                   >
                     {isCreatingFlow ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Zap className="mr-2 h-4 w-4" />}
