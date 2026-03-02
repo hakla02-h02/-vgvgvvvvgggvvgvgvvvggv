@@ -285,6 +285,7 @@ CREATE TABLE IF NOT EXISTS user_flow_state (
   chat_id BIGINT NOT NULL,
   current_node_position INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed', 'waiting_response')),
+  restart_count INTEGER NOT NULL DEFAULT 0,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   UNIQUE (bot_id, flow_id, telegram_user_id)

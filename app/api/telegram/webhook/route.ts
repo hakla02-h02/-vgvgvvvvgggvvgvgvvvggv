@@ -317,6 +317,46 @@ async function setFlowState(
   }
 }
 
+async function getAndIncrementRestartCount(
+  botId: string,
+  flowId: string,
+  telegramUserId: number,
+): Promise<number> {
+  const supabase = getSupabase()
+  
+  const { data: existing } = await supabase
+    .from("user_flow_state")
+    .select("id, restart_count")
+    .eq("bot_id", botId)
+    .eq("flow_id", flowId)
+    .eq("telegram_user_id", telegramUserId)
+    .limit(1)
+
+  if (existing && existing.length > 0) {
+    const currentCount = (existing[0].restart_count || 0) + 1
+    await supabase
+      .from("user_flow_state")
+      .update({ restart_count: currentCount, updated_at: new Date().toISOString() })
+      .eq("id", existing[0].id)
+    return currentCount
+  }
+  return 1
+}
+
+async function resetRestartCount(
+  botId: string,
+  flowId: string,
+  telegramUserId: number,
+) {
+  const supabase = getSupabase()
+  await supabase
+    .from("user_flow_state")
+    .update({ restart_count: 0, updated_at: new Date().toISOString() })
+    .eq("bot_id", botId)
+    .eq("flow_id", flowId)
+    .eq("telegram_user_id", telegramUserId)
+}
+
 async function completeAllStates(botId: string, telegramUserId: number) {
   const supabase = getSupabase()
   const { data: states } = await supabase
@@ -340,30 +380,22 @@ async function completeAllStates(botId: string, telegramUserId: number) {
 // ---------------------------------------------------------------------------
 
 export async function POST(req: NextRequest) {
-  console.log("[v0] Webhook POST recebido")
-  
   const { searchParams } = new URL(req.url)
   const botToken = searchParams.get("token")
 
   if (!botToken) {
-    console.log("[v0] Token ausente na URL")
     return NextResponse.json({ error: "Missing token" }, { status: 400 })
   }
-
-  console.log("[v0] Token encontrado:", botToken.substring(0, 10) + "...")
 
   let update: Record<string, unknown>
   try {
     update = await req.json()
-    console.log("[v0] Update recebido:", JSON.stringify(update).substring(0, 200))
-  } catch (e) {
-    console.log("[v0] Erro ao parsear JSON:", e)
+  } catch {
     return NextResponse.json({ ok: true })
   }
 
   const message = update?.message as Record<string, unknown> | undefined
   if (!message) {
-    console.log("[v0] Nenhuma mensagem no update")
     return NextResponse.json({ ok: true })
   }
 
@@ -374,13 +406,9 @@ export async function POST(req: NextRequest) {
   const messageText = ((message.text as string) || "").trim()
   const isStart = messageText === "/start" || messageText.startsWith("/start ")
 
-  console.log("[v0] Mensagem:", messageText, "| chatId:", chatId, "| isStart:", isStart)
-
   try {
     await processWebhook({ botToken, chatId, telegramUserId, messageText, isStart, fromData: from })
-    console.log("[v0] processWebhook executado com sucesso")
-  } catch (err) {
-    console.log("[v0] Erro no processWebhook:", err)
+  } catch {
     // Always return 200 to Telegram
   }
 
@@ -408,8 +436,6 @@ async function processWebhook({
 }) {
   const supabase = getSupabase()
 
-  console.log("[v0] processWebhook iniciado")
-
   // 1. Find bot
   const { data: bots, error: botError } = await supabase
     .from("bots")
@@ -417,40 +443,23 @@ async function processWebhook({
     .eq("token", botToken)
     .limit(1)
 
-  console.log("[v0] Busca bot - bots:", bots?.length, "erro:", botError?.message)
-
-  if (botError || !bots?.length) {
-    console.log("[v0] Bot nao encontrado no banco de dados")
-    return
-  }
+  if (botError || !bots?.length) return
   const bot = bots[0]
-  console.log("[v0] Bot encontrado:", bot.id, "status:", bot.status)
-  
-  if (bot.status !== "active") {
-    console.log("[v0] Bot nao esta ativo")
-    return
-  }
+  if (bot.status !== "active") return
 
   // 2. Upsert user
   await upsertBotUser(bot.id, telegramUserId, chatId, fromData)
-  console.log("[v0] Usuario atualizado/criado")
 
   // 3. Find active flows
-  const { data: allFlows, error: flowError } = await supabase
+  const { data: allFlows } = await supabase
     .from("flows")
     .select("id, name, category, status")
     .eq("bot_id", bot.id)
     .eq("status", "ativo")
     .order("created_at", { ascending: true })
 
-  console.log("[v0] Busca flows - flows:", allFlows?.length, "erro:", flowError?.message)
-
-  if (!allFlows || allFlows.length === 0) {
-    console.log("[v0] Nenhum fluxo ativo encontrado para o bot")
-    return
-  }
+  if (!allFlows || allFlows.length === 0) return
   const primaryFlow = allFlows[0]
-  console.log("[v0] Fluxo primario:", primaryFlow.id, "nome:", primaryFlow.name)
 
   // 4. Get user states
   const { data: allStates } = await supabase
@@ -468,15 +477,16 @@ async function processWebhook({
   // ------------------------------------------------------------------
   // /start  –  Reset everything and run the primary flow from scratch
   // ------------------------------------------------------------------
-  if (isStart) {
-    await completeAllStates(bot.id, telegramUserId)
-
-    const nodes = await fetchNodes(primaryFlow.id)
-    if (nodes.length === 0) return
-
-    await setFlowState(bot.id, primaryFlow.id, telegramUserId, chatId, 0, "in_progress")
-    await executeNodes(botToken, chatId, nodes, 0, bot.id, primaryFlow.id, telegramUserId)
-    return
+if (isStart) {
+  await completeAllStates(bot.id, telegramUserId)
+  await resetRestartCount(bot.id, primaryFlow.id, telegramUserId)
+  
+  const nodes = await fetchNodes(primaryFlow.id)
+  if (nodes.length === 0) return
+  
+  await setFlowState(bot.id, primaryFlow.id, telegramUserId, chatId, 0, "in_progress")
+  await executeNodes(botToken, chatId, nodes, 0, bot.id, primaryFlow.id, telegramUserId)
+  return
   }
 
   // ------------------------------------------------------------------
@@ -554,10 +564,7 @@ async function executeNodes(
   depth: number = 0,
 ) {
   // Proteção contra loop infinito (max 5 restarts por execução)
-  if (depth > 5) {
-    console.log("[v0] Loop infinito detectado - profundidade excedeu 5")
-    return
-  }
+  if (depth > 5) return
   
   const supabase = getSupabase()
   const remaining = nodes.filter((n) => n.position >= startPosition)
@@ -651,6 +658,16 @@ async function executeNodes(
 
           // -- Restart this flow from position 0 --
           case "restart": {
+            const maxRestarts = parseInt((node.config?.max_restarts as string) || "0") || 0
+            const currentRestartCount = await getAndIncrementRestartCount(botId, flowId, telegramUserId)
+            
+            // Se tem limite e ja atingiu, nao reinicia mais
+            if (maxRestarts > 0 && currentRestartCount > maxRestarts) {
+              // Encerra o fluxo ao inves de reiniciar
+              await setFlowState(botId, flowId, telegramUserId, chatId, node.position, "completed")
+              return // STOP - limite de restarts atingido
+            }
+            
             await setFlowState(botId, flowId, telegramUserId, chatId, 0, "in_progress")
             const restartNodes = await fetchNodes(flowId)
             if (restartNodes.length > 0) {

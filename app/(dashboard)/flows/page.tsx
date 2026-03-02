@@ -339,7 +339,9 @@ const actionTemplates: { type: NodeType; label: string; description: string; con
     type: "action",
     label: "Recomecar Fluxo",
     description: "Voltar ao inicio deste fluxo",
-    configFields: [],
+    configFields: [
+      { key: "max_restarts", label: "Limite de reinicios", placeholder: "Ex: 3 (0 = ilimitado)", inputType: "number" },
+    ],
     subVariant: "restart",
   },
   {
@@ -1168,9 +1170,10 @@ export default function FlowsPage() {
         target_flow_name: nodeConfigValues.target_flow_name,
         subVariant: "goto_flow",
       }
-    } else if (selectedTemplate.subVariant === "restart") {
-      label = "Recomecar Fluxo"
-      config = { subVariant: "restart" }
+} else if (selectedTemplate.subVariant === "restart") {
+  const maxRestarts = parseInt(nodeConfigValues.max_restarts || "0") || 0
+  label = maxRestarts > 0 ? `Recomecar Fluxo (max ${maxRestarts}x)` : "Recomecar Fluxo"
+  config = { subVariant: "restart", max_restarts: maxRestarts }
     } else if (selectedTemplate.subVariant === "end") {
       label = "Encerrar Conversa"
       config = { subVariant: "end" }
@@ -1284,9 +1287,10 @@ export default function FlowsPage() {
     }
     } else if (editingNode.type === "action") {
       const sv = editingNode.config?.subVariant || ""
-      if (sv === "restart") {
-        finalConfig = { subVariant: "restart" }
-        finalLabel = "Recomecar Fluxo"
+if (sv === "restart") {
+  const maxRestarts = parseInt(editNodeConfig.max_restarts || "0") || 0
+  finalConfig = { subVariant: "restart", max_restarts: maxRestarts }
+  finalLabel = maxRestarts > 0 ? `Recomecar Fluxo (max ${maxRestarts}x)` : "Recomecar Fluxo"
       } else if (sv === "end") {
         finalConfig = { subVariant: "end" }
         finalLabel = "Encerrar Conversa"
@@ -2484,11 +2488,11 @@ export default function FlowsPage() {
                                 key={`${tpl.type}-${tpl.subVariant || tplIdx}`}
                                 className="flex items-center gap-4 rounded-xl px-4 py-3.5 text-left transition-all hover:bg-secondary/40 group"
                                 onClick={async () => {
-                                  // Para nós que não precisam de configuração, adiciona direto
-                                  if (tpl.subVariant === "restart" || tpl.subVariant === "end") {
+                                  // Para "end" adiciona direto sem configuracao
+                                  if (tpl.subVariant === "end") {
                                     if (!activeFlow) return
                                     setIsAddingNode(true)
-                                    const label = tpl.subVariant === "restart" ? "Recomecar Fluxo" : "Encerrar Conversa"
+                                    const label = "Encerrar Conversa"
                                     const config = { subVariant: tpl.subVariant }
                                     const newPosition = nodes.length
                                     const { data, error } = await supabase
@@ -2509,6 +2513,7 @@ export default function FlowsPage() {
                                     setIsAddingNode(false)
                                     return
                                   }
+                                  // Para restart e outros, abre modal de configuracao
                                   setSelectedTemplate(tpl)
                                   setNodeConfigValues({})
                                   resetMessageConfig()
