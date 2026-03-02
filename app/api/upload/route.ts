@@ -1,5 +1,8 @@
-import { put } from '@vercel/blob'
+import { createClient } from '@supabase/supabase-js'
 import { type NextRequest, NextResponse } from 'next/server'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,15 +28,35 @@ export async function POST(request: NextRequest) {
     // Generate unique filename
     const timestamp = Date.now()
     const ext = file.name.split('.').pop()
-    const filename = `media/${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`
+    const filename = `${timestamp}-${Math.random().toString(36).substring(7)}.${ext}`
 
-    // Upload to Vercel Blob
-    const blob = await put(filename, file, {
-      access: 'public',
-    })
+    // Create Supabase client with service role key
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+
+    // Convert File to ArrayBuffer then to Buffer for upload
+    const arrayBuffer = await file.arrayBuffer()
+    const buffer = Buffer.from(arrayBuffer)
+
+    // Upload to Supabase Storage (bucket: media)
+    const { data, error } = await supabase.storage
+      .from('media')
+      .upload(filename, buffer, {
+        contentType: file.type,
+        upsert: false,
+      })
+
+    if (error) {
+      console.error('Supabase upload error:', error)
+      return NextResponse.json({ error: 'Upload failed: ' + error.message }, { status: 500 })
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('media')
+      .getPublicUrl(data.path)
 
     return NextResponse.json({
-      url: blob.url,
+      url: urlData.publicUrl,
       filename: file.name,
       size: file.size,
       type: file.type,
