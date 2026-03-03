@@ -536,87 +536,115 @@ export default function BotsPage() {
             </Card>
           ) : (
             <div className="flex flex-col gap-3">
-              {filteredBots.map((bot) => (
-                <Card
-                  key={bot.id}
-                  className={`cursor-pointer bg-card border-border transition-colors hover:bg-secondary/50 ${selectedBot?.id === bot.id ? "ring-1 ring-accent" : ""}`}
-                  onClick={() => setSelectedBot(bot)}
-                >
-                  <CardContent className="p-3 md:p-4">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 md:gap-3 min-w-0">
-                        <div className="flex h-9 w-9 md:h-10 md:w-10 shrink-0 items-center justify-center rounded-lg bg-secondary">
-                          <BotIcon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+              {filteredBots.map((bot) => {
+                const isSelected = selectedBot?.id === bot.id
+                const isActive = bot.status === "active"
+                
+                return (
+                  <Card
+                    key={bot.id}
+                    className={`cursor-pointer bg-card border-border transition-all hover:bg-secondary/30 ${isSelected ? "ring-2 ring-accent border-accent/50" : ""}`}
+                    onClick={() => setSelectedBot(bot)}
+                  >
+                    <CardContent className="p-0">
+                      {/* Main content */}
+                      <div className="flex items-center gap-4 p-4 md:p-5">
+                        {/* Bot icon */}
+                        <div className={`flex h-12 w-12 md:h-14 md:w-14 shrink-0 items-center justify-center rounded-xl ${isActive ? "bg-accent/10" : "bg-secondary"}`}>
+                          <BotIcon className={`h-6 w-6 md:h-7 md:w-7 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-sm font-semibold text-foreground">{bot.name}</h3>
-                            <Circle className={`h-2 w-2 ${bot.status === "active" ? "fill-success text-success" : "fill-muted-foreground text-muted-foreground"}`} />
-                            <Badge variant="outline" className={bot.status === "active" ? "bg-success/10 text-success border-success/20" : "bg-muted text-muted-foreground border-border"}>
-                              {bot.status === "active" ? "Ativo" : "Inativo"}
-                            </Badge>
-                            {selectedBot?.id === bot.id && (
-                              <Badge variant="outline" className="border-accent/30 bg-accent/5 text-accent text-xs">Selecionado</Badge>
+                        
+                        {/* Bot info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className="text-base md:text-lg font-semibold text-foreground truncate">{bot.name}</h3>
+                            {isSelected && (
+                              <Badge className="bg-accent/10 text-accent border-0 text-[10px] font-medium px-2">
+                                Em uso
+                              </Badge>
                             )}
                           </div>
-                          <p className="text-xs font-mono text-muted-foreground">{bot.token.slice(0, 15)}...</p>
+                          {bot.group_name && (
+                            <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                              <LinkIcon className="h-3 w-3" />
+                              {bot.group_name}
+                            </p>
+                          )}
+                        </div>
+                        
+                        {/* Status and actions */}
+                        <div className="flex items-center gap-3 shrink-0">
+                          {/* Status indicator */}
+                          <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full ${isActive ? "bg-success/10" : "bg-secondary"}`}>
+                            <div className={`h-2 w-2 rounded-full ${isActive ? "bg-success animate-pulse" : "bg-muted-foreground"}`} />
+                            <span className={`text-xs font-medium ${isActive ? "text-success" : "text-muted-foreground"}`}>
+                              {isActive ? "Ativo" : "Inativo"}
+                            </span>
+                          </div>
+                          
+                          {/* Toggle */}
+                          <Switch
+                            checked={isActive}
+                            onCheckedChange={async (checked) => {
+                              try {
+                                await updateBot(bot.id, { status: checked ? "active" : "inactive" })
+                                await fetch("/api/telegram/register", {
+                                  method: "POST",
+                                  headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ botToken: bot.token, action: checked ? "register" : "unregister" }),
+                                })
+                              } catch { /* handled */ }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                          
+                          {/* Menu */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground" onClick={(e) => e.stopPropagation()}>
+                                <MoreHorizontal className="h-5 w-5" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-popover border-border w-44">
+                              <DropdownMenuItem className="flex items-center gap-2 text-foreground" onClick={(e) => { e.stopPropagation(); openConfig(bot) }}>
+                                <Settings className="h-4 w-4" />
+                                Configurar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="flex items-center gap-2 text-foreground" onClick={(e) => { e.stopPropagation(); setSelectedBot(bot) }}>
+                                <Circle className="h-4 w-4" />
+                                Selecionar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="flex items-center gap-2 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}>
+                                <Trash2 className="h-4 w-4" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1 md:gap-2 shrink-0">
+                      
+                      {/* Footer with metadata */}
+                      <div className="flex items-center justify-between gap-4 px-4 md:px-5 py-3 border-t border-border/50 bg-secondary/20">
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span className="flex items-center gap-1.5">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            {new Date(bot.created_at).toLocaleDateString("pt-BR")}
+                          </span>
+                        </div>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
-                          className="gap-1.5 text-muted-foreground hover:text-foreground"
+                          className="h-8 gap-1.5 text-xs text-muted-foreground hover:text-accent"
                         >
                           <Settings className="h-3.5 w-3.5" />
-                          <span className="hidden md:inline text-xs">Configurar</span>
+                          Configurar
                         </Button>
-                        <Switch
-                          checked={bot.status === "active"}
-                          onCheckedChange={async (checked) => {
-                            try {
-                              await updateBot(bot.id, { status: checked ? "active" : "inactive" })
-                              await fetch("/api/telegram/register", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ botToken: bot.token, action: checked ? "register" : "unregister" }),
-                              })
-                            } catch { /* handled */ }
-                          }}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={(e) => e.stopPropagation()}>
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-popover border-border">
-                            <DropdownMenuItem className="flex items-center gap-2 text-foreground" onClick={(e) => { e.stopPropagation(); openConfig(bot) }}>
-                              <Settings className="h-3.5 w-3.5" />
-                              Configurar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="flex items-center gap-2 text-destructive" onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}>
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Deletar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
-                    </div>
-                    <div className="mt-3 flex items-center gap-3 text-xs text-muted-foreground">
-                      <span>Criado em {new Date(bot.created_at).toLocaleDateString("pt-BR")}</span>
-                      {bot.group_name && (
-                        <Badge variant="outline" className="border-border text-muted-foreground text-[10px]">
-                          <LinkIcon className="mr-1 h-2.5 w-2.5" />
-                          {bot.group_name}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
           )}
         </div>
