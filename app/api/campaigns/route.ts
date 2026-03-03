@@ -173,6 +173,22 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
+    // When campaign is activated, trigger execution immediately
+    if (status === "ativa") {
+      const baseUrl = req.headers.get("x-forwarded-proto") && req.headers.get("x-forwarded-host")
+        ? `${req.headers.get("x-forwarded-proto")}://${req.headers.get("x-forwarded-host")}`
+        : req.headers.get("origin") || new URL(req.url).origin
+
+      // Fire-and-forget: trigger execution in background
+      fetch(`${baseUrl}/api/campaigns/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ campaign_id: id }),
+      }).catch((err) => {
+        console.error("[campaigns] Error triggering execution:", err)
+      })
+    }
+
     return NextResponse.json({ campaign: data })
   } catch (err) {
     console.error("[campaigns] Unexpected error:", err)

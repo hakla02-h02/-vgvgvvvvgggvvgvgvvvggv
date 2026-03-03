@@ -91,8 +91,11 @@ export default function CampaignsPage() {
     setDeleting(null)
   }
 
+  const [activating, setActivating] = useState<string | null>(null)
+
   const handleToggleStatus = async (campaign: Campaign) => {
     const newStatus = campaign.status === "ativa" ? "pausada" : "ativa"
+    setActivating(campaign.id)
     try {
       await fetch("/api/campaigns", {
         method: "PATCH",
@@ -106,6 +109,7 @@ export default function CampaignsPage() {
         setSelectedCampaign({ ...campaign, status: newStatus })
       }
     } catch { /* ignore */ }
+    setActivating(null)
   }
 
   if (!selectedBot) {
@@ -163,6 +167,7 @@ export default function CampaignsPage() {
                     campaign={campaign}
                     isSelected={selectedCampaign?.id === campaign.id}
                     isDeleting={deleting === campaign.id}
+                    isActivating={activating === campaign.id}
                     onSelect={() => setSelectedCampaign(campaign)}
                     onDelete={() => handleDelete(campaign.id)}
                     onToggleStatus={() => handleToggleStatus(campaign)}
@@ -252,11 +257,12 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
 
 // ==================== CAMPAIGN CARD ====================
 function CampaignCard({
-  campaign, isSelected, isDeleting, onSelect, onDelete, onToggleStatus,
+  campaign, isSelected, isDeleting, isActivating, onSelect, onDelete, onToggleStatus,
 }: {
   campaign: Campaign
   isSelected: boolean
   isDeleting: boolean
+  isActivating: boolean
   onSelect: () => void
   onDelete: () => void
   onToggleStatus: () => void
@@ -312,10 +318,13 @@ function CampaignCard({
             {campaign.status !== "concluida" && (
               <button
                 onClick={onToggleStatus}
-                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary transition-colors"
+                disabled={isActivating}
+                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
                 title={campaign.status === "ativa" ? "Pausar" : "Ativar"}
               >
-                {campaign.status === "ativa" ? (
+                {isActivating ? (
+                  <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" />
+                ) : campaign.status === "ativa" ? (
                   <Pause className="h-3.5 w-3.5 text-amber-500" />
                 ) : (
                   <Play className="h-3.5 w-3.5 text-accent" />
