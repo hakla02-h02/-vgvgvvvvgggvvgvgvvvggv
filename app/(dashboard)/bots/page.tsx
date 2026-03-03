@@ -8,14 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
+import { CreateBotWizard } from "@/components/create-bot-wizard"
 import {
   Plus,
   Search,
@@ -62,15 +56,6 @@ export default function BotsPage() {
   const { bots, selectedBot, setSelectedBot, addBot, updateBot, deleteBot } = useBots()
   const [search, setSearch] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-
-  // Create form
-  const [newName, setNewName] = useState("")
-  const [newToken, setNewToken] = useState("")
-  const [newGroupName, setNewGroupName] = useState("")
-  const [newGroupId, setNewGroupId] = useState("")
-  const [newGroupLink, setNewGroupLink] = useState("")
-  const [createError, setCreateError] = useState("")
 
   // Config panel
   const [configBot, setConfigBot] = useState<Bot | null>(null)
@@ -198,32 +183,19 @@ export default function BotsPage() {
     }
   }
 
-  async function handleCreate() {
-    setCreateError("")
-    if (!newName.trim()) { setCreateError("Digite um nome para o bot"); return }
-    if (!newToken.trim()) { setCreateError("Digite o token do bot"); return }
-
-    setIsSubmitting(true)
-    try {
-      const createdBot = await addBot({
-        name: newName.trim(),
-        token: newToken.trim(),
-        group_name: newGroupName.trim() || undefined,
-        group_id: newGroupId.trim() || undefined,
-        group_link: newGroupLink.trim() || undefined,
-      })
-      await fetch("/api/telegram/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ botToken: createdBot.token, action: "register" }),
-      })
-      setNewName(""); setNewToken(""); setNewGroupName(""); setNewGroupId(""); setNewGroupLink("")
-      setCreateOpen(false)
-    } catch (err: unknown) {
-      setCreateError(err instanceof Error ? err.message : "Erro ao criar bot")
-    } finally {
-      setIsSubmitting(false)
-    }
+  async function handleCreate(data: {
+    name: string
+    token: string
+    group_name?: string
+    group_id?: string
+    group_link?: string
+  }) {
+    const createdBot = await addBot(data)
+    await fetch("/api/telegram/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ botToken: createdBot.token, action: "register" }),
+    })
   }
 
   async function handleDelete(id: string) {
@@ -497,51 +469,15 @@ export default function BotsPage() {
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input placeholder="Buscar bots..." value={search} onChange={(e) => setSearch(e.target.value)} className="w-full sm:w-72 bg-secondary pl-9 border-border" />
             </div>
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar Bot
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle className="text-foreground">Criar Novo Bot</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col gap-4 pt-4">
-                  <div className="flex flex-col gap-2">
-                    <Label className="text-foreground">Nome do Bot</Label>
-                    <Input placeholder="Meu Bot de Vendas" value={newName} onChange={(e) => setNewName(e.target.value)} className="bg-secondary border-border" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Label className="text-foreground">Token do Telegram</Label>
-                    <Input placeholder="123456:ABC-DEF..." value={newToken} onChange={(e) => setNewToken(e.target.value)} className="bg-secondary border-border font-mono text-xs" />
-                    <p className="text-xs text-muted-foreground">Pegue o token com o @BotFather no Telegram</p>
-                  </div>
-                  <div className="border-t border-border pt-4">
-                    <p className="mb-3 text-sm font-medium text-foreground">Grupo do Telegram (opcional)</p>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-muted-foreground text-xs">Nome do Grupo</Label>
-                        <Input placeholder="VIP Premium" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} className="bg-secondary border-border" />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-muted-foreground text-xs">ID do Grupo</Label>
-                        <Input placeholder="-1001234567890 ou @meugrupo" value={newGroupId} onChange={(e) => setNewGroupId(e.target.value)} className="bg-secondary border-border font-mono text-xs" />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-muted-foreground text-xs">Link do Grupo</Label>
-                        <Input placeholder="https://t.me/+abc123" value={newGroupLink} onChange={(e) => setNewGroupLink(e.target.value)} className="bg-secondary border-border" />
-                      </div>
-                    </div>
-                  </div>
-                  {createError && <p className="text-sm text-destructive">{createError}</p>}
-                  <Button onClick={handleCreate} disabled={isSubmitting} className="bg-accent text-accent-foreground hover:bg-accent/90">
-                    {isSubmitting ? "Criando..." : "Criar Bot"}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Button onClick={() => setCreateOpen(true)} className="bg-accent text-accent-foreground hover:bg-accent/90">
+              <Plus className="mr-2 h-4 w-4" />
+              Criar Bot
+            </Button>
+            <CreateBotWizard
+              open={createOpen}
+              onOpenChange={setCreateOpen}
+              onCreateBot={handleCreate}
+            />
           </div>
 
           {/* Stats */}

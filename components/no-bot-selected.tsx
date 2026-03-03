@@ -1,11 +1,38 @@
 "use client"
 
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
 import { Bot, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { CreateBotWizard } from "@/components/create-bot-wizard"
+import { useBots } from "@/lib/bot-context"
 
 export function NoBotSelected() {
-  const router = useRouter()
+  const { addBot, bots, isLoading } = useBots()
+  const [wizardOpen, setWizardOpen] = useState(false)
+  const [hasAutoOpened, setHasAutoOpened] = useState(false)
+
+  // Auto-open wizard for new users (no bots)
+  useEffect(() => {
+    if (!isLoading && bots.length === 0 && !hasAutoOpened) {
+      setWizardOpen(true)
+      setHasAutoOpened(true)
+    }
+  }, [isLoading, bots.length, hasAutoOpened])
+
+  async function handleCreateBot(data: {
+    name: string
+    token: string
+    group_name?: string
+    group_id?: string
+    group_link?: string
+  }) {
+    const createdBot = await addBot(data)
+    await fetch("/api/telegram/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ botToken: createdBot.token, action: "register" }),
+    })
+  }
 
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
@@ -19,12 +46,18 @@ export function NoBotSelected() {
         </p>
       </div>
       <Button
-        onClick={() => router.push("/bots")}
+        onClick={() => setWizardOpen(true)}
         className="bg-accent text-accent-foreground hover:bg-accent/90"
       >
         <Plus className="mr-2 h-4 w-4" />
         Criar Bot
       </Button>
+      <CreateBotWizard
+        open={wizardOpen}
+        onOpenChange={setWizardOpen}
+        onCreateBot={handleCreateBot}
+        isNewUser={true}
+      />
     </div>
   )
 }
