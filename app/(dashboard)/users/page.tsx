@@ -10,8 +10,7 @@ import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
 import {
   Users, Crown, Search, TrendingUp, Clock, X,
-  MessageSquare, CreditCard, CheckCircle2, ArrowDown,
-  Calendar, Activity, ChevronRight, Loader2, RefreshCw,
+  ArrowDown, Calendar, Activity, ChevronRight, Loader2, RefreshCw,
 } from "lucide-react"
 import Image from "next/image"
 
@@ -88,15 +87,16 @@ function KPICard({ icon: Icon, label, value, suffix, iconBg, iconColor }: {
 }
 
 // --- Funnel ---
-const funnelIcons = [DragonIconInline, MessageSquare, CreditCard, CheckCircle2]
-const funnelStepColors = [
-  "from-accent/80 to-accent/40",
-  "from-blue-500/80 to-blue-500/40",
-  "from-amber-500/80 to-amber-500/40",
-  "from-emerald-500/80 to-emerald-500/40",
+const FUNNEL_PALETTE = [
+  { gradient: "from-accent/80 to-accent/40", dot: "bg-accent", text: "text-accent" },
+  { gradient: "from-blue-500/80 to-blue-500/40", dot: "bg-blue-500", text: "text-blue-500" },
+  { gradient: "from-amber-500/80 to-amber-500/40", dot: "bg-amber-500", text: "text-amber-500" },
+  { gradient: "from-emerald-500/80 to-emerald-500/40", dot: "bg-emerald-500", text: "text-emerald-500" },
+  { gradient: "from-purple-500/80 to-purple-500/40", dot: "bg-purple-500", text: "text-purple-500" },
+  { gradient: "from-rose-500/80 to-rose-500/40", dot: "bg-rose-500", text: "text-rose-500" },
+  { gradient: "from-cyan-500/80 to-cyan-500/40", dot: "bg-cyan-500", text: "text-cyan-500" },
+  { gradient: "from-orange-500/80 to-orange-500/40", dot: "bg-orange-500", text: "text-orange-500" },
 ]
-const funnelDotColors = ["bg-accent", "bg-blue-500", "bg-amber-500", "bg-emerald-500"]
-const funnelTextColors = ["text-accent", "text-blue-500", "text-amber-500", "text-emerald-500"]
 
 function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
   const maxCount = funnel[0]?.count || 1
@@ -131,20 +131,21 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
               const drop = i > 0 && funnel[i - 1].count > 0
                 ? ((funnel[i - 1].count - step.count) / funnel[i - 1].count * 100).toFixed(1)
                 : null
-              const Icon = funnelIcons[i] || DragonIconInline
+              const palette = FUNNEL_PALETTE[i % FUNNEL_PALETTE.length]
+              const stepNum = i + 1
 
               return (
                 <div key={step.id}>
                   <div className="flex items-center gap-4">
                     <div className="flex flex-col items-center gap-0 shrink-0 w-10">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${funnelDotColors[i]}/15`}>
-                        <Icon className={`h-4 w-4 ${funnelTextColors[i]}`} />
+                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${palette.dot}/15`}>
+                        <span className={`text-xs font-bold ${palette.text}`}>{stepNum}</span>
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-medium text-foreground">{step.label}</span>
-                        <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-foreground truncate mr-2">{step.label}</span>
+                        <div className="flex items-center gap-2 shrink-0">
                           {drop && Number(drop) > 0 && (
                             <span className="text-[11px] font-medium text-destructive/80">{'-' + drop + '%'}</span>
                           )}
@@ -155,7 +156,7 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
                       </div>
                       <div className="h-3 rounded-full bg-secondary/80 overflow-hidden">
                         <div
-                          className={`h-full rounded-full bg-gradient-to-r ${funnelStepColors[i]} transition-all duration-700`}
+                          className={`h-full rounded-full bg-gradient-to-r ${palette.gradient} transition-all duration-700`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -186,11 +187,13 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
 }
 
 // --- User Detail Drawer ---
-function UserDetailDrawer({ user, onClose }: {
-  user: BotUserData; onClose: () => void
+function UserDetailDrawer({ user, onClose, funnel }: {
+  user: BotUserData; onClose: () => void; funnel: FunnelStep[]
 }) {
-  const etapaLabels = ["", "Iniciou bot", "Viu mensagem", "Pagamento", "Assinante"]
-  const etapaColors = ["", "text-muted-foreground", "text-blue-500", "text-amber-500", "text-emerald-500"]
+  // Encontrar em qual etapa do funil o usuario esta
+  const userStepIndex = Math.min(user.etapa, funnel.length - 1)
+  const currentStepLabel = funnel[userStepIndex]?.label || "Iniciou bot"
+  const palette = FUNNEL_PALETTE[userStepIndex % FUNNEL_PALETTE.length]
 
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
@@ -266,17 +269,20 @@ function UserDetailDrawer({ user, onClose }: {
 
         <div className="bg-secondary/50 rounded-xl p-4">
           <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Posicao no Funil</span>
-          <div className="flex items-center gap-2 mt-3">
-            {[1, 2, 3, 4].map((step) => (
-              <div key={step} className="flex-1">
-                <div className={`h-2 rounded-full transition-colors ${
-                  step <= user.etapa ? "bg-accent" : "bg-secondary"
-                }`} />
-              </div>
-            ))}
+          <div className="flex items-center gap-1 mt-3">
+            {funnel.map((_, idx) => {
+              const stepPalette = FUNNEL_PALETTE[idx % FUNNEL_PALETTE.length]
+              return (
+                <div key={idx} className="flex-1">
+                  <div className={`h-2 rounded-full transition-colors ${
+                    idx <= userStepIndex ? stepPalette.dot : "bg-secondary"
+                  }`} />
+                </div>
+              )
+            })}
           </div>
-          <p className={`text-sm font-medium mt-2 ${etapaColors[user.etapa]}`}>
-            {etapaLabels[user.etapa]}
+          <p className={`text-sm font-medium mt-2 ${palette.text}`}>
+            {currentStepLabel}
           </p>
         </div>
       </div>
@@ -355,7 +361,8 @@ export default function UsersPage() {
     { key: "expirando" as FilterType, label: "Expirando", count: expirando.length },
   ]
 
-  const etapaLabels = ["", "Iniciou bot", "Viu mensagem", "Pagamento", "Assinante"]
+  // Gerar labels a partir do funil dinamico
+  const etapaLabels = funnel.map(f => f.label)
 
   return (
     <>
@@ -482,7 +489,7 @@ export default function UsersPage() {
                           <span className="text-xs text-muted-foreground hidden sm:inline">{user.telegram}</span>
                         </div>
                         <div className="flex items-center gap-2 mt-0.5">
-                          <span className="text-[11px] text-muted-foreground">{etapaLabels[user.etapa]}</span>
+                          <span className="text-[11px] text-muted-foreground">{etapaLabels[Math.min(user.etapa, etapaLabels.length - 1)] || "Iniciou bot"}</span>
                           {user.assinante && user.diasRestantes <= 7 && user.diasRestantes > 0 && (
                             <Badge variant="outline" className="rounded-md border-destructive/30 text-destructive bg-destructive/5 text-[9px] px-1.5 py-0">
                               {'Expira em ' + user.diasRestantes + 'd'}
@@ -535,7 +542,7 @@ export default function UsersPage() {
       </ScrollArea>
 
       {selectedUser && (
-        <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} />
+        <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} funnel={funnel} />
       )}
     </>
   )

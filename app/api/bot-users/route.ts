@@ -89,13 +89,92 @@ export async function GET(req: NextRequest) {
       return endDate <= sevenDaysFromNow && endDate >= now
     })
 
-    // Funil
-    const funnelData = [
-      { id: "start", label: "Iniciaram o Bot", count: allUsers.filter((u) => u.funnel_step >= 1).length },
-      { id: "msg", label: "Receberam Mensagem", count: allUsers.filter((u) => u.funnel_step >= 2).length },
-      { id: "pay", label: "Chegaram ao Pagamento", count: allUsers.filter((u) => u.funnel_step >= 3).length },
-      { id: "sub", label: "Assinaram", count: allUsers.filter((u) => u.funnel_step >= 4).length },
+    // --------------- Funil dinamico baseado nos nodes reais do fluxo ---------------
+
+    // 1. Buscar o fluxo primario (primeiro ativo, mesmo criterio do webhook)
+    const { data: activeFlows } = await supabase
+      .from("flows")
+      .select("id, name")
+      .eq("bot_id", botId)
+      .eq("status", "ativo")
+      .order("created_at", { ascending: true })
+      .limit(1)
+
+    const primaryFlowId = activeFlows?.[0]?.id
+
+    // 2. Buscar os nodes reais desse fluxo
+    let flowNodes: { id: string; type: string; label: string; config: Record<string, unknown>; position: number }[] = []
+    if (primaryFlowId) {
+      const { data: nodes } = await supabase
+        .from("flow_nodes")
+        .select("id, type, label, config, position")
+        .eq("flow_id", primaryFlowId)
+        .order("position", { ascending: true })
+      flowNodes = (nodes as typeof flowNodes) || []
+    }
+
+    // 3. Buscar o estado (posicao atual) de cada usuario nesse fluxo
+    let userPositions: Record<number, number> = {}
+    if (primaryFlowId) {
+      const { data: states } = await supabase
+        .from("user_flow_state")
+        .select("telegram_user_id, current_node_position, status")
+        .eq("bot_id", botId)
+        .eq("flow_id", primaryFlowId)
+
+      if (states) {
+        for (const s of states) {
+          // Se o status e "completed" ou "finished", o usuario passou por todos os nodes
+          if (s.status === "completed" || s.status === "finished") {
+            userPositions[s.telegram_user_id] = 9999 // passou por tudo
+          } else {
+            userPositions[s.telegram_user_id] = s.current_node_position ?? 0
+          }
+        }
+      }
+    }
+
+    // 4. Montar o funil com os nodes reais (excluir trigger e delay, mostrar mensagens/payment/action)
+    const funnelNodeTypes = ["message", "payment", "condition", "action"]
+    const funnelNodes = flowNodes.filter(n => funnelNodeTypes.includes(n.type))
+
+    // O primeiro step e sempre "Iniciaram o Bot" (todos os usuarios)
+    const funnelData: { id: string; label: string; count: number }[] = [
+      { id: "start", label: "Iniciaram o Bot", count: allUsers.length },
     ]
+
+    for (const node of funnelNodes) {
+      // Determinar label legivel
+      let label = node.label || ""
+      if (!label || label === "Mensagem") {
+        const text = (node.config?.text as string) || ""
+        label = text.length > 50 ? text.slice(0, 50) + "..." : text || (node.type === "payment" ? "Pagamento" : node.type === "condition" ? "Condicao" : "Mensagem")
+      }
+
+      // Contar quantos usuarios chegaram ate esse node (position >= node.position)
+      const count = allUsers.filter(u => {
+        const pos = userPositions[u.telegram_user_id]
+        if (pos === undefined) return false
+        return pos >= node.position
+      }).length
+
+      funnelData.push({
+        id: node.id,
+        label,
+        count,
+      })
+    }
+
+    // Se nao tem nodes, fallback para o funil padrao
+    if (funnelNodes.length === 0) {
+      funnelData.length = 0
+      funnelData.push(
+        { id: "start", label: "Iniciaram o Bot", count: allUsers.filter((u) => u.funnel_step >= 1).length },
+        { id: "msg", label: "Receberam Mensagem", count: allUsers.filter((u) => u.funnel_step >= 2).length },
+        { id: "pay", label: "Chegaram ao Pagamento", count: allUsers.filter((u) => u.funnel_step >= 3).length },
+        { id: "sub", label: "Assinaram", count: allUsers.filter((u) => u.funnel_step >= 4).length },
+      )
+    }
 
     // Formatar usuarios para o frontend
     const formattedUsers = allUsers.map((u) => {
