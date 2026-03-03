@@ -167,20 +167,27 @@ async function sendMessageNode(botToken: string, chatId: number, config: Record<
   }
 
   const displayText = text || "Mensagem"
+  const hasMedia = !!mediaUrl && !!mediaType
 
   try {
-    let result: { ok?: boolean; description?: string } = { ok: false }
+    if (hasMedia) {
+      // Step 1: Send media alone (no caption, no buttons)
+      let mediaResult: { ok?: boolean; description?: string } = { ok: false }
+      if (mediaType === "photo") {
+        mediaResult = await sendTelegramPhoto(botToken, chatId, mediaUrl, "", undefined)
+      } else if (mediaType === "video") {
+        mediaResult = await sendTelegramVideo(botToken, chatId, mediaUrl, "", undefined)
+      }
 
-    if (mediaType === "photo" && mediaUrl) {
-      result = await sendTelegramPhoto(botToken, chatId, mediaUrl, displayText, inlineKeyboard)
-    } else if (mediaType === "video" && mediaUrl) {
-      result = await sendTelegramVideo(botToken, chatId, mediaUrl, displayText, inlineKeyboard)
+      // If media failed, just log and continue to text
+      if (!mediaResult.ok) {
+        console.log("[v0] Media send failed, continuing to text message")
+      }
+
+      // Step 2: Send text + buttons as a separate message
+      await sendTelegramMessage(botToken, chatId, displayText, inlineKeyboard)
     } else {
-      result = await sendTelegramMessage(botToken, chatId, displayText, inlineKeyboard)
-    }
-
-    // Fallback: if media failed, send text only
-    if (!result.ok && mediaUrl) {
+      // No media - just send text with buttons
       await sendTelegramMessage(botToken, chatId, displayText, inlineKeyboard)
     }
   } catch {
@@ -404,10 +411,8 @@ async function processWebhook({
     .eq("token", botToken)
     .limit(1)
 
-  console.log("[v0] Step 1 - bots found:", bots?.length, "error:", botError?.message)
   if (botError || !bots?.length) return
   const bot = bots[0]
-  console.log("[v0] Bot status:", bot.status, "bot id:", bot.id)
   if (bot.status !== "active") return
 
   // 2. Upsert user
@@ -421,10 +426,8 @@ async function processWebhook({
     .eq("status", "ativo")
     .order("created_at", { ascending: true })
 
-  console.log("[v0] Step 3 - flows found:", allFlows?.length, "error:", flowsError?.message, "flows:", JSON.stringify(allFlows?.map(f => ({ id: f.id, name: f.name, category: f.category }))))
   if (!allFlows || allFlows.length === 0) return
   const primaryFlow = allFlows[0]
-  console.log("[v0] Primary flow:", primaryFlow.id, primaryFlow.name)
 
   // 4. Get user states
   const { data: allStates } = await supabase
@@ -445,20 +448,13 @@ async function processWebhook({
   // /start  –  Reset everything and run the primary flow from scratch
   // ------------------------------------------------------------------
 if (isStart) {
-  console.log("[v0] /start received - resetting and running primary flow:", primaryFlow.id)
   await completeAllStates(bot.id, telegramUserId)
   
   const nodes = await fetchNodes(primaryFlow.id)
-  console.log("[v0] Nodes fetched for primary flow:", nodes.length, "nodes:", JSON.stringify(nodes.map(n => ({ type: n.type, label: n.label, position: n.position, config: n.config }))))
-  if (nodes.length === 0) {
-    console.log("[v0] No nodes found! Aborting.")
-    return
-  }
+  if (nodes.length === 0) return
   
   await setFlowState(bot.id, primaryFlow.id, telegramUserId, chatId, 0, "in_progress")
-  console.log("[v0] Executing nodes starting from position 0")
   await executeNodes(botToken, chatId, nodes, 0, bot.id, primaryFlow.id, telegramUserId)
-  console.log("[v0] executeNodes finished")
   return
   }
 
