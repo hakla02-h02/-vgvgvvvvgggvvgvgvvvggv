@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { DashboardSidebar } from "@/components/dashboard-sidebar"
 import { BotProvider } from "@/lib/bot-context"
+import { GatewayProvider } from "@/lib/gateway-context"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
@@ -12,7 +13,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <BotProvider>
-      <div className="flex h-screen overflow-hidden">
+      <GatewayProvider>
+        <div className="flex h-screen overflow-hidden">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
           <DashboardSidebar />
@@ -40,7 +42,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
           {children}
         </main>
-      </div>
+        </div>
+      </GatewayProvider>
     </BotProvider>
   )
 }
