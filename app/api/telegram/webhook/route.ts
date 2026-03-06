@@ -835,36 +835,39 @@ async function processCallbackQuery({
     }
 
     // Get user's gateway (Mercado Pago)
-    console.log("[v0] Buscando gateway para user_id:", bot.user_id, "bot_id:", bot.id)
+    // Primeiro tenta buscar gateway vinculado ao bot específico, depois fallback para qualquer gateway ativo
+    let gateway = null
     
-    // Primeiro, vamos ver TODOS os gateways do usuario para debug
-    const { data: allGateways, error: allGatewaysError } = await supabase
-      .from("user_gateways")
-      .select("*")
-      .eq("user_id", bot.user_id)
-    
-    console.log("[v0] Todos os gateways do usuario:", JSON.stringify(allGateways, null, 2))
-    console.log("[v0] Erro ao buscar todos gateways:", allGatewaysError)
-    
-    // Agora busca o gateway especifico
-    const { data: gateway, error: gatewayError } = await supabase
+    // Tenta gateway específico do bot
+    const { data: botGateway } = await supabase
       .from("user_gateways")
       .select("id, access_token, is_active, bot_id, gateway_name")
       .eq("user_id", bot.user_id)
+      .eq("bot_id", bot.id)
       .eq("gateway_name", "mercadopago")
       .eq("is_active", true)
       .single()
-
-    console.log("[v0] Gateway encontrado:", gateway ? { id: gateway.id, is_active: gateway.is_active, bot_id: gateway.bot_id, gateway_name: gateway.gateway_name, has_token: !!gateway.access_token } : null)
-    console.log("[v0] Erro ao buscar gateway:", gatewayError)
+    
+    if (botGateway?.access_token) {
+      gateway = botGateway
+    } else {
+      // Fallback: busca qualquer gateway ativo do usuario
+      const { data: anyGateway } = await supabase
+        .from("user_gateways")
+        .select("id, access_token, is_active, bot_id, gateway_name")
+        .eq("user_id", bot.user_id)
+        .eq("gateway_name", "mercadopago")
+        .eq("is_active", true)
+        .limit(1)
+        .single()
+      
+      gateway = anyGateway
+    }
 
     if (!gateway?.access_token) {
-      console.log("[v0] FALHA: Gateway nao tem access_token ou nao foi encontrado")
       await sendTelegramMessage(botToken, chatId, "Gateway de pagamento nao configurado. Entre em contato com o suporte.")
       return
     }
-    
-    console.log("[v0] SUCESSO: Gateway encontrado com token")
 
     // Generate PIX via Mercado Pago
     try {
