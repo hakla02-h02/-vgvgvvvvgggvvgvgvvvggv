@@ -174,10 +174,7 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     const { data, error } = await query
 
     if (error) {
-      // Ignora erro se a tabela nao existe ainda
-      if (error.code !== 'PGRST205') {
-        console.error("Error fetching plans:", error)
-      }
+      // Ignora erro se a tabela nao existe ainda (PGRST205 = table not found)
       setPlans([])
       return
     }
