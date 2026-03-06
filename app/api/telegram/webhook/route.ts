@@ -839,7 +839,7 @@ async function processCallbackQuery({
       .from("user_gateways")
       .select("id, access_token, is_active")
       .eq("user_id", bot.user_id)
-      .eq("gateway", "mercadopago")
+      .eq("gateway_name", "mercadopago")
       .eq("is_active", true)
       .single()
 
