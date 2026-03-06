@@ -195,15 +195,22 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
 
   const connectGateway = useCallback(
     async (gatewayName: string, accessToken: string): Promise<Gateway> => {
-      if (!session) throw new Error("Nao autenticado")
+      console.log("[v0] connectGateway chamado:", { gatewayName, hasToken: !!accessToken, session: session ? { userId: session.userId } : null, selectedBot: selectedBot ? { id: selectedBot.id, name: selectedBot.name } : null })
+      
+      if (!session) {
+        console.log("[v0] ERRO: Sessao nao encontrada")
+        throw new Error("Nao autenticado")
+      }
 
       // Verifica se ja existe gateway com esse nome para o usuario/bot
       const existing = gateways.find(
         (g) => g.gateway_name === gatewayName && (g.bot_id === selectedBot?.id || g.bot_id === null)
       )
+      console.log("[v0] Gateway existente encontrado:", existing ? { id: existing.id, gateway_name: existing.gateway_name } : null)
 
       if (existing) {
         // Atualiza o token existente
+        console.log("[v0] Atualizando gateway existente:", existing.id)
         const { error } = await supabase
           .from("user_gateways")
           .update({ 
@@ -214,16 +221,25 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
           .eq("id", existing.id)
 
         if (error) {
-          console.error("Error updating gateway:", error)
+          console.error("[v0] ERRO ao atualizar gateway:", error)
           throw new Error("Erro ao atualizar gateway")
         }
 
+        console.log("[v0] Gateway atualizado com sucesso!")
         const updated = { ...existing, access_token: accessToken, is_active: true }
         setGateways((prev) => prev.map((g) => (g.id === existing.id ? updated : g)))
         return updated
       }
 
       // Cria novo gateway
+      console.log("[v0] Criando novo gateway com dados:", {
+        user_id: session.userId,
+        bot_id: selectedBot?.id || null,
+        gateway_name: gatewayName,
+        has_access_token: !!accessToken,
+        is_active: true,
+      })
+      
       const { data, error } = await supabase
         .from("user_gateways")
         .insert({
@@ -237,10 +253,11 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
         .single()
 
       if (error) {
-        console.error("Error creating gateway:", error)
+        console.error("[v0] ERRO ao criar gateway:", error)
         throw new Error("Erro ao conectar gateway")
       }
 
+      console.log("[v0] Gateway criado com sucesso:", data)
       const newGateway = data as Gateway
       setGateways((prev) => [newGateway, ...prev])
       return newGateway
