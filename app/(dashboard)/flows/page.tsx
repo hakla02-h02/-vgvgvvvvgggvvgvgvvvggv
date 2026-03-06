@@ -1188,10 +1188,20 @@ export default function FlowsPage() {
         condition_branches: nodeConfigValues.condition_branches || "[]",
         subVariant: "response_condition",
       }
-    } else if (selectedTemplate.type === "payment") {
-      if (selectedTemplate.subVariant === "charge" && nodeConfigValues.amount) {
+  } else if (selectedTemplate.type === "payment") {
+    if (selectedTemplate.subVariant === "charge") {
+      if (nodeConfigValues.payment_mode === "custom" && nodeConfigValues.amount) {
         label = nodeConfigValues.description ? `R$${nodeConfigValues.amount} - ${nodeConfigValues.description}` : `Cobrar R$${nodeConfigValues.amount}`
+      } else {
+        const selectedPlanIds = nodeConfigValues.selected_plans ? JSON.parse(nodeConfigValues.selected_plans || "[]") : []
+        label = `Cobranca (${selectedPlanIds.length} plano${selectedPlanIds.length !== 1 ? "s" : ""})`
+      }
+      config = {
+        ...nodeConfigValues,
+        subVariant: "charge",
+      }
     }
+  }
     } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
       const actionVal = nodeConfigValues.action_name
       if (selectedTemplate.subVariant === "add_group") {
@@ -3157,106 +3167,141 @@ if (sv === "end") {
                 </div>
               ) : selectedTemplate.type === "payment" ? (
                 <div className="flex flex-col gap-4">
-                      {/* Selecionar plano do bot */}
+                      {/* Tipo de cobranca: planos do bot ou personalizado */}
                       <div className="flex flex-col gap-2">
-                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Plano do bot</Label>
-                        {botPlans.length > 0 ? (
-                          <div className="flex flex-col gap-1.5">
-                            {botPlans.map((plan) => {
-                              const isSelected = nodeConfigValues.plan_id === plan.id
-                              return (
-                                <button
-                                  key={plan.id}
-                                  type="button"
-                                  onClick={() =>
-                                    setNodeConfigValues((prev) => ({
-                                      ...prev,
-                                      plan_id: plan.id,
-                                      description: plan.name,
-                                      amount: plan.price.toFixed(2).replace(".", ","),
-                                    }))
-                                  }
-                                  className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all ${
-                                    isSelected
-                                      ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
-                                      : "border-border/50 bg-secondary/20 hover:border-border hover:bg-secondary/40"
-                                  }`}
-                                >
-                                  <div className={`flex h-8 w-8 items-center justify-center rounded-lg shrink-0 ${
-                                    isSelected ? "bg-primary/15" : "bg-green-500/10"
-                                  }`}>
-                                    <CreditCard className={`h-3.5 w-3.5 ${isSelected ? "text-primary" : "text-green-400"}`} />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <span className={`text-sm font-medium block truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
-                                      {plan.name}
-                                    </span>
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {plan.duration_days} dias{plan.description ? ` - ${plan.description}` : ""}
-                                    </span>
-                                  </div>
-                                  <span className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-green-400"}`}>
-                                    R$ {plan.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                                  </span>
-                                </button>
-                              )
-                            })}
-                          </div>
-                        ) : (
-                          <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/50 px-4 py-5">
-                            <CreditCard className="h-5 w-5 text-muted-foreground/40" />
-                            <p className="text-xs text-muted-foreground text-center">
-                              Nenhum plano configurado no bot. Adicione planos na aba de Bots.
-                            </p>
-                          </div>
-                        )}
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Tipo de cobranca</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setNodeConfigValues((prev) => ({ ...prev, payment_mode: "bot_plans", plan_id: "", amount: "", description: "" }))}
+                            className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all ${
+                              nodeConfigValues.payment_mode !== "custom"
+                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border/50 bg-secondary/20 hover:border-border"
+                            }`}
+                          >
+                            <CreditCard className={`h-5 w-5 ${nodeConfigValues.payment_mode !== "custom" ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`text-xs font-medium ${nodeConfigValues.payment_mode !== "custom" ? "text-primary" : "text-muted-foreground"}`}>Planos do Bot</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setNodeConfigValues((prev) => ({ ...prev, payment_mode: "custom", plan_id: "" }))}
+                            className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all ${
+                              nodeConfigValues.payment_mode === "custom"
+                                ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                                : "border-border/50 bg-secondary/20 hover:border-border"
+                            }`}
+                          >
+                            <Settings2 className={`h-5 w-5 ${nodeConfigValues.payment_mode === "custom" ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className={`text-xs font-medium ${nodeConfigValues.payment_mode === "custom" ? "text-primary" : "text-muted-foreground"}`}>Personalizado</span>
+                          </button>
+                        </div>
                       </div>
 
-                      {/* Valores editaveis (pre-preenchidos pelo plano) */}
-                      {nodeConfigValues.plan_id && (
-                        <div className="flex flex-col gap-2">
-                          <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Personalizar</Label>
-                          <div className="flex items-center gap-3 rounded-xl border border-border/60 bg-secondary/20 px-3.5 py-2.5">
-                            <div className="flex-1 min-w-0">
+                      {/* Mensagem acima dos botoes */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem</Label>
+                        <Textarea
+                          value={nodeConfigValues.payment_message || ""}
+                          onChange={(e) => setNodeConfigValues((prev) => ({ ...prev, payment_message: e.target.value }))}
+                          placeholder="Escolha seu plano para liberar o acesso:"
+                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground min-h-[70px] text-sm"
+                        />
+                        <p className="text-[10px] text-muted-foreground/60">Texto que aparece acima dos botoes de plano</p>
+                      </div>
+
+                      {/* Planos do bot OU personalizado */}
+                      {nodeConfigValues.payment_mode !== "custom" ? (
+                        <>
+                          <div className="flex flex-col gap-2">
+                            <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Selecionar planos</Label>
+                            {botPlans.length > 0 ? (
+                              <div className="flex flex-col gap-1.5">
+                                {botPlans.map((plan) => {
+                                  const selectedPlans = nodeConfigValues.selected_plans ? JSON.parse(nodeConfigValues.selected_plans || "[]") : []
+                                  const isSelected = selectedPlans.includes(plan.id)
+                                  return (
+                                    <button
+                                      key={plan.id}
+                                      type="button"
+                                      onClick={() => {
+                                        const current = nodeConfigValues.selected_plans ? JSON.parse(nodeConfigValues.selected_plans || "[]") : []
+                                        const updated = isSelected 
+                                          ? current.filter((id: string) => id !== plan.id)
+                                          : [...current, plan.id]
+                                        setNodeConfigValues((prev) => ({
+                                          ...prev,
+                                          selected_plans: JSON.stringify(updated),
+                                        }))
+                                      }}
+                                      className={`flex items-center gap-3 rounded-xl border px-3.5 py-2.5 text-left transition-all ${
+                                        isSelected
+                                          ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                                          : "border-border/50 bg-secondary/20 hover:border-border hover:bg-secondary/40"
+                                      }`}
+                                    >
+                                      <div className={`flex h-6 w-6 items-center justify-center rounded-md shrink-0 border ${
+                                        isSelected ? "bg-primary border-primary" : "bg-secondary/50 border-border"
+                                      }`}>
+                                        {isSelected && <CheckCircle2 className="h-3.5 w-3.5 text-primary-foreground" />}
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <span className={`text-sm font-medium block truncate ${isSelected ? "text-primary" : "text-foreground"}`}>
+                                          {plan.name}
+                                        </span>
+                                      </div>
+                                      <span className={`text-sm font-semibold shrink-0 ${isSelected ? "text-primary" : "text-green-400"}`}>
+                                        R$ {plan.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                                      </span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            ) : (
+                              <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border/50 px-4 py-5">
+                                <CreditCard className="h-5 w-5 text-muted-foreground/40" />
+                                <p className="text-xs text-muted-foreground text-center">
+                                  Nenhum plano configurado. Adicione planos em Gateways {'>'} Planos de Cobranca.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-muted-foreground/60">Cada plano sera um botao no Telegram. O usuario clica e recebe o PIX.</p>
+                        </>
+                      ) : (
+                        <>
+                          {/* Modo personalizado - valor unico */}
+                          <div className="flex flex-col gap-2">
+                            <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Configurar cobranca</Label>
+                            <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-secondary/20 p-3.5">
                               <Input
                                 type="text"
                                 value={nodeConfigValues.description || ""}
-                                onChange={(e) =>
-                                  setNodeConfigValues((prev) => ({ ...prev, description: e.target.value }))
-                                }
-                                placeholder="Nome do produto"
-                                className="bg-transparent border-0 p-0 h-auto text-sm font-medium text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
+                                onChange={(e) => setNodeConfigValues((prev) => ({ ...prev, description: e.target.value }))}
+                                placeholder="Nome do produto (ex: Acesso VIP)"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-sm h-9"
                               />
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span className="text-xs text-muted-foreground">R$</span>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-muted-foreground">R$</span>
+                                <Input
+                                  type="text"
+                                  value={nodeConfigValues.amount || ""}
+                                  onChange={(e) => setNodeConfigValues((prev) => ({ ...prev, amount: e.target.value }))}
+                                  placeholder="29,90"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-sm h-9 w-[100px]"
+                                />
+                              </div>
                               <Input
                                 type="text"
-                                value={nodeConfigValues.amount || ""}
-                                onChange={(e) =>
-                                  setNodeConfigValues((prev) => ({ ...prev, amount: e.target.value }))
-                                }
-                                placeholder="0,00"
-                                className="bg-transparent border-0 p-0 h-auto w-[70px] text-sm font-semibold text-foreground text-right focus-visible:ring-0 focus-visible:ring-offset-0"
+                                value={nodeConfigValues.button_text || ""}
+                                onChange={(e) => setNodeConfigValues((prev) => ({ ...prev, button_text: e.target.value }))}
+                                placeholder="Texto do botao (ex: Pagar R$ 29,90)"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-sm h-9"
                               />
                             </div>
                           </div>
-                        </div>
+                        </>
                       )}
-
-                      {/* Texto do botao */}
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Texto do botao</Label>
-                        <Input
-                          type="text"
-                          value={nodeConfigValues.button_text || ""}
-                          onChange={(e) =>
-                            setNodeConfigValues((prev) => ({ ...prev, button_text: e.target.value }))
-                          }
-                          placeholder="Pagar agora"
-                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground h-9 text-sm"
-                        />
-                      </div>
 
                       {/* Switches compactos para upsell/downsell/order bump */}
                       <div className="flex flex-col gap-0 rounded-xl border border-border/60 overflow-hidden">
@@ -3461,7 +3506,8 @@ if (sv === "end") {
                     (selectedTemplate.type === "delay" && (!nodeConfigValues.seconds || parseInt(nodeConfigValues.seconds) <= 0)) ||
                     (selectedTemplate.type === "condition" && !nodeConfigValues.condition_message?.trim()) ||
                     (selectedTemplate.type === "action" && selectedTemplate.subVariant === "add_group" && !nodeConfigValues.action_name?.trim()) ||
-                    (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && !nodeConfigValues.amount?.trim())
+                    (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && nodeConfigValues.payment_mode === "custom" && !nodeConfigValues.amount?.trim()) ||
+                    (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && nodeConfigValues.payment_mode !== "custom" && (!nodeConfigValues.selected_plans || JSON.parse(nodeConfigValues.selected_plans || "[]").length === 0))
                   }
                   onClick={handleAddNode}
                 >

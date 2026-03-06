@@ -362,6 +362,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // Handle callback_query (button clicks)
+  const callbackQuery = update?.callback_query as Record<string, unknown> | undefined
+  if (callbackQuery) {
+    const cbFrom = callbackQuery.from as Record<string, unknown>
+    const cbMessage = callbackQuery.message as Record<string, unknown>
+    const cbData = callbackQuery.data as string
+    const cbChatId = (cbMessage?.chat as Record<string, unknown>)?.id as number
+    const cbUserId = cbFrom?.id as number
+
+    try {
+      await processCallbackQuery({ botToken, chatId: cbChatId, telegramUserId: cbUserId, callbackData: cbData, callbackQueryId: callbackQuery.id as string })
+    } catch {
+      // Always return 200
+    }
+    return NextResponse.json({ ok: true })
+  }
+
   const message = update?.message as Record<string, unknown> | undefined
   if (!message) {
     return NextResponse.json({ ok: true })
@@ -610,11 +627,68 @@ async function executeNodes(
 
       // ---------------------------------------------------------------
       case "payment": {
-        const amount = (node.config?.amount as string) || "0"
-        const description = (node.config?.description as string) || "Pagamento"
-        await sendTelegramMessage(botToken, chatId, `${description}\nValor: R$ ${amount}`)
+        const paymentMessage = (node.config?.payment_message as string) || "Escolha seu plano:"
+        const paymentMode = (node.config?.payment_mode as string) || "bot_plans"
+        const selectedPlansStr = (node.config?.selected_plans as string) || "[]"
+        
+        let inlineKeyboard: { inline_keyboard: { text: string; callback_data: string }[][] } | undefined
+
+        if (paymentMode === "custom") {
+          // Modo personalizado - botao unico
+          const amount = (node.config?.amount as string) || "0"
+          const description = (node.config?.description as string) || "Pagamento"
+          const buttonText = (node.config?.button_text as string) || `Pagar R$ ${amount}`
+          
+          inlineKeyboard = {
+            inline_keyboard: [[{
+              text: buttonText,
+              callback_data: `pay_custom_${amount.replace(",", ".")}_${node.id}`
+            }]]
+          }
+          
+          await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
+        } else {
+          // Modo planos do bot - buscar planos selecionados
+          let selectedPlanIds: string[] = []
+          try {
+            selectedPlanIds = JSON.parse(selectedPlansStr)
+          } catch { /* ignore */ }
+
+          if (selectedPlanIds.length > 0) {
+            // Buscar planos do banco
+            const { data: plans } = await supabase
+              .from("payment_plans")
+              .select("id, name, price")
+              .in("id", selectedPlanIds)
+              .eq("is_active", true)
+
+            if (plans && plans.length > 0) {
+              inlineKeyboard = {
+                inline_keyboard: plans.map((plan) => [{
+                  text: `${plan.name} - R$ ${plan.price.toFixed(2).replace(".", ",")}`,
+                  callback_data: `pay_plan_${plan.id}`
+                }])
+              }
+            }
+          }
+
+          await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
+        }
+
+        // Pausar e aguardar o usuario clicar no botao
+        await supabase
+          .from("user_flow_state")
+          .update({
+            current_node_position: node.position,
+            status: "waiting_payment",
+            updated_at: new Date().toISOString(),
+          })
+          .eq("bot_id", botId)
+          .eq("flow_id", flowId)
+          .eq("telegram_user_id", telegramUserId)
+
         await updateFunnelStep(botId, telegramUserId, 3)
-        break
+        return // STOP - aguardar callback do botao
       }
 
       // ---------------------------------------------------------------
@@ -691,6 +765,167 @@ async function executeNodes(
   } else {
     // No remaining nodes means flow is done - mark as finished
     await setFlowState(botId, flowId, telegramUserId, chatId, startPosition, "finished")
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Process callback query (button clicks)
+// ---------------------------------------------------------------------------
+
+async function processCallbackQuery({
+  botToken,
+  chatId,
+  telegramUserId,
+  callbackData,
+  callbackQueryId,
+}: {
+  botToken: string
+  chatId: number
+  telegramUserId: number
+  callbackData: string
+  callbackQueryId: string
+}) {
+  const supabase = getSupabase()
+
+  // Answer the callback to remove loading state
+  await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ callback_query_id: callbackQueryId }),
+  })
+
+  // Find bot
+  const { data: bots } = await supabase
+    .from("bots")
+    .select("id, user_id, token, status")
+    .eq("token", botToken)
+    .limit(1)
+
+  if (!bots?.length) return
+  const bot = bots[0]
+
+  // Check if this is a payment callback
+  if (callbackData.startsWith("pay_plan_") || callbackData.startsWith("pay_custom_")) {
+    let amount = 0
+    let description = "Pagamento"
+    let planId: string | null = null
+
+    if (callbackData.startsWith("pay_plan_")) {
+      // Get plan info
+      planId = callbackData.replace("pay_plan_", "")
+      const { data: plan } = await supabase
+        .from("payment_plans")
+        .select("id, name, price")
+        .eq("id", planId)
+        .single()
+
+      if (plan) {
+        amount = plan.price
+        description = plan.name
+      }
+    } else if (callbackData.startsWith("pay_custom_")) {
+      // Parse custom amount: pay_custom_29.90_nodeId
+      const parts = callbackData.replace("pay_custom_", "").split("_")
+      amount = parseFloat(parts[0]) || 0
+    }
+
+    if (amount <= 0) {
+      await sendTelegramMessage(botToken, chatId, "Erro ao processar pagamento. Tente novamente.")
+      return
+    }
+
+    // Get user's gateway (Mercado Pago)
+    const { data: gateway } = await supabase
+      .from("user_gateways")
+      .select("id, access_token, is_active")
+      .eq("user_id", bot.user_id)
+      .eq("gateway", "mercadopago")
+      .eq("is_active", true)
+      .single()
+
+    if (!gateway?.access_token) {
+      await sendTelegramMessage(botToken, chatId, "Gateway de pagamento nao configurado. Entre em contato com o suporte.")
+      return
+    }
+
+    // Generate PIX via Mercado Pago
+    try {
+      await sendTelegramMessage(botToken, chatId, "Gerando seu pagamento PIX... Aguarde.")
+
+      const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${gateway.access_token}`,
+          "X-Idempotency-Key": `${telegramUserId}-${Date.now()}`,
+        },
+        body: JSON.stringify({
+          transaction_amount: amount,
+          description: description,
+          payment_method_id: "pix",
+          payer: {
+            email: `telegram_${telegramUserId}@temp.com`,
+          },
+        }),
+      })
+
+      const mpData = await mpResponse.json()
+
+      if (mpData.id && mpData.point_of_interaction?.transaction_data) {
+        const pixData = mpData.point_of_interaction.transaction_data
+        const qrCodeBase64 = pixData.qr_code_base64
+        const pixCopyPaste = pixData.qr_code
+
+        // Save payment to database
+        await supabase.from("payments").insert({
+          user_id: bot.user_id,
+          bot_id: bot.id,
+          telegram_user_id: String(telegramUserId),
+          gateway: "mercadopago",
+          external_payment_id: String(mpData.id),
+          amount: amount,
+          description: description,
+          qr_code: qrCodeBase64 || null,
+          copy_paste: pixCopyPaste || null,
+          status: "pending",
+        })
+
+        // Send QR Code image
+        if (qrCodeBase64) {
+          const photoUrl = `data:image/png;base64,${qrCodeBase64}`
+          await sendTelegramPhoto(botToken, chatId, photoUrl, "", undefined)
+        }
+
+        // Send PIX copy-paste
+        const pixMessage = `<b>PIX Copia e Cola:</b>\n\n<code>${pixCopyPaste}</code>\n\n<b>Valor:</b> R$ ${amount.toFixed(2).replace(".", ",")}\n<b>Descricao:</b> ${description}\n\nCopie o codigo acima e pague no seu banco.`
+        await sendTelegramMessage(botToken, chatId, pixMessage)
+
+        // Update funnel step
+        await updateFunnelStep(bot.id, telegramUserId, 4)
+
+        // Continue flow after payment generated
+        const { data: state } = await supabase
+          .from("user_flow_state")
+          .select("flow_id, current_node_position")
+          .eq("bot_id", bot.id)
+          .eq("telegram_user_id", telegramUserId)
+          .eq("status", "waiting_payment")
+          .single()
+
+        if (state) {
+          const nodes = await fetchNodes(state.flow_id)
+          const nextPos = state.current_node_position + 1
+          await setFlowState(bot.id, state.flow_id, telegramUserId, chatId, nextPos, "in_progress")
+          await executeNodes(botToken, chatId, nodes, nextPos, bot.id, state.flow_id, telegramUserId)
+        }
+      } else {
+        console.error("[v0] Mercado Pago error:", mpData)
+        await sendTelegramMessage(botToken, chatId, "Erro ao gerar PIX. Tente novamente mais tarde.")
+      }
+    } catch (error) {
+      console.error("[v0] Payment generation error:", error)
+      await sendTelegramMessage(botToken, chatId, "Erro ao processar pagamento. Tente novamente.")
+    }
   }
 }
 
