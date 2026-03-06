@@ -1201,8 +1201,7 @@ export default function FlowsPage() {
         subVariant: "charge",
       }
     }
-  }
-    } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
+  } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
       const actionVal = nodeConfigValues.action_name
       if (selectedTemplate.subVariant === "add_group") {
         label = `Grupo: ${actionVal.replace(/https?:\/\//, "").slice(0, 30)}`
