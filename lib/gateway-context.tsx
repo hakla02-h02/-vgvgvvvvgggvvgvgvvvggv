@@ -33,6 +33,18 @@ export interface Payment {
   updated_at: string
 }
 
+export interface PaymentPlan {
+  id: string
+  user_id: string
+  bot_id: string | null
+  name: string
+  price: number
+  description: string | null
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
 // Gateways disponiveis na plataforma
 export const AVAILABLE_GATEWAYS = [
   {
@@ -66,6 +78,7 @@ export const AVAILABLE_GATEWAYS = [
 interface GatewayContextType {
   gateways: Gateway[]
   payments: Payment[]
+  plans: PaymentPlan[]
   isLoading: boolean
   connectGateway: (gatewayName: string, accessToken: string) => Promise<Gateway>
   disconnectGateway: (id: string) => Promise<void>
@@ -73,6 +86,11 @@ interface GatewayContextType {
   getGatewayByName: (name: string) => Gateway | undefined
   refreshGateways: () => Promise<void>
   refreshPayments: () => Promise<void>
+  // Plans
+  addPlan: (plan: { name: string; price: number; description?: string }) => Promise<PaymentPlan>
+  updatePlan: (id: string, updates: Partial<Pick<PaymentPlan, "name" | "price" | "description" | "is_active">>) => Promise<void>
+  deletePlan: (id: string) => Promise<void>
+  refreshPlans: () => Promise<void>
 }
 
 const GatewayContext = createContext<GatewayContextType | null>(null)
@@ -82,6 +100,7 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
   const { selectedBot } = useBots()
   const [gateways, setGateways] = useState<Gateway[]>([])
   const [payments, setPayments] = useState<Payment[]>([])
+  const [plans, setPlans] = useState<PaymentPlan[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchGateways = useCallback(async () => {
@@ -136,6 +155,32 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     setPayments((data || []) as Payment[])
   }, [session, selectedBot])
 
+  const fetchPlans = useCallback(async () => {
+    if (!session) {
+      setPlans([])
+      return
+    }
+
+    let query = supabase
+      .from("payment_plans")
+      .select("*")
+      .eq("user_id", session.userId)
+      .order("created_at", { ascending: false })
+
+    if (selectedBot) {
+      query = query.or(`bot_id.eq.${selectedBot.id},bot_id.is.null`)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error("Error fetching plans:", error)
+      return
+    }
+
+    setPlans((data || []) as PaymentPlan[])
+  }, [session, selectedBot])
+
   useEffect(() => {
     fetchGateways()
   }, [fetchGateways])
@@ -143,6 +188,10 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     fetchPayments()
   }, [fetchPayments])
+
+  useEffect(() => {
+    fetchPlans()
+  }, [fetchPlans])
 
   const connectGateway = useCallback(
     async (gatewayName: string, accessToken: string): Promise<Gateway> => {
@@ -242,11 +291,73 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
     await fetchPayments()
   }, [fetchPayments])
 
+  const addPlan = useCallback(
+    async (plan: { name: string; price: number; description?: string }): Promise<PaymentPlan> => {
+      if (!session) throw new Error("Nao autenticado")
+
+      const { data, error } = await supabase
+        .from("payment_plans")
+        .insert({
+          user_id: session.userId,
+          bot_id: selectedBot?.id || null,
+          name: plan.name,
+          price: plan.price,
+          description: plan.description || null,
+          is_active: true,
+        })
+        .select()
+        .single()
+
+      if (error) {
+        console.error("Error creating plan:", error)
+        throw new Error("Erro ao criar plano")
+      }
+
+      const newPlan = data as PaymentPlan
+      setPlans((prev) => [newPlan, ...prev])
+      return newPlan
+    },
+    [session, selectedBot]
+  )
+
+  const updatePlan = useCallback(
+    async (id: string, updates: Partial<Pick<PaymentPlan, "name" | "price" | "description" | "is_active">>) => {
+      const { error } = await supabase
+        .from("payment_plans")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", id)
+
+      if (error) {
+        console.error("Error updating plan:", error)
+        throw new Error("Erro ao atualizar plano")
+      }
+
+      setPlans((prev) => prev.map((p) => (p.id === id ? { ...p, ...updates } : p)))
+    },
+    []
+  )
+
+  const deletePlan = useCallback(async (id: string) => {
+    const { error } = await supabase.from("payment_plans").delete().eq("id", id)
+
+    if (error) {
+      console.error("Error deleting plan:", error)
+      throw new Error("Erro ao excluir plano")
+    }
+
+    setPlans((prev) => prev.filter((p) => p.id !== id))
+  }, [])
+
+  const refreshPlans = useCallback(async () => {
+    await fetchPlans()
+  }, [fetchPlans])
+
   return (
     <GatewayContext.Provider
       value={{
         gateways,
         payments,
+        plans,
         isLoading,
         connectGateway,
         disconnectGateway,
@@ -254,6 +365,10 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
         getGatewayByName,
         refreshGateways,
         refreshPayments,
+        addPlan,
+        updatePlan,
+        deletePlan,
+        refreshPlans,
       }}
     >
       {children}
