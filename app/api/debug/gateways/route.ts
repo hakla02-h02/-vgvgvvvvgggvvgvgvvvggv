@@ -2,69 +2,48 @@ import { supabase } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 
 export async function GET() {
-
-  // Pega o usuario logado
-  const { data: { user }, error: userError } = await supabase.auth.getUser()
-  
   const debugInfo: Record<string, unknown> = {
     timestamp: new Date().toISOString(),
-    user: user ? { id: user.id, email: user.email } : null,
-    userError: userError?.message || null,
   }
 
-  if (!user) {
-    return NextResponse.json({
-      ...debugInfo,
-      error: "Usuario nao logado"
-    })
-  }
-
-  // Busca TODOS os gateways do usuario
+  // Busca TODOS os gateways do banco (sem filtro de user para debug)
   const { data: allGateways, error: gatewaysError } = await supabase
     .from("user_gateways")
     .select("*")
-    .eq("user_id", user.id)
 
-  debugInfo.allGateways = allGateways
+  debugInfo.allGateways = allGateways?.map(g => ({
+    id: g.id,
+    user_id: g.user_id,
+    bot_id: g.bot_id,
+    gateway_name: g.gateway_name,
+    is_active: g.is_active,
+    has_access_token: !!g.access_token,
+    access_token_preview: g.access_token ? g.access_token.substring(0, 30) + "..." : null,
+    created_at: g.created_at,
+  }))
   debugInfo.gatewaysError = gatewaysError?.message || null
   debugInfo.gatewaysCount = allGateways?.length || 0
 
-  // Busca gateway mercadopago ativo especificamente
-  const { data: mpGateway, error: mpError } = await supabase
-    .from("user_gateways")
-    .select("*")
-    .eq("user_id", user.id)
-    .eq("gateway_name", "mercadopago")
-    .eq("is_active", true)
-    .single()
-
-  debugInfo.mercadoPagoGateway = mpGateway ? {
-    id: mpGateway.id,
-    gateway_name: mpGateway.gateway_name,
-    is_active: mpGateway.is_active,
-    bot_id: mpGateway.bot_id,
-    has_access_token: !!mpGateway.access_token,
-    access_token_preview: mpGateway.access_token ? mpGateway.access_token.substring(0, 20) + "..." : null,
-    created_at: mpGateway.created_at,
-  } : null
-  debugInfo.mpError = mpError?.message || null
-
-  // Busca os bots do usuario
+  // Busca todos os bots
   const { data: bots, error: botsError } = await supabase
     .from("bots")
-    .select("id, name, user_id")
-    .eq("user_id", user.id)
+    .select("id, name, user_id, token")
 
-  debugInfo.bots = bots
+  debugInfo.bots = bots?.map(b => ({
+    id: b.id,
+    name: b.name,
+    user_id: b.user_id,
+    has_token: !!b.token,
+  }))
   debugInfo.botsError = botsError?.message || null
 
-  // Verifica estrutura da tabela user_gateways
-  const { data: tableInfo, error: tableError } = await supabase
-    .from("user_gateways")
-    .select("*")
-    .limit(0)
+  // Busca todos os usuarios
+  const { data: users, error: usersError } = await supabase
+    .from("users")
+    .select("id, email")
 
-  debugInfo.tableError = tableError?.message || null
+  debugInfo.users = users
+  debugInfo.usersError = usersError?.message || null
 
   return NextResponse.json(debugInfo, { status: 200 })
 }
