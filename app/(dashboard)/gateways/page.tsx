@@ -101,8 +101,14 @@ export default function GatewaysPage() {
   }
 
   const handleConnect = async () => {
-    if (!selectedGatewayId) return
+    console.log("[v0] handleConnect chamado:", { selectedGatewayId, hasToken: !!accessToken.trim() })
+    
+    if (!selectedGatewayId) {
+      console.log("[v0] ERRO: selectedGatewayId vazio")
+      return
+    }
     if (!accessToken.trim()) {
+      console.log("[v0] ERRO: accessToken vazio")
       setError("Digite o Access Token")
       return
     }
@@ -112,7 +118,9 @@ export default function GatewaysPage() {
     setSuccess("")
 
     try {
+      console.log("[v0] Chamando connectGateway...")
       await connectGateway(selectedGatewayId, accessToken.trim())
+      console.log("[v0] connectGateway retornou com sucesso!")
       setSuccess("Gateway conectado com sucesso!")
       setTimeout(() => {
         setConnectDialogOpen(false)
@@ -120,6 +128,7 @@ export default function GatewaysPage() {
         setSuccess("")
       }, 1500)
     } catch (err) {
+      console.error("[v0] ERRO no connectGateway:", err)
       setError(err instanceof Error ? err.message : "Erro ao conectar gateway")
     } finally {
       setIsSubmitting(false)
