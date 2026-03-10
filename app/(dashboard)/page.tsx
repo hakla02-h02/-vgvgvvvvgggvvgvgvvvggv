@@ -233,8 +233,8 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Column - Dragon AI Panel - spans full height */}
-          <div className="row-span-full h-full">
-            <div className="bg-[#0f0f0f] rounded-[24px] p-5 flex flex-col w-full h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[500px] xl:min-h-0">
+          <div className="xl:row-span-full order-last xl:order-none">
+            <div className="bg-[#0f0f0f] rounded-[24px] p-5 flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[500px] xl:min-h-full">
               {/* Background glow effect */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
 
