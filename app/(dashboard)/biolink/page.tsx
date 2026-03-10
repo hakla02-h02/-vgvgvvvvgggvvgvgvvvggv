@@ -51,11 +51,16 @@ const pageTypes = [
   },
 ]
 
-const biolinks = [
-  { id: "bl1", nome: "Pagina Principal", url: "bio.dragon.com/principal", visitas: 2480, cliques: 890, ativo: true, tipo: "dragonbio" },
-  { id: "bl2", nome: "Loja de Cursos", url: "bio.dragon.com/cursos", visitas: 1340, cliques: 520, ativo: true, tipo: "presell" },
-  { id: "bl3", nome: "Contato VIP", url: "bio.dragon.com/vip", visitas: 680, cliques: 310, ativo: false, tipo: "conversion" },
-]
+// Paginas serao carregadas do banco de dados
+const biolinks: Array<{
+  id: string
+  nome: string
+  url: string
+  visitas: number
+  cliques: number
+  ativo: boolean
+  tipo: string
+}> = []
 
 function getTypeInfo(tipo: string) {
   return pageTypes.find(p => p.id === tipo) || pageTypes[0]
