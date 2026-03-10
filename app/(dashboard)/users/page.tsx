@@ -538,8 +538,8 @@ export default function UsersPage() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </ScrollArea>
 
