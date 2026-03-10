@@ -94,9 +94,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Grid Layout - 2 column layout with Dragon AI on right spanning full height */}
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] xl:grid-rows-[auto_1fr] gap-5">
-          {/* Sales Distribution Card - Top Left */}
-          <div className="bg-[#111111] rounded-[24px] p-4 md:p-5 text-white relative overflow-hidden shadow-lg xl:col-start-1 xl:row-start-1">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_280px] gap-5">
+          {/* Sales Distribution Card - Top Left, spans 2 columns */}
+          <div className="bg-[#111111] rounded-[24px] p-4 md:p-5 text-white relative overflow-hidden shadow-lg xl:col-span-2">
               {/* Glow effect */}
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-[#a3e635] opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
 
@@ -141,10 +141,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-          {/* Analysis Cards Row - Bottom Left */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 xl:col-start-1 xl:row-start-2">
-              {/* Sales Analysis Card */}
-              <div className="bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
+          {/* Sales Analysis Card - Bottom Left */}
+          <div className="bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
@@ -201,8 +199,8 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* Deal Analysis Card */}
-              <div className="bg-[#ebfcac] rounded-[24px] p-4 md:p-5 shadow-sm border border-[#e2f89f] flex flex-col relative overflow-hidden min-h-[220px]">
+          {/* Deal Analysis Card - Bottom Right */}
+          <div className="bg-[#ebfcac] rounded-[24px] p-4 md:p-5 shadow-sm border border-[#e2f89f] flex flex-col relative overflow-hidden min-h-[220px]">
                 <div className="flex justify-between items-center mb-3 relative z-10">
                   <div className="flex items-center gap-2">
                     <BarChart2 size={14} className="text-[#4d7c0f]" />
@@ -227,10 +225,9 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-          </div>
 
           {/* Right Column - Dragon AI Panel - spans full height */}
-          <div className="xl:row-span-full xl:col-start-2 xl:row-start-1 order-last xl:order-none">
+          <div className="xl:row-span-2 xl:col-start-3 xl:row-start-1 order-last xl:order-none">
             <div className="bg-[#0f0f0f] rounded-[24px] p-4 flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[450px] xl:min-h-full">
               {/* Background glow effect */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
