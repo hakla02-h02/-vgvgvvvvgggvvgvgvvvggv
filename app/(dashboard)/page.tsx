@@ -93,10 +93,10 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Grid Layout - Main 2 column structure */}
-        <div className="grid grid-cols-12 gap-4 md:gap-5 auto-rows-min">
-          {/* Left Column (8 cols) - Sales Distribution + Analysis Cards */}
-          <div className="col-span-12 xl:col-span-8 flex flex-col gap-4 md:gap-5">
+        {/* Grid Layout - 2 column layout with Dragon AI on right spanning full height */}
+        <div className="flex flex-col xl:flex-row gap-4 md:gap-5">
+          {/* Left Column - Sales Distribution + Analysis Cards */}
+          <div className="flex-1 flex flex-col gap-4 md:gap-5">
             {/* Smart Sales Distribution Card */}
             <div className="bg-[#111111] rounded-[24px] p-4 md:p-6 text-white relative overflow-hidden shadow-lg">
               {/* Glow effect */}
@@ -232,9 +232,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right Column (4 cols) - Dragon AI Panel - spans full height */}
-          <div className="col-span-12 xl:col-span-4 xl:row-span-2">
-            <div className="bg-[#0f0f0f] rounded-[24px] p-5 flex flex-col w-full h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[400px]">
+          {/* Right Column - Dragon AI Panel - spans full height */}
+          <div className="w-full xl:w-[320px] flex-shrink-0">
+            <div className="bg-[#0f0f0f] rounded-[24px] p-5 flex flex-col w-full h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[400px] xl:sticky xl:top-4">
               {/* Background glow effect */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
 
@@ -296,9 +296,10 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Bottom Table Section (Spans full width 12 cols) */}
-          <div className="col-span-12 bg-white rounded-[24px] p-4 md:p-6 shadow-sm border border-gray-100 mb-4">
+        {/* Bottom Table Section */}
+        <div className="mt-4 md:mt-5 bg-white rounded-[24px] p-4 md:p-6 shadow-sm border border-gray-100 mb-4">
             {/* Table Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3">
               <div className="flex items-center gap-2">
@@ -390,7 +391,6 @@ export default function DashboardPage() {
               </table>
             </div>
           </div>
-        </div>
       </div>
     </div>
   )
