@@ -228,36 +228,78 @@ export default function DashboardPage() {
 
           {/* Right Column - Dragon AI Panel - spans full height */}
           <div className="xl:row-span-2 xl:col-start-3 xl:row-start-1 order-last xl:order-none">
-            <div className="bg-black rounded-3xl p-6 flex flex-col items-center justify-center min-h-[400px] xl:min-h-full relative">
-              {/* Header */}
-              <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                <button className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors">
-                  <Minus className="w-5 h-5" />
+            <div className="bg-[#111] rounded-[40px] p-6 md:p-8 flex flex-col shadow-2xl relative overflow-hidden border border-white/5 min-h-[500px] xl:min-h-full">
+              
+              {/* Efeitos de fundo (Glow) */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#a3e635] opacity-10 blur-[60px] rounded-full"></div>
+              <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 opacity-5 blur-[60px] rounded-full"></div>
+
+              {/* Cabeçalho */}
+              <div className="flex justify-between items-center mb-8 md:mb-10 relative z-10">
+                <button className="w-10 h-10 rounded-2xl bg-[#1c1c1c] flex items-center justify-center border border-white/5 text-gray-400 hover:text-white transition-all">
+                  <Minus size={18} />
                 </button>
-                <h3 className="text-white font-bold text-xl italic tracking-wide">DRAGON AI</h3>
-                <button className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors">
-                  <Plus className="w-5 h-5" />
+                <span className="font-black text-lg md:text-xl text-white tracking-[0.2em] italic uppercase">Dragon AI</span>
+                <button className="w-10 h-10 rounded-2xl bg-[#1c1c1c] flex items-center justify-center border border-white/5 text-gray-400 hover:text-white transition-all">
+                  <Plus size={18} />
                 </button>
               </div>
 
-              {/* 3D Sphere */}
-              <div className="relative mt-8">
-                {/* Outer glow */}
-                <div className="absolute inset-0 rounded-full bg-lime-400/20 blur-3xl scale-150" />
-                {/* Inner ring */}
-                <div className="absolute inset-[-20px] rounded-full border border-zinc-700/50" />
-                {/* Sphere */}
-                <div 
-                  className="w-48 h-48 rounded-full relative"
-                  style={{
-                    background: 'radial-gradient(circle at 30% 30%, #a3e635, #22c55e, #15803d, #14532d)',
-                    boxShadow: '0 0 60px rgba(163, 230, 53, 0.3), inset -20px -20px 40px rgba(0,0,0,0.3), inset 20px 20px 40px rgba(255,255,255,0.1)'
-                  }}
-                />
+              {/* Área da Esfera 3D */}
+              <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                <div className="relative w-40 h-40 md:w-52 md:h-52 mb-8 md:mb-10 group">
+                  {/* Esfera Principal com Gradiente Complexo */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#d9f970] via-[#22c55e] to-[#064e3b] shadow-[0_0_50px_rgba(163,230,53,0.3)] animate-pulse transition-transform duration-700 group-hover:scale-105"></div>
+                  
+                  {/* Camada de Brilho e Reflexo (Efeito Vidro) */}
+                  <div className="absolute inset-0 rounded-full shadow-[inset_-15px_-15px_30px_rgba(0,0,0,0.6),inset_15px_15px_30px_rgba(255,255,255,0.3)]"></div>
+                  
+                  {/* Pontos de Luz Internos */}
+                  <div className="absolute top-6 left-10 w-12 h-12 rounded-full bg-white/30 blur-md"></div>
+                  <div className="absolute bottom-10 right-10 w-20 h-20 rounded-full bg-cyan-400/20 blur-xl"></div>
+                  
+                  {/* Aro Externo Sutil */}
+                  <div className="absolute -inset-4 rounded-full border border-[#a3e635]/5 scale-95 group-hover:scale-100 transition-transform duration-1000"></div>
+                </div>
+                
+                <h2 className="text-gray-200 text-lg md:text-xl font-medium text-center">Como posso ajudar você hoje?</h2>
               </div>
 
-              {/* Text */}
-              <p className="text-zinc-400 text-lg mt-8">Como posso ajudar você hoje?</p>
+              {/* Botões de Ação (Pro Analysis & Report) */}
+              <div className="grid grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6 relative z-10">
+                <button className="bg-[#1c1c1c] hover:bg-[#252525] py-4 md:py-6 rounded-[20px] md:rounded-[28px] border border-white/5 flex flex-col items-center gap-2 md:gap-3 transition-all group">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full border-2 border-[#a3e635] flex items-center justify-center group-hover:shadow-[0_0_15px_rgba(163,230,53,0.4)] transition-all">
+                    <Clock size={18} className="text-[#a3e635]" />
+                  </div>
+                  <span className="text-[9px] md:text-[10px] font-black text-white/80 uppercase tracking-widest">Pro Analysis</span>
+                </button>
+                
+                <button className="bg-[#1c1c1c] hover:bg-[#252525] py-4 md:py-6 rounded-[20px] md:rounded-[28px] border border-white/5 flex flex-col items-center gap-2 md:gap-3 transition-all group">
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-[#2a2a2a] flex items-center justify-center group-hover:bg-[#333]">
+                    <FileText size={18} className="text-gray-400" />
+                  </div>
+                  <span className="text-[9px] md:text-[10px] font-black text-white/80 uppercase tracking-widest">Report</span>
+                </button>
+              </div>
+
+              {/* Barra de Input / Chat */}
+              <div className="relative z-10">
+                <div className="bg-[#1c1c1c] rounded-[20px] md:rounded-[24px] p-2 pl-4 md:pl-6 flex items-center border border-white/5 focus-within:border-[#a3e635]/30 transition-colors">
+                  <input 
+                    type="text" 
+                    placeholder="Ask anything..." 
+                    className="bg-transparent border-none outline-none text-sm text-white placeholder-gray-600 w-full font-medium"
+                  />
+                  <div className="flex items-center gap-1">
+                    <button className="w-8 h-8 md:w-10 md:h-10 flex items-center justify-center text-gray-500 hover:text-white transition-colors">
+                      <Send size={16} className="transform rotate-45" />
+                    </button>
+                    <button className="w-10 h-10 md:w-12 md:h-12 rounded-[14px] md:rounded-[18px] bg-black flex items-center justify-center text-gray-400 hover:text-[#a3e635] transition-all border border-white/10 shadow-lg">
+                      <Mic size={18} />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
