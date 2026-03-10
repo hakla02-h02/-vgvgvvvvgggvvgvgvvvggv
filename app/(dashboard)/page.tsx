@@ -94,9 +94,11 @@ export default function DashboardPage() {
         </div>
 
         {/* Grid Layout - 2 column layout with Dragon AI on right spanning full height */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_280px] gap-5">
-          {/* Sales Distribution Card - Top Left, spans 2 columns */}
-          <div className="bg-[#111111] rounded-[24px] p-4 md:p-5 text-white relative overflow-hidden shadow-lg xl:col-span-2">
+        <div className="flex flex-col xl:flex-row gap-5">
+          {/* Left Column - All analytics cards */}
+          <div className="flex-1 flex flex-col gap-5">
+            {/* Sales Distribution Card */}
+            <div className="bg-[#111111] rounded-[24px] p-4 md:p-5 text-white relative overflow-hidden shadow-lg">
               {/* Glow effect */}
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-[#a3e635] opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
 
@@ -141,8 +143,10 @@ export default function DashboardPage() {
               </div>
             </div>
 
-          {/* Sales Analysis Card - Bottom Left */}
-          <div className="bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
+            {/* Analysis Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {/* Sales Analysis Card */}
+              <div className="bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
