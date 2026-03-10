@@ -285,67 +285,71 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right Column - Bostie AI (Spans 4 cols) */}
+          {/* Right Column - Dragon AI (Spans 4 cols) */}
           <div className="col-span-12 xl:col-span-4 flex">
-            <div className="bg-[#111111] rounded-[24px] p-4 md:p-6 flex flex-col w-full shadow-xl relative overflow-hidden">
+            <div className="bg-[#0f0f0f] rounded-[24px] p-6 flex flex-col w-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[520px]">
+              {/* Background glow effect */}
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
+
               {/* Header */}
-              <div className="flex justify-between items-center mb-6 md:mb-8 relative z-10 text-white">
-                <button className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center border border-white/5 hover:bg-white/10 transition-colors">
-                  <Minus size={14} />
+              <div className="flex justify-between items-center mb-8 relative z-10 text-white">
+                <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <Minus size={16} />
                 </button>
-                <span className="font-semibold text-base md:text-lg tracking-wide">Dragon AI</span>
-                <button className="w-8 h-8 rounded-full bg-[#1c1c1c] flex items-center justify-center border border-white/5 hover:bg-white/10 transition-colors">
+                <span className="font-medium tracking-wide">Dragon AI</span>
+                <button className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
                   <Plus size={14} />
                 </button>
               </div>
 
-              {/* 3D Sphere Graphic */}
-              <div className="flex-1 flex flex-col items-center justify-center mb-6 md:mb-8 relative z-10">
-                <div className="relative w-36 h-36 md:w-48 md:h-48 mb-6 md:mb-8">
-                  {/* The complex sphere effect */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#d9f970] via-[#22c55e] to-[#022c22] shadow-[0_10px_40px_-10px_rgba(163,230,53,0.6)]"></div>
-                  <div className="absolute inset-0 rounded-full shadow-[inset_-15px_-15px_30px_rgba(0,0,0,0.8),inset_15px_15px_30px_rgba(255,255,255,0.4)]"></div>
-                  <div className="absolute bottom-4 right-8 w-20 h-20 rounded-full bg-cyan-400 opacity-30 blur-[15px]"></div>
-                  <div className="absolute top-6 left-6 w-12 h-12 rounded-full bg-white opacity-40 blur-[8px]"></div>
+              {/* 3D Sphere Area */}
+              <div className="flex-1 flex flex-col items-center justify-center relative z-10 mb-8">
+                <div className="w-[180px] h-[180px] rounded-full relative flex-shrink-0 animate-float">
+                  {/* Main Sphere with Neon Gradient */}
+                  <div 
+                    className="absolute inset-0 rounded-full"
+                    style={{
+                      background: 'linear-gradient(135deg, #00ffb3 0%, #c6ff00 100%)',
+                      boxShadow: 'inset -20px -20px 40px rgba(0,0,0,0.5), inset 10px 10px 20px rgba(255,255,255,0.8), 0 0 60px rgba(160,255,0,0.3)',
+                      filter: 'blur(0.3px)'
+                    }}
+                  />
+                  {/* Glass effect overlay */}
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/20 to-white/60 blur-[2px] mix-blend-overlay" />
                 </div>
-
-                <p className="text-gray-300 text-sm md:text-[15px]">Como posso ajudar você hoje?</p>
+                
+                <h3 className="text-xl font-medium mt-8 mb-2 text-center text-white">Como posso ajudar você hoje?</h3>
+                <p className="text-[13px] text-gray-400 text-center px-4 leading-relaxed">
+                  Analise dados, gere relatórios ou tire dúvidas sobre seu desempenho.
+                </p>
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-4 relative z-10">
-                <button className="bg-[#1c1c1c] hover:bg-[#252525] text-white py-3 md:py-4 rounded-2xl border border-white/5 flex flex-col items-center gap-2 transition-colors group">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#d9f970] to-[#84cc16] p-[1px] group-hover:shadow-[0_0_15px_rgba(163,230,53,0.3)] transition-shadow">
-                    <div className="w-full h-full bg-[#1c1c1c] rounded-full flex items-center justify-center">
-                      <Clock size={14} className="text-[#a3e635]" />
-                    </div>
-                  </div>
-                  <span className="text-xs font-medium">Análise Pro</span>
+              <div className="grid grid-cols-2 gap-3 mb-4 relative z-10 flex-shrink-0">
+                <button className="h-[42px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-[12px] flex items-center justify-center gap-2 transition-all group">
+                  <Clock size={14} className="text-[#c6ff00] group-hover:scale-110 transition-transform" />
+                  <span className="text-[12px] font-medium text-white">Análise Pro</span>
                 </button>
-                <button className="bg-[#1c1c1c] hover:bg-[#252525] text-white py-3 md:py-4 rounded-2xl border border-white/5 flex flex-col items-center gap-2 transition-colors">
-                  <div className="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center">
-                    <FileText size={14} className="text-gray-300" />
-                  </div>
-                  <span className="text-xs font-medium">Relatório</span>
+                <button className="h-[42px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-[12px] flex items-center justify-center gap-2 transition-all group">
+                  <FileText size={14} className="text-[#00ffb3] group-hover:scale-110 transition-transform" />
+                  <span className="text-[12px] font-medium text-white">Relatório</span>
                 </button>
               </div>
 
-              {/* Input Area */}
-              <div className="relative z-10 mt-auto">
-                <div className="bg-[#1c1c1c] rounded-2xl p-1 pl-4 flex items-center border border-white/5 shadow-inner">
-                  <input
-                    type="text"
-                    placeholder="Pergunte qualquer coisa..."
-                    className="bg-transparent border-none outline-none text-sm text-white placeholder-gray-500 w-full"
-                  />
-                  <div className="flex items-center gap-1 pr-1">
-                    <button className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                      <Send size={16} className="transform rotate-45" />
-                    </button>
-                    <button className="w-8 h-8 rounded-xl bg-black flex items-center justify-center text-gray-300 hover:text-white transition-colors border border-white/10">
-                      <Mic size={14} />
-                    </button>
-                  </div>
+              {/* Chat Input */}
+              <div className="relative mt-auto z-10 flex-shrink-0">
+                <input 
+                  type="text" 
+                  placeholder="Pergunte qualquer coisa..." 
+                  className="w-full h-[44px] bg-[rgba(255,255,255,0.06)] border-none rounded-[14px] pl-4 pr-24 text-[13px] text-white focus:outline-none focus:bg-[rgba(255,255,255,0.1)] placeholder-gray-500 backdrop-blur-md transition-all"
+                />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button className="w-8 h-8 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                    <Send size={14} />
+                  </button>
+                  <button className="w-8 h-8 rounded-[10px] bg-white text-black flex items-center justify-center hover:bg-[#c6ff00] transition-colors shadow-lg">
+                    <Mic size={14} />
+                  </button>
                 </div>
               </div>
             </div>
