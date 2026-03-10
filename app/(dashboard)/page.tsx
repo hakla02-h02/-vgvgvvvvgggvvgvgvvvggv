@@ -94,9 +94,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Grid Layout - 2 column layout with Dragon AI on right spanning full height */}
-        <div className="flex flex-col xl:flex-row gap-4 md:gap-5">
+        <div className="grid grid-cols-1 xl:grid-cols-[1fr_320px] gap-5 xl:gap-6">
           {/* Left Column - Sales Distribution + Analysis Cards */}
-          <div className="flex-1 flex flex-col gap-4 md:gap-5">
+          <div className="flex flex-col gap-5">
             {/* Smart Sales Distribution Card */}
             <div className="bg-[#111111] rounded-[24px] p-4 md:p-6 text-white relative overflow-hidden shadow-lg">
               {/* Glow effect */}
@@ -233,7 +233,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Right Column - Dragon AI Panel - spans full height */}
-          <div className="w-full xl:w-[320px] flex-shrink-0">
+          <div className="xl:row-span-full">
             <div className="bg-[#0f0f0f] rounded-[24px] p-5 flex flex-col w-full h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[400px] xl:sticky xl:top-4">
               {/* Background glow effect */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
