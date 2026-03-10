@@ -93,182 +93,188 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Grid Layout */}
+        {/* Grid Layout - Main 2 column structure */}
         <div className="grid grid-cols-12 gap-4 md:gap-5 auto-rows-min">
-          {/* Smart Sales Distribution Card - Full Width */}
-          <div className="col-span-12 bg-[#111111] rounded-[24px] p-4 md:p-6 text-white relative overflow-hidden shadow-lg">
-            {/* Glow effect */}
-            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-[#a3e635] opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
+          {/* Left Column (8 cols) - Sales Distribution + Analysis Cards */}
+          <div className="col-span-12 xl:col-span-8 flex flex-col gap-4 md:gap-5">
+            {/* Smart Sales Distribution Card */}
+            <div className="bg-[#111111] rounded-[24px] p-4 md:p-6 text-white relative overflow-hidden shadow-lg">
+              {/* Glow effect */}
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-[#a3e635] opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
 
-            <div className="relative z-10">
-              <h2 className="text-lg md:text-xl font-semibold mb-1">Distribuição de Vendas</h2>
-              <p className="text-gray-400 text-xs md:text-sm mb-4 md:mb-6">
-                Métricas de vendas mostrando crescimento em leads, receita e performance
-              </p>
+              <div className="relative z-10">
+                <h2 className="text-lg md:text-xl font-semibold mb-1">Distribuição de Vendas</h2>
+                <p className="text-gray-400 text-xs md:text-sm mb-4 md:mb-6">
+                  Métricas de vendas mostrando crescimento em leads, receita e performance
+                </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
-                {/* Metric 1 */}
-                <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
-                  <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
-                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                    Receita Total
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
-                    56.000 <span className="text-sm font-normal text-gray-500 mb-1">R$</span>
-                  </div>
-                </div>
-                {/* Metric 2 */}
-                <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
-                  <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
-                    <div className="w-2 h-2 rounded-full bg-white"></div>
-                    ROI
-                  </div>
-                  <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
-                    +312 <span className="text-sm font-normal text-gray-500 mb-1">%</span>
-                  </div>
-                </div>
-                {/* Metric 3 */}
-                <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
-                  <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
-                    <div className="w-4 h-4 rounded-full bg-[#111111] flex items-center justify-center border border-gray-600">
-                      <span className="text-[8px]">±</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                  {/* Metric 1 */}
+                  <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
+                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                      Receita Total
                     </div>
-                    Usuários Ativos
+                    <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
+                      56.000 <span className="text-sm font-normal text-gray-500 mb-1">R$</span>
+                    </div>
                   </div>
-                  <div className="text-2xl md:text-3xl font-bold">12.846</div>
+                  {/* Metric 2 */}
+                  <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
+                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
+                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                      ROI
+                    </div>
+                    <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
+                      +312 <span className="text-sm font-normal text-gray-500 mb-1">%</span>
+                    </div>
+                  </div>
+                  {/* Metric 3 */}
+                  <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
+                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
+                      <div className="w-4 h-4 rounded-full bg-[#111111] flex items-center justify-center border border-gray-600">
+                        <span className="text-[8px]">±</span>
+                      </div>
+                      Usuários Ativos
+                    </div>
+                    <div className="text-2xl md:text-3xl font-bold">12.846</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Analysis Cards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+              {/* Sales Analysis Card */}
+              <div className="bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
+                    <h3 className="font-semibold text-gray-900 text-sm">Análise de Vendas</h3>
+                  </div>
+                  <div className="text-[10px] font-medium text-gray-500 flex items-center cursor-pointer">
+                    01-07 Jan <ChevronDown size={12} className="ml-1" />
+                  </div>
+                </div>
+
+                <div className="flex-1 flex items-center gap-4">
+                  {/* Donut Chart Simulation */}
+                  <div className="relative w-24 h-24 flex-shrink-0">
+                    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="12" strokeDasharray="4 4" />
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="160 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
+                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a3e635" strokeWidth="14" strokeDasharray="30 251" strokeDashoffset="-180" className="drop-shadow-sm" strokeLinecap="round" />
+                      <defs>
+                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                          <stop offset="0%" stopColor="#8b5cf6" />
+                          <stop offset="100%" stopColor="#3b82f6" />
+                        </linearGradient>
+                      </defs>
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <span className="text-xs font-bold text-gray-900">R$728.000</span>
+                      <span className="text-[8px] text-gray-400">Receita Total</span>
+                    </div>
+                  </div>
+
+                  {/* Legend */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-sm bg-blue-600"></span>
+                      <span className="text-xs font-bold text-gray-800">344</span>
+                      <span className="text-xs text-gray-400">Leads</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-sm bg-gray-200"></span>
+                      <span className="text-xs font-bold text-gray-800">256</span>
+                      <span className="text-xs text-gray-400">Receita</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-sm bg-[#a3e635]"></span>
+                      <span className="text-xs font-bold text-gray-800">128</span>
+                      <span className="text-xs text-gray-400">Crescimento</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-gray-100 text-[10px] text-gray-400 flex items-center gap-1">
+                  <HelpCircle size={10} />
+                  Calculado a partir da atividade agregada do período
+                </div>
+              </div>
+
+              {/* Deal Analysis Card */}
+              <div className="bg-[#ebfcac] rounded-[24px] p-4 md:p-5 shadow-sm border border-[#e2f89f] flex flex-col relative overflow-hidden min-h-[220px]">
+                <div className="flex justify-between items-center mb-3 relative z-10">
+                  <div className="flex items-center gap-2">
+                    <BarChart2 size={14} className="text-[#4d7c0f]" />
+                    <h3 className="font-semibold text-gray-900 text-sm">Análise de Negócios</h3>
+                  </div>
+                  <div className="text-[10px] font-medium text-[#4d7c0f] flex items-center cursor-pointer">
+                    01-07 Jan <ChevronDown size={12} className="ml-1" />
+                  </div>
+                </div>
+
+                {/* Abstract Chart Representation */}
+                <div className="flex-1 relative mt-1 z-10">
+                  <div className="absolute top-0 left-0 w-[45%] h-[80%] bg-[#d9f970] rounded-xl flex items-start p-3 overflow-hidden">
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, #84cc16 5px, #84cc16 10px)" }}></div>
+                    <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f]">Ganhos 6K</div>
+                  </div>
+                  <div className="absolute top-4 right-0 w-[45%] h-[40%] bg-[#d9f970] rounded-xl flex items-start justify-end p-3">
+                    <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f]">Crescimento 4K</div>
+                  </div>
+                  <div className="absolute bottom-0 right-[10%] w-[40%] h-[35%] bg-[#111] rounded-xl flex items-end justify-start p-3 shadow-lg">
+                    <div className="absolute -top-6 left-0 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800">Perdas 2K</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Sales Analysis Card */}
-          <div className="col-span-12 md:col-span-4 bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
-                <h3 className="font-semibold text-gray-900 text-sm">Análise de Vendas</h3>
-              </div>
-              <div className="text-[10px] font-medium text-gray-500 flex items-center cursor-pointer">
-                01-07 Jan <ChevronDown size={12} className="ml-1" />
-              </div>
-            </div>
-
-            <div className="flex-1 flex items-center gap-4">
-              {/* Donut Chart Simulation */}
-              <div className="relative w-20 h-20 flex-shrink-0">
-                <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                  <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="12" strokeDasharray="4 4" />
-                  <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="160 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
-                  <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a3e635" strokeWidth="14" strokeDasharray="30 251" strokeDashoffset="-180" className="drop-shadow-sm" strokeLinecap="round" />
-                  <defs>
-                    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stopColor="#8b5cf6" />
-                      <stop offset="100%" stopColor="#3b82f6" />
-                    </linearGradient>
-                  </defs>
-                </svg>
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <span className="text-[10px] font-bold text-gray-900">R$728K</span>
-                  <span className="text-[7px] text-gray-400">Total</span>
-                </div>
-              </div>
-
-              {/* Legend */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-sm bg-blue-600"></span>
-                  <span className="text-[10px] font-bold text-gray-800">344</span>
-                  <span className="text-[10px] text-gray-400">Leads</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-sm bg-gray-200"></span>
-                  <span className="text-[10px] font-bold text-gray-800">256</span>
-                  <span className="text-[10px] text-gray-400">Receita</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-sm bg-[#a3e635]"></span>
-                  <span className="text-[10px] font-bold text-gray-800">128</span>
-                  <span className="text-[10px] text-gray-400">Crescimento</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-3 pt-3 border-t border-gray-100 text-[9px] text-gray-400 flex items-center gap-1">
-              <HelpCircle size={8} />
-              Dados agregados do período
-            </div>
-          </div>
-
-          {/* Deal Analysis Card */}
-          <div className="col-span-12 md:col-span-4 bg-[#ebfcac] rounded-[24px] p-4 md:p-5 shadow-sm border border-[#e2f89f] flex flex-col relative overflow-hidden min-h-[200px]">
-            <div className="flex justify-between items-center mb-3 relative z-10">
-              <div className="flex items-center gap-2">
-                <BarChart2 size={14} className="text-[#4d7c0f]" />
-                <h3 className="font-semibold text-gray-900 text-sm">Análise de Negócios</h3>
-              </div>
-              <div className="text-[10px] font-medium text-[#4d7c0f] flex items-center cursor-pointer">
-                01-07 Jan <ChevronDown size={12} className="ml-1" />
-              </div>
-            </div>
-
-            {/* Abstract Chart Representation */}
-            <div className="flex-1 relative mt-1 z-10">
-              <div className="absolute top-0 left-0 w-[42%] h-[75%] bg-[#d9f970] rounded-lg flex items-start p-2 overflow-hidden">
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 4px, #84cc16 4px, #84cc16 8px)" }}></div>
-                <div className="relative z-10 bg-white/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] font-bold text-[#4d7c0f]">Ganhos 6K</div>
-              </div>
-              <div className="absolute top-3 right-0 w-[42%] h-[35%] bg-[#d9f970] rounded-lg flex items-start justify-end p-2">
-                <div className="bg-white/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] font-bold text-[#4d7c0f]">Crescimento 4K</div>
-              </div>
-              <div className="absolute bottom-0 right-[8%] w-[36%] h-[30%] bg-[#111] rounded-lg flex items-end justify-start p-2 shadow-lg">
-                <div className="absolute -top-5 left-0 bg-white/60 backdrop-blur-sm px-1.5 py-0.5 rounded text-[8px] font-bold text-gray-800">Perdas 2K</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Dragon AI Panel - Compact */}
-          <div className="col-span-12 md:col-span-4 flex">
-            <div className="bg-[#0f0f0f] rounded-[24px] p-4 flex flex-col w-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden">
+          {/* Right Column (4 cols) - Dragon AI Panel - spans full height */}
+          <div className="col-span-12 xl:col-span-4 xl:row-span-2">
+            <div className="bg-[#0f0f0f] rounded-[24px] p-5 flex flex-col w-full h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[400px]">
               {/* Background glow effect */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[80px] pointer-events-none" />
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
 
               {/* Header */}
-              <div className="flex justify-between items-center mb-4 relative z-10 text-white">
-                <button className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <Minus size={12} />
+              <div className="flex justify-between items-center mb-6 relative z-10 text-white">
+                <button className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <Minus size={14} />
                 </button>
                 <span className="text-sm font-medium tracking-wide">Dragon AI</span>
-                <button className="w-6 h-6 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <Plus size={12} />
+                <button className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
+                  <Plus size={14} />
                 </button>
               </div>
 
               {/* 3D Sphere Area */}
-              <div className="flex flex-col items-center justify-center relative z-10 mb-4">
-                <div className="w-[100px] h-[100px] rounded-full relative flex-shrink-0 animate-float">
+              <div className="flex-1 flex flex-col items-center justify-center relative z-10">
+                <div className="w-[140px] h-[140px] rounded-full relative flex-shrink-0 animate-float">
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
                       background: 'linear-gradient(135deg, #00ffb3 0%, #c6ff00 100%)',
-                      boxShadow: 'inset -12px -12px 24px rgba(0,0,0,0.5), inset 6px 6px 12px rgba(255,255,255,0.8), 0 0 40px rgba(160,255,0,0.3)',
+                      boxShadow: 'inset -16px -16px 32px rgba(0,0,0,0.5), inset 8px 8px 16px rgba(255,255,255,0.8), 0 0 50px rgba(160,255,0,0.3)',
                       filter: 'blur(0.3px)'
                     }}
                   />
                   <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/20 to-white/60 blur-[2px] mix-blend-overlay" />
                 </div>
                 
-                <p className="text-[11px] text-gray-400 text-center mt-3">Como posso ajudar você hoje?</p>
+                <p className="text-sm text-gray-300 text-center mt-6">Como posso ajudar você hoje?</p>
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 mb-3 relative z-10 flex-shrink-0">
-                <button className="h-[32px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center gap-1.5 transition-all group">
-                  <Clock size={10} className="text-[#c6ff00]" />
-                  <span className="text-[10px] font-medium text-white">Pro Analysis</span>
+              <div className="grid grid-cols-2 gap-3 mb-4 relative z-10 flex-shrink-0">
+                <button className="h-[40px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl flex items-center justify-center gap-2 transition-all group">
+                  <Clock size={14} className="text-[#c6ff00]" />
+                  <span className="text-xs font-medium text-white">Pro Analysis</span>
                 </button>
-                <button className="h-[32px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center gap-1.5 transition-all group">
-                  <FileText size={10} className="text-[#00ffb3]" />
-                  <span className="text-[10px] font-medium text-white">Relatório</span>
+                <button className="h-[40px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl flex items-center justify-center gap-2 transition-all group">
+                  <FileText size={14} className="text-[#00ffb3]" />
+                  <span className="text-xs font-medium text-white">Relatório</span>
                 </button>
               </div>
 
@@ -277,14 +283,14 @@ export default function DashboardPage() {
                 <input 
                   type="text" 
                   placeholder="Ask anything..." 
-                  className="w-full h-[36px] bg-[rgba(255,255,255,0.06)] border-none rounded-xl pl-3 pr-16 text-[11px] text-white focus:outline-none focus:bg-[rgba(255,255,255,0.1)] placeholder-gray-500 backdrop-blur-md transition-all"
+                  className="w-full h-[42px] bg-[rgba(255,255,255,0.06)] border-none rounded-xl pl-4 pr-20 text-sm text-white focus:outline-none focus:bg-[rgba(255,255,255,0.1)] placeholder-gray-500 backdrop-blur-md transition-all"
                 />
-                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-                  <button className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                    <Send size={10} />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                  <button className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                    <Send size={14} />
                   </button>
-                  <button className="w-6 h-6 rounded-lg bg-white text-black flex items-center justify-center hover:bg-[#c6ff00] transition-colors shadow-lg">
-                    <Mic size={10} />
+                  <button className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center hover:bg-[#c6ff00] transition-colors shadow-lg">
+                    <Mic size={14} />
                   </button>
                 </div>
               </div>
