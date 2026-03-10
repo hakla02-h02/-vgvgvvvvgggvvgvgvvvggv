@@ -228,66 +228,36 @@ export default function DashboardPage() {
 
           {/* Right Column - Dragon AI Panel - spans full height */}
           <div className="xl:row-span-2 xl:col-start-3 xl:row-start-1 order-last xl:order-none">
-            <div className="bg-[#0f0f0f] rounded-[24px] p-4 flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[450px] xl:min-h-full">
-              {/* Background glow effect */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
-
+            <div className="bg-black rounded-3xl p-6 flex flex-col items-center justify-center min-h-[400px] xl:min-h-full relative">
               {/* Header */}
-              <div className="flex justify-between items-center mb-6 relative z-10 text-white">
-                <button className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <Minus size={14} />
+              <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                <button className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors">
+                  <Minus className="w-5 h-5" />
                 </button>
-                <span className="text-sm font-medium tracking-wide">Dragon AI</span>
-                <button className="w-7 h-7 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-                  <Plus size={14} />
-                </button>
-              </div>
-
-              {/* 3D Sphere Area */}
-              <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-                <div className="w-[100px] h-[100px] rounded-full relative flex-shrink-0 animate-float">
-                  <div 
-                    className="absolute inset-0 rounded-full"
-                    style={{
-                      background: 'linear-gradient(135deg, #00ffb3 0%, #c6ff00 100%)',
-                      boxShadow: 'inset -16px -16px 32px rgba(0,0,0,0.5), inset 8px 8px 16px rgba(255,255,255,0.8), 0 0 50px rgba(160,255,0,0.3)',
-                      filter: 'blur(0.3px)'
-                    }}
-                  />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-transparent via-white/20 to-white/60 blur-[2px] mix-blend-overlay" />
-                </div>
-                
-                <p className="text-sm text-gray-300 text-center mt-6">Como posso ajudar você hoje?</p>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-2 mb-3 relative z-10 flex-shrink-0">
-                <button className="h-[36px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center gap-1.5 transition-all group">
-                  <Clock size={12} className="text-[#c6ff00]" />
-                  <span className="text-[10px] font-medium text-white">Analysis</span>
-                </button>
-                <button className="h-[36px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center gap-1.5 transition-all group">
-                  <FileText size={12} className="text-[#00ffb3]" />
-                  <span className="text-[10px] font-medium text-white">Relatório</span>
+                <h3 className="text-white font-bold text-xl italic tracking-wide">DRAGON AI</h3>
+                <button className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center text-white hover:bg-zinc-700 transition-colors">
+                  <Plus className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Chat Input */}
-              <div className="relative z-10 flex-shrink-0">
-                <input 
-                  type="text" 
-                  placeholder="Ask anything..." 
-                  className="w-full h-[38px] bg-[rgba(255,255,255,0.06)] border-none rounded-lg pl-3 pr-16 text-xs text-white focus:outline-none focus:bg-[rgba(255,255,255,0.1)] placeholder-gray-500 backdrop-blur-md transition-all"
+              {/* 3D Sphere */}
+              <div className="relative mt-8">
+                {/* Outer glow */}
+                <div className="absolute inset-0 rounded-full bg-lime-400/20 blur-3xl scale-150" />
+                {/* Inner ring */}
+                <div className="absolute inset-[-20px] rounded-full border border-zinc-700/50" />
+                {/* Sphere */}
+                <div 
+                  className="w-48 h-48 rounded-full relative"
+                  style={{
+                    background: 'radial-gradient(circle at 30% 30%, #a3e635, #22c55e, #15803d, #14532d)',
+                    boxShadow: '0 0 60px rgba(163, 230, 53, 0.3), inset -20px -20px 40px rgba(0,0,0,0.3), inset 20px 20px 40px rgba(255,255,255,0.1)'
+                  }}
                 />
-                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
-                  <button className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                    <Send size={12} />
-                  </button>
-                  <button className="w-6 h-6 rounded-md bg-white text-black flex items-center justify-center hover:bg-[#c6ff00] transition-colors shadow-lg">
-                    <Mic size={12} />
-                  </button>
-                </div>
               </div>
+
+              {/* Text */}
+              <p className="text-zinc-400 text-lg mt-8">Como posso ajudar você hoje?</p>
             </div>
           </div>
         </div>
