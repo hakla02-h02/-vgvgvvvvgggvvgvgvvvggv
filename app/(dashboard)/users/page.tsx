@@ -61,28 +61,29 @@ function DragonIconInline({ className }: { className?: string }) {
   )
 }
 
-// --- KPI Card ---
-function KPICard({ icon: Icon, label, value, suffix, iconBg, iconColor }: {
+// --- KPI Card - Dashboard Style ---
+function KPICard({ icon: Icon, label, value, suffix, iconBg, iconColor, isDark }: {
   icon: React.ElementType; label: string; value: string; suffix?: string
-  iconBg: string; iconColor: string
+  iconBg: string; iconColor: string; isDark?: boolean
 }) {
   return (
-    <Card className="bg-card border-border rounded-2xl overflow-hidden">
-      <CardContent className="p-5">
+    <div className={`rounded-[24px] p-5 relative overflow-hidden ${isDark ? 'bg-[#111]' : 'bg-white border border-gray-100 shadow-sm'}`}>
+      {isDark && <div className="absolute top-0 right-0 w-20 h-20 bg-[#a3e635] opacity-10 blur-[40px] rounded-full" />}
+      <div className="relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{label}</span>
+            <span className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{label}</span>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">{value}</span>
-              {suffix && <span className="text-sm font-medium text-muted-foreground">{suffix}</span>}
+              <span className={`text-2xl md:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</span>
+              {suffix && <span className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{suffix}</span>}
             </div>
           </div>
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
             <Icon className={`h-5 w-5 ${iconColor}`} />
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -102,17 +103,17 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
   const maxCount = funnel[0]?.count || 1
 
   return (
-    <Card className="bg-card border-border rounded-2xl">
-      <CardContent className="p-5 md:p-6">
+    <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm">
+      <div className="p-5 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Funil de Conversao</h3>
-            <p className="text-xs text-muted-foreground mt-0.5">Acompanhe onde seus usuarios estao parando</p>
+            <h3 className="text-base font-bold text-gray-900">Funil de Conversao</h3>
+            <p className="text-xs text-gray-500 mt-1">Acompanhe onde seus usuarios estao parando</p>
           </div>
           {funnel.length >= 2 && funnel[0].count > 0 && (
-            <Badge variant="outline" className="border-accent/30 text-accent bg-accent/5 rounded-lg text-[11px]">
+            <span className="bg-[#a3e635]/10 text-[#65a30d] px-3 py-1.5 rounded-full text-xs font-semibold">
               {'Taxa: ' + ((funnel[funnel.length - 1].count / funnel[0].count) * 100).toFixed(1) + '%'}
-            </Badge>
+            </span>
           )}
         </div>
 
@@ -181,8 +182,8 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
             })}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
@@ -371,22 +372,23 @@ export default function UsersPage() {
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
 
           {/* KPI Cards */}
-          <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
             <KPICard
               icon={Users} label="Total Usuarios" value={kpis.totalUsuarios.toLocaleString("pt-BR")}
-              iconBg="bg-accent/10" iconColor="text-accent"
+              iconBg="bg-[#a3e635]/10" iconColor="text-[#65a30d]"
+              isDark
             />
             <KPICard
               icon={Crown} label="Assinantes" value={kpis.assinantes.toLocaleString("pt-BR")}
-              iconBg="bg-emerald-500/10" iconColor="text-emerald-500"
+              iconBg="bg-emerald-50" iconColor="text-emerald-600"
             />
             <KPICard
               icon={Clock} label="Expirando em 7d" value={kpis.expirando7d.toString()}
-              iconBg="bg-amber-500/10" iconColor="text-amber-500"
+              iconBg="bg-amber-50" iconColor="text-amber-600"
             />
             <KPICard
               icon={TrendingUp} label="Conversao" value={kpis.taxaConversao.toString()} suffix="%"
-              iconBg="bg-blue-500/10" iconColor="text-blue-500"
+              iconBg="bg-blue-50" iconColor="text-blue-600"
             />
           </div>
 
@@ -394,13 +396,13 @@ export default function UsersPage() {
           <FunnelVisual funnel={funnel} />
 
           {/* Users List */}
-          <Card className="bg-card border-border rounded-2xl">
-            <CardContent className="p-5 md:p-6">
+          <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm">
+            <div className="p-5 md:p-6">
               <div className="flex flex-col gap-4 mb-5">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-1">
-                    <h3 className="text-sm font-semibold text-foreground">Gerenciamento de Usuarios</h3>
-                    <p className="text-xs text-muted-foreground">Usuarios que interagiram com seu bot</p>
+                    <h3 className="text-base font-bold text-gray-900">Gerenciamento de Usuarios</h3>
+                    <p className="text-xs text-gray-500">Usuarios que interagiram com seu bot</p>
                   </div>
                   <button
                     onClick={fetchData}
@@ -411,20 +413,20 @@ export default function UsersPage() {
                   </button>
                 </div>
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex gap-1.5 flex-wrap">
+                  <div className="flex gap-2 flex-wrap">
                     {filterTabs.map((tab) => (
                       <button
                         key={tab.key}
                         onClick={() => setFiltro(tab.key)}
-                        className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all ${
+                        className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
                           filtro === tab.key
-                            ? "bg-accent/15 text-accent shadow-sm"
-                            : "bg-secondary/60 text-muted-foreground hover:bg-secondary hover:text-foreground"
+                            ? "bg-[#111] text-white"
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
                         {tab.label}
-                        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-semibold ${
-                          filtro === tab.key ? "bg-accent/20 text-accent" : "bg-background/50 text-muted-foreground"
+                        <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${
+                          filtro === tab.key ? "bg-white/20 text-white" : "bg-gray-200 text-gray-500"
                         }`}>
                           {tab.count}
                         </span>
@@ -432,12 +434,12 @@ export default function UsersPage() {
                     ))}
                   </div>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                     <Input
                       placeholder="Buscar..."
                       value={busca}
                       onChange={(e) => setBusca(e.target.value)}
-                      className="w-full sm:w-56 bg-secondary/60 pl-9 border-border rounded-lg h-8 text-xs"
+                      className="w-full sm:w-56 bg-gray-50 pl-9 border-gray-200 rounded-xl h-10 text-sm"
                     />
                   </div>
                 </div>

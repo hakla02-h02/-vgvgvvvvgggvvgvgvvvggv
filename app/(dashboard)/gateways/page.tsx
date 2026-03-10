@@ -235,73 +235,67 @@ export default function GatewaysPage() {
       <DashboardHeader title="Gateways" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-          {/* Stats */}
-          <div className="grid gap-3 md:gap-4 grid-cols-2 md:grid-cols-4">
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+          {/* Stats - Dashboard Style */}
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+            {/* Gateways Conectados */}
+            <div className="bg-[#111] rounded-[24px] p-5 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-20 h-20 bg-[#a3e635] opacity-10 blur-[40px] rounded-full" />
+              <div className="relative z-10">
+                <div className="w-10 h-10 rounded-xl bg-[#a3e635]/10 flex items-center justify-center mb-3">
+                  <CreditCard className="h-5 w-5 text-[#a3e635]" />
                 </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Gateways</p>
-                  <p className="text-lg md:text-2xl font-bold text-foreground">{connectedGateways}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <Package className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Planos</p>
-                  <p className="text-lg md:text-2xl font-bold text-foreground">{activePlans.length}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <ArrowRightLeft className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Transacoes</p>
-                  <p className="text-lg md:text-2xl font-bold text-foreground">0</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Volume</p>
-                  <p className="text-lg md:text-2xl font-bold text-foreground">R$ 0</p>
-                </div>
-              </CardContent>
-            </Card>
+                <p className="text-xs text-gray-500">Gateways</p>
+                <p className="text-2xl font-bold text-white mt-0.5">{connectedGateways}</p>
+              </div>
+            </div>
+            
+            {/* Planos */}
+            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
+              <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center mb-3">
+                <Package className="h-5 w-5 text-purple-600" />
+              </div>
+              <p className="text-xs text-gray-500">Planos</p>
+              <p className="text-2xl font-bold text-gray-900 mt-0.5">{activePlans.length}</p>
+            </div>
+            
+            {/* Transacoes */}
+            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center mb-3">
+                <ArrowRightLeft className="h-5 w-5 text-blue-600" />
+              </div>
+              <p className="text-xs text-gray-500">Transacoes</p>
+              <p className="text-2xl font-bold text-gray-900 mt-0.5">0</p>
+            </div>
+            
+            {/* Volume */}
+            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-3">
+                <DollarSign className="h-5 w-5 text-emerald-600" />
+              </div>
+              <p className="text-xs text-gray-500">Volume</p>
+              <p className="text-2xl font-bold text-gray-900 mt-0.5">R$ 0</p>
+            </div>
           </div>
 
           {/* Tabs */}
           <Tabs defaultValue="gateways" className="w-full">
-            <TabsList className="bg-secondary/50 border border-border">
-              <TabsTrigger value="gateways" className="data-[state=active]:bg-card">
+            <TabsList className="bg-gray-100 border border-gray-200 p-1.5 rounded-2xl">
+              <TabsTrigger value="gateways" className="data-[state=active]:bg-[#111] data-[state=active]:text-white rounded-xl px-6 py-2.5 text-sm font-medium transition-all">
                 <CreditCard className="h-4 w-4 mr-2" />
                 Gateways
               </TabsTrigger>
-              <TabsTrigger value="plans" className="data-[state=active]:bg-card">
+              <TabsTrigger value="plans" className="data-[state=active]:bg-[#111] data-[state=active]:text-white rounded-xl px-6 py-2.5 text-sm font-medium transition-all">
                 <Package className="h-4 w-4 mr-2" />
                 Planos de Cobranca
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="gateways" className="mt-4">
+            <TabsContent value="gateways" className="mt-6">
               {/* Header */}
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Gateways de Pagamento</h2>
-                  <p className="text-sm text-muted-foreground">Conecte seus gateways para receber pagamentos PIX</p>
+                  <h2 className="text-xl font-bold text-gray-900">Gateways de Pagamento</h2>
+                  <p className="text-sm text-gray-500 mt-1">Conecte seus gateways para receber pagamentos PIX</p>
                 </div>
               </div>
 
@@ -318,11 +312,11 @@ export default function GatewaysPage() {
                 const isComingSoon = gw.comingSoon
 
                 return (
-                  <Card
+                  <div
                     key={gw.id}
-                    className={`bg-card border-border rounded-2xl transition-all ${
-                      isComingSoon ? "opacity-60" : ""
-                    } ${isConnected ? "ring-1 ring-accent/30" : ""}`}
+                    className={`bg-white rounded-[24px] border transition-all shadow-sm ${
+                      isComingSoon ? "opacity-60 border-gray-100" : "border-gray-100"
+                    } ${isConnected ? "ring-2 ring-[#a3e635]/30" : ""}`}
                   >
                     <CardContent className="p-0">
                       <div className="flex items-center justify-between p-4 md:p-5">
@@ -341,22 +335,22 @@ export default function GatewaysPage() {
                           {/* Gateway Info */}
                           <div>
                             <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="text-base md:text-lg font-semibold text-foreground">
+                              <h3 className="text-lg font-bold text-gray-900">
                                 {gw.name}
                               </h3>
                               {isConnected && (
-                                <Badge className="bg-success/10 text-success border-0 text-[10px] font-medium px-2">
-                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                <span className="inline-flex items-center gap-1 bg-[#22c55e]/10 text-[#22c55e] text-xs font-medium px-2.5 py-1 rounded-full">
+                                  <CheckCircle2 className="h-3 w-3" />
                                   Conectado
-                                </Badge>
+                                </span>
                               )}
                               {isComingSoon && (
-                                <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
+                                <span className="text-xs text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
                                   Em breve
-                                </Badge>
+                                </span>
                               )}
                             </div>
-                            <p className="text-sm text-muted-foreground">{gw.description}</p>
+                            <p className="text-sm text-gray-500 mt-1">{gw.description}</p>
                           </div>
                         </div>
 
@@ -380,13 +374,13 @@ export default function GatewaysPage() {
                           )}
 
                           {!isConnected && !isComingSoon && (
-                            <Button
+                            <button
                               onClick={() => handleOpenConnect(gw.id)}
-                              className="bg-accent text-accent-foreground hover:bg-accent/90"
+                              className="bg-[#111] text-white hover:bg-gray-800 px-5 py-2.5 rounded-xl font-medium text-sm flex items-center gap-2 transition-colors"
                             >
-                              <Plus className="h-4 w-4 mr-2" />
+                              <Plus className="h-4 w-4" />
                               Conectar
-                            </Button>
+                            </button>
                           )}
 
                           {isComingSoon && (
@@ -418,7 +412,7 @@ export default function GatewaysPage() {
                         </div>
                       )}
                     </CardContent>
-                  </Card>
+                  </div>
                 )
               })}
             </div>

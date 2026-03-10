@@ -219,24 +219,22 @@ export default function SettingsPage() {
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-5 p-4 md:p-6 max-w-5xl mx-auto w-full">
 
-          {/* ── PROFILE CARD - Left aligned avatar with floating stats ── */}
-          <section className="relative rounded-2xl border border-border bg-card overflow-hidden">
-            {/* Subtle geometric pattern background */}
-            <div className="absolute inset-0 opacity-[0.03]" style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, hsl(var(--accent)) 1px, transparent 0)`,
-              backgroundSize: '24px 24px'
-            }} />
+          {/* ── PROFILE CARD - Premium Dashboard Style ── */}
+          <section className="relative rounded-[24px] bg-[#111] overflow-hidden">
+            {/* Glow Effects */}
+            <div className="absolute top-0 right-0 w-40 h-40 bg-[#a3e635] opacity-10 blur-[80px] rounded-full" />
+            <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 opacity-5 blur-[60px] rounded-full" />
 
-            <div className="relative p-6">
+            <div className="relative p-6 md:p-8">
               <div className="flex flex-col items-center gap-4">
-                {/* Avatar with status ring */}
+                {/* Avatar with premium ring */}
                 <div className="relative group">
-                  <div className="absolute -inset-1 rounded-full bg-gradient-to-br from-accent/40 to-accent/10 blur-sm" />
-                  <Avatar className="relative h-20 w-20 rounded-full ring-2 ring-accent/20 ring-offset-2 ring-offset-card">
+                  <div className="absolute -inset-2 rounded-full bg-gradient-to-br from-[#a3e635]/40 to-[#22c55e]/20 blur-md" />
+                  <Avatar className="relative h-24 w-24 rounded-full ring-2 ring-[#a3e635]/30 ring-offset-4 ring-offset-[#111]">
                     {profile?.avatar_url ? (
                       <AvatarImage src={profile.avatar_url} alt="Avatar" className="object-cover" />
                     ) : null}
-                    <AvatarFallback className="bg-accent/10 text-accent text-2xl font-bold">
+                    <AvatarFallback className="bg-[#a3e635]/10 text-[#a3e635] text-3xl font-bold">
                       {userInitial}
                     </AvatarFallback>
                   </Avatar>
@@ -260,54 +258,54 @@ export default function SettingsPage() {
                     className="hidden"
                   />
                   {/* Online indicator */}
-                  <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-accent border-2 border-card" />
+                  <div className="absolute -bottom-0.5 -right-0.5 h-5 w-5 rounded-full bg-[#22c55e] border-3 border-[#111]" />
                 </div>
 
                 {/* Name & email centered */}
                 <div className="text-center">
-                  <h1 className="text-xl font-bold text-foreground">
+                  <h1 className="text-2xl font-bold text-white">
                     {profile?.name || session?.name || "Usuario"}
                   </h1>
-                  <p className="text-sm text-muted-foreground mt-0.5">{profile?.email || session?.email}</p>
+                  <p className="text-sm text-gray-400 mt-1">{profile?.email || session?.email}</p>
                 </div>
 
                 {/* ID badge */}
                 <button
                   onClick={handleCopyId}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-secondary/60 border border-border/50 hover:border-accent/30 transition-colors group/id"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#a3e635]/30 transition-colors group/id"
                 >
-                  <span className="text-[10px] font-mono text-muted-foreground tracking-wider">ID: {accountId}</span>
+                  <span className="text-xs font-mono text-gray-400 tracking-wider">ID: {accountId}</span>
                   {copiedId ? (
-                    <Check className="h-3 w-3 text-accent" />
+                    <Check className="h-3.5 w-3.5 text-[#a3e635]" />
                   ) : (
-                    <Copy className="h-3 w-3 text-muted-foreground group-hover/id:text-accent transition-colors" />
+                    <Copy className="h-3.5 w-3.5 text-gray-500 group-hover/id:text-[#a3e635] transition-colors" />
                   )}
                 </button>
               </div>
 
               {/* Stats row - horizontal pills */}
-              <div className="mt-6 flex flex-wrap justify-center gap-2">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border/40">
-                  <CalendarDays className="h-3.5 w-3.5 text-accent" />
-                  <span className="text-xs text-muted-foreground">Desde</span>
-                  <span className="text-xs font-semibold text-foreground">{memberSince}</span>
+              <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10">
+                  <CalendarDays className="h-4 w-4 text-[#a3e635]" />
+                  <span className="text-xs text-gray-500">Desde</span>
+                  <span className="text-xs font-semibold text-white">{memberSince}</span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-secondary/50 border border-border/40">
-                  <Clock className="h-3.5 w-3.5 text-accent" />
-                  <span className="text-xs text-muted-foreground">Acesso</span>
-                  <span className="text-xs font-semibold text-foreground">{lastAccess}</span>
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10">
+                  <Clock className="h-4 w-4 text-blue-400" />
+                  <span className="text-xs text-gray-500">Acesso</span>
+                  <span className="text-xs font-semibold text-white">{lastAccess}</span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/10 border border-accent/20">
-                  <DollarSign className="h-3.5 w-3.5 text-accent" />
-                  <span className="text-xs text-muted-foreground">Taxa</span>
-                  <span className="text-xs font-bold text-accent">R$ 0,50</span>
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#a3e635]/10 border border-[#a3e635]/20">
+                  <DollarSign className="h-4 w-4 text-[#a3e635]" />
+                  <span className="text-xs text-gray-400">Taxa</span>
+                  <span className="text-xs font-bold text-[#a3e635]">R$ 0,50</span>
                 </div>
               </div>
             </div>
           </section>
 
           {/* ── SECTION NAVIGATION TABS ── */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-secondary/40 border border-border/50">
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-gray-100 border border-gray-200">
             {[
               { id: "perfil" as const, label: "Dados Pessoais", icon: User },
               { id: "seguranca" as const, label: "Seguranca", icon: Shield },
@@ -316,13 +314,13 @@ export default function SettingsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSection(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeSection === tab.id
-                    ? "bg-accent text-accent-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-[#111] text-white shadow-lg"
+                    : "text-gray-500 hover:text-gray-900"
                 }`}
               >
-                <tab.icon className="h-3.5 w-3.5" />
+                <tab.icon className="h-4 w-4" />
                 <span className="hidden sm:inline">{tab.label}</span>
               </button>
             ))}
@@ -330,14 +328,14 @@ export default function SettingsPage() {
 
           {/* ── PERSONAL INFO SECTION ── */}
           {activeSection === "perfil" && (
-            <section className="rounded-2xl border border-border bg-card overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+            <section className="rounded-[24px] border border-gray-200 bg-white overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-300 shadow-sm">
               {/* Header with inline edit toggle */}
-              <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
-                <div className="flex items-center gap-2.5">
-                  <div className="flex items-center justify-center h-7 w-7 rounded-lg bg-accent/10">
-                    <User className="h-3.5 w-3.5 text-accent" />
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#a3e635]/10">
+                    <User className="h-5 w-5 text-[#65a30d]" />
                   </div>
-                  <h2 className="text-sm font-semibold text-foreground">Informacoes Pessoais</h2>
+                  <h2 className="text-base font-semibold text-gray-900">Informacoes Pessoais</h2>
                 </div>
                 <Button
                   variant="ghost"
