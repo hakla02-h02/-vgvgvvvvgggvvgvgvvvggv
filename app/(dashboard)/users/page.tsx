@@ -366,10 +366,25 @@ export default function UsersPage() {
   const etapaLabels = funnel.map(f => f.label)
 
   return (
-    <>
-      <DashboardHeader title="Usuarios" />
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
+    <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#f4f5f8]">
+      {/* Header */}
+      <header className="px-4 md:px-8 py-5 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Usuarios</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Gerencie os usuarios do seu bot</p>
+        </div>
+        <button
+          onClick={fetchData}
+          disabled={loading}
+          className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          Atualizar
+        </button>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
+        <div className="flex flex-col gap-6">
 
           {/* KPI Cards */}
           <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
