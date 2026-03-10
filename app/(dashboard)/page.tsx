@@ -211,17 +211,20 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
-                {/* Abstract Chart Representation */}
-                <div className="flex-1 relative mt-1 z-10">
-                  <div className="absolute top-0 left-0 w-[45%] h-[80%] bg-[#d9f970] rounded-xl flex items-start p-3 overflow-hidden">
+                {/* Cards em Fileira */}
+                <div className="flex-1 flex items-end gap-3 mt-1 z-10">
+                  {/* Card Ganhos */}
+                  <div className="flex-1 h-[85%] bg-[#d9f970] rounded-2xl p-3 relative overflow-hidden">
                     <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, #84cc16 5px, #84cc16 10px)" }}></div>
-                    <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f]">Ganhos 6K</div>
+                    <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Ganhos 6K</div>
                   </div>
-                  <div className="absolute top-4 right-0 w-[45%] h-[40%] bg-[#d9f970] rounded-xl flex items-start justify-end p-3">
-                    <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f]">Crescimento 4K</div>
+                  {/* Card Perdas */}
+                  <div className="flex-1 h-[55%] bg-[#111] rounded-2xl p-3 shadow-lg">
+                    <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800 inline-block">Perdas 2K</div>
                   </div>
-                  <div className="absolute bottom-0 right-[10%] w-[40%] h-[35%] bg-[#111] rounded-xl flex items-end justify-start p-3 shadow-lg">
-                    <div className="absolute -top-6 left-0 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800">Perdas 2K</div>
+                  {/* Card Crescimento */}
+                  <div className="flex-1 h-[70%] bg-[#d9f970] rounded-2xl p-3">
+                    <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Crescimento 4K</div>
                   </div>
                 </div>
               </div>
