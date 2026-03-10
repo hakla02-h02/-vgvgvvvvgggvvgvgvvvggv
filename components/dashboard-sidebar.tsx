@@ -66,7 +66,7 @@ const navSections: NavSection[] = [
     items: [
       { label: "Gateways", description: "Pagamentos PIX", href: "/gateways", icon: CreditCard },
       { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair },
-      { label: "Bio Link", description: "Paginas de bio", href: "/biolink", icon: LinkIcon },
+      { label: "Dragon Sites", description: "Crie paginas de conversao", href: "/biolink", icon: LinkIcon },
     ],
   },
   {

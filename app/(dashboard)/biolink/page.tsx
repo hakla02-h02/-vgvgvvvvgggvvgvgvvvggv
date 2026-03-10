@@ -110,191 +110,316 @@ export default function BioLinkPage() {
     )
   }
 
+  // Estado vazio - sem paginas criadas
+  const hasPages = biolinks.length > 0
+
+  // Calcula estatisticas
+  const totalPages = biolinks.length
+  const totalVisitas = biolinks.reduce((acc, bl) => acc + bl.visitas, 0)
+  const totalCliques = biolinks.reduce((acc, bl) => acc + bl.cliques, 0)
+
   return (
     <>
       <DashboardHeader title="Dragon Sites" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-          <div className="grid gap-3 md:gap-4 grid-cols-3">
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <LinkIcon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Paginas</p>
-                  <p className="text-lg md:text-2xl font-bold text-foreground">3</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <Eye className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Visitas</p>
-                  <p className="text-lg md:text-2xl font-bold text-foreground">4.500</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                  <MousePointerClick className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Cliques</p>
-                  <p className="text-lg md:text-2xl font-bold text-foreground">1.720</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Crie paginas de alta conversao</p>
-            <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-              <DialogTrigger asChild>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Criar Site
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-card border-border sm:max-w-lg">
-                {!selectedType ? (
-                  <>
-                    <DialogHeader>
-                      <DialogTitle className="text-foreground text-center">
-                        Vamos criar seu site
-                      </DialogTitle>
-                      <p className="text-sm text-muted-foreground text-center">
-                        Escolha o tipo de pagina que deseja criar
-                      </p>
-                    </DialogHeader>
-                    <div className="grid grid-cols-2 gap-3 pt-4">
-                      {pageTypes.map((type) => {
-                        const Icon = type.icon
-                        return (
-                          <button
-                            key={type.id}
-                            onClick={() => handleSelectType(type.id)}
-                            className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all text-left group"
-                          >
-                            <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${type.color}`}>
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div>
-                              <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
-                                {type.name}
-                              </h3>
-                              <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                {type.description}
-                              </p>
-                            </div>
-                            <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors ml-auto" />
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <DialogHeader>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 rounded-lg"
-                          onClick={handleBack}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <DialogTitle className="text-foreground">
-                          {pageTypes.find(p => p.id === selectedType)?.name}
+          
+          {!hasPages ? (
+            // Estado vazio com CTA central
+            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
+                <LinkIcon className="h-10 w-10 text-accent" />
+              </div>
+              <div className="text-center max-w-md">
+                <h2 className="text-xl font-bold text-foreground mb-2">
+                  Vamos criar sua primeira pagina?
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  Crie paginas de alta conversao para vender mais. Escolha entre presell, pagina de conversao, link na bio ou checkout.
+                </p>
+              </div>
+              <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+                <DialogTrigger asChild>
+                  <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl px-8">
+                    <Plus className="mr-2 h-5 w-5" />
+                    Criar Meu Primeiro Site
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-border sm:max-w-lg">
+                  {!selectedType ? (
+                    <>
+                      <DialogHeader>
+                        <DialogTitle className="text-foreground text-center">
+                          Vamos criar seu site
                         </DialogTitle>
+                        <p className="text-sm text-muted-foreground text-center">
+                          Escolha o tipo de pagina que deseja criar
+                        </p>
+                      </DialogHeader>
+                      <div className="grid grid-cols-2 gap-3 pt-4">
+                        {pageTypes.map((type) => {
+                          const Icon = type.icon
+                          return (
+                            <button
+                              key={type.id}
+                              onClick={() => handleSelectType(type.id)}
+                              className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all text-left group"
+                            >
+                              <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${type.color}`}>
+                                <Icon className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
+                                  {type.name}
+                                </h3>
+                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                  {type.description}
+                                </p>
+                              </div>
+                              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors ml-auto" />
+                            </button>
+                          )
+                        })}
                       </div>
-                    </DialogHeader>
-                    <div className="flex flex-col gap-4 pt-4">
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-foreground">Nome da Pagina</Label>
-                        <Input 
-                          placeholder="Ex: Minha Pagina de Vendas" 
-                          className="bg-secondary border-border rounded-xl"
-                          value={pageName}
-                          onChange={(e) => setPageName(e.target.value)}
-                        />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Label className="text-foreground">Slug (URL)</Label>
+                    </>
+                  ) : (
+                    <>
+                      <DialogHeader>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground">dragon.bio/</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg"
+                            onClick={handleBack}
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </Button>
+                          <DialogTitle className="text-foreground">
+                            {pageTypes.find(p => p.id === selectedType)?.name}
+                          </DialogTitle>
+                        </div>
+                      </DialogHeader>
+                      <div className="flex flex-col gap-4 pt-4">
+                        <div className="flex flex-col gap-2">
+                          <Label className="text-foreground">Nome da Pagina</Label>
                           <Input 
-                            placeholder="minha-pagina" 
-                            className="bg-secondary border-border rounded-xl flex-1"
-                            value={pageSlug}
-                            onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                            placeholder="Ex: Minha Pagina de Vendas" 
+                            className="bg-secondary border-border rounded-xl"
+                            value={pageName}
+                            onChange={(e) => setPageName(e.target.value)}
                           />
                         </div>
-                      </div>
-                      <Button 
-                        className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl mt-2"
-                        onClick={handleCreate}
-                        disabled={!pageName.trim() || !pageSlug.trim()}
-                      >
-                        Criar e Personalizar
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </>
-                )}
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {biolinks.map((bl) => {
-              const typeInfo = getTypeInfo(bl.tipo)
-              const Icon = typeInfo.icon
-              return (
-                <Card key={bl.id} className="bg-card border-border rounded-2xl">
-                  <CardContent className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${typeInfo.color}`}>
-                        <Icon className="h-4 w-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-semibold text-foreground">{bl.nome}</h3>
-                          <Badge
-                            variant="outline"
-                            className={`rounded-lg ${
-                              bl.ativo
-                                ? "bg-success/10 text-success border-success/20"
-                                : "bg-secondary text-muted-foreground border-border"
-                            }`}
-                          >
-                            {bl.ativo ? "ativo" : "inativo"}
-                          </Badge>
-                          <Badge variant="outline" className="rounded-lg bg-secondary text-muted-foreground border-border text-xs">
-                            {typeInfo.name}
-                          </Badge>
+                        <div className="flex flex-col gap-2">
+                          <Label className="text-foreground">Slug (URL)</Label>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-muted-foreground">dragon.bio/</span>
+                            <Input 
+                              placeholder="minha-pagina" 
+                              className="bg-secondary border-border rounded-xl flex-1"
+                              value={pageSlug}
+                              onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                            />
+                          </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">{bl.url} - {bl.visitas} visitas, {bl.cliques} cliques</p>
+                        <Button 
+                          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl mt-2"
+                          onClick={handleCreate}
+                          disabled={!pageName.trim() || !pageSlug.trim()}
+                        >
+                          Criar e Personalizar
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
                       </div>
+                    </>
+                  )}
+                </DialogContent>
+              </Dialog>
+            </div>
+          ) : (
+            // Estado com paginas existentes
+            <>
+              <div className="grid gap-3 md:gap-4 grid-cols-3">
+                <Card className="bg-card border-border rounded-2xl">
+                  <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                    <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                      <LinkIcon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg">
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Paginas</p>
+                      <p className="text-lg md:text-2xl font-bold text-foreground">{totalPages}</p>
                     </div>
                   </CardContent>
                 </Card>
-              )
-            })}
-          </div>
+                <Card className="bg-card border-border rounded-2xl">
+                  <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                    <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                      <Eye className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Visitas</p>
+                      <p className="text-lg md:text-2xl font-bold text-foreground">{totalVisitas.toLocaleString('pt-BR')}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-card border-border rounded-2xl">
+                  <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
+                    <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
+                      <MousePointerClick className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <p className="text-xs md:text-sm text-muted-foreground">Cliques</p>
+                      <p className="text-lg md:text-2xl font-bold text-foreground">{totalCliques.toLocaleString('pt-BR')}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">Crie paginas de alta conversao</p>
+                <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Criar Site
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="bg-card border-border sm:max-w-lg">
+                    {!selectedType ? (
+                      <>
+                        <DialogHeader>
+                          <DialogTitle className="text-foreground text-center">
+                            Vamos criar seu site
+                          </DialogTitle>
+                          <p className="text-sm text-muted-foreground text-center">
+                            Escolha o tipo de pagina que deseja criar
+                          </p>
+                        </DialogHeader>
+                        <div className="grid grid-cols-2 gap-3 pt-4">
+                          {pageTypes.map((type) => {
+                            const Icon = type.icon
+                            return (
+                              <button
+                                key={type.id}
+                                onClick={() => handleSelectType(type.id)}
+                                className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all text-left group"
+                              >
+                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${type.color}`}>
+                                  <Icon className="h-5 w-5" />
+                                </div>
+                                <div>
+                                  <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
+                                    {type.name}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                                    {type.description}
+                                  </p>
+                                </div>
+                                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors ml-auto" />
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <DialogHeader>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 rounded-lg"
+                              onClick={handleBack}
+                            >
+                              <ChevronLeft className="h-4 w-4" />
+                            </Button>
+                            <DialogTitle className="text-foreground">
+                              {pageTypes.find(p => p.id === selectedType)?.name}
+                            </DialogTitle>
+                          </div>
+                        </DialogHeader>
+                        <div className="flex flex-col gap-4 pt-4">
+                          <div className="flex flex-col gap-2">
+                            <Label className="text-foreground">Nome da Pagina</Label>
+                            <Input 
+                              placeholder="Ex: Minha Pagina de Vendas" 
+                              className="bg-secondary border-border rounded-xl"
+                              value={pageName}
+                              onChange={(e) => setPageName(e.target.value)}
+                            />
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Label className="text-foreground">Slug (URL)</Label>
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">dragon.bio/</span>
+                              <Input 
+                                placeholder="minha-pagina" 
+                                className="bg-secondary border-border rounded-xl flex-1"
+                                value={pageSlug}
+                                onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                              />
+                            </div>
+                          </div>
+                          <Button 
+                            className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl mt-2"
+                            onClick={handleCreate}
+                            disabled={!pageName.trim() || !pageSlug.trim()}
+                          >
+                            Criar e Personalizar
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                {biolinks.map((bl) => {
+                  const typeInfo = getTypeInfo(bl.tipo)
+                  const Icon = typeInfo.icon
+                  return (
+                    <Card key={bl.id} className="bg-card border-border rounded-2xl">
+                      <CardContent className="flex items-center justify-between p-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${typeInfo.color}`}>
+                            <Icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-sm font-semibold text-foreground">{bl.nome}</h3>
+                              <Badge
+                                variant="outline"
+                                className={`rounded-lg ${
+                                  bl.ativo
+                                    ? "bg-success/10 text-success border-success/20"
+                                    : "bg-secondary text-muted-foreground border-border"
+                                }`}
+                              >
+                                {bl.ativo ? "ativo" : "inativo"}
+                              </Badge>
+                              <Badge variant="outline" className="rounded-lg bg-secondary text-muted-foreground border-border text-xs">
+                                {typeInfo.name}
+                              </Badge>
+                            </div>
+                            <p className="text-xs text-muted-foreground">{bl.url} - {bl.visitas} visitas, {bl.cliques} cliques</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg">
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg">
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </>
+          )}
         </div>
       </ScrollArea>
     </>
