@@ -14,7 +14,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <BotProvider>
       <GatewayProvider>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex h-screen overflow-hidden bg-[#f4f5f8]">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
           <DashboardSidebar />

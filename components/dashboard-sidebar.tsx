@@ -25,9 +25,7 @@ import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import Image from "next/image"
 import { BotSwitcher } from "@/components/bot-switcher"
-import { DragonIcon } from "@/components/dragon-icon"
 import { useAuth } from "@/lib/auth-context"
 
 type NavItem = {
@@ -99,32 +97,31 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "flex h-screen flex-col bg-sidebar transition-all duration-300 relative",
-          collapsed ? "w-[68px]" : "w-[260px]"
+          "flex h-screen flex-col bg-white border-r border-gray-100 transition-all duration-300 relative",
+          collapsed ? "w-[68px]" : "w-[240px]"
         )}
       >
-        {/* Subtle right edge line */}
-        <div className="absolute right-0 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-border to-transparent" />
 
         {/* Logo */}
-        <div className={cn("flex items-center px-4 pt-4 pb-1", collapsed && "justify-center px-2")}>
+        <div className={cn("flex items-center gap-3 px-6 pt-6 pb-4", collapsed && "justify-center px-2")}>
           {collapsed ? (
-            <DragonIcon className="h-7 w-7 shrink-0" />
+            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+              <span className="text-white font-semibold text-lg leading-none">D</span>
+            </div>
           ) : (
-            <Image
-              src="/images/dragon-logo.png"
-              alt="Dragon"
-              width={140}
-              height={36}
-              className="h-8 w-auto object-contain"
-            />
+            <>
+              <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
+                <span className="text-white font-semibold text-lg leading-none">D</span>
+              </div>
+              <span className="font-bold text-xl tracking-tight text-gray-900">Dragon</span>
+            </>
           )}
         </div>
 
         {/* User Profile + Bot Switcher */}
-        <div className={cn("px-3 pt-2 pb-2", collapsed && "px-2")}>
+        <div className={cn("px-4 pt-2 pb-2", collapsed && "px-2")}>
           <div className={cn(
-            "rounded-xl bg-secondary/30 p-3 flex flex-col gap-3",
+            "rounded-xl bg-gray-50 p-3 flex flex-col gap-3",
             collapsed && "items-center p-2 gap-2"
           )}>
             {/* Profile row */}
@@ -134,12 +131,12 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                   <Link
                     href="/settings"
                     onClick={onNavigate}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/15 text-accent text-xs font-bold transition-colors hover:bg-accent/25 ring-2 ring-accent/20"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white text-xs font-bold transition-colors hover:bg-gray-800"
                   >
                     {userInitial}
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-popover text-popover-foreground">
+                <TooltipContent side="right" className="bg-white text-gray-900 border border-gray-100">
                   {userName}
                 </TooltipContent>
               </Tooltip>
@@ -148,21 +145,21 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                 <Link
                   href="/settings"
                   onClick={onNavigate}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/15 text-accent text-sm font-bold transition-colors hover:bg-accent/25 ring-2 ring-accent/20"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white text-sm font-bold transition-colors hover:bg-gray-800"
                 >
                   {userInitial}
                 </Link>
                 <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-[13px] font-semibold text-foreground truncate">
+                  <span className="text-[13px] font-semibold text-gray-900 truncate">
                     {userName}
                   </span>
-                  <span className="text-[11px] text-muted-foreground truncate">
+                  <span className="text-[11px] text-gray-500 truncate">
                     {session?.email || ""}
                   </span>
                 </div>
                 <button
                   onClick={logout}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-destructive hover:bg-destructive/10"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 transition-colors hover:text-red-500 hover:bg-red-50"
                   aria-label="Sair"
                 >
                   <LogOut className="h-3.5 w-3.5" />
@@ -183,10 +180,9 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                 {/* Category divider */}
                 {!collapsed ? (
                   <div className="flex items-center gap-2.5 px-2 pb-2 pt-1">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-accent">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
                       {section.category}
                     </span>
-                    <div className="h-px flex-1 bg-accent/15" />
                   </div>
                 ) : (
                   <div className="flex justify-center py-1.5">
@@ -244,24 +240,20 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                       href={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-lg px-2.5 py-2 transition-all duration-200",
+                        "group relative flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200",
                         collapsed && "justify-center px-0",
                         isActive
-                          ? "bg-accent/10 text-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                          ? "bg-[#111111] text-white shadow-[0_8px_20px_-6px_rgba(163,230,53,0.5)]"
+                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
                       )}
                     >
                       {/* Active indicator bar */}
-                      {isActive && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-accent" />
-                      )}
-
                       <span className={cn(
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
                         collapsed ? "h-9 w-9" : "",
                         isActive
-                          ? "text-accent"
-                          : "text-muted-foreground group-hover:text-foreground"
+                          ? "text-[#a3e635]"
+                          : "text-gray-500 group-hover:text-gray-900"
                       )}>
                         <item.icon className="h-[18px] w-[18px]" />
                       </span>
@@ -270,8 +262,8 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
                         <span className={cn(
                           "text-[13px] font-medium truncate transition-colors duration-200",
                           isActive
-                            ? "text-foreground"
-                            : "text-muted-foreground group-hover:text-foreground"
+                            ? "text-white"
+                            : "text-gray-500 group-hover:text-gray-900"
                         )}>
                           {item.label}
                         </span>
@@ -299,12 +291,12 @@ export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
         </ScrollArea>
 
         {/* Collapse toggle */}
-        <div className={cn("px-3 pb-3 pt-1", collapsed && "px-2")}>
+        <div className={cn("px-4 pb-4 pt-1", collapsed && "px-2")}>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex w-full justify-center text-muted-foreground/50 hover:text-foreground hover:bg-transparent h-7"
+            className="hidden md:flex w-full justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 h-7"
           >
             {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           </Button>
