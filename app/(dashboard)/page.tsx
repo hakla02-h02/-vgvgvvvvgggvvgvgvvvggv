@@ -141,93 +141,96 @@ export default function DashboardPage() {
               </div>
             </div>
 
-          {/* Sales Analysis Card - Bottom Left */}
-          <div className="bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
-                    <h3 className="font-semibold text-gray-900 text-sm">Análise de Vendas</h3>
-                  </div>
-                  <div className="text-[10px] font-medium text-gray-500 flex items-center cursor-pointer">
-                    01-07 Jan <ChevronDown size={12} className="ml-1" />
-                  </div>
-                </div>
-
-                <div className="flex-1 flex items-center gap-4">
-                  {/* Donut Chart Simulation */}
-                  <div className="relative w-24 h-24 flex-shrink-0">
-                    <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="12" strokeDasharray="4 4" />
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="160 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
-                      <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a3e635" strokeWidth="14" strokeDasharray="30 251" strokeDashoffset="-180" className="drop-shadow-sm" strokeLinecap="round" />
-                      <defs>
-                        <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor="#8b5cf6" />
-                          <stop offset="100%" stopColor="#3b82f6" />
-                        </linearGradient>
-                      </defs>
-                    </svg>
-                    <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-xs font-bold text-gray-900">R$728.000</span>
-                      <span className="text-[8px] text-gray-400">Receita Total</span>
-                    </div>
-                  </div>
-
-                  {/* Legend */}
-                  <div className="flex flex-col gap-2">
+          {/* Container para Análise de Vendas e Análise de Negócios lado a lado */}
+          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+            {/* Sales Analysis Card */}
+            <div className="flex-1 bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
+                  <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-sm bg-blue-600"></span>
-                      <span className="text-xs font-bold text-gray-800">344</span>
-                      <span className="text-xs text-gray-400">Leads</span>
+                      <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
+                      <h3 className="font-semibold text-gray-900 text-sm">Análise de Vendas</h3>
                     </div>
+                    <div className="text-[10px] font-medium text-gray-500 flex items-center cursor-pointer">
+                      01-07 Jan <ChevronDown size={12} className="ml-1" />
+                    </div>
+                  </div>
+
+                  <div className="flex-1 flex items-center gap-4">
+                    {/* Donut Chart Simulation */}
+                    <div className="relative w-24 h-24 flex-shrink-0">
+                      <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="12" strokeDasharray="4 4" />
+                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="160 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
+                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a3e635" strokeWidth="14" strokeDasharray="30 251" strokeDashoffset="-180" className="drop-shadow-sm" strokeLinecap="round" />
+                        <defs>
+                          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stopColor="#8b5cf6" />
+                            <stop offset="100%" stopColor="#3b82f6" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center">
+                        <span className="text-xs font-bold text-gray-900">R$728.000</span>
+                        <span className="text-[8px] text-gray-400">Receita Total</span>
+                      </div>
+                    </div>
+
+                    {/* Legend */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-sm bg-blue-600"></span>
+                        <span className="text-xs font-bold text-gray-800">344</span>
+                        <span className="text-xs text-gray-400">Leads</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-sm bg-gray-200"></span>
+                        <span className="text-xs font-bold text-gray-800">256</span>
+                        <span className="text-xs text-gray-400">Receita</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-sm bg-[#a3e635]"></span>
+                        <span className="text-xs font-bold text-gray-800">128</span>
+                        <span className="text-xs text-gray-400">Crescimento</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 pt-3 border-t border-gray-100 text-[10px] text-gray-400 flex items-center gap-1">
+                    <HelpCircle size={10} />
+                    Calculado a partir da atividade agregada do período
+                  </div>
+            </div>
+
+            {/* Deal Analysis Card */}
+            <div className="flex-1 bg-[#ebfcac] rounded-[24px] p-4 md:p-5 shadow-sm border border-[#e2f89f] flex flex-col relative overflow-hidden min-h-[220px]">
+                  <div className="flex justify-between items-center mb-3 relative z-10">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-sm bg-gray-200"></span>
-                      <span className="text-xs font-bold text-gray-800">256</span>
-                      <span className="text-xs text-gray-400">Receita</span>
+                      <BarChart2 size={14} className="text-[#4d7c0f]" />
+                      <h3 className="font-semibold text-gray-900 text-sm">Análise de Negócios</h3>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-sm bg-[#a3e635]"></span>
-                      <span className="text-xs font-bold text-gray-800">128</span>
-                      <span className="text-xs text-gray-400">Crescimento</span>
+                    <div className="text-[10px] font-medium text-[#4d7c0f] flex items-center cursor-pointer">
+                      01-07 Jan <ChevronDown size={12} className="ml-1" />
                     </div>
                   </div>
-                </div>
 
-                <div className="mt-4 pt-3 border-t border-gray-100 text-[10px] text-gray-400 flex items-center gap-1">
-                  <HelpCircle size={10} />
-                  Calculado a partir da atividade agregada do período
-                </div>
-              </div>
-
-          {/* Deal Analysis Card - Bottom Right */}
-          <div className="bg-[#ebfcac] rounded-[24px] p-4 md:p-5 shadow-sm border border-[#e2f89f] flex flex-col relative overflow-hidden min-h-[220px]">
-                <div className="flex justify-between items-center mb-3 relative z-10">
-                  <div className="flex items-center gap-2">
-                    <BarChart2 size={14} className="text-[#4d7c0f]" />
-                    <h3 className="font-semibold text-gray-900 text-sm">Análise de Negócios</h3>
+                  {/* Cards em Fileira */}
+                  <div className="flex-1 flex items-end gap-3 mt-1 z-10">
+                    {/* Card Ganhos */}
+                    <div className="flex-1 h-[85%] bg-[#d9f970] rounded-2xl p-3 relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, #84cc16 5px, #84cc16 10px)" }}></div>
+                      <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Ganhos 6K</div>
+                    </div>
+                    {/* Card Perdas */}
+                    <div className="flex-1 h-[55%] bg-[#111] rounded-2xl p-3 shadow-lg">
+                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800 inline-block">Perdas 2K</div>
+                    </div>
+                    {/* Card Crescimento */}
+                    <div className="flex-1 h-[70%] bg-[#d9f970] rounded-2xl p-3">
+                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Crescimento 4K</div>
+                    </div>
                   </div>
-                  <div className="text-[10px] font-medium text-[#4d7c0f] flex items-center cursor-pointer">
-                    01-07 Jan <ChevronDown size={12} className="ml-1" />
-                  </div>
-                </div>
-
-                {/* Cards em Fileira */}
-                <div className="flex-1 flex items-end gap-3 mt-1 z-10">
-                  {/* Card Ganhos */}
-                  <div className="flex-1 h-[85%] bg-[#d9f970] rounded-2xl p-3 relative overflow-hidden">
-                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, #84cc16 5px, #84cc16 10px)" }}></div>
-                    <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Ganhos 6K</div>
-                  </div>
-                  {/* Card Perdas */}
-                  <div className="flex-1 h-[55%] bg-[#111] rounded-2xl p-3 shadow-lg">
-                    <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800 inline-block">Perdas 2K</div>
-                  </div>
-                  {/* Card Crescimento */}
-                  <div className="flex-1 h-[70%] bg-[#d9f970] rounded-2xl p-3">
-                    <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Crescimento 4K</div>
-                  </div>
-                </div>
-              </div>
+            </div>
+          </div>
 
           {/* Right Column - Dragon AI Panel - spans full height */}
           <div className="xl:row-span-2 xl:col-start-3 xl:row-start-1 order-last xl:order-none">
