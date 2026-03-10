@@ -94,11 +94,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Grid Layout - 2 column layout with Dragon AI on right spanning full height */}
-        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_360px] gap-6">
-          {/* Left Column - Sales Distribution + Analysis Cards */}
-          <div className="flex flex-col gap-6">
-            {/* Smart Sales Distribution Card */}
-            <div className="bg-[#111111] rounded-[24px] p-4 md:p-6 text-white relative overflow-hidden shadow-lg">
+        <div className="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px] xl:grid-rows-[auto_1fr] gap-5">
+          {/* Sales Distribution Card - Top Left */}
+          <div className="bg-[#111111] rounded-[24px] p-4 md:p-5 text-white relative overflow-hidden shadow-lg xl:col-start-1 xl:row-start-1">
               {/* Glow effect */}
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-[#a3e635] opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
 
@@ -143,8 +141,8 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Analysis Cards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+          {/* Analysis Cards Row - Bottom Left */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 xl:col-start-1 xl:row-start-2">
               {/* Sales Analysis Card */}
               <div className="bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
                 <div className="flex justify-between items-center mb-4">
@@ -229,12 +227,11 @@ export default function DashboardPage() {
                   </div>
                 </div>
               </div>
-            </div>
           </div>
 
           {/* Right Column - Dragon AI Panel - spans full height */}
-          <div className="xl:row-span-full order-last xl:order-none">
-            <div className="bg-[#0f0f0f] rounded-[24px] p-5 flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[500px] xl:min-h-full">
+          <div className="xl:row-span-full xl:col-start-2 xl:row-start-1 order-last xl:order-none">
+            <div className="bg-[#0f0f0f] rounded-[24px] p-4 flex flex-col h-full shadow-[0_20px_40px_rgba(0,0,0,0.2)] relative overflow-hidden min-h-[450px] xl:min-h-full">
               {/* Background glow effect */}
               <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-1/2 bg-[#00ffb3]/5 blur-[100px] pointer-events-none" />
 
@@ -251,7 +248,7 @@ export default function DashboardPage() {
 
               {/* 3D Sphere Area */}
               <div className="flex-1 flex flex-col items-center justify-center relative z-10">
-                <div className="w-[140px] h-[140px] rounded-full relative flex-shrink-0 animate-float">
+                <div className="w-[100px] h-[100px] rounded-full relative flex-shrink-0 animate-float">
                   <div 
                     className="absolute inset-0 rounded-full"
                     style={{
@@ -267,14 +264,14 @@ export default function DashboardPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 mb-4 relative z-10 flex-shrink-0">
-                <button className="h-[40px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl flex items-center justify-center gap-2 transition-all group">
-                  <Clock size={14} className="text-[#c6ff00]" />
-                  <span className="text-xs font-medium text-white">Pro Analysis</span>
+              <div className="grid grid-cols-2 gap-2 mb-3 relative z-10 flex-shrink-0">
+                <button className="h-[36px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center gap-1.5 transition-all group">
+                  <Clock size={12} className="text-[#c6ff00]" />
+                  <span className="text-[10px] font-medium text-white">Analysis</span>
                 </button>
-                <button className="h-[40px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-xl flex items-center justify-center gap-2 transition-all group">
-                  <FileText size={14} className="text-[#00ffb3]" />
-                  <span className="text-xs font-medium text-white">Relatório</span>
+                <button className="h-[36px] bg-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.15)] rounded-lg flex items-center justify-center gap-1.5 transition-all group">
+                  <FileText size={12} className="text-[#00ffb3]" />
+                  <span className="text-[10px] font-medium text-white">Relatório</span>
                 </button>
               </div>
 
@@ -283,14 +280,14 @@ export default function DashboardPage() {
                 <input 
                   type="text" 
                   placeholder="Ask anything..." 
-                  className="w-full h-[42px] bg-[rgba(255,255,255,0.06)] border-none rounded-xl pl-4 pr-20 text-sm text-white focus:outline-none focus:bg-[rgba(255,255,255,0.1)] placeholder-gray-500 backdrop-blur-md transition-all"
+                  className="w-full h-[38px] bg-[rgba(255,255,255,0.06)] border-none rounded-lg pl-3 pr-16 text-xs text-white focus:outline-none focus:bg-[rgba(255,255,255,0.1)] placeholder-gray-500 backdrop-blur-md transition-all"
                 />
-                <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                  <button className="w-7 h-7 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
-                    <Send size={14} />
+                <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                  <button className="w-6 h-6 rounded-full flex items-center justify-center text-gray-400 hover:text-white transition-colors">
+                    <Send size={12} />
                   </button>
-                  <button className="w-7 h-7 rounded-lg bg-white text-black flex items-center justify-center hover:bg-[#c6ff00] transition-colors shadow-lg">
-                    <Mic size={14} />
+                  <button className="w-6 h-6 rounded-md bg-white text-black flex items-center justify-center hover:bg-[#c6ff00] transition-colors shadow-lg">
+                    <Mic size={12} />
                   </button>
                 </div>
               </div>
