@@ -526,7 +526,7 @@ export default function DashboardPage() {
                     <th className="pb-3 font-medium px-2">Mensagens</th>
                     <th className="pb-3 font-medium px-2">Status</th>
                     <th className="pb-3 font-medium px-2">Tempo de Resposta</th>
-                    <th className="pb-3 font-medium px-2 text-right">Satisfação</th>
+                    <th className="pb-3 font-medium px-2 text-right">Resultado</th>
                   </tr>
                 </thead>
                 <tbody>
