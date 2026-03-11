@@ -111,9 +111,6 @@ export default function BioLinkPage() {
       setSelectedType(null)
       setPageName("")
       setPageSlug("")
-      
-      // Redirecionar para o editor
-      router.push(`/biolink-editor/${newPage.id}?name=${encodeURIComponent(pageName)}&slug=${encodeURIComponent(pageSlug)}`)
     } else {
       console.log("Criando pagina:", { type: selectedType, name: pageName, slug: pageSlug })
       setDialogOpen(false)
