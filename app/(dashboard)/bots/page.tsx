@@ -10,7 +10,7 @@ import {
   Plus, Search, Bot as BotIcon, MoreHorizontal, Activity, Users, Trash2, Settings, ChevronLeft,
   DollarSign, Tag, CalendarDays, Hash, LinkIcon, KeyRound, Save, Loader2, Zap, TrendingUp,
   Filter, MoreVertical, Sparkles, MessageSquare, Shield, Globe, Eye, EyeOff, Copy, ExternalLink,
-  ChevronRight, Signal, Cpu, Clock, CheckCircle2,
+  ChevronRight, Signal, Cpu, Clock, CheckCircle2, LayoutGrid, List,
 } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -498,22 +498,38 @@ export default function BotsPage() {
   // ── BOT LIST ──
   return (
     <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#f4f5f8]">
-      {/* Header */}
+      {/* Header Clean */}
       <header className="px-4 md:px-8 py-6 flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Meus Bots</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gerencie seus bots do Telegram</p>
+          <p className="text-sm text-gray-500 mt-0.5">{bots.length} bot(s) cadastrado(s)</p>
         </div>
         <div className="flex items-center gap-3">
-          <button className="w-10 h-10 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-50 transition-colors">
-            <Filter className="h-4 w-4" />
-          </button>
+          {/* View Toggle */}
+          <div className="hidden sm:flex items-center gap-1 bg-white rounded-xl p-1 border border-gray-100">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                viewMode === "grid" ? "bg-[#a3e635] text-[#111]" : "text-gray-400 hover:bg-gray-50"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                viewMode === "list" ? "bg-[#a3e635] text-[#111]" : "text-gray-400 hover:bg-gray-50"
+              }`}
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
           <button
             onClick={() => setCreateOpen(true)}
             className="flex items-center gap-2 bg-[#a3e635] text-[#111] px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors"
           >
             <Plus className="h-4 w-4" />
-            Novo Bot
+            <span className="hidden sm:inline">Novo Bot</span>
           </button>
         </div>
       </header>
@@ -525,51 +541,6 @@ export default function BotsPage() {
       />
 
       <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
-        {/* Stats Hero */}
-        <div className="bg-[#111] rounded-[28px] p-6 md:p-8 mb-6 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#a3e635] opacity-[0.08] blur-[100px] rounded-full" />
-          <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-[#22c55e] opacity-[0.05] blur-[80px] rounded-full" />
-          
-          <div className="relative z-10 grid grid-cols-2 lg:grid-cols-4 gap-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-[#a3e635]/20 flex items-center justify-center">
-                  <BotIcon className="h-4 w-4 text-[#a3e635]" />
-                </div>
-                <span className="text-xs text-gray-500">Total</span>
-              </div>
-              <p className="text-4xl font-bold text-white">{bots.length}</p>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-[#22c55e]/20 flex items-center justify-center">
-                  <Signal className="h-4 w-4 text-[#22c55e]" />
-                </div>
-                <span className="text-xs text-gray-500">Online</span>
-              </div>
-              <p className="text-4xl font-bold text-[#22c55e]">{activeBots}</p>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                  <Users className="h-4 w-4 text-blue-400" />
-                </div>
-                <span className="text-xs text-gray-500">Com Grupo</span>
-              </div>
-              <p className="text-4xl font-bold text-white">{bots.filter((b) => b.group_name).length}</p>
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <div className="w-8 h-8 rounded-lg bg-[#a3e635]/20 flex items-center justify-center">
-                  <Sparkles className="h-4 w-4 text-[#a3e635]" />
-                </div>
-                <span className="text-xs text-gray-500">Uptime</span>
-              </div>
-              <p className="text-4xl font-bold text-[#a3e635]">99.9%</p>
-            </div>
-          </div>
-        </div>
-
         {/* Search */}
         <div className="flex items-center gap-4 mb-6">
           <div className="flex-1 relative">
@@ -579,28 +550,29 @@ export default function BotsPage() {
               placeholder="Buscar bots..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white rounded-xl border border-gray-200 pl-12 pr-4 py-3.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3e635]/30 focus:border-[#a3e635] transition-all"
+              className="w-full bg-white rounded-xl border border-gray-200 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3e635]/30 focus:border-[#a3e635] transition-all"
             />
           </div>
         </div>
 
-        {/* Bot Grid */}
+        {/* Empty State */}
         {bots.length === 0 ? (
           <div className="bg-white rounded-[28px] border border-gray-100 p-12 text-center">
-            <div className="w-24 h-24 rounded-3xl bg-gray-100 flex items-center justify-center mx-auto mb-6">
-              <BotIcon className="h-12 w-12 text-gray-400" />
+            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/10 flex items-center justify-center mx-auto mb-6">
+              <BotIcon className="h-12 w-12 text-[#65a30d]" />
             </div>
             <h3 className="text-xl font-bold text-gray-900">Nenhum bot criado</h3>
-            <p className="text-gray-500 mt-2 mb-6">Crie seu primeiro bot para comecar</p>
+            <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">Crie seu primeiro bot para comecar a gerenciar seus grupos VIP</p>
             <button
               onClick={() => setCreateOpen(true)}
-              className="flex items-center gap-2 bg-[#a3e635] text-[#111] px-6 py-3 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors mx-auto"
+              className="inline-flex items-center gap-2 bg-[#a3e635] text-[#111] px-6 py-3 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors"
             >
               <Plus className="h-4 w-4" />
               Criar Primeiro Bot
             </button>
           </div>
-        ) : (
+        ) : viewMode === "grid" ? (
+          /* Grid View */
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {filteredBots.map((bot) => {
               const isSelected = selectedBot?.id === bot.id
@@ -610,86 +582,155 @@ export default function BotsPage() {
                 <div
                   key={bot.id}
                   onClick={() => setSelectedBot(bot)}
-                  className={`bg-white rounded-[24px] border cursor-pointer transition-all hover:shadow-lg group ${
+                  className={`bg-white rounded-[24px] border cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 group ${
                     isSelected ? "border-[#a3e635] ring-2 ring-[#a3e635]/20" : "border-gray-100"
                   }`}
                 >
                   <div className="p-5">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center relative ${
                         isActive ? "bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20" : "bg-gray-100"
                       }`}>
                         <BotIcon className={`h-7 w-7 ${isActive ? "text-[#65a30d]" : "text-gray-400"}`} />
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${
+                          isActive ? "bg-[#22c55e]" : "bg-gray-300"
+                        }`} />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className={`w-2.5 h-2.5 rounded-full ${isActive ? "bg-[#22c55e] animate-pulse" : "bg-gray-300"}`} />
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button
-                              className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <MoreVertical className="h-4 w-4 text-gray-400" />
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                            <DropdownMenuItem
-                              className="flex items-center gap-2 py-2.5 cursor-pointer"
-                              onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
-                            >
-                              <Settings className="h-4 w-4" />
-                              Configurar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="flex items-center gap-2 py-2.5 cursor-pointer text-red-600"
-                              onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4 text-gray-400" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                          <DropdownMenuItem
+                            className="flex items-center gap-2 py-2.5 cursor-pointer"
+                            onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
+                          >
+                            <Settings className="h-4 w-4" />
+                            Configurar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="flex items-center gap-2 py-2.5 cursor-pointer text-red-600"
+                            onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
 
                     {/* Info */}
                     <h3 className="text-lg font-bold text-gray-900 truncate">{bot.name}</h3>
-                    {bot.group_name && (
+                    {bot.group_name ? (
                       <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5 truncate">
                         <Globe className="h-3.5 w-3.5 flex-shrink-0" />
                         {bot.group_name}
                       </p>
+                    ) : (
+                      <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Sem grupo vinculado
+                      </p>
                     )}
 
-                    {/* Toggle */}
+                    {/* Footer */}
                     <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
-                      <span className={`text-xs font-medium ${isActive ? "text-[#22c55e]" : "text-gray-400"}`}>
-                        {isActive ? "Ativo" : "Inativo"}
+                      <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
+                        isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-gray-400"
+                      }`}>
+                        {isActive ? "Online" : "Offline"}
                       </span>
-                      <Switch
-                        checked={isActive}
-                        onCheckedChange={async (checked) => {
-                          try {
-                            await updateBot(bot.id, { status: checked ? "active" : "inactive" })
-                            await fetch("/api/telegram/register", {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({ botToken: bot.token, action: checked ? "register" : "unregister" }),
-                            })
-                          } catch { /* handled */ }
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                      />
+                      <button
+                        onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
+                        className="text-xs font-medium text-[#65a30d] hover:underline flex items-center gap-1"
+                      >
+                        Configurar
+                        <ChevronRight className="h-3 w-3" />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Footer */}
+                  {/* Selected Badge */}
                   {isSelected && (
                     <div className="px-5 py-3 bg-[#a3e635]/10 border-t border-[#a3e635]/20 rounded-b-[24px]">
-                      <p className="text-xs font-medium text-[#65a30d] text-center">Bot em uso</p>
+                      <p className="text-xs font-medium text-[#65a30d] text-center flex items-center justify-center gap-1.5">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        Bot selecionado
+                      </p>
                     </div>
                   )}
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          /* List View */
+          <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
+            {filteredBots.map((bot, index) => {
+              const isSelected = selectedBot?.id === bot.id
+              const isActive = bot.status === "active"
+              
+              return (
+                <div
+                  key={bot.id}
+                  onClick={() => setSelectedBot(bot)}
+                  className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-gray-50 ${
+                    index !== filteredBots.length - 1 ? "border-b border-gray-100" : ""
+                  } ${isSelected ? "bg-[#a3e635]/5" : ""}`}
+                >
+                  {/* Icon */}
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center relative flex-shrink-0 ${
+                    isActive ? "bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20" : "bg-gray-100"
+                  }`}>
+                    <BotIcon className={`h-6 w-6 ${isActive ? "text-[#65a30d]" : "text-gray-400"}`} />
+                    <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
+                      isActive ? "bg-[#22c55e]" : "bg-gray-300"
+                    }`} />
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold text-gray-900 truncate">{bot.name}</h3>
+                      {isSelected && (
+                        <span className="text-[10px] font-medium text-[#65a30d] bg-[#a3e635]/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                          Em uso
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-500 truncate mt-0.5">
+                      {bot.group_name || "Sem grupo vinculado"}
+                    </p>
+                  </div>
+
+                  {/* Status */}
+                  <span className={`text-xs font-medium px-3 py-1.5 rounded-full flex-shrink-0 ${
+                    isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-gray-400"
+                  }`}>
+                    {isActive ? "Online" : "Offline"}
+                  </span>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
+                      className="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                    >
+                      <Settings className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}
+                      className="w-9 h-9 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </div>
               )
             })}
