@@ -111,8 +111,8 @@ export default function GatewaysPage() {
     <>
       <DashboardHeader title="Gateways" />
       <ScrollArea className="flex-1">
-        <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
-          <div className="max-w-3xl mx-auto">
+        <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full flex flex-col">
+          <div className="max-w-3xl mx-auto w-full flex-1 flex flex-col">
             
             {/* Header - Nunca muda */}
             <div className="flex items-center gap-4 mb-8">
@@ -231,8 +231,11 @@ export default function GatewaysPage() {
                 )}
             </div>
 
-            {/* Help Section - Simples e separado */}
-            <div className="mt-10 flex items-center gap-3 text-gray-500">
+            {/* Spacer */}
+            <div className="flex-1 min-h-8"></div>
+
+            {/* Help Section - No fundo da pagina */}
+            <div className="flex items-center gap-3 text-gray-500 pb-4">
               <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 16v-4M12 8h.01"/>
