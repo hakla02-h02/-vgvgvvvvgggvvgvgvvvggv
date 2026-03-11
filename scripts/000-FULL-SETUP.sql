@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS flows (
   name TEXT NOT NULL DEFAULT 'Novo Fluxo',
   category TEXT DEFAULT 'personalizado',
   is_primary BOOLEAN DEFAULT false,
+  flow_type TEXT NOT NULL DEFAULT 'complete' CHECK (flow_type IN ('basic', 'complete')),
   status TEXT NOT NULL DEFAULT 'ativo' CHECK (status IN ('ativo', 'pausado')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -185,6 +186,7 @@ CREATE TABLE IF NOT EXISTS webhook_log (
 
 CREATE INDEX IF NOT EXISTS idx_flows_bot_id ON flows(bot_id);
 CREATE INDEX IF NOT EXISTS idx_flows_user_id ON flows(user_id);
+CREATE INDEX IF NOT EXISTS idx_flows_flow_type ON flows(flow_type);
 CREATE INDEX IF NOT EXISTS idx_flow_nodes_flow_id ON flow_nodes(flow_id);
 CREATE INDEX IF NOT EXISTS idx_flow_nodes_position ON flow_nodes(flow_id, position);
 CREATE INDEX IF NOT EXISTS idx_webhook_log_bot_id ON webhook_log(bot_id);
@@ -580,6 +582,10 @@ INSERT INTO storage.buckets (id, name, public)
 VALUES ('flow-media', 'flow-media', true)
 ON CONFLICT (id) DO UPDATE SET public = true;
 
+INSERT INTO storage.buckets (id, name, public)
+VALUES ('media', 'media', true)
+ON CONFLICT (id) DO NOTHING;
+
 -- Drop existing storage policies for flow-media
 DO $$
 DECLARE
@@ -611,6 +617,24 @@ CREATE POLICY "Allow public update flow-media" ON storage.objects
 CREATE POLICY "Allow public delete flow-media" ON storage.objects
   FOR DELETE TO anon, authenticated
   USING (bucket_id = 'flow-media');
+
+-- Policies para bucket media
+CREATE POLICY "Allow public read media" ON storage.objects
+  FOR SELECT TO anon, authenticated
+  USING (bucket_id = 'media');
+
+CREATE POLICY "Allow public upload media" ON storage.objects
+  FOR INSERT TO anon, authenticated
+  WITH CHECK (bucket_id = 'media');
+
+CREATE POLICY "Allow public update media" ON storage.objects
+  FOR UPDATE TO anon, authenticated
+  USING (bucket_id = 'media')
+  WITH CHECK (bucket_id = 'media');
+
+CREATE POLICY "Allow public delete media" ON storage.objects
+  FOR DELETE TO anon, authenticated
+  USING (bucket_id = 'media');
 
 -- ============================================
 -- FIM DO SETUP COMPLETO
