@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
+import { useAuth } from "@/lib/auth-context"
 import { ArrowRight, ChevronLeft, Edit3, ExternalLink, Copy, MoreHorizontal, Trash2, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
@@ -77,6 +78,7 @@ export type DragonBioSite = {
 
 export default function BioLinkPage() {
   const { selectedBot } = useBots()
+  const { session } = useAuth()
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<PageType>(null)
@@ -88,17 +90,17 @@ export default function BioLinkPage() {
 
   // Carregar sites do banco
   useEffect(() => {
-    if (selectedBot?.id) {
+    if (session?.userId) {
       fetchSites()
     }
-  }, [selectedBot?.id])
-
+  }, [session?.userId])
+  
   const fetchSites = async () => {
-    if (!selectedBot?.id) return
+    if (!session?.userId) return
     
     try {
       setLoading(true)
-      const res = await fetch(`/api/dragon-bio?userId=${selectedBot.id}`)
+      const res = await fetch(`/api/dragon-bio?userId=${session.userId}`)
       const data = await res.json()
       
       if (data.sites) {
@@ -122,7 +124,7 @@ export default function BioLinkPage() {
   }
 
   const handleCreate = async () => {
-    if (!selectedBot?.id || !pageName.trim() || !pageSlug.trim()) return
+    if (!session?.userId || !pageName.trim() || !pageSlug.trim()) return
 
     if (selectedType === "dragonbio") {
       try {
@@ -131,7 +133,9 @@ export default function BioLinkPage() {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            userId: selectedBot.id,
+            userId: session.userId,
+            userEmail: session.email,
+            userName: session.name,
             nome: pageName,
             slug: pageSlug,
           }),

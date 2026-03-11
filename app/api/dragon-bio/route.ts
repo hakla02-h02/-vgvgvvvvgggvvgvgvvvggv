@@ -35,13 +35,38 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { userId, nome, slug } = body
+    const { userId, nome, slug, userEmail, userName } = body
 
     if (!userId || !nome || !slug) {
       return NextResponse.json({ error: "userId, nome e slug são obrigatórios" }, { status: 400 })
     }
 
     const supabase = getSupabase()
+
+    // Verificar se usuário existe na tabela users, se não, criar
+    const { data: existingUser } = await supabase
+      .from("users")
+      .select("id")
+      .eq("id", userId)
+      .single()
+
+    if (!existingUser) {
+      // Criar usuário na tabela users se não existir
+      const { error: userError } = await supabase
+        .from("users")
+        .insert({
+          id: userId,
+          name: userName || nome,
+          email: userEmail || "",
+          phone: "",
+          banned: false
+        })
+
+      if (userError) {
+        console.error("Erro ao criar usuário:", userError)
+        return NextResponse.json({ error: "Erro ao criar perfil de usuário" }, { status: 500 })
+      }
+    }
 
     // Verificar se slug já existe
     const { data: existing } = await supabase
