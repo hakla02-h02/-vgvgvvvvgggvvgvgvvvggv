@@ -21,11 +21,6 @@ export async function GET(
 
     if (error) throw error
 
-    // Ordenar links pelo order_index
-    if (site?.dragon_bio_links) {
-      site.dragon_bio_links.sort((a: any, b: any) => a.order_index - b.order_index)
-    }
-
     return NextResponse.json({ site })
   } catch (error: any) {
     console.error("Erro ao buscar site:", error)
@@ -68,11 +63,10 @@ export async function PUT(
 
       // Inserir novos links
       if (links.length > 0) {
-        const linksToInsert = links.map((link: any, index: number) => ({
+        const linksToInsert = links.map((link: any) => ({
           site_id: id,
           title: link.title,
-          url: link.url,
-          order_index: index
+          url: link.url
         }))
 
         const { error: linksError } = await supabase

@@ -22,7 +22,6 @@ import {
   Loader2,
   Eye,
   ExternalLink,
-  Globe,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -46,7 +45,6 @@ export type BioPageData = {
     text: string
   }
   links: BioLink[]
-  published: boolean
 }
 
 const defaultColors = {
@@ -104,7 +102,6 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     profile_image: "",
     colors: defaultColors,
     links: [],
-    published: false,
   })
   const [activeTab, setActiveTab] = useState("template")
   const [isSaving, setIsSaving] = useState(false)
@@ -134,7 +131,6 @@ export default function DragonBioEditorPage({ params }: PageProps) {
             title: link.title,
             url: link.url,
           })),
-          published: data.site.published || false,
         })
       }
     } catch (error) {
@@ -185,9 +181,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
           profile_name: pageData.profile_name,
           profile_bio: pageData.profile_bio,
           profile_image: pageData.profile_image,
-          colors: pageData.colors,
           links: pageData.links,
-          published: pageData.published,
         }),
       })
 
@@ -206,23 +200,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     }
   }
 
-  const handlePublish = async () => {
-    const newPublished = !pageData.published
-    updatePageData({ published: newPublished })
-    
-    try {
-      await fetch(`/api/dragon-bio/${id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ published: newPublished }),
-      })
-      
-      toast.success(newPublished ? "Site publicado!" : "Site despublicado")
-    } catch (error) {
-      console.error("Erro ao publicar:", error)
-      toast.error("Erro ao alterar publicacao")
-    }
-  }
+
 
   const applyColorPreset = (preset: typeof colorPresets[0]) => {
     updatePageData({
@@ -283,20 +261,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
             <Eye className="w-3.5 h-3.5 mr-1.5" />
             Preview
           </Button>
-          <Button
-            variant={pageData.published ? "outline" : "default"}
-            size="sm"
-            onClick={handlePublish}
-            className={cn(
-              "h-9 px-3 rounded-lg text-sm",
-              pageData.published 
-                ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" 
-                : "bg-green-600 text-white hover:bg-green-700"
-            )}
-          >
-            <Globe className="w-3.5 h-3.5 mr-1.5" />
-            {pageData.published ? "Publicado" : "Publicar"}
-          </Button>
+
           <Button
             onClick={handleSave}
             disabled={isSaving}
