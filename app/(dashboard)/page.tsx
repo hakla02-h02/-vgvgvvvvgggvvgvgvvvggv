@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   Search,
   Moon,
@@ -21,14 +22,38 @@ import {
   Mic,
   MoreVertical,
   List,
+  X,
+  Check,
 } from "lucide-react"
 import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
 import { NoBotSelected } from "@/components/no-bot-selected"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { Button } from "@/components/ui/button"
+
+const dateRanges = [
+  { label: "Hoje", value: "today" },
+  { label: "Ultimos 7 dias", value: "7days" },
+  { label: "Ultimos 30 dias", value: "30days" },
+  { label: "Este mes", value: "month" },
+  { label: "Este ano", value: "year" },
+]
+
+const filterOptions = [
+  { label: "Todos", value: "all" },
+  { label: "Ativos", value: "active" },
+  { label: "Inativos", value: "inactive" },
+  { label: "Novos", value: "new" },
+]
 
 export default function DashboardPage() {
   const { selectedBot } = useBots()
   const { session } = useAuth()
+  const [selectedDateRange, setSelectedDateRange] = useState("7days")
+  const [selectedFilter, setSelectedFilter] = useState("all")
+  const [salesDateRange, setSalesDateRange] = useState("01-07 Jan")
+  const [dealDateRange, setDealDateRange] = useState("01-07 Jan")
+  const [tablePeriod, setTablePeriod] = useState("month")
 
   if (!selectedBot) {
     return <NoBotSelected />
@@ -83,13 +108,63 @@ export default function DashboardPage() {
             Painel Analítico
           </h1>
           <div className="flex items-center gap-3">
-            <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 text-sm font-medium hover:bg-gray-50">
-              <Calendar size={16} className="text-gray-500" />
-              Selecionar Data
-            </button>
-            <button className="w-10 h-10 bg-white rounded-xl shadow-sm border border-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-50">
-              <Filter size={16} />
-            </button>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 text-sm font-medium hover:bg-gray-50">
+                  <Calendar size={16} className="text-gray-500" />
+                  {dateRanges.find(d => d.value === selectedDateRange)?.label || "Selecionar Data"}
+                  <ChevronDown size={14} className="text-gray-400" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-2" align="end">
+                <div className="flex flex-col gap-1">
+                  {dateRanges.map((range) => (
+                    <button
+                      key={range.value}
+                      onClick={() => setSelectedDateRange(range.value)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                        selectedDateRange === range.value 
+                          ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
+                          : "hover:bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {range.label}
+                      {selectedDateRange === range.value && <Check size={14} />}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className={`w-10 h-10 rounded-xl shadow-sm border flex items-center justify-center hover:bg-gray-50 ${
+                  selectedFilter !== "all" 
+                    ? "bg-[#ebfcac] border-[#a3e635] text-[#4d7c0f]" 
+                    : "bg-white border-gray-100 text-gray-500"
+                }`}>
+                  <Filter size={16} />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-40 p-2" align="end">
+                <div className="flex flex-col gap-1">
+                  {filterOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => setSelectedFilter(option.value)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
+                        selectedFilter === option.value 
+                          ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
+                          : "hover:bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      {option.label}
+                      {selectedFilter === option.value && <Check size={14} />}
+                    </button>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
 
@@ -150,9 +225,30 @@ export default function DashboardPage() {
                       <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
                       <h3 className="font-semibold text-gray-900 text-sm">Análise de Vendas</h3>
                     </div>
-                    <div className="text-[10px] font-medium text-gray-500 flex items-center cursor-pointer">
-                      01-07 Jan <ChevronDown size={12} className="ml-1" />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-[10px] font-medium text-gray-500 flex items-center hover:text-gray-700 transition-colors">
+                          {salesDateRange} <ChevronDown size={12} className="ml-1" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-36 p-2" align="end">
+                        <div className="flex flex-col gap-1">
+                          {["01-07 Jan", "08-14 Jan", "15-21 Jan", "22-28 Jan", "Todo Janeiro"].map((range) => (
+                            <button
+                              key={range}
+                              onClick={() => setSalesDateRange(range)}
+                              className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
+                                salesDateRange === range 
+                                  ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
+                                  : "hover:bg-gray-100 text-gray-600"
+                              }`}
+                            >
+                              {range}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   <div className="flex-1 flex items-center gap-4">
@@ -208,9 +304,30 @@ export default function DashboardPage() {
                       <BarChart2 size={14} className="text-[#4d7c0f]" />
                       <h3 className="font-semibold text-gray-900 text-sm">Análise de Negócios</h3>
                     </div>
-                    <div className="text-[10px] font-medium text-[#4d7c0f] flex items-center cursor-pointer">
-                      01-07 Jan <ChevronDown size={12} className="ml-1" />
-                    </div>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <button className="text-[10px] font-medium text-[#4d7c0f] flex items-center hover:text-[#3d6c0f] transition-colors">
+                          {dealDateRange} <ChevronDown size={12} className="ml-1" />
+                        </button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-36 p-2" align="end">
+                        <div className="flex flex-col gap-1">
+                          {["01-07 Jan", "08-14 Jan", "15-21 Jan", "22-28 Jan", "Todo Janeiro"].map((range) => (
+                            <button
+                              key={range}
+                              onClick={() => setDealDateRange(range)}
+                              className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
+                                dealDateRange === range 
+                                  ? "bg-[#d9f970] text-[#4d7c0f] font-medium" 
+                                  : "hover:bg-[#e2f89f] text-[#4d7c0f]"
+                              }`}
+                            >
+                              {range}
+                            </button>
+                          ))}
+                        </div>
+                      </PopoverContent>
+                    </Popover>
                   </div>
 
                   {/* Cards em Fileira */}
@@ -322,9 +439,39 @@ export default function DashboardPage() {
                   Top Oportunidades
                 </h3>
               </div>
-              <div className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 cursor-pointer">
-                Mês <ChevronDown size={14} />
-                <MoreVertical size={14} className="ml-2 text-gray-400" />
+              <div className="flex items-center gap-2">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
+                      {tablePeriod === "week" ? "Semana" : tablePeriod === "month" ? "Mes" : "Ano"} 
+                      <ChevronDown size={14} />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-32 p-2" align="end">
+                    <div className="flex flex-col gap-1">
+                      {[
+                        { label: "Semana", value: "week" },
+                        { label: "Mes", value: "month" },
+                        { label: "Ano", value: "year" },
+                      ].map((period) => (
+                        <button
+                          key={period.value}
+                          onClick={() => setTablePeriod(period.value)}
+                          className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
+                            tablePeriod === period.value 
+                              ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
+                              : "hover:bg-gray-100 text-gray-600"
+                          }`}
+                        >
+                          {period.label}
+                        </button>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+                <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                  <MoreVertical size={14} className="text-gray-400" />
+                </button>
               </div>
             </div>
 
