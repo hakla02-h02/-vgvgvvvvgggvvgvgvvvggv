@@ -2,64 +2,62 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
-import { Switch } from "@/components/ui/switch"
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
-import { Target, TrendingUp, Users, DollarSign, BarChart3, ChevronDown, ArrowUpRight, ArrowDownRight, Eye, MousePointerClick } from "lucide-react"
+import { 
+  TrendingUp, 
+  Users, 
+  DollarSign, 
+  MousePointerClick, 
+  Activity,
+  Zap,
+  Target,
+  Eye,
+  ArrowUp,
+  ArrowDown,
+  MoreHorizontal,
+  Filter,
+  Calendar,
+  Download
+} from "lucide-react"
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area,
+  AreaChart, Area, XAxis, YAxis, ResponsiveContainer, 
+  BarChart, Bar, Tooltip, PieChart, Pie, Cell
 } from "recharts"
 
-const conversaoTrend = [
-  { dia: "Seg", facebook: 42, tiktok: 28, google: 18 },
-  { dia: "Ter", facebook: 55, tiktok: 35, google: 22 },
-  { dia: "Qua", facebook: 48, tiktok: 42, google: 19 },
-  { dia: "Qui", facebook: 62, tiktok: 38, google: 28 },
-  { dia: "Sex", facebook: 71, tiktok: 45, google: 32 },
-  { dia: "Sab", facebook: 58, tiktok: 52, google: 24 },
-  { dia: "Dom", facebook: 45, tiktok: 32, google: 20 },
+const performanceData = [
+  { name: "01", visitors: 2400, conversions: 120, revenue: 4200 },
+  { name: "05", visitors: 3200, conversions: 180, revenue: 5800 },
+  { name: "10", visitors: 2800, conversions: 140, revenue: 4900 },
+  { name: "15", visitors: 4100, conversions: 220, revenue: 7200 },
+  { name: "20", visitors: 3600, conversions: 190, revenue: 6400 },
+  { name: "25", visitors: 4800, conversions: 260, revenue: 8100 },
+  { name: "30", visitors: 4200, conversions: 230, revenue: 7600 },
 ]
 
-const utmData = [
-  { source: "facebook", campaign: "weekend_promo", vendas: 87, roi: "342%", trend: "up" },
-  { source: "tiktok", campaign: "launch_v2", vendas: 62, roi: "287%", trend: "up" },
-  { source: "google", campaign: "brand_search", vendas: 45, roi: "412%", trend: "down" },
-  { source: "organico", campaign: "-", vendas: 38, roi: "-", trend: "up" },
-  { source: "instagram", campaign: "stories", vendas: 28, roi: "198%", trend: "down" },
+const channelData = [
+  { name: "Facebook", value: 35, color: "#3b82f6" },
+  { name: "TikTok", value: 28, color: "#0f172a" },
+  { name: "Google", value: 20, color: "#f97316" },
+  { name: "Direto", value: 17, color: "#a3e635" },
 ]
 
-const pixels = [
-  { nome: "Facebook Pixel", id: "1234567890", ativo: true, color: "#1877F2" },
-  { nome: "TikTok Pixel", id: "TT-987654", ativo: true, color: "#000000" },
-  { nome: "Google Ads Tag", id: "AW-112233", ativo: true, color: "#EA4335" },
-  { nome: "Kwai Ads", id: "KW-445566", ativo: false, color: "#FF6B00" },
+const campaignData = [
+  { name: "Promo Weekend", clicks: 2840, conversions: 312, ctr: 11.0, status: "active" },
+  { name: "Launch V2", clicks: 1920, conversions: 187, ctr: 9.7, status: "active" },
+  { name: "Brand Search", clicks: 1450, conversions: 203, ctr: 14.0, status: "active" },
+  { name: "Retargeting", clicks: 980, conversions: 145, ctr: 14.8, status: "paused" },
 ]
 
-const sourceColors = [
-  "#a3e635", "#3b82f6", "#f97316", "#71717a", "#8b5cf6",
-]
-
-const sourceData = [
-  { name: "Facebook", value: 87 },
-  { name: "TikTok", value: 62 },
-  { name: "Google", value: 45 },
-  { name: "Organico", value: 38 },
-  { name: "Instagram", value: 28 },
-]
-
-const revenueData = [
-  { day: "01", value: 2400 },
-  { day: "05", value: 3100 },
-  { day: "10", value: 2800 },
-  { day: "15", value: 4200 },
-  { day: "20", value: 3800 },
-  { day: "25", value: 5100 },
-  { day: "30", value: 4700 },
+const hourlyData = [
+  { hour: "00h", value: 12 },
+  { hour: "03h", value: 8 },
+  { hour: "06h", value: 15 },
+  { hour: "09h", value: 45 },
+  { hour: "12h", value: 68 },
+  { hour: "15h", value: 82 },
+  { hour: "18h", value: 95 },
+  { hour: "21h", value: 72 },
 ]
 
 export default function AnalyticsPage() {
@@ -78,285 +76,356 @@ export default function AnalyticsPage() {
     <>
       <DashboardHeader title="Analytics" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-4 md:p-6">
+        <div className="p-6 space-y-6">
           
-          {/* KPI Cards Row */}
-          <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-            {/* Total Visitantes */}
-            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium">Total Visitantes</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">12.847</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <ArrowUpRight className="h-3 w-3 text-[#22c55e]" />
-                    <span className="text-xs font-medium text-[#22c55e]">+12.5%</span>
-                    <span className="text-xs text-gray-400">vs semana passada</span>
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-[#a3e635]/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-[#65a30d]" />
-                </div>
-              </div>
+          {/* Header Actions */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-foreground">Visao Geral</h2>
+              <p className="text-sm text-muted-foreground">Ultimos 30 dias de performance</p>
             </div>
-
-            {/* Taxa de Conversao */}
-            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium">Taxa de Conversao</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">4.8%</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <ArrowUpRight className="h-3 w-3 text-[#22c55e]" />
-                    <span className="text-xs font-medium text-[#22c55e]">+0.8%</span>
-                    <span className="text-xs text-gray-400">vs mes passado</span>
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* Receita */}
-            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium">Receita Total</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">R$ 48.2K</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <ArrowUpRight className="h-3 w-3 text-[#22c55e]" />
-                    <span className="text-xs font-medium text-[#22c55e]">+23.1%</span>
-                    <span className="text-xs text-gray-400">vs mes passado</span>
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-emerald-600" />
-                </div>
-              </div>
-            </div>
-
-            {/* CTR */}
-            <div className="bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs text-gray-500 font-medium">CTR Medio</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">2.3%</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    <ArrowDownRight className="h-3 w-3 text-red-500" />
-                    <span className="text-xs font-medium text-red-500">-0.2%</span>
-                    <span className="text-xs text-gray-400">vs semana passada</span>
-                  </div>
-                </div>
-                <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
-                  <MousePointerClick className="h-5 w-5 text-purple-600" />
-                </div>
-              </div>
+            <div className="flex items-center gap-2">
+              <button className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <Calendar className="h-4 w-4" />
+                Mar 2026
+              </button>
+              <button className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-card border border-border text-sm font-medium text-foreground hover:bg-muted transition-colors">
+                <Filter className="h-4 w-4" />
+                Filtros
+              </button>
+              <button className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-foreground text-background text-sm font-medium hover:bg-foreground/90 transition-colors">
+                <Download className="h-4 w-4" />
+                Exportar
+              </button>
             </div>
           </div>
 
-          {/* Charts Row */}
-          <div className="grid gap-6 lg:grid-cols-5">
-            {/* Main Chart - Conversoes */}
-            <div className="lg:col-span-3 bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <MetricCard 
+              title="Visitantes"
+              value="24.8K"
+              change={12.5}
+              icon={Users}
+              trend="up"
+            />
+            <MetricCard 
+              title="Conversoes"
+              value="1,847"
+              change={8.2}
+              icon={TrendingUp}
+              trend="up"
+            />
+            <MetricCard 
+              title="Receita"
+              value="R$ 86.4K"
+              change={23.1}
+              icon={DollarSign}
+              trend="up"
+            />
+            <MetricCard 
+              title="CTR"
+              value="4.8%"
+              change={-0.3}
+              icon={MousePointerClick}
+              trend="down"
+            />
+          </div>
+
+          {/* Main Chart + Side Panel */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Performance Chart */}
+            <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Conversoes por Fonte</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Ultimos 7 dias</p>
+                  <h3 className="font-semibold text-foreground">Performance</h3>
+                  <p className="text-sm text-muted-foreground">Visitantes e conversoes ao longo do tempo</p>
                 </div>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
-                  Esta Semana <ChevronDown className="h-3 w-3" />
-                </button>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-accent" />
+                    <span className="text-xs text-muted-foreground">Visitantes</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-foreground" />
+                    <span className="text-xs text-muted-foreground">Conversoes</span>
+                  </div>
+                </div>
               </div>
-              <div className="h-64">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={conversaoTrend}>
+                  <AreaChart data={performanceData}>
                     <defs>
-                      <linearGradient id="colorFacebook" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#a3e635" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#a3e635" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorTiktok" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorGoogle" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f97316" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                      <linearGradient id="visitorsGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--accent))" stopOpacity={0.2}/>
+                        <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                    <XAxis dataKey="dia" axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: "#94a3b8", fontSize: 12 }} />
+                    <XAxis 
+                      dataKey="name" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    />
+                    <YAxis 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                    />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #e2e8f0",
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
                         borderRadius: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
                         fontSize: 13,
                       }}
                     />
-                    <Area type="monotone" dataKey="facebook" stroke="#a3e635" strokeWidth={2} fill="url(#colorFacebook)" />
-                    <Area type="monotone" dataKey="tiktok" stroke="#3b82f6" strokeWidth={2} fill="url(#colorTiktok)" />
-                    <Area type="monotone" dataKey="google" stroke="#f97316" strokeWidth={2} fill="url(#colorGoogle)" />
+                    <Area 
+                      type="monotone" 
+                      dataKey="visitors" 
+                      stroke="hsl(var(--accent))" 
+                      strokeWidth={2}
+                      fill="url(#visitorsGrad)" 
+                    />
+                    <Area 
+                      type="monotone" 
+                      dataKey="conversions" 
+                      stroke="hsl(var(--foreground))" 
+                      strokeWidth={2}
+                      fill="transparent" 
+                    />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
-              {/* Legend */}
-              <div className="flex items-center justify-center gap-6 mt-4 pt-4 border-t border-gray-100">
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#a3e635]" />
-                  <span className="text-xs text-gray-600">Facebook</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#3b82f6]" />
-                  <span className="text-xs text-gray-600">TikTok</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-[#f97316]" />
-                  <span className="text-xs text-gray-600">Google</span>
-                </div>
-              </div>
             </div>
 
-            {/* Pie Chart - Vendas por Fonte */}
-            <div className="lg:col-span-2 bg-white rounded-[24px] p-5 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Vendas por Fonte</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Distribuicao total</p>
-                </div>
+            {/* Channel Distribution */}
+            <div className="bg-card rounded-2xl border border-border p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-semibold text-foreground">Canais</h3>
+                <button className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
-              <div className="h-48 flex items-center justify-center">
+              <div className="h-40 flex items-center justify-center mb-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie 
-                      data={sourceData} 
+                      data={channelData} 
                       dataKey="value" 
                       cx="50%" 
                       cy="50%" 
-                      outerRadius={80} 
-                      innerRadius={55}
-                      paddingAngle={2}
+                      innerRadius={45}
+                      outerRadius={65}
+                      strokeWidth={0}
                     >
-                      {sourceData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={sourceColors[index]} />
+                      {channelData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                        fontSize: 13,
-                      }}
-                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              {/* Stats List */}
-              <div className="mt-4 space-y-2">
-                {sourceData.map((s, i) => (
-                  <div key={s.name} className="flex items-center justify-between py-1.5">
-                    <div className="flex items-center gap-2">
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: sourceColors[i] }} />
-                      <span className="text-sm text-gray-700">{s.name}</span>
+              <div className="space-y-3">
+                {channelData.map((channel) => (
+                  <div key={channel.name} className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: channel.color }}
+                      />
+                      <span className="text-sm text-foreground">{channel.name}</span>
                     </div>
-                    <span className="text-sm font-semibold text-gray-900">{s.value}</span>
+                    <span className="text-sm font-semibold text-foreground">{channel.value}%</span>
                   </div>
                 ))}
               </div>
             </div>
           </div>
 
-          {/* Pixels Section */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold text-gray-900">Pixels de Rastreamento</h3>
-              <button className="text-xs font-medium text-[#65a30d] hover:underline">+ Adicionar Pixel</button>
-            </div>
-            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-              {pixels.map((pixel) => (
-                <div 
-                  key={pixel.nome} 
-                  className={`bg-white rounded-[20px] p-4 shadow-sm border transition-all ${pixel.ativo ? 'border-gray-100' : 'border-gray-100 opacity-60'}`}
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div 
-                      className="w-10 h-10 rounded-xl flex items-center justify-center"
-                      style={{ backgroundColor: `${pixel.color}15` }}
-                    >
-                      <Target className="h-5 w-5" style={{ color: pixel.color }} />
-                    </div>
-                    <Switch defaultChecked={pixel.ativo} />
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">{pixel.nome}</p>
-                  <p className="text-xs text-gray-500 font-mono mt-0.5">{pixel.id}</p>
+          {/* Bottom Row */}
+          <div className="grid lg:grid-cols-5 gap-6">
+            {/* Hourly Activity */}
+            <div className="lg:col-span-2 bg-card rounded-2xl border border-border p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-semibold text-foreground">Atividade por Hora</h3>
+                  <p className="text-sm text-muted-foreground">Pico as 18h</p>
                 </div>
-              ))}
+                <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-accent/10">
+                  <Activity className="h-3.5 w-3.5 text-accent-foreground" />
+                  <span className="text-xs font-medium text-accent-foreground">Ao vivo</span>
+                </div>
+              </div>
+              <div className="h-40">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hourlyData} barSize={20}>
+                    <XAxis 
+                      dataKey="hour" 
+                      axisLine={false} 
+                      tickLine={false} 
+                      tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10 }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "12px",
+                        fontSize: 13,
+                      }}
+                    />
+                    <Bar 
+                      dataKey="value" 
+                      fill="hsl(var(--accent))" 
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Campaign Performance */}
+            <div className="lg:col-span-3 bg-card rounded-2xl border border-border p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="font-semibold text-foreground">Campanhas</h3>
+                  <p className="text-sm text-muted-foreground">Top campanhas ativas</p>
+                </div>
+                <button className="text-sm font-medium text-accent-foreground hover:underline">
+                  Ver todas
+                </button>
+              </div>
+              <div className="space-y-4">
+                {campaignData.map((campaign) => (
+                  <div 
+                    key={campaign.name} 
+                    className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        campaign.status === "active" ? "bg-accent/10" : "bg-muted"
+                      }`}>
+                        <Zap className={`h-5 w-5 ${
+                          campaign.status === "active" ? "text-accent-foreground" : "text-muted-foreground"
+                        }`} />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">{campaign.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {campaign.clicks.toLocaleString()} clicks
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-8">
+                      <div className="text-right">
+                        <p className="font-semibold text-foreground">{campaign.conversions}</p>
+                        <p className="text-xs text-muted-foreground">conversoes</p>
+                      </div>
+                      <div className="text-right min-w-[60px]">
+                        <p className="font-semibold text-foreground">{campaign.ctr}%</p>
+                        <p className="text-xs text-muted-foreground">CTR</p>
+                      </div>
+                      <div className={`px-2.5 py-1 rounded-lg text-xs font-medium ${
+                        campaign.status === "active" 
+                          ? "bg-accent/10 text-accent-foreground" 
+                          : "bg-muted text-muted-foreground"
+                      }`}>
+                        {campaign.status === "active" ? "Ativa" : "Pausada"}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
-          {/* UTM Table */}
-          <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-5 border-b border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-gray-900">Desempenho UTM</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Analise de campanhas por fonte</p>
-                </div>
-                <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors">
-                  Exportar
-                </button>
-              </div>
-            </div>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-gray-100 hover:bg-transparent">
-                    <TableHead className="text-gray-500 text-xs font-medium">Fonte</TableHead>
-                    <TableHead className="text-gray-500 text-xs font-medium">Campanha</TableHead>
-                    <TableHead className="text-gray-500 text-xs font-medium">Vendas</TableHead>
-                    <TableHead className="text-gray-500 text-xs font-medium">ROI</TableHead>
-                    <TableHead className="text-gray-500 text-xs font-medium">Tendencia</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {utmData.map((row, i) => (
-                    <TableRow key={i} className="border-gray-100 hover:bg-gray-50/50">
-                      <TableCell className="font-medium text-gray-900 capitalize">{row.source}</TableCell>
-                      <TableCell className="font-mono text-xs text-gray-500">{row.campaign}</TableCell>
-                      <TableCell className="font-semibold text-gray-900">{row.vendas}</TableCell>
-                      <TableCell>
-                        {row.roi !== "-" ? (
-                          <Badge className="bg-[#a3e635]/10 text-[#65a30d] border-0 rounded-lg font-semibold">{row.roi}</Badge>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {row.trend === "up" ? (
-                          <div className="flex items-center gap-1 text-[#22c55e]">
-                            <ArrowUpRight className="h-3.5 w-3.5" />
-                            <span className="text-xs font-medium">Alta</span>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1 text-red-500">
-                            <ArrowDownRight className="h-3.5 w-3.5" />
-                            <span className="text-xs font-medium">Baixa</span>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+          {/* Quick Insights */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <InsightCard 
+              icon={Eye}
+              title="Paginas Vistas"
+              value="156K"
+              subtitle="media 6.3 por visita"
+            />
+            <InsightCard 
+              icon={Target}
+              title="Taxa de Rejeicao"
+              value="32.4%"
+              subtitle="abaixo da media"
+            />
+            <InsightCard 
+              icon={Activity}
+              title="Sessao Media"
+              value="4m 23s"
+              subtitle="+12% vs ultimo mes"
+            />
+            <InsightCard 
+              icon={Zap}
+              title="Velocidade"
+              value="1.2s"
+              subtitle="tempo de carga"
+            />
           </div>
+
         </div>
       </ScrollArea>
     </>
+  )
+}
+
+function MetricCard({ 
+  title, 
+  value, 
+  change, 
+  icon: Icon, 
+  trend 
+}: { 
+  title: string
+  value: string
+  change: number
+  icon: React.ElementType
+  trend: "up" | "down"
+}) {
+  return (
+    <div className="bg-card rounded-2xl border border-border p-5 hover:border-accent/50 transition-colors">
+      <div className="flex items-start justify-between mb-4">
+        <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+          <Icon className="h-5 w-5 text-foreground" />
+        </div>
+        <div className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium ${
+          trend === "up" 
+            ? "bg-accent/10 text-accent-foreground" 
+            : "bg-destructive/10 text-destructive"
+        }`}>
+          {trend === "up" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+          {Math.abs(change)}%
+        </div>
+      </div>
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-sm text-muted-foreground mt-1">{title}</p>
+    </div>
+  )
+}
+
+function InsightCard({ 
+  icon: Icon, 
+  title, 
+  value, 
+  subtitle 
+}: { 
+  icon: React.ElementType
+  title: string
+  value: string
+  subtitle: string
+}) {
+  return (
+    <div className="bg-card rounded-2xl border border-border p-5">
+      <div className="flex items-center gap-3 mb-3">
+        <Icon className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">{title}</span>
+      </div>
+      <p className="text-xl font-bold text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>
+    </div>
   )
 }
