@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 import { createPayment } from "@/lib/payments/createPayment"
 
-const SUPABASE_URL = "https://rqgzgnknaklzlxlpuwwh.supabase.co"
+const SUPABASE_URL = "https://izvulojnfvgsbmhyvqtn.supabase.co"
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 
 export async function POST(request: NextRequest) {
