@@ -114,14 +114,22 @@ export default function GatewaysPage() {
         <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
           <div className="max-w-3xl mx-auto">
             
-            {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-                Integracao de Pagamentos
-              </h1>
-              <p className="text-sm text-gray-500 mt-1">
-                Configure sua gateway para receber pagamentos no seu bot
-              </p>
+            {/* Header - Nunca muda */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-[#111] flex items-center justify-center">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                  <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                  Conectar Gateway
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Escolha um gateway para receber pagamentos no seu bot
+                </p>
+              </div>
             </div>
 
             {/* Main Content Grid */}
