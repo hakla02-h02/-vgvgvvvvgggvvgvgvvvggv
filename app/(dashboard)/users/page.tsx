@@ -561,6 +561,6 @@ export default function UsersPage() {
       {selectedUser && (
         <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} funnel={funnel} />
       )}
-    </>
+    </div>
   )
 }
