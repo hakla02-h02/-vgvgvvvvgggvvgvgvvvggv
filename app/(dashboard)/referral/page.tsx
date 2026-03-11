@@ -3,14 +3,12 @@
 import { useEffect, useState, useCallback } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
 import { cn } from "@/lib/utils"
-import { Users, DollarSign, Copy, Link2, Check, Loader2, UserPlus, Pencil, X, Crown, ShoppingBag, Eye, Phone, Mail, Calendar, Shield, ChevronRight } from "lucide-react"
+import { Loader2, ExternalLink } from "lucide-react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
 import useSWR from "swr"
 
 const fetcher = async (url: string) => {
@@ -52,7 +50,6 @@ export default function ReferralPage() {
     setOrigin(window.location.origin)
   }, [])
 
-  // Only fetch when userId is available
   const { data: couponData, mutate: mutateCoupon } = useSWR(
     userId ? `/api/referral/coupon?userId=${userId}` : null,
     fetcher,
@@ -188,425 +185,320 @@ export default function ReferralPage() {
     <>
       <DashboardHeader title="Indique e Ganhe" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-          {/* Plano Atual */}
-          <Card className="bg-card border-border rounded-2xl">
-            <CardContent className="flex items-center gap-4 p-4 md:p-5">
-              <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
-                <Crown className="h-5 w-5 md:h-6 md:w-6 text-accent" />
+        <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
+          <div className="max-w-5xl mx-auto">
+            
+            {/* Header */}
+            <div className="flex items-center gap-4 mb-8">
+              <div className="w-12 h-12 rounded-2xl bg-[#111] flex items-center justify-center relative">
+                <div className="absolute inset-0 rounded-2xl bg-[#a3e635] opacity-20 blur-md"></div>
+                <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635] relative z-10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/>
+                </svg>
               </div>
-              <div className="flex-1">
-                <p className="text-xs md:text-sm text-muted-foreground">Seu Plano de Indicacao</p>
-                <p className="text-base md:text-lg font-bold text-foreground">Basico</p>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                  Indique e Ganhe
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Convide amigos e ganhe comissao por cada venda
+                </p>
               </div>
-              <div className="text-right">
-                <p className="text-xs text-muted-foreground">Comissao por venda</p>
-                <p className="text-base md:text-lg font-bold text-accent">R$ 0,10</p>
-              </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Stats Cards */}
-          <div className="grid gap-3 md:gap-4 grid-cols-3">
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
-                <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
-                  <Users className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Indicados</p>
-                  <p className="text-xl md:text-3xl font-bold text-foreground">{totalReferrals}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
-                <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
-                  <ShoppingBag className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Vendas</p>
-                  <p className="text-xl md:text-3xl font-bold text-foreground">{totalSales}</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="bg-card border-border rounded-2xl">
-              <CardContent className="flex items-center gap-3 md:gap-4 p-4 md:p-5">
-                <div className="flex h-10 w-10 md:h-12 md:w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10">
-                  <DollarSign className="h-5 w-5 md:h-6 md:w-6 text-accent" />
-                </div>
-                <div>
-                  <p className="text-xs md:text-sm text-muted-foreground">Ganhos</p>
-                  <p className="text-xl md:text-3xl font-bold text-foreground">
-                    R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Coupon Section */}
-          <Card className="bg-card border-border rounded-2xl">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
-                <Link2 className="h-4 w-4 text-accent" />
-                Seu Link de Indicacao
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {coupon ? (
-                <div className="flex flex-col gap-3">
-                  {isEditing ? (
-                    <>
-                      <p className="text-sm text-muted-foreground">
-                        Digite o novo codigo do cupom:
-                      </p>
-                      <div className="flex gap-2">
-                        <Input
-                          placeholder="Novo cupom (ex: maria20)"
-                          value={editInput}
-                          onChange={(e) => {
-                            setEditInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                            setEditError("")
-                          }}
-                          className="bg-secondary border-border rounded-xl text-foreground placeholder:text-muted-foreground"
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              e.preventDefault()
-                              handleUpdateCoupon()
-                            }
-                            if (e.key === "Escape") {
-                              handleCancelEdit()
-                            }
-                          }}
-                          disabled={isUpdating}
-                          maxLength={20}
-                          autoFocus
-                        />
-                        <Button
-                          onClick={handleUpdateCoupon}
-                          disabled={isUpdating || editInput.trim().length < 3}
-                          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl shrink-0"
-                        >
-                          {isUpdating ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <Check className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={handleCancelEdit}
-                          disabled={isUpdating}
-                          className="border-border rounded-xl shrink-0 min-w-[44px]"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      {editError && (
-                        <p className="text-xs text-destructive">{editError}</p>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Apenas letras minusculas, numeros e hifens. Entre 3 e 20 caracteres.
-                      </p>
-                    </>
-                  ) : (
-                    <>
-                      <div className="flex gap-2">
-                        <Input
-                          readOnly
-                          value={referralLink}
-                          className="bg-secondary border-border rounded-xl text-sm text-foreground font-mono"
-                        />
-                        <Button
-                          variant="outline"
-                          onClick={handleCopy}
-                          className="border-border rounded-xl shrink-0 min-w-[44px]"
-                        >
-                          {copied ? (
-                            <Check className="h-4 w-4 text-accent" />
-                          ) : (
-                            <Copy className="h-4 w-4" />
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          onClick={handleStartEdit}
-                          className="border-border rounded-xl shrink-0 min-w-[44px]"
-                          title="Editar cupom"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Compartilhe este link para ganhar R$ 0,10 por cada venda feita.
-                      </p>
-                    </>
-                  )}
-                </div>
-              ) : (
-                <div className="flex flex-col gap-3">
-                  <p className="text-sm text-muted-foreground">
-                    Crie seu cupom personalizado para comecar a indicar.
-                  </p>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Digite seu cupom (ex: joao10)"
-                      value={couponInput}
-                      onChange={(e) => {
-                        setCouponInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
-                        setCreateError("")
-                      }}
-                      className="bg-secondary border-border rounded-xl text-foreground placeholder:text-muted-foreground"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault()
-                          handleCreateCoupon()
-                        }
-                      }}
-                      disabled={isCreating}
-                      maxLength={20}
-                    />
-                    <Button
-                      onClick={handleCreateCoupon}
-                      disabled={isCreating || couponInput.length < 3}
-                      className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl shrink-0"
-                    >
-                      {isCreating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        "Gerar"
-                      )}
-                    </Button>
+            {/* Main Hero Card - Dark */}
+            <div className="bg-[#111] rounded-[28px] p-6 md:p-8 mb-6 relative overflow-hidden">
+              {/* Glows */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#a3e635] opacity-15 blur-[60px] rounded-full pointer-events-none"></div>
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500 opacity-10 blur-[50px] rounded-full pointer-events-none"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="px-3 py-1 bg-[#a3e635]/20 rounded-full">
+                    <span className="text-[#a3e635] text-xs font-semibold">Plano Basico</span>
                   </div>
-                  {createError && (
-                    <p className="text-xs text-destructive">{createError}</p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Apenas letras minusculas, numeros e hifens. Entre 3 e 20 caracteres.
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Referrals List */}
-          <Card className="bg-card border-border rounded-2xl">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <UserPlus className="h-4 w-4 text-accent" />
-                  Seus Indicados
-                </CardTitle>
-                {referrals.length > 0 && (
-                  <Badge variant="secondary" className="text-xs font-medium rounded-lg">
-                    {referrals.length} {referrals.length === 1 ? "pessoa" : "pessoas"}
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {referrals.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary">
-                    <Users className="h-6 w-6 text-muted-foreground" />
+                  <div className="px-3 py-1 bg-white/10 rounded-full">
+                    <span className="text-white/70 text-xs">R$ 0,10 por venda</span>
                   </div>
-                  <div>
-                    <p className="text-sm font-medium text-foreground">Nenhum indicado ainda</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Compartilhe seu link e veja seus indicados aqui.
+                </div>
+
+                {/* Stats Grid */}
+                <div className="grid grid-cols-3 gap-4 mb-8">
+                  <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
+                      <span className="text-gray-400 text-xs">Indicados</span>
+                    </div>
+                    <p className="text-2xl md:text-3xl font-bold text-white">{totalReferrals}</p>
+                  </div>
+                  <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                      <span className="text-gray-400 text-xs">Vendas</span>
+                    </div>
+                    <p className="text-2xl md:text-3xl font-bold text-white">{totalSales}</p>
+                  </div>
+                  <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
+                      <span className="text-gray-400 text-xs">Ganhos</span>
+                    </div>
+                    <p className="text-2xl md:text-3xl font-bold text-white">
+                      R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
                 </div>
+
+                {/* Link Section */}
+                <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <span className="text-white text-sm font-medium">Seu Link de Indicacao</span>
+                  </div>
+
+                  {coupon ? (
+                    <>
+                      {isEditing ? (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="Novo cupom (ex: maria20)"
+                              value={editInput}
+                              onChange={(e) => {
+                                setEditInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                                setEditError("")
+                              }}
+                              className="bg-[#111] border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:border-[#a3e635]/50"
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                  e.preventDefault()
+                                  handleUpdateCoupon()
+                                }
+                                if (e.key === "Escape") {
+                                  handleCancelEdit()
+                                }
+                              }}
+                              disabled={isUpdating}
+                              maxLength={20}
+                              autoFocus
+                            />
+                            <Button
+                              onClick={handleUpdateCoupon}
+                              disabled={isUpdating || editInput.trim().length < 3}
+                              className="bg-[#a3e635] text-black hover:bg-[#95d62e] rounded-xl px-4"
+                            >
+                              {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={handleCancelEdit}
+                              disabled={isUpdating}
+                              className="border-white/10 text-white hover:bg-white/5 rounded-xl"
+                            >
+                              Cancelar
+                            </Button>
+                          </div>
+                          {editError && <p className="text-xs text-red-400">{editError}</p>}
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <div className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 font-mono truncate">
+                            {referralLink}
+                          </div>
+                          <Button
+                            onClick={handleCopy}
+                            className={cn(
+                              "rounded-xl px-4 transition-all",
+                              copied 
+                                ? "bg-[#a3e635] text-black" 
+                                : "bg-white/10 text-white hover:bg-white/20"
+                            )}
+                          >
+                            {copied ? "Copiado!" : "Copiar"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={handleStartEdit}
+                            className="border-white/10 text-white hover:bg-white/5 rounded-xl"
+                          >
+                            Editar
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="flex flex-col gap-3">
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Digite seu cupom (ex: joao10)"
+                          value={couponInput}
+                          onChange={(e) => {
+                            setCouponInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
+                            setCreateError("")
+                          }}
+                          className="bg-[#111] border-white/10 rounded-xl text-white placeholder:text-gray-500 focus:border-[#a3e635]/50"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault()
+                              handleCreateCoupon()
+                            }
+                          }}
+                          disabled={isCreating}
+                          maxLength={20}
+                        />
+                        <Button
+                          onClick={handleCreateCoupon}
+                          disabled={isCreating || couponInput.length < 3}
+                          className="bg-[#a3e635] text-black hover:bg-[#95d62e] rounded-xl px-6"
+                        >
+                          {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
+                        </Button>
+                      </div>
+                      {createError && <p className="text-xs text-red-400">{createError}</p>}
+                      <p className="text-xs text-gray-500">
+                        Apenas letras minusculas, numeros e hifens. Entre 3 e 20 caracteres.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Referrals List */}
+            <div className="bg-white rounded-[24px] p-6 border border-gray-100 shadow-sm">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-[#f0fdf4] flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#16a34a]" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 className="font-semibold text-gray-900">Seus Indicados</h2>
+                    <p className="text-xs text-gray-500">{referrals.length} {referrals.length === 1 ? "pessoa" : "pessoas"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {referrals.length === 0 ? (
+                <div className="flex flex-col items-center gap-3 py-12 text-center">
+                  <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">Nenhum indicado ainda</p>
+                    <p className="text-sm text-gray-500 mt-1">Compartilhe seu link e veja seus indicados aqui</p>
+                  </div>
+                </div>
               ) : (
-                <div className="flex flex-col gap-2">
+                <div className="space-y-2">
                   {referrals.map((ref) => (
                     <div
                       key={ref.id}
-                      className="group flex items-center justify-between rounded-xl bg-secondary/70 p-3 transition-colors hover:bg-secondary"
+                      onClick={() => setSelectedUser(ref)}
+                      className="flex items-center justify-between p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer group"
                     >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        {/* Avatar */}
-                        <div className="relative shrink-0">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/10 text-sm font-bold text-accent">
+                      <div className="flex items-center gap-3">
+                        <div className="relative">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a3e635] to-[#16a34a] flex items-center justify-center text-white font-bold text-sm">
                             {ref.name.charAt(0).toUpperCase()}
                           </div>
-                          {/* Status dot */}
                           <span
                             className={cn(
-                              "absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card",
-                              ref.banned ? "bg-destructive" : "bg-accent"
+                              "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white",
+                              ref.banned ? "bg-red-500" : "bg-green-500"
                             )}
                           />
                         </div>
-                        {/* Info */}
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="text-sm font-medium text-foreground truncate">{ref.name}</p>
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "text-[10px] px-1.5 py-0 h-4 rounded-md border shrink-0",
-                                ref.banned
-                                  ? "border-destructive/30 text-destructive"
-                                  : "border-accent/30 text-accent"
-                              )}
-                            >
-                              {ref.banned ? "Inativo" : "Ativo"}
-                            </Badge>
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">{ref.email}</p>
+                        <div>
+                          <p className="font-medium text-gray-900 text-sm">{ref.name}</p>
+                          <p className="text-xs text-gray-500">{ref.email}</p>
                         </div>
                       </div>
-                      {/* Right side */}
-                      <div className="flex items-center gap-2 shrink-0 ml-2">
+                      <div className="flex items-center gap-4">
                         <div className="text-right hidden sm:block">
-                          <p className="text-xs text-muted-foreground">Indicado em</p>
-                          <p className="text-xs font-medium text-foreground">{formatDate(ref.referral_date)}</p>
+                          <p className="text-xs text-gray-400">Indicado em</p>
+                          <p className="text-xs font-medium text-gray-600">{formatDate(ref.referral_date)}</p>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setSelectedUser(ref)}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground rounded-lg"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className={cn(
+                          "px-2.5 py-1 rounded-lg text-xs font-medium",
+                          ref.banned 
+                            ? "bg-red-100 text-red-600" 
+                            : "bg-green-100 text-green-600"
+                        )}>
+                          {ref.banned ? "Inativo" : "Ativo"}
+                        </div>
+                        <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M9 18l6-6-6-6"/>
+                        </svg>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+
+          </div>
         </div>
       </ScrollArea>
 
-      {/* User Detail Modal */}
-      <Dialog open={!!selectedUser} onOpenChange={(open) => !open && setSelectedUser(null)}>
-        <DialogContent className="bg-card border-border rounded-2xl max-w-md">
+      {/* User Details Dialog */}
+      <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+        <DialogContent className="bg-[#111] border-white/10 text-white rounded-[24px] max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground">Detalhes do Indicado</DialogTitle>
+            <DialogTitle className="text-white">Detalhes do Indicado</DialogTitle>
           </DialogHeader>
+          
           {selectedUser && (
-            <div className="flex flex-col gap-5">
-              {/* Profile header */}
+            <div className="space-y-4 pt-4">
               <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-lg font-bold text-accent">
-                    {selectedUser.name.charAt(0).toUpperCase()}
-                  </div>
-                  <span
-                    className={cn(
-                      "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-card",
-                      selectedUser.banned ? "bg-destructive" : "bg-accent"
-                    )}
-                  />
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#a3e635] to-[#16a34a] flex items-center justify-center text-white font-bold text-xl">
+                  {selectedUser.name.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-semibold text-foreground truncate">{selectedUser.name}</p>
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "text-[11px] px-2 py-0.5 rounded-md border mt-1",
-                      selectedUser.banned
-                        ? "border-destructive/30 text-destructive bg-destructive/5"
-                        : "border-accent/30 text-accent bg-accent/5"
-                    )}
-                  >
-                    {selectedUser.banned ? "Conta Inativa" : "Conta Ativa"}
-                  </Badge>
-                </div>
-              </div>
-
-              {/* Info list */}
-              <div className="flex flex-col gap-3 rounded-xl bg-secondary/50 p-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
-                    <Mail className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-muted-foreground">Email</p>
-                    <p className="text-sm text-foreground truncate">{selectedUser.email}</p>
-                  </div>
-                </div>
-
-                <div className="h-px bg-border/50" />
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-muted-foreground">Telefone</p>
-                    <p className="text-sm text-foreground">{selectedUser.phone || "Nao informado"}</p>
-                  </div>
-                </div>
-
-                <div className="h-px bg-border/50" />
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-muted-foreground">Data de Cadastro</p>
-                    <p className="text-sm text-foreground">{formatDate(selectedUser.user_created_at)}</p>
-                  </div>
-                </div>
-
-                <div className="h-px bg-border/50" />
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
-                    <Link2 className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-muted-foreground">Indicado via Cupom</p>
-                    <p className="text-sm text-foreground font-mono">{selectedUser.coupon_code}</p>
-                  </div>
-                </div>
-
-                <div className="h-px bg-border/50" />
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-muted-foreground">Data da Indicacao</p>
-                    <p className="text-sm text-foreground">{formatDate(selectedUser.referral_date)}</p>
-                  </div>
-                </div>
-
-                <div className="h-px bg-border/50" />
-
-                <div className="flex items-center gap-3">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background">
-                    <Shield className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[11px] text-muted-foreground">Status da Conta</p>
-                    <p className={cn(
-                      "text-sm font-medium",
-                      selectedUser.banned ? "text-destructive" : "text-accent"
-                    )}>
-                      {selectedUser.banned ? "Banido / Inativo" : "Ativo"}
-                    </p>
+                <div>
+                  <p className="font-semibold text-lg">{selectedUser.name}</p>
+                  <div className={cn(
+                    "inline-flex px-2 py-0.5 rounded text-xs font-medium mt-1",
+                    selectedUser.banned 
+                      ? "bg-red-500/20 text-red-400" 
+                      : "bg-green-500/20 text-green-400"
+                  )}>
+                    {selectedUser.banned ? "Inativo" : "Ativo"}
                   </div>
                 </div>
               </div>
 
-              {/* Earnings estimate */}
-              <div className="rounded-xl bg-accent/5 border border-accent/10 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Comissao por venda deste indicado</p>
-                    <p className="text-lg font-bold text-accent mt-0.5">R$ 0,10</p>
-                  </div>
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
-                    <DollarSign className="h-5 w-5 text-accent" />
-                  </div>
+              <div className="space-y-3 bg-white/5 rounded-xl p-4">
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                    <polyline points="22,6 12,13 2,6"/>
+                  </svg>
+                  <span className="text-sm text-gray-300">{selectedUser.email}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                  </svg>
+                  <span className="text-sm text-gray-300">{selectedUser.phone || "Nao informado"}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                  </svg>
+                  <span className="text-sm text-gray-300">Indicado em {formatDate(selectedUser.referral_date)}</span>
                 </div>
               </div>
             </div>
