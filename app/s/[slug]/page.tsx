@@ -47,34 +47,19 @@ export default async function DragonBioPage({ params }: PageProps) {
   // Ordenar links
   const links = site.dragon_bio_links || []
   
-  // Cores padrao para quando nao tem cores salvas
-  const defaultColors = {
-    primary: "#000000",
+  // Cores padrao
+  const colors = site.colors || {
+    primary: "#0f172a",
     secondary: "#ffffff",
     accent: "#3b82f6",
     background: "#0f172a",
     text: "#ffffff"
   }
-  
-  // Usar cores do site ou cores padrao baseadas no template
-  const colors = site.colors || (
-    site.template === "minimal" ? defaultColors :
-    site.template === "gradient" ? { ...defaultColors, background: "#9333ea", accent: "#f97316" } :
-    site.template === "glassmorphism" ? { ...defaultColors, background: "#1e3a8a", primary: "#581c87" } :
-    defaultColors
-  )
 
-  // Renderizar baseado no template
   return (
     <div 
       className="min-h-screen flex flex-col items-center justify-start pt-16 pb-8 px-4"
-      style={{ 
-        background: site.template === "gradient" 
-          ? `linear-gradient(135deg, ${colors.background} 0%, ${colors.accent} 100%)`
-          : site.template === "glass"
-          ? `linear-gradient(180deg, ${colors.background} 0%, ${colors.primary} 100%)`
-          : colors.background
-      }}
+      style={{ backgroundColor: colors.background }}
     >
       {/* Profile Section */}
       <div className="flex flex-col items-center mb-8">
@@ -117,24 +102,47 @@ export default async function DragonBioPage({ params }: PageProps) {
       {/* Links Section */}
       <div className="w-full max-w-md space-y-3">
         {links.map((link: any) => (
-          <a
-            key={link.id}
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`
-              block w-full py-4 px-6 text-center font-medium rounded-xl
-              transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
-              ${site.template === "glassmorphism" ? "backdrop-blur-md border border-white/20" : ""}
-            `}
-            style={{ 
-              backgroundColor: site.template === "glassmorphism" ? "rgba(255,255,255,0.15)" : colors.secondary,
-              color: site.template === "glassmorphism" ? colors.text : colors.primary,
-              borderRadius: site.template === "minimal" ? "9999px" : "12px"
-            }}
-          >
-            {link.title}
-          </a>
+          link.type === "card" ? (
+            // Card com imagem
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-xl overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+            >
+              {link.image && (
+                <div 
+                  className="w-full h-40 bg-cover bg-center"
+                  style={{ backgroundImage: `url(${link.image})` }}
+                />
+              )}
+              <div 
+                className="py-3 px-4 font-medium"
+                style={{ 
+                  backgroundColor: colors.secondary + "20",
+                  color: colors.text 
+                }}
+              >
+                {link.title}
+              </div>
+            </a>
+          ) : (
+            // Botao normal
+            <a
+              key={link.id}
+              href={link.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-4 px-6 text-center font-medium rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+              style={{ 
+                backgroundColor: colors.secondary,
+                color: colors.primary,
+              }}
+            >
+              {link.title}
+            </a>
+          )
         ))}
       </div>
 
