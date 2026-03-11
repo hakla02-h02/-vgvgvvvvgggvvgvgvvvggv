@@ -65,13 +65,6 @@ export async function POST(request: Request) {
         profile_name: nome,
         profile_bio: "Sua bio aqui",
         profile_image: null,
-        colors: {
-          primary: "#000000",
-          secondary: "#ffffff",
-          accent: "#3b82f6",
-          background: "#0f172a",
-          text: "#ffffff"
-        },
         published: false,
         views: 0
       })
