@@ -28,12 +28,13 @@ import { toast } from "sonner"
 // Types
 export type BioLink = {
   id: string
+  type: "button" | "card" // button = botao normal, card = imagem horizontal com texto
   title: string
   url: string
+  image?: string // imagem para o tipo card
 }
 
 export type BioPageData = {
-  template: "minimal" | "gradient" | "glassmorphism"
   profile_name: string
   profile_bio: string
   profile_image: string
@@ -55,27 +56,6 @@ const defaultColors = {
   text: "#ffffff"
 }
 
-const templates = [
-  {
-    id: "minimal" as const,
-    name: "Minimal",
-    description: "Design limpo e escuro",
-    preview: "bg-[#0f172a]",
-  },
-  {
-    id: "gradient" as const,
-    name: "Gradient",
-    description: "Gradiente vibrante",
-    preview: "bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400",
-  },
-  {
-    id: "glassmorphism" as const,
-    name: "Glass",
-    description: "Efeito vidro",
-    preview: "bg-gradient-to-br from-blue-900 to-purple-900",
-  },
-]
-
 const colorPresets = [
   { bg: "#0f172a", btn: "#ffffff", text: "#ffffff", btnText: "#0f172a", accent: "#3b82f6" },
   { bg: "#1a1a2e", btn: "#e94560", text: "#ffffff", btnText: "#ffffff", accent: "#e94560" },
@@ -96,14 +76,13 @@ export default function DragonBioEditorPage({ params }: PageProps) {
   const [loading, setLoading] = useState(true)
   const [site, setSite] = useState<any>(null)
   const [pageData, setPageData] = useState<BioPageData>({
-    template: "minimal",
     profile_name: "",
     profile_bio: "",
     profile_image: "",
     colors: defaultColors,
     links: [],
   })
-  const [activeTab, setActiveTab] = useState("template")
+  const [activeTab, setActiveTab] = useState("profile")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -121,15 +100,16 @@ export default function DragonBioEditorPage({ params }: PageProps) {
       if (data.site) {
         setSite(data.site)
         setPageData({
-          template: data.site.template || "minimal",
           profile_name: data.site.profile_name || "",
           profile_bio: data.site.profile_bio || "",
           profile_image: data.site.profile_image || "",
           colors: data.site.colors || defaultColors,
           links: (data.site.dragon_bio_links || []).map((link: any) => ({
             id: link.id,
+            type: link.type || "button",
             title: link.title,
             url: link.url,
+            image: link.image || "",
           })),
         })
       }
@@ -146,11 +126,13 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     setSaved(false)
   }
 
-  const addLink = () => {
+  const addLink = (type: "button" | "card" = "button") => {
     const newLink: BioLink = {
       id: Date.now().toString(),
-      title: "Novo Link",
+      type,
+      title: type === "button" ? "Novo Link" : "Titulo do Card",
       url: "https://",
+      image: "",
     }
     updatePageData({ links: [...pageData.links, newLink] })
   }
@@ -177,11 +159,15 @@ export default function DragonBioEditorPage({ params }: PageProps) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          template: pageData.template,
           profile_name: pageData.profile_name,
           profile_bio: pageData.profile_bio,
           profile_image: pageData.profile_image,
-          links: pageData.links,
+          links: pageData.links.map(link => ({
+            title: link.title,
+            url: link.url,
+            type: link.type,
+            image: link.image || null,
+          })),
         }),
       })
 
@@ -214,14 +200,8 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     })
   }
 
-  // Get background style based on template - always uses custom colors
+  // Get background style - simple solid color
   const getBackgroundStyle = () => {
-    if (pageData.template === "gradient") {
-      return { background: `linear-gradient(135deg, ${pageData.colors.background} 0%, ${pageData.colors.accent || pageData.colors.secondary} 100%)` }
-    }
-    if (pageData.template === "glassmorphism") {
-      return { background: `linear-gradient(180deg, ${pageData.colors.background} 0%, ${pageData.colors.primary || '#1e1e2e'} 100%)` }
-    }
     return { backgroundColor: pageData.colors.background }
   }
 
@@ -294,10 +274,6 @@ export default function DragonBioEditorPage({ params }: PageProps) {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="px-4 pt-4">
               <TabsList className="w-full bg-gray-100 rounded-lg h-10 p-1">
-                <TabsTrigger value="template" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Palette className="w-3.5 h-3.5 mr-1.5" />
-                  Template
-                </TabsTrigger>
                 <TabsTrigger value="profile" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
                   <Type className="w-3.5 h-3.5 mr-1.5" />
                   Perfil
@@ -306,55 +282,165 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                   <Link2 className="w-3.5 h-3.5 mr-1.5" />
                   Links
                 </TabsTrigger>
+                <TabsTrigger value="cores" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Palette className="w-3.5 h-3.5 mr-1.5" />
+                  Cores
+                </TabsTrigger>
               </TabsList>
             </div>
 
             <ScrollArea className="flex-1">
-              {/* Template Tab */}
-              <TabsContent value="template" className="p-4 m-0">
-                <div className="flex flex-col gap-5">
-                  {/* Template Selection */}
+              {/* Profile Tab */}
+              <TabsContent value="profile" className="p-4 m-0">
+                <div className="flex flex-col gap-4">
+                  {/* Profile Image */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Escolha um Template
+                      Foto de Perfil
                     </Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {templates.map((template) => (
-                        <button
-                          key={template.id}
-                          onClick={() => updatePageData({ template: template.id })}
-                          className={cn(
-                            "relative group rounded-lg overflow-hidden border-2 transition-all",
-                            pageData.template === template.id
-                              ? "border-[#111] ring-2 ring-[#111]/10"
-                              : "border-gray-100 hover:border-gray-200"
-                          )}
-                        >
-                          <div className={`aspect-[9/16] ${template.preview}`}>
-                            <div className="flex flex-col items-center justify-center h-full p-2">
-                              <div className="w-4 h-4 rounded-full bg-white/20 mb-1" />
-                              <div className="w-6 h-0.5 rounded bg-white/30 mb-0.5" />
-                              <div className="w-5 h-0.5 rounded bg-white/20 mb-1.5" />
-                              <div className="w-full space-y-0.5 px-1">
-                                <div className="h-1.5 rounded-full bg-white/40" />
-                                <div className="h-1.5 rounded-full bg-white/40" />
-                                <div className="h-1.5 rounded-full bg-white/40" />
-                              </div>
-                            </div>
-                          </div>
-                          {pageData.template === template.id && (
-                            <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#111] flex items-center justify-center">
-                              <Check className="w-2 h-2 text-white" />
-                            </div>
-                          )}
-                        </button>
-                      ))}
+                    <div className="flex items-center gap-3">
+                      <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                        {pageData.profile_image ? (
+                          <img 
+                            src={pageData.profile_image} 
+                            alt="Profile" 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <ImageIcon className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                      <Input
+                        placeholder="URL da imagem"
+                        value={pageData.profile_image}
+                        onChange={(e) => updatePageData({ profile_image: e.target.value })}
+                        className="flex-1 h-9 text-xs"
+                      />
                     </div>
-                    <p className="text-[10px] text-gray-400 mt-1.5 text-center">
-                      {templates.find(t => t.id === pageData.template)?.name} - {templates.find(t => t.id === pageData.template)?.description}
-                    </p>
                   </div>
 
+                  {/* Name */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                      Nome
+                    </Label>
+                    <Input
+                      value={pageData.profile_name}
+                      onChange={(e) => updatePageData({ profile_name: e.target.value })}
+                      className="h-9 text-sm"
+                      placeholder="Seu nome"
+                    />
+                  </div>
+
+                  {/* Bio */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                      Bio
+                    </Label>
+                    <textarea
+                      value={pageData.profile_bio}
+                      onChange={(e) => updatePageData({ profile_bio: e.target.value })}
+                      className="w-full h-20 px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#111]/10 focus:border-[#111]"
+                      placeholder="Escreva uma bio curta"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Links Tab */}
+              <TabsContent value="links" className="p-4 m-0">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                      Seus Links ({pageData.links.length})
+                    </Label>
+                  </div>
+
+                  {/* Add Link Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addLink("button")}
+                      className="flex-1 h-9 text-xs rounded-lg border-dashed"
+                    >
+                      <Plus className="w-3 h-3 mr-1" />
+                      Botao
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => addLink("card")}
+                      className="flex-1 h-9 text-xs rounded-lg border-dashed"
+                    >
+                      <ImageIcon className="w-3 h-3 mr-1" />
+                      Card com Imagem
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    {pageData.links.map((link, index) => (
+                      <div
+                        key={link.id}
+                        className="border border-gray-200 rounded-lg p-3 bg-white"
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <GripVertical className="w-3.5 h-3.5 text-gray-300 cursor-grab" />
+                          <span className={cn(
+                            "text-[10px] font-medium px-1.5 py-0.5 rounded",
+                            link.type === "card" 
+                              ? "bg-purple-100 text-purple-700" 
+                              : "bg-gray-100 text-gray-600"
+                          )}>
+                            {link.type === "card" ? "Card" : "Botao"}
+                          </span>
+                          <button
+                            onClick={() => removeLink(link.id)}
+                            className="ml-auto text-gray-400 hover:text-red-500 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Input
+                            placeholder="Titulo do link"
+                            value={link.title}
+                            onChange={(e) => updateLink(link.id, { title: e.target.value })}
+                            className="h-8 text-xs"
+                          />
+                          <Input
+                            placeholder="https://..."
+                            value={link.url}
+                            onChange={(e) => updateLink(link.id, { url: e.target.value })}
+                            className="h-8 text-xs font-mono"
+                          />
+                          {link.type === "card" && (
+                            <div className="flex items-center gap-2">
+                              <div className="w-12 h-8 rounded bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                                {link.image ? (
+                                  <img src={link.image} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                  <ImageIcon className="w-3 h-3 text-gray-400" />
+                                )}
+                              </div>
+                              <Input
+                                placeholder="URL da imagem do card"
+                                value={link.image || ""}
+                                onChange={(e) => updateLink(link.id, { image: e.target.value })}
+                                className="h-8 text-xs flex-1"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Cores Tab */}
+              <TabsContent value="cores" className="p-4 m-0">
+                <div className="flex flex-col gap-5">
                   {/* Color Presets */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
@@ -458,117 +544,6 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                   </div>
                 </div>
               </TabsContent>
-
-              {/* Profile Tab */}
-              <TabsContent value="profile" className="p-4 m-0">
-                <div className="flex flex-col gap-4">
-                  {/* Profile Image */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Foto de Perfil
-                    </Label>
-                    <div className="flex items-center gap-3">
-                      <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {pageData.profile_image ? (
-                          <img 
-                            src={pageData.profile_image} 
-                            alt="Profile" 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <ImageIcon className="w-5 h-5 text-gray-400" />
-                        )}
-                      </div>
-                      <Input
-                        placeholder="URL da imagem"
-                        value={pageData.profile_image}
-                        onChange={(e) => updatePageData({ profile_image: e.target.value })}
-                        className="flex-1 h-9 text-xs"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Name */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-                      Nome
-                    </Label>
-                    <Input
-                      value={pageData.profile_name}
-                      onChange={(e) => updatePageData({ profile_name: e.target.value })}
-                      className="h-9 text-sm"
-                      placeholder="Seu nome"
-                    />
-                  </div>
-
-                  {/* Bio */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2 block">
-                      Bio
-                    </Label>
-                    <textarea
-                      value={pageData.profile_bio}
-                      onChange={(e) => updatePageData({ profile_bio: e.target.value })}
-                      className="w-full h-20 px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#111]/10 focus:border-[#111]"
-                      placeholder="Escreva uma bio curta"
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Links Tab */}
-              <TabsContent value="links" className="p-4 m-0">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                      Seus Links ({pageData.links.length})
-                    </Label>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={addLink}
-                      className="h-7 text-xs rounded-lg"
-                    >
-                      <Plus className="w-3 h-3 mr-1" />
-                      Adicionar
-                    </Button>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    {pageData.links.map((link, index) => (
-                      <div
-                        key={link.id}
-                        className="border border-gray-200 rounded-lg p-3 bg-white"
-                      >
-                        <div className="flex items-center gap-2 mb-2">
-                          <GripVertical className="w-3.5 h-3.5 text-gray-300 cursor-grab" />
-                          <span className="text-[10px] text-gray-400 font-medium">Link {index + 1}</span>
-                          <button
-                            onClick={() => removeLink(link.id)}
-                            className="ml-auto text-gray-400 hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Input
-                            placeholder="Titulo do link"
-                            value={link.title}
-                            onChange={(e) => updateLink(link.id, { title: e.target.value })}
-                            className="h-8 text-xs"
-                          />
-                          <Input
-                            placeholder="https://..."
-                            value={link.url}
-                            onChange={(e) => updateLink(link.id, { url: e.target.value })}
-                            className="h-8 text-xs font-mono"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </TabsContent>
             </ScrollArea>
           </Tabs>
         </div>
@@ -629,26 +604,40 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                   {/* Links */}
                   <div className="w-full flex flex-col gap-2.5 flex-1 overflow-y-auto">
                     {pageData.links.map((link) => (
-                      <button
-                        key={link.id}
-                        className={cn(
-                          "w-full py-3 px-4 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]",
-                          pageData.template === "glassmorphism" && "backdrop-blur-md"
-                        )}
-                        style={{ 
-                          backgroundColor: pageData.template === "glassmorphism" 
-                            ? "rgba(255,255,255,0.15)" 
-                            : pageData.colors.secondary,
-                          color: pageData.template === "glassmorphism" 
-                            ? pageData.colors.text 
-                            : pageData.colors.primary,
-                          border: pageData.template === "glassmorphism" 
-                            ? "1px solid rgba(255,255,255,0.2)" 
-                            : "none"
-                        }}
-                      >
-                        {link.title}
-                      </button>
+                      link.type === "card" ? (
+                        // Card com imagem
+                        <div
+                          key={link.id}
+                          className="w-full rounded-xl overflow-hidden transition-all hover:scale-[1.02]"
+                          style={{ backgroundColor: pageData.colors.secondary + "20" }}
+                        >
+                          <div 
+                            className="w-full h-20 bg-cover bg-center"
+                            style={{ 
+                              backgroundImage: link.image ? `url(${link.image})` : undefined,
+                              backgroundColor: link.image ? undefined : pageData.colors.secondary + "30"
+                            }}
+                          />
+                          <div 
+                            className="py-2 px-3 text-xs font-medium"
+                            style={{ color: pageData.colors.text }}
+                          >
+                            {link.title}
+                          </div>
+                        </div>
+                      ) : (
+                        // Botao normal
+                        <button
+                          key={link.id}
+                          className="w-full py-3 px-4 rounded-xl text-sm font-medium transition-all hover:scale-[1.02]"
+                          style={{ 
+                            backgroundColor: pageData.colors.secondary,
+                            color: pageData.colors.primary,
+                          }}
+                        >
+                          {link.title}
+                        </button>
+                      )
                     ))}
                   </div>
 

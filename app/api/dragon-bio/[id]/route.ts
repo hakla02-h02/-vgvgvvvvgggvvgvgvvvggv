@@ -66,14 +66,28 @@ export async function PUT(
         const linksToInsert = links.map((link: any) => ({
           site_id: id,
           title: link.title,
-          url: link.url
+          url: link.url,
+          type: link.type || "button",
+          image: link.image || null
         }))
 
         const { error: linksError } = await supabase
           .from("dragon_bio_links")
           .insert(linksToInsert)
 
-        if (linksError) throw linksError
+        if (linksError) {
+          console.error("Erro ao inserir links:", linksError)
+          // Se der erro por coluna inexistente, tentar sem type e image
+          const basicLinks = links.map((link: any) => ({
+            site_id: id,
+            title: link.title,
+            url: link.url
+          }))
+          const { error: basicError } = await supabase
+            .from("dragon_bio_links")
+            .insert(basicLinks)
+          if (basicError) throw basicError
+        }
       }
     }
 
