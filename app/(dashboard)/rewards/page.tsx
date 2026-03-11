@@ -2,7 +2,6 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { useRef, useState } from "react"
 
 const premiacoes = [
   { 
@@ -41,35 +40,12 @@ const premiacoes = [
 
 export default function RewardsPage() {
   const faturamentoAtual = 0
-  const carouselRef = useRef<HTMLDivElement>(null)
-  const [isDragging, setIsDragging] = useState(false)
-  const [startX, setStartX] = useState(0)
-  const [scrollLeft, setScrollLeft] = useState(0)
 
   // Proxima meta
   const proximaMetaIdx = premiacoes.findIndex((p) => faturamentoAtual < p.meta)
   const proximaMeta = proximaMetaIdx >= 0 ? premiacoes[proximaMetaIdx] : premiacoes[premiacoes.length - 1]
   const faltaParaMeta = proximaMeta.meta - faturamentoAtual
   const progressoGeral = proximaMetaIdx >= 0 ? (faturamentoAtual / proximaMeta.meta) * 100 : 100
-
-  // Drag handlers
-  const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true)
-    setStartX(e.pageX - (carouselRef.current?.offsetLeft || 0))
-    setScrollLeft(carouselRef.current?.scrollLeft || 0)
-  }
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return
-    e.preventDefault()
-    const x = e.pageX - (carouselRef.current?.offsetLeft || 0)
-    const walk = (x - startX) * 1.5
-    if (carouselRef.current) {
-      carouselRef.current.scrollLeft = scrollLeft - walk
-    }
-  }
-
-  const handleMouseUp = () => setIsDragging(false)
 
   return (
     <>
@@ -164,21 +140,12 @@ export default function RewardsPage() {
           </div>
 
           {/* Section Title */}
-          <div className="flex items-center justify-between mb-5">
+          <div className="mb-5">
             <h2 className="text-lg font-semibold text-gray-900">Suas Recompensas</h2>
-            <span className="text-xs text-gray-400">Arraste para ver mais</span>
           </div>
 
-          {/* Horizontal Carousel - Premium Cards */}
-          <div 
-            ref={carouselRef}
-            className="flex gap-5 overflow-x-auto pb-4 scrollbar-hide cursor-grab active:cursor-grabbing select-none"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
+          {/* Grid de Premiacoes - Layout responsivo */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {premiacoes.map((premio) => {
               const desbloqueado = faturamentoAtual >= premio.meta
               const progresso = Math.min(100, (faturamentoAtual / premio.meta) * 100)
@@ -187,69 +154,64 @@ export default function RewardsPage() {
               return (
                 <div 
                   key={premio.id}
-                  className={`flex-shrink-0 w-[280px] md:w-[320px] rounded-[24px] overflow-hidden transition-all duration-300 ${
+                  className={`rounded-[20px] overflow-hidden transition-all duration-300 ${
                     desbloqueado 
-                      ? 'bg-[#111] shadow-[0_0_30px_rgba(163,230,53,0.15)]' 
-                      : 'bg-white border border-gray-100 shadow-sm hover:shadow-md'
+                      ? 'bg-[#111] shadow-[0_0_20px_rgba(163,230,53,0.1)]' 
+                      : 'bg-white border border-gray-100'
                   }`}
                 >
-                  {/* Image Section */}
-                  <div className="relative h-40 overflow-hidden">
+                  {/* Image - Compacta */}
+                  <div className="relative h-24 overflow-hidden">
                     <img 
                       src={premio.imagem} 
                       alt={premio.titulo}
-                      className={`w-full h-full object-cover transition-all duration-300 ${!desbloqueado ? 'grayscale-[60%]' : ''}`}
-                      draggable={false}
+                      className={`w-full h-full object-cover ${!desbloqueado ? 'grayscale-[50%] opacity-80' : ''}`}
                     />
-                    <div className={`absolute inset-0 ${desbloqueado ? 'bg-gradient-to-t from-[#111] via-transparent to-transparent' : 'bg-gradient-to-t from-white via-transparent to-transparent'}`}></div>
+                    <div className={`absolute inset-0 ${desbloqueado ? 'bg-gradient-to-t from-[#111]/80 to-transparent' : 'bg-gradient-to-t from-white/60 to-transparent'}`}></div>
                     
-                    {/* Badge */}
-                    <div className={`absolute top-3 right-3 px-3 py-1.5 rounded-full text-xs font-bold ${
+                    {/* Badge da meta */}
+                    <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-[10px] font-bold ${
                       desbloqueado 
                         ? 'bg-[#a3e635] text-black' 
-                        : 'bg-white/90 backdrop-blur-sm text-gray-700 border border-gray-200'
+                        : 'bg-white/95 text-gray-600'
                     }`}>
                       {premio.metaLabel}
                     </div>
 
                     {desbloqueado && (
-                      <div className="absolute top-3 left-3 w-8 h-8 rounded-full bg-[#a3e635] flex items-center justify-center">
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 text-black" fill="none" stroke="currentColor" strokeWidth="3">
+                      <div className="absolute top-2 left-2 w-6 h-6 rounded-full bg-[#a3e635] flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" className="w-3 h-3 text-black" fill="none" stroke="currentColor" strokeWidth="3">
                           <path d="M20 6L9 17l-5-5"/>
                         </svg>
                       </div>
                     )}
                   </div>
 
-                  {/* Content Section */}
-                  <div className="p-5">
-                    <h3 className={`font-bold text-lg mb-1 ${desbloqueado ? 'text-white' : 'text-gray-900'}`}>
+                  {/* Content - Compacto */}
+                  <div className="p-4">
+                    <h3 className={`font-semibold text-sm mb-1 ${desbloqueado ? 'text-white' : 'text-gray-900'}`}>
                       {premio.titulo}
                     </h3>
-                    <p className={`text-sm mb-4 line-clamp-2 ${desbloqueado ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className={`text-xs mb-3 line-clamp-2 ${desbloqueado ? 'text-gray-400' : 'text-gray-500'}`}>
                       {premio.descricao}
                     </p>
 
                     {!desbloqueado ? (
                       <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs text-gray-400">Progresso</span>
-                          <span className="text-xs font-medium text-gray-600">{progresso.toFixed(0)}%</span>
-                        </div>
-                        <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-3">
+                        <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mb-2">
                           <div 
-                            className="h-full bg-gradient-to-r from-[#a3e635] to-[#84cc16] rounded-full transition-all"
+                            className="h-full bg-gradient-to-r from-[#a3e635] to-[#84cc16] rounded-full"
                             style={{ width: `${Math.max(progresso, 3)}%` }}
                           ></div>
                         </div>
-                        <p className="text-xs text-gray-400">
-                          Faltam <span className="font-semibold text-gray-600">R$ {falta.toLocaleString("pt-BR")}</span>
+                        <p className="text-[10px] text-gray-400">
+                          Faltam <span className="font-medium text-gray-600">R$ {falta.toLocaleString("pt-BR")}</span>
                         </p>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 py-2 px-3 bg-[#a3e635]/10 rounded-xl">
-                        <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
-                        <span className="text-sm font-medium text-[#a3e635]">Premio conquistado</span>
+                      <div className="flex items-center gap-1.5 py-1.5 px-2 bg-[#a3e635]/10 rounded-lg">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#a3e635]"></div>
+                        <span className="text-xs font-medium text-[#a3e635]">Conquistado</span>
                       </div>
                     )}
                   </div>
