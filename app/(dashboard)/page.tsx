@@ -435,14 +435,14 @@ export default function DashboardPage() {
                   <div className="w-8 h-8 rounded-full border-2 border-[#a3e635] flex items-center justify-center group-hover:shadow-[0_0_10px_rgba(163,230,53,0.4)] transition-all">
                     <Clock size={14} className="text-[#a3e635]" />
                   </div>
-                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider">Pro Analysis</span>
+                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider">Análise Profunda</span>
                 </button>
                 
                 <button className="bg-[#1c1c1c] hover:bg-[#252525] py-3 rounded-xl border border-white/5 flex flex-col items-center gap-1.5 transition-all group">
                   <div className="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center group-hover:bg-[#333]">
                     <FileText size={14} className="text-gray-400" />
                   </div>
-                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider">Report</span>
+                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider">Reportar Problema</span>
                 </button>
               </div>
 
@@ -451,7 +451,7 @@ export default function DashboardPage() {
                 <div className="bg-[#1c1c1c] rounded-xl p-1.5 pl-3 flex items-center border border-white/5 focus-within:border-[#a3e635]/30 transition-colors">
                   <input 
                     type="text" 
-                    placeholder="Ask anything..." 
+                    placeholder="Pergunte o que quiser..." 
                     className="bg-transparent border-none outline-none text-xs text-white placeholder-gray-600 w-full font-medium"
                   />
                   <div className="flex items-center gap-1">
