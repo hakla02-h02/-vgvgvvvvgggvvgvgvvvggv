@@ -82,7 +82,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     colors: defaultColors,
     links: [],
   })
-  const [activeTab, setActiveTab] = useState("profile")
+  const [activeTab, setActiveTab] = useState("visual")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -274,6 +274,10 @@ export default function DragonBioEditorPage({ params }: PageProps) {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="px-4 pt-4">
               <TabsList className="w-full bg-gray-100 rounded-lg h-10 p-1">
+                <TabsTrigger value="visual" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Palette className="w-3.5 h-3.5 mr-1.5" />
+                  Visual
+                </TabsTrigger>
                 <TabsTrigger value="profile" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
                   <Type className="w-3.5 h-3.5 mr-1.5" />
                   Perfil
@@ -282,14 +286,117 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                   <Link2 className="w-3.5 h-3.5 mr-1.5" />
                   Links
                 </TabsTrigger>
-                <TabsTrigger value="cores" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Palette className="w-3.5 h-3.5 mr-1.5" />
-                  Cores
-                </TabsTrigger>
               </TabsList>
             </div>
 
             <ScrollArea className="flex-1">
+              {/* Visual Tab */}
+              <TabsContent value="visual" className="p-4 m-0">
+                <div className="flex flex-col gap-5">
+                  {/* Color Presets */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Paleta de Cores
+                    </Label>
+                    <div className="grid grid-cols-6 gap-1.5">
+                      {colorPresets.map((preset, index) => (
+                        <button
+                          key={index}
+                          onClick={() => applyColorPreset(preset)}
+                          className={cn(
+                            "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
+                            pageData.colors.background === preset.bg && pageData.colors.secondary === preset.btn
+                              ? "border-[#111] ring-2 ring-[#111]/10"
+                              : "border-gray-100"
+                          )}
+                          style={{ backgroundColor: preset.bg }}
+                        >
+                          <div className="w-full h-full flex items-end justify-center pb-1">
+                            <div 
+                              className="w-3/4 h-1 rounded-full"
+                              style={{ backgroundColor: preset.btn }}
+                            />
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Custom Colors */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Cores Personalizadas
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-gray-400">Fundo</label>
+                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
+                          <input
+                            type="color"
+                            value={pageData.colors.background}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
+                            className="w-5 h-5 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={pageData.colors.background}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
+                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-gray-400">Botao</label>
+                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
+                          <input
+                            type="color"
+                            value={pageData.colors.secondary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, secondary: e.target.value } })}
+                            className="w-5 h-5 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={pageData.colors.secondary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, secondary: e.target.value } })}
+                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-gray-400">Texto</label>
+                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
+                          <input
+                            type="color"
+                            value={pageData.colors.text}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
+                            className="w-5 h-5 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={pageData.colors.text}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
+                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-gray-400">Texto Botao</label>
+                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
+                          <input
+                            type="color"
+                            value={pageData.colors.primary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, primary: e.target.value } })}
+                            className="w-5 h-5 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={pageData.colors.primary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, primary: e.target.value } })}
+                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
               {/* Profile Tab */}
               <TabsContent value="profile" className="p-4 m-0">
                 <div className="flex flex-col gap-4">
@@ -438,112 +545,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                 </div>
               </TabsContent>
 
-              {/* Cores Tab */}
-              <TabsContent value="cores" className="p-4 m-0">
-                <div className="flex flex-col gap-5">
-                  {/* Color Presets */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Paleta de Cores
-                    </Label>
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {colorPresets.map((preset, index) => (
-                        <button
-                          key={index}
-                          onClick={() => applyColorPreset(preset)}
-                          className={cn(
-                            "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
-                            pageData.colors.background === preset.bg && pageData.colors.secondary === preset.btn
-                              ? "border-[#111] ring-2 ring-[#111]/10"
-                              : "border-gray-100"
-                          )}
-                          style={{ backgroundColor: preset.bg }}
-                        >
-                          <div className="w-full h-full flex items-end justify-center pb-1">
-                            <div 
-                              className="w-3/4 h-1 rounded-full"
-                              style={{ backgroundColor: preset.btn }}
-                            />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
 
-                  {/* Custom Colors */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Cores Personalizadas
-                    </Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Fundo</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
-                          <input
-                            type="color"
-                            value={pageData.colors.background}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
-                            className="w-5 h-5 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.background}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
-                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
-                          <input
-                            type="color"
-                            value={pageData.colors.secondary}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, secondary: e.target.value } })}
-                            className="w-5 h-5 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.secondary}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, secondary: e.target.value } })}
-                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Texto</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
-                          <input
-                            type="color"
-                            value={pageData.colors.text}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
-                            className="w-5 h-5 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.text}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
-                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Texto Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
-                          <input
-                            type="color"
-                            value={pageData.colors.primary}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, primary: e.target.value } })}
-                            className="w-5 h-5 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.primary}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, primary: e.target.value } })}
-                            className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
             </ScrollArea>
           </Tabs>
         </div>
@@ -568,11 +570,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                   <div className="flex flex-col items-center mb-6">
                     <div 
                       className="w-20 h-20 rounded-full mb-3 flex items-center justify-center overflow-hidden"
-                      style={{ 
-                        backgroundColor: pageData.template === "glassmorphism" 
-                          ? "rgba(255,255,255,0.1)" 
-                          : pageData.colors.secondary + "20" 
-                      }}
+                      style={{ backgroundColor: pageData.colors.secondary + "20" }}
                     >
                       {pageData.profile_image ? (
                         <img 
