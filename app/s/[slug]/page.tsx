@@ -14,7 +14,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     .from("dragon_bio_sites")
     .select("profile_name, profile_bio")
     .eq("slug", slug)
-    .eq("published", true)
     .single()
 
   if (!site) {
@@ -39,18 +38,11 @@ export default async function DragonBioPage({ params }: PageProps) {
       dragon_bio_links (*)
     `)
     .eq("slug", slug)
-    .eq("published", true)
     .single()
 
   if (error || !site) {
     notFound()
   }
-
-  // Incrementar views
-  await supabase
-    .from("dragon_bio_sites")
-    .update({ views: (site.views || 0) + 1 })
-    .eq("id", site.id)
 
   // Ordenar links
   const links = (site.dragon_bio_links || []).sort((a: any, b: any) => a.order_index - b.order_index)

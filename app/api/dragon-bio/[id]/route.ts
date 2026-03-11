@@ -41,7 +41,7 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { template, profile_name, profile_bio, profile_image, colors, links, published } = body
+    const { template, profile_name, profile_bio, profile_image, links } = body
 
     const supabase = getSupabase()
 
@@ -51,8 +51,6 @@ export async function PUT(
     if (profile_name !== undefined) updateData.profile_name = profile_name
     if (profile_bio !== undefined) updateData.profile_bio = profile_bio
     if (profile_image !== undefined) updateData.profile_image = profile_image
-    if (colors !== undefined) updateData.colors = colors
-    if (published !== undefined) updateData.published = published
 
     const { data: site, error: siteError } = await supabase
       .from("dragon_bio_sites")

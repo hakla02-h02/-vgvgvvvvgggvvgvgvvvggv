@@ -43,29 +43,20 @@ export async function POST(request: Request) {
 
     const supabase = getSupabase()
 
-    // Verificar se usuário existe na tabela users, se não, criar
-    const { data: existingUser } = await supabase
+    // Verificar/garantir que usuário existe na tabela users
+    const { error: userError } = await supabase
       .from("users")
-      .select("id")
-      .eq("id", userId)
-      .single()
+      .upsert({
+        id: userId,
+        name: userName || nome,
+        email: userEmail || "",
+        phone: "",
+        banned: false
+      }, { onConflict: "id", ignoreDuplicates: true })
 
-    if (!existingUser) {
-      // Criar usuário na tabela users se não existir
-      const { error: userError } = await supabase
-        .from("users")
-        .insert({
-          id: userId,
-          name: userName || nome,
-          email: userEmail || "",
-          phone: "",
-          banned: false
-        })
-
-      if (userError) {
-        console.error("Erro ao criar usuário:", userError)
-        return NextResponse.json({ error: "Erro ao criar perfil de usuário" }, { status: 500 })
-      }
+    if (userError) {
+      console.error("Erro ao verificar/criar usuário:", userError)
+      // Continuar mesmo se der erro - o usuário pode já existir
     }
 
     // Verificar se slug já existe
