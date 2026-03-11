@@ -64,9 +64,7 @@ export async function POST(request: Request) {
         template: "minimal",
         profile_name: nome,
         profile_bio: "Sua bio aqui",
-        profile_image: null,
-        published: false,
-        views: 0
+        profile_image: null
       })
       .select()
       .single()
