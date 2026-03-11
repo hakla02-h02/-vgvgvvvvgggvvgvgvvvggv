@@ -46,13 +46,54 @@ const filterOptions = [
   { label: "Novos", value: "new" },
 ]
 
+// Função para gerar os intervalos de semanas do mês atual
+function getCurrentMonthWeekRanges() {
+  const now = new Date()
+  const currentMonth = now.getMonth()
+  const currentYear = now.getFullYear()
+  
+  // Nomes dos meses em português
+  const monthNames = [
+    "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
+    "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+  ]
+  const fullMonthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ]
+  
+  const monthAbbr = monthNames[currentMonth]
+  const fullMonthName = fullMonthNames[currentMonth]
+  
+  // Último dia do mês
+  const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
+  
+  // Gerar semanas
+  const weeks: string[] = []
+  let startDay = 1
+  
+  while (startDay <= lastDay) {
+    const endDay = Math.min(startDay + 6, lastDay)
+    weeks.push(`${String(startDay).padStart(2, '0')}-${String(endDay).padStart(2, '0')} ${monthAbbr}`)
+    startDay = endDay + 1
+  }
+  
+  // Adicionar opção "Todo [Mês]"
+  weeks.push(`Todo ${fullMonthName}`)
+  
+  return { weeks, firstWeek: weeks[0] }
+}
+
 export default function DashboardPage() {
   const { selectedBot } = useBots()
   const { session } = useAuth()
   const [selectedDateRange, setSelectedDateRange] = useState("7days")
   const [selectedFilter, setSelectedFilter] = useState("all")
-  const [salesDateRange, setSalesDateRange] = useState("01-07 Jan")
-  const [dealDateRange, setDealDateRange] = useState("01-07 Jan")
+  
+  // Usar o mês atual para os intervalos
+  const { weeks: currentMonthWeeks, firstWeek } = getCurrentMonthWeekRanges()
+  const [salesDateRange, setSalesDateRange] = useState(firstWeek)
+  const [dealDateRange, setDealDateRange] = useState(firstWeek)
   const [tablePeriod, setTablePeriod] = useState("month")
 
   if (!selectedBot) {
@@ -233,7 +274,7 @@ export default function DashboardPage() {
                       </PopoverTrigger>
                       <PopoverContent className="w-36 p-2" align="end">
                         <div className="flex flex-col gap-1">
-                          {["01-07 Jan", "08-14 Jan", "15-21 Jan", "22-28 Jan", "Todo Janeiro"].map((range) => (
+                          {currentMonthWeeks.map((range) => (
                             <button
                               key={range}
                               onClick={() => setSalesDateRange(range)}
@@ -312,7 +353,7 @@ export default function DashboardPage() {
                       </PopoverTrigger>
                       <PopoverContent className="w-36 p-2" align="end">
                         <div className="flex flex-col gap-1">
-                          {["01-07 Jan", "08-14 Jan", "15-21 Jan", "22-28 Jan", "Todo Janeiro"].map((range) => (
+                          {currentMonthWeeks.map((range) => (
                             <button
                               key={range}
                               onClick={() => setDealDateRange(range)}
