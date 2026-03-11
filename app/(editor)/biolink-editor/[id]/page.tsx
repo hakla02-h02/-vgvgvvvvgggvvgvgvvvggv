@@ -77,12 +77,12 @@ const templates = [
 ]
 
 const colorPresets = [
-  { bg: "#0f172a", btn: "#ffffff", text: "#ffffff", btnText: "#0f172a" },
-  { bg: "#1a1a2e", btn: "#e94560", text: "#ffffff", btnText: "#ffffff" },
-  { bg: "#f5f5f5", btn: "#000000", text: "#000000", btnText: "#ffffff" },
-  { bg: "#0d1b2a", btn: "#3a86ff", text: "#ffffff", btnText: "#ffffff" },
-  { bg: "#2d132c", btn: "#ee4540", text: "#ffffff", btnText: "#ffffff" },
-  { bg: "#1b262c", btn: "#bbe1fa", text: "#ffffff", btnText: "#000000" },
+  { bg: "#0f172a", btn: "#ffffff", text: "#ffffff", btnText: "#0f172a", accent: "#3b82f6" },
+  { bg: "#1a1a2e", btn: "#e94560", text: "#ffffff", btnText: "#ffffff", accent: "#e94560" },
+  { bg: "#ffffff", btn: "#111111", text: "#111111", btnText: "#ffffff", accent: "#3b82f6" },
+  { bg: "#0d1b2a", btn: "#3a86ff", text: "#ffffff", btnText: "#ffffff", accent: "#3a86ff" },
+  { bg: "#2d132c", btn: "#ee4540", text: "#ffffff", btnText: "#ffffff", accent: "#ee4540" },
+  { bg: "#1b262c", btn: "#bbe1fa", text: "#ffffff", btnText: "#1b262c", accent: "#bbe1fa" },
 ]
 
 interface PageProps {
@@ -205,22 +205,22 @@ export default function DragonBioEditorPage({ params }: PageProps) {
   const applyColorPreset = (preset: typeof colorPresets[0]) => {
     updatePageData({
       colors: {
-        ...pageData.colors,
         background: preset.bg,
         secondary: preset.btn,
         text: preset.text,
         primary: preset.btnText,
+        accent: preset.accent,
       }
     })
   }
 
-  // Get background style based on template
+  // Get background style based on template - always uses custom colors
   const getBackgroundStyle = () => {
     if (pageData.template === "gradient") {
-      return { background: "linear-gradient(135deg, #9333ea 0%, #ec4899 50%, #f97316 100%)" }
+      return { background: `linear-gradient(135deg, ${pageData.colors.background} 0%, ${pageData.colors.accent || pageData.colors.secondary} 100%)` }
     }
     if (pageData.template === "glassmorphism") {
-      return { background: "linear-gradient(135deg, #1e3a8a 0%, #581c87 100%)" }
+      return { background: `linear-gradient(180deg, ${pageData.colors.background} 0%, ${pageData.colors.primary || '#1e1e2e'} 100%)` }
     }
     return { backgroundColor: pageData.colors.background }
   }

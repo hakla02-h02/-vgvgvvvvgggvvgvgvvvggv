@@ -45,14 +45,24 @@ export default async function DragonBioPage({ params }: PageProps) {
   }
 
   // Ordenar links
-  const links = (site.dragon_bio_links || []).sort((a: any, b: any) => a.order_index - b.order_index)
-  const colors = site.colors || {
+  const links = site.dragon_bio_links || []
+  
+  // Cores padrao para quando nao tem cores salvas
+  const defaultColors = {
     primary: "#000000",
     secondary: "#ffffff",
     accent: "#3b82f6",
     background: "#0f172a",
     text: "#ffffff"
   }
+  
+  // Usar cores do site ou cores padrao baseadas no template
+  const colors = site.colors || (
+    site.template === "minimal" ? defaultColors :
+    site.template === "gradient" ? { ...defaultColors, background: "#9333ea", accent: "#f97316" } :
+    site.template === "glassmorphism" ? { ...defaultColors, background: "#1e3a8a", primary: "#581c87" } :
+    defaultColors
+  )
 
   // Renderizar baseado no template
   return (
@@ -115,11 +125,11 @@ export default async function DragonBioPage({ params }: PageProps) {
             className={`
               block w-full py-4 px-6 text-center font-medium rounded-xl
               transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
-              ${site.template === "glass" ? "backdrop-blur-md bg-white/10 border border-white/20" : ""}
+              ${site.template === "glassmorphism" ? "backdrop-blur-md border border-white/20" : ""}
             `}
             style={{ 
-              backgroundColor: site.template === "glass" ? "rgba(255,255,255,0.1)" : colors.secondary,
-              color: site.template === "glass" ? colors.text : colors.background,
+              backgroundColor: site.template === "glassmorphism" ? "rgba(255,255,255,0.15)" : colors.secondary,
+              color: site.template === "glassmorphism" ? colors.text : colors.primary,
               borderRadius: site.template === "minimal" ? "9999px" : "12px"
             }}
           >
