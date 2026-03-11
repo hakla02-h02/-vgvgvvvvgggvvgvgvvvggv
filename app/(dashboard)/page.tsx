@@ -24,7 +24,9 @@ import {
   List,
   X,
   Check,
+  Bot,
 } from "lucide-react"
+import Link from "next/link"
 import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
 import { NoBotSelected } from "@/components/no-bot-selected"
@@ -85,7 +87,7 @@ function getCurrentMonthWeekRanges() {
 }
 
 export default function DashboardPage() {
-  const { selectedBot } = useBots()
+  const { selectedBot, bots, setSelectedBot } = useBots()
   const { session } = useAuth()
   const [selectedDateRange, setSelectedDateRange] = useState("7days")
   const [selectedFilter, setSelectedFilter] = useState("all")
@@ -122,22 +124,50 @@ export default function DashboardPage() {
           <button className="w-9 h-9 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center text-gray-500 shadow-sm hover:bg-gray-50">
             <Moon size={18} />
           </button>
-          <button className="w-9 h-9 md:w-10 md:h-10 bg-[#e4f6aa] rounded-full flex items-center justify-center text-[#4d7c0f] shadow-sm">
-            <Settings size={18} />
-          </button>
+          <Link href="/bots">
+            <button className="w-9 h-9 md:w-10 md:h-10 bg-[#e4f6aa] rounded-full flex items-center justify-center text-[#4d7c0f] shadow-sm hover:bg-[#d9f59d] transition-colors">
+              <Bot size={18} />
+            </button>
+          </Link>
           <div className="h-6 w-px bg-gray-200 mx-1 md:mx-2 hidden md:block"></div>
-          <div className="hidden md:flex items-center gap-3 cursor-pointer">
-            <img
-              src="https://i.pravatar.cc/150?img=11"
-              alt="User Avatar"
-              className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
-            />
-            <div className="flex flex-col">
-              <span className="text-sm font-bold text-gray-900 leading-tight">{userName}</span>
-              <span className="text-[11px] text-gray-500">@{selectedBot.name}</span>
-            </div>
-            <ChevronDown size={16} className="text-gray-400 ml-1" />
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <div className="hidden md:flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a3e635] to-[#65a30d] flex items-center justify-center shadow-sm">
+                  <Bot size={20} className="text-white" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-bold text-gray-900 leading-tight">{selectedBot.name}</span>
+                  <span className="text-[11px] text-gray-500">{selectedBot.status === "active" ? "Ativo" : "Inativo"}</span>
+                </div>
+                <ChevronDown size={16} className="text-gray-400 ml-1" />
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2" align="end">
+              <div className="flex flex-col gap-1">
+                {bots.map((bot) => (
+                  <button
+                    key={bot.id}
+                    onClick={() => setSelectedBot(bot)}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      selectedBot?.id === bot.id 
+                        ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
+                        : "hover:bg-gray-100 text-gray-700"
+                    }`}
+                  >
+                    <div className={`w-2 h-2 rounded-full ${bot.status === "active" ? "bg-[#a3e635]" : "bg-gray-400"}`} />
+                    <span className="truncate">{bot.name}</span>
+                    {selectedBot?.id === bot.id && <Check size={14} className="ml-auto" />}
+                  </button>
+                ))}
+                <div className="h-px bg-gray-200 my-1" />
+                <Link href="/bots" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#4d7c0f] hover:bg-gray-100 transition-colors">
+                  <Plus size={14} />
+                  <span>Gerenciar bots</span>
+                </Link>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </header>
 
