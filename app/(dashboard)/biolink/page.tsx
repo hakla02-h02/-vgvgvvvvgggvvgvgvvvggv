@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -12,13 +12,14 @@ import {
 } from "@/components/ui/dialog"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
-import { ArrowRight, ChevronLeft, Edit3, ExternalLink, Copy, MoreHorizontal, Trash2 } from "lucide-react"
+import { ArrowRight, ChevronLeft, Edit3, ExternalLink, Copy, MoreHorizontal, Trash2, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { toast } from "sonner"
 
 type PageType = "presell" | "conversion" | "dragonbio" | "checkout" | null
 
@@ -57,20 +58,22 @@ const pageTypes = [
   },
 ]
 
-export type DragonBioPage = {
+export type DragonBioSite = {
   id: string
+  user_id: string
   nome: string
   slug: string
-  tipo: string
-  visitas: number
-  cliques: number
-  ativo: boolean
   template: string
-  createdAt: Date
+  profile_name: string
+  profile_bio: string
+  profile_image: string | null
+  colors: any
+  published: boolean
+  views: number
+  created_at: string
+  updated_at: string
+  dragon_bio_links?: any[]
 }
-
-// Estado local para simular (depois vai ser banco de dados)
-const initialPages: DragonBioPage[] = []
 
 export default function BioLinkPage() {
   const { selectedBot } = useBots()
@@ -79,7 +82,34 @@ export default function BioLinkPage() {
   const [selectedType, setSelectedType] = useState<PageType>(null)
   const [pageName, setPageName] = useState("")
   const [pageSlug, setPageSlug] = useState("")
-  const [pages, setPages] = useState<DragonBioPage[]>(initialPages)
+  const [sites, setSites] = useState<DragonBioSite[]>([])
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+
+  // Carregar sites do banco
+  useEffect(() => {
+    if (selectedBot?.id) {
+      fetchSites()
+    }
+  }, [selectedBot?.id])
+
+  const fetchSites = async () => {
+    if (!selectedBot?.id) return
+    
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/dragon-bio?userId=${selectedBot.id}`)
+      const data = await res.json()
+      
+      if (data.sites) {
+        setSites(data.sites)
+      }
+    } catch (error) {
+      console.error("Erro ao carregar sites:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleSelectType = (type: PageType) => {
     setSelectedType(type)
@@ -91,28 +121,43 @@ export default function BioLinkPage() {
     setPageSlug("")
   }
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+    if (!selectedBot?.id || !pageName.trim() || !pageSlug.trim()) return
+
     if (selectedType === "dragonbio") {
-      // Criar nova pagina e redirecionar para o editor
-      const newPage: DragonBioPage = {
-        id: Date.now().toString(),
-        nome: pageName,
-        slug: pageSlug,
-        tipo: selectedType,
-        visitas: 0,
-        cliques: 0,
-        ativo: true,
-        template: "minimal",
-        createdAt: new Date(),
+      try {
+        setCreating(true)
+        const res = await fetch("/api/dragon-bio", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: selectedBot.id,
+            nome: pageName,
+            slug: pageSlug,
+          }),
+        })
+
+        const data = await res.json()
+
+        if (!res.ok) {
+          toast.error(data.error || "Erro ao criar site")
+          return
+        }
+
+        toast.success("Site criado com sucesso!")
+        setSites([data.site, ...sites])
+        setDialogOpen(false)
+        setSelectedType(null)
+        setPageName("")
+        setPageSlug("")
+      } catch (error) {
+        console.error("Erro ao criar site:", error)
+        toast.error("Erro ao criar site")
+      } finally {
+        setCreating(false)
       }
-      
-      setPages([...pages, newPage])
-      setDialogOpen(false)
-      setSelectedType(null)
-      setPageName("")
-      setPageSlug("")
     } else {
-      console.log("Criando pagina:", { type: selectedType, name: pageName, slug: pageSlug })
+      toast.info("Esse tipo de pagina ainda nao esta disponivel")
       setDialogOpen(false)
       setSelectedType(null)
       setPageName("")
@@ -129,16 +174,33 @@ export default function BioLinkPage() {
     }
   }
 
-  const handleEditPage = (page: DragonBioPage) => {
-    router.push(`/biolink-editor/${page.id}?name=${encodeURIComponent(page.nome)}&slug=${encodeURIComponent(page.slug)}`)
+  const handleEditPage = (site: DragonBioSite) => {
+    router.push(`/biolink-editor/${site.id}`)
   }
 
   const handleCopyLink = (slug: string) => {
-    navigator.clipboard.writeText(`dragon.bio/${slug}`)
+    const baseUrl = window.location.origin
+    navigator.clipboard.writeText(`${baseUrl}/s/${slug}`)
+    toast.success("Link copiado!")
   }
 
-  const handleDeletePage = (id: string) => {
-    setPages(pages.filter(p => p.id !== id))
+  const handleDeletePage = async (id: string) => {
+    try {
+      const res = await fetch(`/api/dragon-bio?siteId=${id}`, {
+        method: "DELETE",
+      })
+
+      if (!res.ok) {
+        toast.error("Erro ao excluir site")
+        return
+      }
+
+      toast.success("Site excluido com sucesso!")
+      setSites(sites.filter(s => s.id !== id))
+    } catch (error) {
+      console.error("Erro ao excluir site:", error)
+      toast.error("Erro ao excluir site")
+    }
   }
 
   if (!selectedBot) {
@@ -150,11 +212,21 @@ export default function BioLinkPage() {
     )
   }
 
-  const dragonBioPages = pages.filter(p => p.tipo === "dragonbio")
-  const hasPages = dragonBioPages.length > 0
-  const totalPages = dragonBioPages.length
-  const totalVisitas = dragonBioPages.reduce((acc, bl) => acc + bl.visitas, 0)
-  const totalCliques = dragonBioPages.reduce((acc, bl) => acc + bl.cliques, 0)
+  const dragonBioSites = sites
+  const hasPages = dragonBioSites.length > 0
+  const totalPages = dragonBioSites.length
+  const totalVisitas = dragonBioSites.reduce((acc, s) => acc + (s.views || 0), 0)
+
+  if (loading) {
+    return (
+      <>
+        <DashboardHeader title="Dragon Sites" />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        </div>
+      </>
+    )
+  }
 
   return (
     <>
@@ -331,22 +403,31 @@ export default function BioLinkPage() {
                           <div className="flex flex-col gap-2">
                             <Label className="text-gray-700 text-sm">Slug (URL)</Label>
                             <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
-                              <span className="text-sm text-gray-400 whitespace-nowrap">dragon.bio/</span>
+                              <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
                               <Input 
                                 placeholder="minha-pagina" 
                                 className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
                                 value={pageSlug}
-                                onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                                onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
                               />
                             </div>
                           </div>
                           <Button 
                             className="bg-[#111] text-white hover:bg-[#222] rounded-xl h-11 mt-2"
                             onClick={handleCreate}
-                            disabled={!pageName.trim() || !pageSlug.trim()}
+                            disabled={!pageName.trim() || !pageSlug.trim() || creating}
                           >
-                            Criar e Personalizar
-                            <ArrowRight className="ml-2 h-4 w-4" />
+                            {creating ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Criando...
+                              </>
+                            ) : (
+                              <>
+                                Criar Site
+                                <ArrowRight className="ml-2 h-4 w-4" />
+                              </>
+                            )}
                           </Button>
                         </div>
                       </DialogContent>
@@ -481,22 +562,31 @@ export default function BioLinkPage() {
                                 <div className="flex flex-col gap-2">
                                   <Label className="text-gray-700 text-sm">Slug (URL)</Label>
                                   <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
-                                    <span className="text-sm text-gray-400 whitespace-nowrap">dragon.bio/</span>
+                                    <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
                                     <Input 
                                       placeholder="minha-pagina" 
                                       className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
                                       value={pageSlug}
-                                      onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                                      onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
                                     />
                                   </div>
                                 </div>
                                 <Button 
                                   className="bg-[#111] text-white hover:bg-[#222] rounded-xl h-11 mt-2"
                                   onClick={handleCreate}
-                                  disabled={!pageName.trim() || !pageSlug.trim()}
+                                  disabled={!pageName.trim() || !pageSlug.trim() || creating}
                                 >
-                                  Criar e Personalizar
-                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                  {creating ? (
+                                    <>
+                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                      Criando...
+                                    </>
+                                  ) : (
+                                    <>
+                                      Criar Site
+                                      <ArrowRight className="ml-2 h-4 w-4" />
+                                    </>
+                                  )}
                                 </Button>
                               </div>
                             </>
@@ -506,7 +596,7 @@ export default function BioLinkPage() {
                     </div>
                     
                     {/* Stats Grid */}
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5">
                         <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
                           <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
@@ -521,13 +611,6 @@ export default function BioLinkPage() {
                         </div>
                         <div className="text-2xl font-bold text-white">{totalVisitas.toLocaleString('pt-BR')}</div>
                       </div>
-                      <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5">
-                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
-                          <div className="w-2 h-2 rounded-full bg-purple-400"></div>
-                          Cliques
-                        </div>
-                        <div className="text-2xl font-bold text-white">{totalCliques.toLocaleString('pt-BR')}</div>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -538,10 +621,10 @@ export default function BioLinkPage() {
                     <h3 className="font-semibold text-gray-900">Suas Paginas</h3>
                   </div>
                   <div className="divide-y divide-gray-50">
-                    {dragonBioPages.map((page) => {
-                      const typeInfo = pageTypes.find(t => t.id === page.tipo) || pageTypes[2]
+                    {dragonBioSites.map((site) => {
+                      const typeInfo = pageTypes[2] // Dragon Bio
                       return (
-                        <div key={page.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                        <div key={site.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
                           <div className="flex items-center gap-4">
                             <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${typeInfo.gradient} flex items-center justify-center shadow-sm`}>
                               <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
@@ -550,19 +633,19 @@ export default function BioLinkPage() {
                             </div>
                             <div>
                               <div className="flex items-center gap-2 mb-0.5">
-                                <h4 className="font-medium text-gray-900">{page.nome}</h4>
-                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${page.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                  {page.ativo ? 'Ativo' : 'Inativo'}
+                                <h4 className="font-medium text-gray-900">{site.nome}</h4>
+                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${site.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                  {site.published ? 'Publicado' : 'Rascunho'}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-500">dragon.bio/{page.slug} • {page.visitas} visitas</p>
+                              <p className="text-xs text-gray-500">/s/{site.slug} • {site.views || 0} visitas</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => handleEditPage(page)}
+                              onClick={() => handleEditPage(site)}
                               className="h-9 px-3 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                             >
                               <Edit3 className="w-4 h-4 mr-2" />
@@ -579,16 +662,16 @@ export default function BioLinkPage() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleCopyLink(page.slug)}>
+                                <DropdownMenuItem onClick={() => handleCopyLink(site.slug)}>
                                   <Copy className="w-4 h-4 mr-2" />
                                   Copiar Link
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => window.open(`/b/${page.slug}`, '_blank')}>
+                                <DropdownMenuItem onClick={() => window.open(`/s/${site.slug}`, '_blank')}>
                                   <ExternalLink className="w-4 h-4 mr-2" />
                                   Abrir Pagina
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
-                                  onClick={() => handleDeletePage(page.id)}
+                                  onClick={() => handleDeletePage(site.id)}
                                   className="text-red-600 focus:text-red-600"
                                 >
                                   <Trash2 className="w-4 h-4 mr-2" />

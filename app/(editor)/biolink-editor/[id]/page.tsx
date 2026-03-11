@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useState, useEffect, use } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,41 +19,42 @@ import {
   Palette,
   Save,
   Check,
+  Loader2,
+  Eye,
+  ExternalLink,
+  Globe,
 } from "lucide-react"
+import { toast } from "sonner"
 
 // Types
 export type BioLink = {
   id: string
-  label: string
+  title: string
   url: string
 }
 
 export type BioPageData = {
   template: "minimal" | "gradient" | "glassmorphism"
-  profileName: string
-  profileBio: string
-  profileImage: string
-  backgroundColor: string
-  buttonColor: string
-  textColor: string
-  buttonTextColor: string
+  profile_name: string
+  profile_bio: string
+  profile_image: string
+  colors: {
+    primary: string
+    secondary: string
+    accent: string
+    background: string
+    text: string
+  }
   links: BioLink[]
+  published: boolean
 }
 
-const defaultPageData: BioPageData = {
-  template: "minimal",
-  profileName: "Seu Nome",
-  profileBio: "Sua bio aqui",
-  profileImage: "",
-  backgroundColor: "#0f172a",
-  buttonColor: "#ffffff",
-  textColor: "#ffffff",
-  buttonTextColor: "#0f172a",
-  links: [
-    { id: "1", label: "Instagram", url: "https://instagram.com" },
-    { id: "2", label: "YouTube", url: "https://youtube.com" },
-    { id: "3", label: "WhatsApp", url: "https://wa.me" },
-  ]
+const defaultColors = {
+  primary: "#000000",
+  secondary: "#ffffff",
+  accent: "#3b82f6",
+  background: "#0f172a",
+  text: "#ffffff"
 }
 
 const templates = [
@@ -86,20 +87,63 @@ const colorPresets = [
   { bg: "#1b262c", btn: "#bbe1fa", text: "#ffffff", btnText: "#000000" },
 ]
 
-export default function DragonBioEditorPage() {
+interface PageProps {
+  params: Promise<{ id: string }>
+}
+
+export default function DragonBioEditorPage({ params }: PageProps) {
+  const { id } = use(params)
   const router = useRouter()
-  const searchParams = useSearchParams()
   
-  const pageName = searchParams.get("name") || "Nova Pagina"
-  const pageSlug = searchParams.get("slug") || "minha-pagina"
-  
+  const [loading, setLoading] = useState(true)
+  const [site, setSite] = useState<any>(null)
   const [pageData, setPageData] = useState<BioPageData>({
-    ...defaultPageData,
-    profileName: pageName,
+    template: "minimal",
+    profile_name: "",
+    profile_bio: "",
+    profile_image: "",
+    colors: defaultColors,
+    links: [],
+    published: false,
   })
   const [activeTab, setActiveTab] = useState("template")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+
+  // Carregar dados do site
+  useEffect(() => {
+    fetchSite()
+  }, [id])
+
+  const fetchSite = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/dragon-bio/${id}`)
+      const data = await res.json()
+
+      if (data.site) {
+        setSite(data.site)
+        setPageData({
+          template: data.site.template || "minimal",
+          profile_name: data.site.profile_name || "",
+          profile_bio: data.site.profile_bio || "",
+          profile_image: data.site.profile_image || "",
+          colors: data.site.colors || defaultColors,
+          links: (data.site.dragon_bio_links || []).map((link: any) => ({
+            id: link.id,
+            title: link.title,
+            url: link.url,
+          })),
+          published: data.site.published || false,
+        })
+      }
+    } catch (error) {
+      console.error("Erro ao carregar site:", error)
+      toast.error("Erro ao carregar site")
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const updatePageData = (updates: Partial<BioPageData>) => {
     setPageData(prev => ({ ...prev, ...updates }))
@@ -109,40 +153,86 @@ export default function DragonBioEditorPage() {
   const addLink = () => {
     const newLink: BioLink = {
       id: Date.now().toString(),
-      label: "Novo Link",
+      title: "Novo Link",
       url: "https://",
     }
     updatePageData({ links: [...pageData.links, newLink] })
   }
 
-  const updateLink = (id: string, updates: Partial<BioLink>) => {
+  const updateLink = (linkId: string, updates: Partial<BioLink>) => {
     updatePageData({
       links: pageData.links.map(link => 
-        link.id === id ? { ...link, ...updates } : link
+        link.id === linkId ? { ...link, ...updates } : link
       )
     })
   }
 
-  const removeLink = (id: string) => {
+  const removeLink = (linkId: string) => {
     updatePageData({
-      links: pageData.links.filter(link => link.id !== id)
+      links: pageData.links.filter(link => link.id !== linkId)
     })
   }
 
   const handleSave = async () => {
-    setIsSaving(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsSaving(false)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
+    try {
+      setIsSaving(true)
+      
+      const res = await fetch(`/api/dragon-bio/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          template: pageData.template,
+          profile_name: pageData.profile_name,
+          profile_bio: pageData.profile_bio,
+          profile_image: pageData.profile_image,
+          colors: pageData.colors,
+          links: pageData.links,
+          published: pageData.published,
+        }),
+      })
+
+      if (!res.ok) {
+        throw new Error("Erro ao salvar")
+      }
+
+      setSaved(true)
+      toast.success("Alteracoes salvas!")
+      setTimeout(() => setSaved(false), 2000)
+    } catch (error) {
+      console.error("Erro ao salvar:", error)
+      toast.error("Erro ao salvar alteracoes")
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handlePublish = async () => {
+    const newPublished = !pageData.published
+    updatePageData({ published: newPublished })
+    
+    try {
+      await fetch(`/api/dragon-bio/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ published: newPublished }),
+      })
+      
+      toast.success(newPublished ? "Site publicado!" : "Site despublicado")
+    } catch (error) {
+      console.error("Erro ao publicar:", error)
+      toast.error("Erro ao alterar publicacao")
+    }
   }
 
   const applyColorPreset = (preset: typeof colorPresets[0]) => {
     updatePageData({
-      backgroundColor: preset.bg,
-      buttonColor: preset.btn,
-      textColor: preset.text,
-      buttonTextColor: preset.btnText,
+      colors: {
+        ...pageData.colors,
+        background: preset.bg,
+        secondary: preset.btn,
+        text: preset.text,
+        primary: preset.btnText,
+      }
     })
   }
 
@@ -154,7 +244,15 @@ export default function DragonBioEditorPage() {
     if (pageData.template === "glassmorphism") {
       return { background: "linear-gradient(135deg, #1e3a8a 0%, #581c87 100%)" }
     }
-    return { backgroundColor: pageData.backgroundColor }
+    return { backgroundColor: pageData.colors.background }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+      </div>
+    )
   }
 
   return (
@@ -171,32 +269,57 @@ export default function DragonBioEditorPage() {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="font-semibold text-gray-900 text-sm">{pageName}</h1>
-            <p className="text-[11px] text-gray-500">dragon.bio/{pageSlug}</p>
+            <h1 className="font-semibold text-gray-900 text-sm">{site?.nome || "Carregando..."}</h1>
+            <p className="text-[11px] text-gray-500">/s/{site?.slug}</p>
           </div>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="h-9 px-4 rounded-lg bg-[#111] text-white hover:bg-[#222] text-sm"
-        >
-          {isSaving ? (
-            <span className="flex items-center gap-2">
-              <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Salvando
-            </span>
-          ) : saved ? (
-            <span className="flex items-center gap-2">
-              <Check className="w-3.5 h-3.5" />
-              Salvo
-            </span>
-          ) : (
-            <span className="flex items-center gap-2">
-              <Save className="w-3.5 h-3.5" />
-              Salvar
-            </span>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => window.open(`/s/${site?.slug}`, '_blank')}
+            className="h-9 px-3 rounded-lg text-sm"
+          >
+            <Eye className="w-3.5 h-3.5 mr-1.5" />
+            Preview
+          </Button>
+          <Button
+            variant={pageData.published ? "outline" : "default"}
+            size="sm"
+            onClick={handlePublish}
+            className={cn(
+              "h-9 px-3 rounded-lg text-sm",
+              pageData.published 
+                ? "border-green-200 bg-green-50 text-green-700 hover:bg-green-100" 
+                : "bg-green-600 text-white hover:bg-green-700"
+            )}
+          >
+            <Globe className="w-3.5 h-3.5 mr-1.5" />
+            {pageData.published ? "Publicado" : "Publicar"}
+          </Button>
+          <Button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="h-9 px-4 rounded-lg bg-[#111] text-white hover:bg-[#222] text-sm"
+          >
+            {isSaving ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Salvando
+              </span>
+            ) : saved ? (
+              <span className="flex items-center gap-2">
+                <Check className="w-3.5 h-3.5" />
+                Salvo
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Save className="w-3.5 h-3.5" />
+                Salvar
+              </span>
+            )}
+          </Button>
+        </div>
       </header>
 
       {/* Main Content - Editor + Preview */}
@@ -279,7 +402,7 @@ export default function DragonBioEditorPage() {
                           onClick={() => applyColorPreset(preset)}
                           className={cn(
                             "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
-                            pageData.backgroundColor === preset.bg && pageData.buttonColor === preset.btn
+                            pageData.colors.background === preset.bg && pageData.colors.secondary === preset.btn
                               ? "border-[#111] ring-2 ring-[#111]/10"
                               : "border-gray-100"
                           )}
@@ -307,13 +430,13 @@ export default function DragonBioEditorPage() {
                         <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
                           <input
                             type="color"
-                            value={pageData.backgroundColor}
-                            onChange={(e) => updatePageData({ backgroundColor: e.target.value })}
+                            value={pageData.colors.background}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
                             className="w-5 h-5 rounded cursor-pointer border-0"
                           />
                           <Input
-                            value={pageData.backgroundColor}
-                            onChange={(e) => updatePageData({ backgroundColor: e.target.value })}
+                            value={pageData.colors.background}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
                             className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
                           />
                         </div>
@@ -323,13 +446,13 @@ export default function DragonBioEditorPage() {
                         <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
                           <input
                             type="color"
-                            value={pageData.buttonColor}
-                            onChange={(e) => updatePageData({ buttonColor: e.target.value })}
+                            value={pageData.colors.secondary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, secondary: e.target.value } })}
                             className="w-5 h-5 rounded cursor-pointer border-0"
                           />
                           <Input
-                            value={pageData.buttonColor}
-                            onChange={(e) => updatePageData({ buttonColor: e.target.value })}
+                            value={pageData.colors.secondary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, secondary: e.target.value } })}
                             className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
                           />
                         </div>
@@ -339,13 +462,13 @@ export default function DragonBioEditorPage() {
                         <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
                           <input
                             type="color"
-                            value={pageData.textColor}
-                            onChange={(e) => updatePageData({ textColor: e.target.value })}
+                            value={pageData.colors.text}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
                             className="w-5 h-5 rounded cursor-pointer border-0"
                           />
                           <Input
-                            value={pageData.textColor}
-                            onChange={(e) => updatePageData({ textColor: e.target.value })}
+                            value={pageData.colors.text}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
                             className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
                           />
                         </div>
@@ -355,13 +478,13 @@ export default function DragonBioEditorPage() {
                         <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-1.5">
                           <input
                             type="color"
-                            value={pageData.buttonTextColor}
-                            onChange={(e) => updatePageData({ buttonTextColor: e.target.value })}
+                            value={pageData.colors.primary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, primary: e.target.value } })}
                             className="w-5 h-5 rounded cursor-pointer border-0"
                           />
                           <Input
-                            value={pageData.buttonTextColor}
-                            onChange={(e) => updatePageData({ buttonTextColor: e.target.value })}
+                            value={pageData.colors.primary}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, primary: e.target.value } })}
                             className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
                           />
                         </div>
@@ -381,9 +504,9 @@ export default function DragonBioEditorPage() {
                     </Label>
                     <div className="flex items-center gap-3">
                       <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
-                        {pageData.profileImage ? (
+                        {pageData.profile_image ? (
                           <img 
-                            src={pageData.profileImage} 
+                            src={pageData.profile_image} 
                             alt="Profile" 
                             className="w-full h-full object-cover"
                           />
@@ -393,8 +516,8 @@ export default function DragonBioEditorPage() {
                       </div>
                       <Input
                         placeholder="URL da imagem"
-                        value={pageData.profileImage}
-                        onChange={(e) => updatePageData({ profileImage: e.target.value })}
+                        value={pageData.profile_image}
+                        onChange={(e) => updatePageData({ profile_image: e.target.value })}
                         className="flex-1 h-9 text-xs"
                       />
                     </div>
@@ -406,8 +529,8 @@ export default function DragonBioEditorPage() {
                       Nome
                     </Label>
                     <Input
-                      value={pageData.profileName}
-                      onChange={(e) => updatePageData({ profileName: e.target.value })}
+                      value={pageData.profile_name}
+                      onChange={(e) => updatePageData({ profile_name: e.target.value })}
                       className="h-9 text-sm"
                       placeholder="Seu nome"
                     />
@@ -419,8 +542,8 @@ export default function DragonBioEditorPage() {
                       Bio
                     </Label>
                     <textarea
-                      value={pageData.profileBio}
-                      onChange={(e) => updatePageData({ profileBio: e.target.value })}
+                      value={pageData.profile_bio}
+                      onChange={(e) => updatePageData({ profile_bio: e.target.value })}
                       className="w-full h-20 px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-[#111]/10 focus:border-[#111]"
                       placeholder="Escreva uma bio curta"
                     />
@@ -465,8 +588,8 @@ export default function DragonBioEditorPage() {
                         <div className="flex flex-col gap-2">
                           <Input
                             placeholder="Titulo do link"
-                            value={link.label}
-                            onChange={(e) => updateLink(link.id, { label: e.target.value })}
+                            value={link.title}
+                            onChange={(e) => updateLink(link.id, { title: e.target.value })}
                             className="h-8 text-xs"
                           />
                           <Input
@@ -508,33 +631,33 @@ export default function DragonBioEditorPage() {
                       style={{ 
                         backgroundColor: pageData.template === "glassmorphism" 
                           ? "rgba(255,255,255,0.1)" 
-                          : pageData.buttonColor + "20" 
+                          : pageData.colors.secondary + "20" 
                       }}
                     >
-                      {pageData.profileImage ? (
+                      {pageData.profile_image ? (
                         <img 
-                          src={pageData.profileImage} 
+                          src={pageData.profile_image} 
                           alt="Profile" 
                           className="w-full h-full object-cover"
                         />
                       ) : (
                         <div 
                           className="w-full h-full rounded-full"
-                          style={{ backgroundColor: pageData.buttonColor + "40" }}
+                          style={{ backgroundColor: pageData.colors.secondary + "40" }}
                         />
                       )}
                     </div>
                     <h2 
                       className="text-base font-bold mb-0.5"
-                      style={{ color: pageData.textColor }}
+                      style={{ color: pageData.colors.text }}
                     >
-                      {pageData.profileName || "Seu Nome"}
+                      {pageData.profile_name || "Seu Nome"}
                     </h2>
                     <p 
                       className="text-xs opacity-80 text-center max-w-[200px]"
-                      style={{ color: pageData.textColor }}
+                      style={{ color: pageData.colors.text }}
                     >
-                      {pageData.profileBio || "Sua bio aqui"}
+                      {pageData.profile_bio || "Sua bio aqui"}
                     </p>
                   </div>
 
@@ -550,16 +673,16 @@ export default function DragonBioEditorPage() {
                         style={{ 
                           backgroundColor: pageData.template === "glassmorphism" 
                             ? "rgba(255,255,255,0.15)" 
-                            : pageData.buttonColor,
+                            : pageData.colors.secondary,
                           color: pageData.template === "glassmorphism" 
-                            ? pageData.textColor 
-                            : pageData.buttonTextColor,
+                            ? pageData.colors.text 
+                            : pageData.colors.primary,
                           border: pageData.template === "glassmorphism" 
                             ? "1px solid rgba(255,255,255,0.2)" 
                             : "none"
                         }}
                       >
-                        {link.label}
+                        {link.title}
                       </button>
                     ))}
                   </div>
@@ -568,7 +691,7 @@ export default function DragonBioEditorPage() {
                   <div className="mt-4 pt-3">
                     <span 
                       className="text-[10px] opacity-50"
-                      style={{ color: pageData.textColor }}
+                      style={{ color: pageData.colors.text }}
                     >
                       dragon.bio
                     </span>
