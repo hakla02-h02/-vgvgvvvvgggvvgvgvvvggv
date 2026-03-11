@@ -114,7 +114,7 @@ export default function DashboardPage() {
                       Receita Total
                     </div>
                     <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
-                      56.000 <span className="text-sm font-normal text-gray-500 mb-1">R$</span>
+                      0 <span className="text-sm font-normal text-gray-500 mb-1">R$</span>
                     </div>
                   </div>
                   {/* Metric 2 */}
@@ -124,7 +124,7 @@ export default function DashboardPage() {
                       ROI
                     </div>
                     <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
-                      +312 <span className="text-sm font-normal text-gray-500 mb-1">%</span>
+                      0 <span className="text-sm font-normal text-gray-500 mb-1">%</span>
                     </div>
                   </div>
                   {/* Metric 3 */}
@@ -135,7 +135,7 @@ export default function DashboardPage() {
                       </div>
                       Usuários Ativos
                     </div>
-                    <div className="text-2xl md:text-3xl font-bold">12.846</div>
+                    <div className="text-2xl md:text-3xl font-bold">0</div>
                   </div>
                 </div>
               </div>
@@ -160,8 +160,8 @@ export default function DashboardPage() {
                     <div className="relative w-24 h-24 flex-shrink-0">
                       <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                         <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="12" strokeDasharray="4 4" />
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="160 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a3e635" strokeWidth="14" strokeDasharray="30 251" strokeDashoffset="-180" className="drop-shadow-sm" strokeLinecap="round" />
+                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
+                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a3e635" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="-180" className="drop-shadow-sm" strokeLinecap="round" />
                         <defs>
                           <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stopColor="#8b5cf6" />
@@ -170,7 +170,7 @@ export default function DashboardPage() {
                         </defs>
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xs font-bold text-gray-900">R$728.000</span>
+                        <span className="text-xs font-bold text-gray-900">R$0</span>
                         <span className="text-[8px] text-gray-400">Receita Total</span>
                       </div>
                     </div>
@@ -179,17 +179,17 @@ export default function DashboardPage() {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-sm bg-blue-600"></span>
-                        <span className="text-xs font-bold text-gray-800">344</span>
+                        <span className="text-xs font-bold text-gray-800">0</span>
                         <span className="text-xs text-gray-400">Leads</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-sm bg-gray-200"></span>
-                        <span className="text-xs font-bold text-gray-800">256</span>
+                        <span className="text-xs font-bold text-gray-800">0</span>
                         <span className="text-xs text-gray-400">Receita</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-sm bg-[#a3e635]"></span>
-                        <span className="text-xs font-bold text-gray-800">128</span>
+                        <span className="text-xs font-bold text-gray-800">0</span>
                         <span className="text-xs text-gray-400">Crescimento</span>
                       </div>
                     </div>
@@ -216,17 +216,17 @@ export default function DashboardPage() {
                   {/* Cards em Fileira */}
                   <div className="flex-1 flex items-end gap-3 mt-1 z-10">
                     {/* Card Ganhos */}
-                    <div className="flex-1 h-[85%] bg-[#d9f970] rounded-2xl p-3 relative overflow-hidden">
+                    <div className="flex-1 h-[33%] bg-[#d9f970] rounded-2xl p-3 relative overflow-hidden">
                       <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, #84cc16 5px, #84cc16 10px)" }}></div>
-                      <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Ganhos 6K</div>
+                      <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Ganhos 0</div>
                     </div>
                     {/* Card Perdas */}
-                    <div className="flex-1 h-[55%] bg-[#111] rounded-2xl p-3 shadow-lg">
-                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800 inline-block">Perdas 2K</div>
+                    <div className="flex-1 h-[33%] bg-[#111] rounded-2xl p-3 shadow-lg">
+                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800 inline-block">Perdas 0</div>
                     </div>
                     {/* Card Crescimento */}
-                    <div className="flex-1 h-[70%] bg-[#d9f970] rounded-2xl p-3">
-                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Crescimento 4K</div>
+                    <div className="flex-1 h-[33%] bg-[#d9f970] rounded-2xl p-3">
+                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Crescimento 0</div>
                     </div>
                   </div>
             </div>
@@ -342,61 +342,10 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {/* Row 1 */}
-                  <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors group">
-                    <td className="py-4 px-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-400 to-green-800 shadow-sm flex items-center justify-center text-white text-[10px] font-bold">
-                          QS
-                        </div>
-                        <span className="text-sm font-semibold text-gray-800">Quinta Starter</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-2 text-sm text-gray-600 font-medium">BR</td>
-                    <td className="py-4 px-2 text-sm font-bold text-gray-800">88%</td>
-                    <td className="py-4 px-2">
-                      {/* Risk Level Bar Chart */}
-                      <div className="flex items-end gap-0.5 h-4">
-                        <div className="w-1.5 bg-[#a3e635] rounded-t-sm h-full"></div>
-                        <div className="w-1.5 bg-[#a3e635] rounded-t-sm h-[80%]"></div>
-                        <div className="w-1.5 bg-[#a3e635] rounded-t-sm h-full"></div>
-                        <div className="w-1.5 bg-[#a3e635] rounded-t-sm h-[90%]"></div>
-                        <div className="w-1.5 bg-[#a3e635] rounded-t-sm h-[70%]"></div>
-                        <div className="w-1.5 bg-gray-200 rounded-t-sm h-[40%]"></div>
-                        <div className="w-1.5 bg-gray-200 rounded-t-sm h-[30%]"></div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-2 text-sm text-gray-600 font-medium">+8.000</td>
-                    <td className="py-4 px-2 text-sm font-bold text-gray-900 text-right">
-                      +R$48.569,09
-                    </td>
-                  </tr>
-                  {/* Row 2 */}
-                  <tr className="hover:bg-gray-50/50 transition-colors">
-                    <td className="py-4 px-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-800 shadow-sm flex items-center justify-center text-white text-[10px] font-bold">
-                          NS
-                        </div>
-                        <span className="text-sm font-semibold text-gray-800">Nova Systems</span>
-                      </div>
-                    </td>
-                    <td className="py-4 px-2 text-sm text-gray-600 font-medium">SP</td>
-                    <td className="py-4 px-2 text-sm font-bold text-gray-800">72%</td>
-                    <td className="py-4 px-2">
-                      <div className="flex items-end gap-0.5 h-4">
-                        <div className="w-1.5 bg-blue-500 rounded-t-sm h-[60%]"></div>
-                        <div className="w-1.5 bg-blue-500 rounded-t-sm h-[50%]"></div>
-                        <div className="w-1.5 bg-blue-500 rounded-t-sm h-[70%]"></div>
-                        <div className="w-1.5 bg-blue-500 rounded-t-sm h-[40%]"></div>
-                        <div className="w-1.5 bg-gray-200 rounded-t-sm h-[30%]"></div>
-                        <div className="w-1.5 bg-gray-200 rounded-t-sm h-[30%]"></div>
-                        <div className="w-1.5 bg-gray-200 rounded-t-sm h-[20%]"></div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-2 text-sm text-gray-600 font-medium">+3.200</td>
-                    <td className="py-4 px-2 text-sm font-bold text-gray-900 text-right">
-                      +R$12.450,00
+                  {/* Sem dados ainda */}
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
+                      Nenhuma oportunidade registrada ainda
                     </td>
                   </tr>
                 </tbody>
