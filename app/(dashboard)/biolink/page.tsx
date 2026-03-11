@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
@@ -11,7 +12,13 @@ import {
 } from "@/components/ui/dialog"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
-import { ArrowRight, ChevronLeft } from "lucide-react"
+import { ArrowRight, ChevronLeft, Edit3, ExternalLink, Copy, MoreHorizontal, Trash2 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 type PageType = "presell" | "conversion" | "dragonbio" | "checkout" | null
 
@@ -50,23 +57,29 @@ const pageTypes = [
   },
 ]
 
-// Paginas serao carregadas do banco de dados
-const biolinks: Array<{
+export type DragonBioPage = {
   id: string
   nome: string
-  url: string
+  slug: string
+  tipo: string
   visitas: number
   cliques: number
   ativo: boolean
-  tipo: string
-}> = []
+  template: string
+  createdAt: Date
+}
+
+// Estado local para simular (depois vai ser banco de dados)
+const initialPages: DragonBioPage[] = []
 
 export default function BioLinkPage() {
   const { selectedBot } = useBots()
+  const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<PageType>(null)
   const [pageName, setPageName] = useState("")
   const [pageSlug, setPageSlug] = useState("")
+  const [pages, setPages] = useState<DragonBioPage[]>(initialPages)
 
   const handleSelectType = (type: PageType) => {
     setSelectedType(type)
@@ -79,11 +92,35 @@ export default function BioLinkPage() {
   }
 
   const handleCreate = () => {
-    console.log("Criando pagina:", { type: selectedType, name: pageName, slug: pageSlug })
-    setDialogOpen(false)
-    setSelectedType(null)
-    setPageName("")
-    setPageSlug("")
+    if (selectedType === "dragonbio") {
+      // Criar nova pagina e redirecionar para o editor
+      const newPage: DragonBioPage = {
+        id: Date.now().toString(),
+        nome: pageName,
+        slug: pageSlug,
+        tipo: selectedType,
+        visitas: 0,
+        cliques: 0,
+        ativo: true,
+        template: "minimal",
+        createdAt: new Date(),
+      }
+      
+      setPages([...pages, newPage])
+      setDialogOpen(false)
+      setSelectedType(null)
+      setPageName("")
+      setPageSlug("")
+      
+      // Redirecionar para o editor
+      router.push(`/biolink-editor/${newPage.id}?name=${encodeURIComponent(pageName)}&slug=${encodeURIComponent(pageSlug)}`)
+    } else {
+      console.log("Criando pagina:", { type: selectedType, name: pageName, slug: pageSlug })
+      setDialogOpen(false)
+      setSelectedType(null)
+      setPageName("")
+      setPageSlug("")
+    }
   }
 
   const handleDialogChange = (open: boolean) => {
@@ -95,6 +132,18 @@ export default function BioLinkPage() {
     }
   }
 
+  const handleEditPage = (page: DragonBioPage) => {
+    router.push(`/biolink-editor/${page.id}?name=${encodeURIComponent(page.nome)}&slug=${encodeURIComponent(page.slug)}`)
+  }
+
+  const handleCopyLink = (slug: string) => {
+    navigator.clipboard.writeText(`dragon.bio/${slug}`)
+  }
+
+  const handleDeletePage = (id: string) => {
+    setPages(pages.filter(p => p.id !== id))
+  }
+
   if (!selectedBot) {
     return (
       <>
@@ -104,10 +153,11 @@ export default function BioLinkPage() {
     )
   }
 
-  const hasPages = biolinks.length > 0
-  const totalPages = biolinks.length
-  const totalVisitas = biolinks.reduce((acc, bl) => acc + bl.visitas, 0)
-  const totalCliques = biolinks.reduce((acc, bl) => acc + bl.cliques, 0)
+  const dragonBioPages = pages.filter(p => p.tipo === "dragonbio")
+  const hasPages = dragonBioPages.length > 0
+  const totalPages = dragonBioPages.length
+  const totalVisitas = dragonBioPages.reduce((acc, bl) => acc + bl.visitas, 0)
+  const totalCliques = dragonBioPages.reduce((acc, bl) => acc + bl.cliques, 0)
 
   return (
     <>
@@ -491,10 +541,10 @@ export default function BioLinkPage() {
                     <h3 className="font-semibold text-gray-900">Suas Paginas</h3>
                   </div>
                   <div className="divide-y divide-gray-50">
-                    {biolinks.map((bl) => {
-                      const typeInfo = pageTypes.find(t => t.id === bl.tipo) || pageTypes[0]
+                    {dragonBioPages.map((page) => {
+                      const typeInfo = pageTypes.find(t => t.id === page.tipo) || pageTypes[2]
                       return (
-                        <div key={bl.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                        <div key={page.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
                           <div className="flex items-center gap-4">
                             <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${typeInfo.gradient} flex items-center justify-center shadow-sm`}>
                               <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
@@ -503,28 +553,52 @@ export default function BioLinkPage() {
                             </div>
                             <div>
                               <div className="flex items-center gap-2 mb-0.5">
-                                <h4 className="font-medium text-gray-900">{bl.nome}</h4>
-                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${bl.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
-                                  {bl.ativo ? 'Ativo' : 'Inativo'}
+                                <h4 className="font-medium text-gray-900">{page.nome}</h4>
+                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${page.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                  {page.ativo ? 'Ativo' : 'Inativo'}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-500">{bl.url} • {bl.visitas} visitas</p>
+                              <p className="text-xs text-gray-500">dragon.bio/{page.slug} • {page.visitas} visitas</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <button className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                              </svg>
-                            </button>
-                            <button className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
-                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                                <polyline points="15 3 21 3 21 9"/>
-                                <line x1="10" y1="14" x2="21" y2="3"/>
-                              </svg>
-                            </button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditPage(page)}
+                              className="h-9 px-3 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                            >
+                              <Edit3 className="w-4 h-4 mr-2" />
+                              Editar
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-9 w-9 rounded-lg bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                >
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem onClick={() => handleCopyLink(page.slug)}>
+                                  <Copy className="w-4 h-4 mr-2" />
+                                  Copiar Link
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => window.open(`/b/${page.slug}`, '_blank')}>
+                                  <ExternalLink className="w-4 h-4 mr-2" />
+                                  Abrir Pagina
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeletePage(page.id)}
+                                  className="text-red-600 focus:text-red-600"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Excluir
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </div>
                       )
