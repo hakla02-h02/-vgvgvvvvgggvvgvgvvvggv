@@ -19,7 +19,7 @@ export function DashboardShell({ children, sidebarCollapsed = false }: Dashboard
   return (
     <BotProvider>
       <GatewayProvider>
-        <div className="flex h-screen overflow-hidden bg-[#f4f5f8]">
+        <div className="flex h-screen overflow-hidden bg-background">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
           <DashboardSidebar defaultCollapsed={sidebarCollapsed} />

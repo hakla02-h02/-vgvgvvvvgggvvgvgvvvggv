@@ -193,9 +193,9 @@ export default function BotsPage() {
   // ── CONFIG PANEL ──
   if (configBot) {
     return (
-      <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#f4f5f8]">
+      <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
         {/* Header Minimalista */}
-        <header className="px-4 md:px-8 py-5 flex items-center gap-4 flex-shrink-0 bg-white border-b border-gray-100">
+        <header className="px-4 md:px-8 py-5 flex items-center gap-4 flex-shrink-0 bg-card border-b border-border">
           <button
             onClick={() => setConfigBot(null)}
             className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
@@ -203,8 +203,8 @@ export default function BotsPage() {
             <ChevronLeft className="h-5 w-5" />
           </button>
           <div className="flex-1">
-            <h1 className="text-xl font-bold text-gray-900">Configuracoes</h1>
-            <p className="text-sm text-gray-500">{configBot.name}</p>
+            <h1 className="text-xl font-bold text-foreground">Configuracoes</h1>
+            <p className="text-sm text-muted-foreground">{configBot.name}</p>
           </div>
           <button
             onClick={handleSaveConfig}
@@ -230,7 +230,7 @@ export default function BotsPage() {
                     <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center relative">
                       <BotIcon className="h-10 w-10 text-[#a3e635]" />
                       <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4 border-[#111] ${
-                        configBot.status === "active" ? "bg-[#22c55e]" : "bg-gray-500"
+                        configBot.status === "active" ? "bg-[#22c55e]" : "bg-muted0"
                       }`} />
                     </div>
                     <div>
@@ -239,12 +239,12 @@ export default function BotsPage() {
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                           configBot.status === "active" 
                             ? "bg-[#22c55e]/20 text-[#22c55e]" 
-                            : "bg-gray-700 text-gray-400"
+                            : "bg-gray-700 text-muted-foreground"
                         }`}>
                           <Signal className="h-3 w-3" />
                           {configBot.status === "active" ? "Online" : "Offline"}
                         </span>
-                        <span className="text-sm text-gray-500 flex items-center gap-1.5">
+                        <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                           <Clock className="h-3.5 w-3.5" />
                           {new Date(configBot.created_at).toLocaleDateString("pt-BR")}
                         </span>
@@ -269,15 +269,15 @@ export default function BotsPage() {
                 <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
                   <div className="text-center">
                     <p className="text-3xl font-bold text-white">0</p>
-                    <p className="text-xs text-gray-500 mt-1">Mensagens Hoje</p>
+                    <p className="text-xs text-muted-foreground mt-1">Mensagens Hoje</p>
                   </div>
                   <div className="text-center">
                     <p className="text-3xl font-bold text-[#a3e635]">{plans.length}</p>
-                    <p className="text-xs text-gray-500 mt-1">Planos Ativos</p>
+                    <p className="text-xs text-muted-foreground mt-1">Planos Ativos</p>
                   </div>
                   <div className="text-center">
                     <p className="text-3xl font-bold text-white">100%</p>
-                    <p className="text-xs text-gray-500 mt-1">Uptime</p>
+                    <p className="text-xs text-muted-foreground mt-1">Uptime</p>
                   </div>
                 </div>
               </div>
@@ -286,23 +286,23 @@ export default function BotsPage() {
             {/* Config Cards */}
             <div className="grid gap-6 md:grid-cols-2">
               {/* Bot Info */}
-              <div className="bg-white rounded-[24px] p-6 border border-gray-100">
+              <div className="bg-card rounded-[24px] p-6 border border-border">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-11 h-11 rounded-2xl bg-[#a3e635]/10 flex items-center justify-center">
                     <Cpu className="h-5 w-5 text-[#65a30d]" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Informacoes</h3>
-                    <p className="text-xs text-gray-500">Dados do bot</p>
+                    <h3 className="font-bold text-foreground">Informacoes</h3>
+                    <p className="text-xs text-muted-foreground">Dados do bot</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-xs text-gray-500 mb-1.5 block">Nome do Bot</Label>
-                    <Input value={cfgName} onChange={(e) => setCfgName(e.target.value)} className="bg-gray-50 border-0 rounded-xl h-11" />
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">Nome do Bot</Label>
+                    <Input value={cfgName} onChange={(e) => setCfgName(e.target.value)} className="bg-muted border-0 rounded-xl h-11" />
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-500 mb-1.5 flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-2">
                       <KeyRound className="h-3 w-3" />
                       Token do Telegram
                     </Label>
@@ -311,20 +311,20 @@ export default function BotsPage() {
                         value={cfgToken}
                         onChange={(e) => setCfgToken(e.target.value)}
                         type={showToken ? "text" : "password"}
-                        className="bg-gray-50 border-0 rounded-xl h-11 font-mono text-xs pr-24"
+                        className="bg-muted border-0 rounded-xl h-11 font-mono text-xs pr-24"
                       />
                       <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                         <button
                           onClick={() => navigator.clipboard.writeText(cfgToken)}
                           className="w-8 h-8 rounded-lg hover:bg-gray-200 flex items-center justify-center transition-colors"
                         >
-                          <Copy className="h-3.5 w-3.5 text-gray-400" />
+                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
                         <button
                           onClick={() => setShowToken(!showToken)}
                           className="w-8 h-8 rounded-lg hover:bg-gray-200 flex items-center justify-center transition-colors"
                         >
-                          {showToken ? <EyeOff className="h-3.5 w-3.5 text-gray-400" /> : <Eye className="h-3.5 w-3.5 text-gray-400" />}
+                          {showToken ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
                         </button>
                       </div>
                     </div>
@@ -333,46 +333,46 @@ export default function BotsPage() {
               </div>
 
               {/* Group Config */}
-              <div className="bg-white rounded-[24px] p-6 border border-gray-100">
+              <div className="bg-card rounded-[24px] p-6 border border-border">
                 <div className="flex items-center gap-3 mb-6">
                   <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center">
                     <MessageSquare className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Grupo VIP</h3>
-                    <p className="text-xs text-gray-500">Configuracoes do grupo</p>
+                    <h3 className="font-bold text-foreground">Grupo VIP</h3>
+                    <p className="text-xs text-muted-foreground">Configuracoes do grupo</p>
                   </div>
                 </div>
                 <div className="space-y-4">
                   <div>
-                    <Label className="text-xs text-gray-500 mb-1.5 block">Nome do Grupo</Label>
-                    <Input value={cfgGroupName} onChange={(e) => setCfgGroupName(e.target.value)} placeholder="VIP Premium" className="bg-gray-50 border-0 rounded-xl h-11" />
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">Nome do Grupo</Label>
+                    <Input value={cfgGroupName} onChange={(e) => setCfgGroupName(e.target.value)} placeholder="VIP Premium" className="bg-muted border-0 rounded-xl h-11" />
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-500 mb-1.5 block">ID do Grupo</Label>
-                    <Input value={cfgGroupId} onChange={(e) => setCfgGroupId(e.target.value)} placeholder="-1001234567890" className="bg-gray-50 border-0 rounded-xl h-11 font-mono text-xs" />
+                    <Label className="text-xs text-muted-foreground mb-1.5 block">ID do Grupo</Label>
+                    <Input value={cfgGroupId} onChange={(e) => setCfgGroupId(e.target.value)} placeholder="-1001234567890" className="bg-muted border-0 rounded-xl h-11 font-mono text-xs" />
                   </div>
                   <div>
-                    <Label className="text-xs text-gray-500 mb-1.5 flex items-center gap-2">
+                    <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-2">
                       <LinkIcon className="h-3 w-3" />
                       Link de Convite
                     </Label>
-                    <Input value={cfgGroupLink} onChange={(e) => setCfgGroupLink(e.target.value)} placeholder="https://t.me/+abc123" className="bg-gray-50 border-0 rounded-xl h-11" />
+                    <Input value={cfgGroupLink} onChange={(e) => setCfgGroupLink(e.target.value)} placeholder="https://t.me/+abc123" className="bg-muted border-0 rounded-xl h-11" />
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Plans Section */}
-            <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+            <div className="bg-card rounded-[24px] border border-border overflow-hidden">
+              <div className="flex items-center justify-between p-6 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="w-11 h-11 rounded-2xl bg-[#a3e635]/10 flex items-center justify-center">
                     <Tag className="h-5 w-5 text-[#65a30d]" />
                   </div>
                   <div>
-                    <h3 className="font-bold text-gray-900">Planos de Assinatura</h3>
-                    <p className="text-xs text-gray-500">{plans.length} plano(s) configurado(s)</p>
+                    <h3 className="font-bold text-foreground">Planos de Assinatura</h3>
+                    <p className="text-xs text-muted-foreground">{plans.length} plano(s) configurado(s)</p>
                   </div>
                 </div>
               </div>
@@ -380,15 +380,15 @@ export default function BotsPage() {
               <div className="p-6 space-y-4">
                 {loadingPlans ? (
                   <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
                 ) : plans.length === 0 ? (
                   <div className="rounded-2xl border-2 border-dashed border-gray-200 py-12 text-center">
                     <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                      <DollarSign className="h-8 w-8 text-gray-400" />
+                      <DollarSign className="h-8 w-8 text-muted-foreground" />
                     </div>
-                    <p className="text-gray-900 font-semibold">Nenhum plano criado</p>
-                    <p className="text-sm text-gray-500 mt-1">Adicione planos para seus clientes</p>
+                    <p className="text-foreground font-semibold">Nenhum plano criado</p>
+                    <p className="text-sm text-muted-foreground mt-1">Adicione planos para seus clientes</p>
                   </div>
                 ) : (
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -398,7 +398,7 @@ export default function BotsPage() {
                         className={`relative rounded-2xl border p-5 transition-all ${
                           plan.active 
                             ? "border-[#a3e635]/30 bg-[#a3e635]/5" 
-                            : "border-gray-200 bg-gray-50/50 opacity-60"
+                            : "border-gray-200 bg-muted/50 opacity-60"
                         }`}
                       >
                         {plan.active && (
@@ -411,8 +411,8 @@ export default function BotsPage() {
                             <DollarSign className="h-5 w-5 text-[#65a30d]" />
                           </div>
                           <div>
-                            <p className="font-bold text-gray-900">{plan.name}</p>
-                            <p className="text-xs text-gray-500">{plan.duration_days} dias</p>
+                            <p className="font-bold text-foreground">{plan.name}</p>
+                            <p className="text-xs text-muted-foreground">{plan.duration_days} dias</p>
                           </div>
                         </div>
                         <p className="text-2xl font-bold text-[#65a30d] mb-4">
@@ -425,7 +425,7 @@ export default function BotsPage() {
                           />
                           <button
                             onClick={() => handleDeletePlan(plan.id)}
-                            className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                            className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -436,24 +436,24 @@ export default function BotsPage() {
                 )}
 
                 {/* Add Plan */}
-                <div className="rounded-2xl bg-gray-50 border border-gray-200 p-5 mt-4">
+                <div className="rounded-2xl bg-muted border border-gray-200 p-5 mt-4">
                   <p className="text-sm font-semibold text-gray-700 mb-4">Adicionar Novo Plano</p>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <Label className="text-xs text-gray-500">Nome</Label>
-                      <Input value={newPlanName} onChange={(e) => setNewPlanName(e.target.value)} placeholder="Mensal" className="mt-1.5 bg-white border-gray-200 rounded-xl" />
+                      <Label className="text-xs text-muted-foreground">Nome</Label>
+                      <Input value={newPlanName} onChange={(e) => setNewPlanName(e.target.value)} placeholder="Mensal" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-500">Preco (R$)</Label>
-                      <Input value={newPlanPrice} onChange={(e) => setNewPlanPrice(e.target.value)} placeholder="29,90" className="mt-1.5 bg-white border-gray-200 rounded-xl" />
+                      <Label className="text-xs text-muted-foreground">Preco (R$)</Label>
+                      <Input value={newPlanPrice} onChange={(e) => setNewPlanPrice(e.target.value)} placeholder="29,90" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-500">Duracao (dias)</Label>
-                      <Input value={newPlanDays} onChange={(e) => setNewPlanDays(e.target.value)} placeholder="30" type="number" className="mt-1.5 bg-white border-gray-200 rounded-xl" />
+                      <Label className="text-xs text-muted-foreground">Duracao (dias)</Label>
+                      <Input value={newPlanDays} onChange={(e) => setNewPlanDays(e.target.value)} placeholder="30" type="number" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
                     </div>
                     <div>
-                      <Label className="text-xs text-gray-500">Descricao</Label>
-                      <Input value={newPlanDesc} onChange={(e) => setNewPlanDesc(e.target.value)} placeholder="Acesso completo" className="mt-1.5 bg-white border-gray-200 rounded-xl" />
+                      <Label className="text-xs text-muted-foreground">Descricao</Label>
+                      <Input value={newPlanDesc} onChange={(e) => setNewPlanDesc(e.target.value)} placeholder="Acesso completo" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
                     </div>
                   </div>
                   <button
@@ -497,20 +497,20 @@ export default function BotsPage() {
 
   // ── BOT LIST ──
   return (
-    <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#f4f5f8]">
+    <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
       {/* Header Clean */}
       <header className="px-4 md:px-8 py-6 flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Meus Bots</h1>
-          <p className="text-sm text-gray-500 mt-0.5">{bots.length} bot(s) cadastrado(s)</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Meus Bots</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{bots.length} bot(s) cadastrado(s)</p>
         </div>
         <div className="flex items-center gap-3">
           {/* View Toggle */}
-          <div className="hidden sm:flex items-center gap-1 bg-white rounded-xl p-1 border border-gray-100">
+          <div className="hidden sm:flex items-center gap-1 bg-card rounded-xl p-1 border border-border">
             <button
               onClick={() => setViewMode("grid")}
               className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                viewMode === "grid" ? "bg-[#a3e635] text-[#111]" : "text-gray-400 hover:bg-gray-50"
+                viewMode === "grid" ? "bg-[#a3e635] text-[#111]" : "text-muted-foreground hover:bg-muted"
               }`}
             >
               <LayoutGrid className="h-4 w-4" />
@@ -518,7 +518,7 @@ export default function BotsPage() {
             <button
               onClick={() => setViewMode("list")}
               className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                viewMode === "list" ? "bg-[#a3e635] text-[#111]" : "text-gray-400 hover:bg-gray-50"
+                viewMode === "list" ? "bg-[#a3e635] text-[#111]" : "text-muted-foreground hover:bg-muted"
               }`}
             >
               <List className="h-4 w-4" />
@@ -544,25 +544,25 @@ export default function BotsPage() {
         {/* Search */}
         <div className="flex items-center gap-4 mb-6">
           <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar bots..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white rounded-xl border border-gray-200 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3e635]/30 focus:border-[#a3e635] transition-all"
+              className="w-full bg-card rounded-xl border border-gray-200 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3e635]/30 focus:border-[#a3e635] transition-all"
             />
           </div>
         </div>
 
         {/* Empty State */}
         {bots.length === 0 ? (
-          <div className="bg-white rounded-[28px] border border-gray-100 p-12 text-center">
+          <div className="bg-card rounded-[28px] border border-border p-12 text-center">
             <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/10 flex items-center justify-center mx-auto mb-6">
               <BotIcon className="h-12 w-12 text-[#65a30d]" />
             </div>
-            <h3 className="text-xl font-bold text-gray-900">Nenhum bot criado</h3>
-            <p className="text-gray-500 mt-2 mb-6 max-w-sm mx-auto">Crie seu primeiro bot para comecar a gerenciar seus grupos VIP</p>
+            <h3 className="text-xl font-bold text-foreground">Nenhum bot criado</h3>
+            <p className="text-muted-foreground mt-2 mb-6 max-w-sm mx-auto">Crie seu primeiro bot para comecar a gerenciar seus grupos VIP</p>
             <button
               onClick={() => setCreateOpen(true)}
               className="inline-flex items-center gap-2 bg-[#a3e635] text-[#111] px-6 py-3 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors"
@@ -582,8 +582,8 @@ export default function BotsPage() {
                 <div
                   key={bot.id}
                   onClick={() => setSelectedBot(bot)}
-                  className={`bg-white rounded-[24px] border cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 group ${
-                    isSelected ? "border-[#a3e635] ring-2 ring-[#a3e635]/20" : "border-gray-100"
+                  className={`bg-card rounded-[24px] border cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 group ${
+                    isSelected ? "border-[#a3e635] ring-2 ring-[#a3e635]/20" : "border-border"
                   }`}
                 >
                   <div className="p-5">
@@ -592,7 +592,7 @@ export default function BotsPage() {
                       <div className={`w-14 h-14 rounded-2xl flex items-center justify-center relative ${
                         isActive ? "bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20" : "bg-gray-100"
                       }`}>
-                        <BotIcon className={`h-7 w-7 ${isActive ? "text-[#65a30d]" : "text-gray-400"}`} />
+                        <BotIcon className={`h-7 w-7 ${isActive ? "text-[#65a30d]" : "text-muted-foreground"}`} />
                         <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${
                           isActive ? "bg-[#22c55e]" : "bg-gray-300"
                         }`} />
@@ -603,7 +603,7 @@ export default function BotsPage() {
                             className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVertical className="h-4 w-4 text-gray-400" />
+                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
                           </button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" className="w-48 rounded-xl">
@@ -626,23 +626,23 @@ export default function BotsPage() {
                     </div>
 
                     {/* Info */}
-                    <h3 className="text-lg font-bold text-gray-900 truncate">{bot.name}</h3>
+                    <h3 className="text-lg font-bold text-foreground truncate">{bot.name}</h3>
                     {bot.group_name ? (
-                      <p className="text-sm text-gray-500 mt-1 flex items-center gap-1.5 truncate">
+                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
                         <Globe className="h-3.5 w-3.5 flex-shrink-0" />
                         {bot.group_name}
                       </p>
                     ) : (
-                      <p className="text-sm text-gray-400 mt-1 flex items-center gap-1.5">
+                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
                         <MessageSquare className="h-3.5 w-3.5" />
                         Sem grupo vinculado
                       </p>
                     )}
 
                     {/* Footer */}
-                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                        isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-gray-400"
+                        isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-muted-foreground"
                       }`}>
                         {isActive ? "Online" : "Offline"}
                       </span>
@@ -671,7 +671,7 @@ export default function BotsPage() {
           </div>
         ) : (
           /* List View */
-          <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
+          <div className="bg-card rounded-[24px] border border-border overflow-hidden">
             {filteredBots.map((bot, index) => {
               const isSelected = selectedBot?.id === bot.id
               const isActive = bot.status === "active"
@@ -680,15 +680,15 @@ export default function BotsPage() {
                 <div
                   key={bot.id}
                   onClick={() => setSelectedBot(bot)}
-                  className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-gray-50 ${
-                    index !== filteredBots.length - 1 ? "border-b border-gray-100" : ""
+                  className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-muted ${
+                    index !== filteredBots.length - 1 ? "border-b border-border" : ""
                   } ${isSelected ? "bg-[#a3e635]/5" : ""}`}
                 >
                   {/* Icon */}
                   <div className={`w-12 h-12 rounded-xl flex items-center justify-center relative flex-shrink-0 ${
                     isActive ? "bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20" : "bg-gray-100"
                   }`}>
-                    <BotIcon className={`h-6 w-6 ${isActive ? "text-[#65a30d]" : "text-gray-400"}`} />
+                    <BotIcon className={`h-6 w-6 ${isActive ? "text-[#65a30d]" : "text-muted-foreground"}`} />
                     <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
                       isActive ? "bg-[#22c55e]" : "bg-gray-300"
                     }`} />
@@ -697,21 +697,21 @@ export default function BotsPage() {
                   {/* Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900 truncate">{bot.name}</h3>
+                      <h3 className="font-semibold text-foreground truncate">{bot.name}</h3>
                       {isSelected && (
                         <span className="text-[10px] font-medium text-[#65a30d] bg-[#a3e635]/20 px-2 py-0.5 rounded-full flex-shrink-0">
                           Em uso
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-gray-500 truncate mt-0.5">
+                    <p className="text-sm text-muted-foreground truncate mt-0.5">
                       {bot.group_name || "Sem grupo vinculado"}
                     </p>
                   </div>
 
                   {/* Status */}
                   <span className={`text-xs font-medium px-3 py-1.5 rounded-full flex-shrink-0 ${
-                    isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-gray-400"
+                    isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-muted-foreground"
                   }`}>
                     {isActive ? "Online" : "Offline"}
                   </span>
@@ -720,13 +720,13 @@ export default function BotsPage() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
-                      className="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-gray-400 hover:text-gray-600 transition-colors"
+                      className="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-muted-foreground hover:text-gray-600 transition-colors"
                     >
                       <Settings className="h-4 w-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}
-                      className="w-9 h-9 rounded-lg hover:bg-red-50 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                      className="w-9 h-9 rounded-lg hover:bg-red-50 flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

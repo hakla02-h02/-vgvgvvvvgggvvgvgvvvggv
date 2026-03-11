@@ -4,6 +4,7 @@ import { useState } from "react"
 import {
   Search,
   Moon,
+  Sun,
   Settings,
   Calendar,
   Filter,
@@ -27,6 +28,7 @@ import {
   Bot,
 } from "lucide-react"
 import Link from "next/link"
+import { useTheme } from "next-themes"
 import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
 import { NoBotSelected } from "@/components/no-bot-selected"
@@ -89,6 +91,7 @@ function getCurrentMonthWeekRanges() {
 export default function DashboardPage() {
   const { selectedBot, bots, setSelectedBot } = useBots()
   const { session } = useAuth()
+  const { theme, setTheme } = useTheme()
   const [selectedDateRange, setSelectedDateRange] = useState("7days")
   const [selectedFilter, setSelectedFilter] = useState("all")
   
@@ -105,42 +108,45 @@ export default function DashboardPage() {
   const userName = session?.name || session?.email?.split("@")[0] || "Usuario"
 
   return (
-    <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#f4f5f8]">
+    <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
       {/* Top Header */}
       <header className="px-4 md:px-8 py-4 md:py-5 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center gap-4 bg-white px-4 py-2.5 rounded-full shadow-sm w-full max-w-[400px]">
-          <Search size={18} className="text-gray-400" />
+        <div className="flex items-center gap-4 bg-card px-4 py-2.5 rounded-full shadow-sm w-full max-w-[400px]">
+          <Search size={18} className="text-muted-foreground" />
           <input
             type="text"
             placeholder="Buscar"
-            className="bg-transparent border-none outline-none text-sm w-full placeholder-gray-400"
+            className="bg-transparent border-none outline-none text-sm w-full placeholder-muted-foreground text-foreground"
           />
-          <div className="hidden sm:flex items-center gap-1 bg-[#f0fdf4] text-[#166534] px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap">
+          <div className="hidden sm:flex items-center gap-1 bg-accent/20 text-accent-foreground px-2 py-1 rounded-md text-[10px] font-medium whitespace-nowrap">
             <span>⌘</span> + <span>Space</span>
           </div>
         </div>
 
         <div className="flex items-center gap-2 md:gap-4">
-          <button className="w-9 h-9 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center text-gray-500 shadow-sm hover:bg-gray-50">
-            <Moon size={18} />
+          <button 
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="w-9 h-9 md:w-10 md:h-10 bg-card rounded-full flex items-center justify-center text-muted-foreground shadow-sm hover:bg-muted transition-colors"
+          >
+            {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <Link href="/bots">
-            <button className="w-9 h-9 md:w-10 md:h-10 bg-[#e4f6aa] rounded-full flex items-center justify-center text-[#4d7c0f] shadow-sm hover:bg-[#d9f59d] transition-colors">
+            <button className="w-9 h-9 md:w-10 md:h-10 bg-accent/30 rounded-full flex items-center justify-center text-accent-foreground shadow-sm hover:bg-accent/40 transition-colors">
               <Bot size={18} />
             </button>
           </Link>
-          <div className="h-6 w-px bg-gray-200 mx-1 md:mx-2 hidden md:block"></div>
+          <div className="h-6 w-px bg-border mx-1 md:mx-2 hidden md:block"></div>
           <Popover>
             <PopoverTrigger asChild>
               <div className="hidden md:flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a3e635] to-[#65a30d] flex items-center justify-center shadow-sm">
-                  <Bot size={20} className="text-white" />
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-sm">
+                  <Bot size={20} className="text-accent-foreground" />
                 </div>
                 <div className="flex flex-col">
-                  <span className="text-sm font-bold text-gray-900 leading-tight">{selectedBot.name}</span>
-                  <span className="text-[11px] text-gray-500">{selectedBot.status === "active" ? "Ativo" : "Inativo"}</span>
+                  <span className="text-sm font-bold text-foreground leading-tight">{selectedBot.name}</span>
+                  <span className="text-[11px] text-muted-foreground">{selectedBot.status === "active" ? "Ativo" : "Inativo"}</span>
                 </div>
-                <ChevronDown size={16} className="text-gray-400 ml-1" />
+                <ChevronDown size={16} className="text-muted-foreground ml-1" />
               </div>
             </PopoverTrigger>
             <PopoverContent className="w-56 p-2" align="end">
@@ -151,17 +157,17 @@ export default function DashboardPage() {
                     onClick={() => setSelectedBot(bot)}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                       selectedBot?.id === bot.id 
-                        ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
-                        : "hover:bg-gray-100 text-gray-700"
+                        ? "bg-accent/30 text-accent-foreground font-medium" 
+                        : "hover:bg-muted text-foreground"
                     }`}
                   >
-                    <div className={`w-2 h-2 rounded-full ${bot.status === "active" ? "bg-[#a3e635]" : "bg-gray-400"}`} />
+                    <div className={`w-2 h-2 rounded-full ${bot.status === "active" ? "bg-accent" : "bg-muted-foreground"}`} />
                     <span className="truncate">{bot.name}</span>
                     {selectedBot?.id === bot.id && <Check size={14} className="ml-auto" />}
                   </button>
                 ))}
-                <div className="h-px bg-gray-200 my-1" />
-                <Link href="/bots" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-[#4d7c0f] hover:bg-gray-100 transition-colors">
+                <div className="h-px bg-border my-1" />
+                <Link href="/bots" className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-accent-foreground hover:bg-muted transition-colors">
                   <Plus size={14} />
                   <span>Gerenciar bots</span>
                 </Link>
@@ -175,16 +181,16 @@ export default function DashboardPage() {
       <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
         {/* Content Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
             Painel Analítico
           </h1>
           <div className="flex items-center gap-3">
             <Popover>
               <PopoverTrigger asChild>
-                <button className="flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 text-sm font-medium hover:bg-gray-50">
-                  <Calendar size={16} className="text-gray-500" />
+                <button className="flex items-center gap-2 bg-card px-4 py-2 rounded-xl shadow-sm border border-border text-sm font-medium text-foreground hover:bg-muted">
+                  <Calendar size={16} className="text-muted-foreground" />
                   {dateRanges.find(d => d.value === selectedDateRange)?.label || "Selecionar Data"}
-                  <ChevronDown size={14} className="text-gray-400" />
+                  <ChevronDown size={14} className="text-muted-foreground" />
                 </button>
               </PopoverTrigger>
               <PopoverContent className="w-48 p-2" align="end">
@@ -195,8 +201,8 @@ export default function DashboardPage() {
                       onClick={() => setSelectedDateRange(range.value)}
                       className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
                         selectedDateRange === range.value 
-                          ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
-                          : "hover:bg-gray-100 text-gray-700"
+                          ? "bg-accent/30 text-accent-foreground font-medium" 
+                          : "hover:bg-muted text-foreground"
                       }`}
                     >
                       {range.label}
@@ -209,10 +215,10 @@ export default function DashboardPage() {
 
             <Popover>
               <PopoverTrigger asChild>
-                <button className={`w-10 h-10 rounded-xl shadow-sm border flex items-center justify-center hover:bg-gray-50 ${
+                <button className={`w-10 h-10 rounded-xl shadow-sm border flex items-center justify-center hover:bg-muted ${
                   selectedFilter !== "all" 
-                    ? "bg-[#ebfcac] border-[#a3e635] text-[#4d7c0f]" 
-                    : "bg-white border-gray-100 text-gray-500"
+                    ? "bg-accent/30 border-accent text-accent-foreground" 
+                    : "bg-card border-border text-muted-foreground"
                 }`}>
                   <Filter size={16} />
                 </button>
@@ -225,8 +231,8 @@ export default function DashboardPage() {
                       onClick={() => setSelectedFilter(option.value)}
                       className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
                         selectedFilter === option.value 
-                          ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
-                          : "hover:bg-gray-100 text-gray-700"
+                          ? "bg-accent/30 text-accent-foreground font-medium" 
+                          : "hover:bg-muted text-foreground"
                       }`}
                     >
                       {option.label}
@@ -242,41 +248,41 @@ export default function DashboardPage() {
         {/* Grid Layout - 2 column layout with Dragon AI on right */}
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_240px] gap-4">
           {/* Sales Distribution Card - Top Left, spans 2 columns */}
-          <div className="bg-[#111111] rounded-[24px] p-4 md:p-5 text-white relative overflow-hidden shadow-lg xl:col-span-2">
+          <div className="bg-foreground dark:bg-card rounded-[24px] p-4 md:p-5 text-background dark:text-foreground relative overflow-hidden shadow-lg xl:col-span-2">
               {/* Glow effect */}
-              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-[#a3e635] opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
 
               <div className="relative z-10">
                 <h2 className="text-lg md:text-xl font-semibold mb-1">Distribuição de Vendas</h2>
-                <p className="text-gray-400 text-xs md:text-sm mb-4 md:mb-6">
+                <p className="text-muted-foreground text-xs md:text-sm mb-4 md:mb-6">
                   Métricas de vendas mostrando crescimento em leads, receita e performance
                 </p>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
                   {/* Metric 1 */}
-                  <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
-                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
-                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-4 md:p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-2">
+                      <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
                       Receita Total
                     </div>
                     <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
-                      0 <span className="text-sm font-normal text-gray-500 mb-1">R$</span>
+                      0 <span className="text-sm font-normal text-muted-foreground mb-1">R$</span>
                     </div>
                   </div>
                   {/* Metric 2 */}
-                  <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
-                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
-                      <div className="w-2 h-2 rounded-full bg-white"></div>
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-4 md:p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-2">
+                      <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
                       ROI
                     </div>
                     <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
-                      0 <span className="text-sm font-normal text-gray-500 mb-1">%</span>
+                      0 <span className="text-sm font-normal text-muted-foreground mb-1">%</span>
                     </div>
                   </div>
                   {/* Metric 3 */}
-                  <div className="bg-[#1c1c1c] rounded-2xl p-4 md:p-5 border border-white/5">
-                    <div className="flex items-center gap-2 text-gray-400 text-xs md:text-sm mb-2">
-                      <div className="w-4 h-4 rounded-full bg-[#111111] flex items-center justify-center border border-gray-600">
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-4 md:p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-2">
+                      <div className="w-4 h-4 rounded-full bg-background/10 dark:bg-secondary flex items-center justify-center border border-muted-foreground/50">
                         <span className="text-[8px]">±</span>
                       </div>
                       Usuários Ativos
@@ -290,15 +296,15 @@ export default function DashboardPage() {
           {/* Container para Análise de Vendas e Análise de Negócios lado a lado */}
           <div className="flex flex-col md:flex-row gap-4 md:gap-6">
             {/* Sales Analysis Card */}
-            <div className="flex-1 bg-white rounded-[24px] p-4 md:p-5 shadow-sm border border-gray-100 flex flex-col">
+            <div className="flex-1 bg-card rounded-[24px] p-4 md:p-5 shadow-sm border border-border flex flex-col">
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-[#a3e635]"></span>
-                      <h3 className="font-semibold text-gray-900 text-sm">Análise de Vendas</h3>
+                      <span className="w-2 h-2 rounded-full bg-accent"></span>
+                      <h3 className="font-semibold text-foreground text-sm">Análise de Vendas</h3>
                     </div>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="text-[10px] font-medium text-gray-500 flex items-center hover:text-gray-700 transition-colors">
+                        <button className="text-[10px] font-medium text-muted-foreground flex items-center hover:text-foreground transition-colors">
                           {salesDateRange} <ChevronDown size={12} className="ml-1" />
                         </button>
                       </PopoverTrigger>
@@ -310,8 +316,8 @@ export default function DashboardPage() {
                               onClick={() => setSalesDateRange(range)}
                               className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
                                 salesDateRange === range 
-                                  ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
-                                  : "hover:bg-gray-100 text-gray-600"
+                                  ? "bg-accent/30 text-accent-foreground font-medium" 
+                                  : "hover:bg-muted text-muted-foreground"
                               }`}
                             >
                               {range}
@@ -326,9 +332,9 @@ export default function DashboardPage() {
                     {/* Donut Chart Simulation */}
                     <div className="relative w-24 h-24 flex-shrink-0">
                       <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#f3f4f6" strokeWidth="12" strokeDasharray="4 4" />
+                        <circle cx="50" cy="50" r="40" fill="transparent" className="stroke-muted" strokeWidth="12" strokeDasharray="4 4" />
                         <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="#a3e635" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="-180" className="drop-shadow-sm" strokeLinecap="round" />
+                        <circle cx="50" cy="50" r="40" fill="transparent" className="stroke-accent" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="-180" strokeLinecap="round" />
                         <defs>
                           <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                             <stop offset="0%" stopColor="#8b5cf6" />
@@ -337,8 +343,8 @@ export default function DashboardPage() {
                         </defs>
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xs font-bold text-gray-900">R$0</span>
-                        <span className="text-[8px] text-gray-400">Receita Total</span>
+                        <span className="text-xs font-bold text-foreground">R$0</span>
+                        <span className="text-[8px] text-muted-foreground">Receita Total</span>
                       </div>
                     </div>
 
@@ -346,38 +352,38 @@ export default function DashboardPage() {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-sm bg-blue-600"></span>
-                        <span className="text-xs font-bold text-gray-800">0</span>
-                        <span className="text-xs text-gray-400">Leads</span>
+                        <span className="text-xs font-bold text-foreground">0</span>
+                        <span className="text-xs text-muted-foreground">Leads</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-sm bg-gray-200"></span>
-                        <span className="text-xs font-bold text-gray-800">0</span>
-                        <span className="text-xs text-gray-400">Receita</span>
+                        <span className="w-2 h-2 rounded-sm bg-muted"></span>
+                        <span className="text-xs font-bold text-foreground">0</span>
+                        <span className="text-xs text-muted-foreground">Receita</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-sm bg-[#a3e635]"></span>
-                        <span className="text-xs font-bold text-gray-800">0</span>
-                        <span className="text-xs text-gray-400">Crescimento</span>
+                        <span className="w-2 h-2 rounded-sm bg-accent"></span>
+                        <span className="text-xs font-bold text-foreground">0</span>
+                        <span className="text-xs text-muted-foreground">Crescimento</span>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-gray-100 text-[10px] text-gray-400 flex items-center gap-1">
+                  <div className="mt-4 pt-3 border-t border-border text-[10px] text-muted-foreground flex items-center gap-1">
                     <HelpCircle size={10} />
                     Calculado a partir da atividade agregada do período
                   </div>
             </div>
 
             {/* Deal Analysis Card */}
-            <div className="flex-1 bg-[#ebfcac] rounded-[24px] p-4 md:p-5 shadow-sm border border-[#e2f89f] flex flex-col relative overflow-hidden min-h-[220px]">
+            <div className="flex-1 bg-accent/30 dark:bg-accent/20 rounded-[24px] p-4 md:p-5 shadow-sm border border-accent/40 flex flex-col relative overflow-hidden min-h-[220px]">
                   <div className="flex justify-between items-center mb-3 relative z-10">
                     <div className="flex items-center gap-2">
-                      <BarChart2 size={14} className="text-[#4d7c0f]" />
-                      <h3 className="font-semibold text-gray-900 text-sm">Análise de Negócios</h3>
+                      <BarChart2 size={14} className="text-accent-foreground" />
+                      <h3 className="font-semibold text-foreground text-sm">Análise de Negócios</h3>
                     </div>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="text-[10px] font-medium text-[#4d7c0f] flex items-center hover:text-[#3d6c0f] transition-colors">
+                        <button className="text-[10px] font-medium text-accent-foreground flex items-center hover:opacity-80 transition-colors">
                           {dealDateRange} <ChevronDown size={12} className="ml-1" />
                         </button>
                       </PopoverTrigger>
@@ -389,8 +395,8 @@ export default function DashboardPage() {
                               onClick={() => setDealDateRange(range)}
                               className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
                                 dealDateRange === range 
-                                  ? "bg-[#d9f970] text-[#4d7c0f] font-medium" 
-                                  : "hover:bg-[#e2f89f] text-[#4d7c0f]"
+                                  ? "bg-accent/50 text-accent-foreground font-medium" 
+                                  : "hover:bg-accent/30 text-accent-foreground"
                               }`}
                             >
                               {range}
@@ -404,17 +410,17 @@ export default function DashboardPage() {
                   {/* Cards em Fileira */}
                   <div className="flex-1 flex items-end gap-3 mt-1 z-10">
                     {/* Card Ganhos */}
-                    <div className="flex-1 h-[33%] bg-[#d9f970] rounded-2xl p-3 relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, #84cc16 5px, #84cc16 10px)" }}></div>
-                      <div className="relative z-10 bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Ganhos 0</div>
+                    <div className="flex-1 h-[33%] bg-accent/50 rounded-2xl p-3 relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, hsl(var(--accent)) 5px, hsl(var(--accent)) 10px)" }}></div>
+                      <div className="relative z-10 bg-card/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-accent-foreground inline-block">Ganhos 0</div>
                     </div>
                     {/* Card Perdas */}
-                    <div className="flex-1 h-[33%] bg-[#111] rounded-2xl p-3 shadow-lg">
-                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-gray-800 inline-block">Perdas 0</div>
+                    <div className="flex-1 h-[33%] bg-foreground dark:bg-secondary rounded-2xl p-3 shadow-lg">
+                      <div className="bg-background/60 dark:bg-card/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground dark:text-foreground inline-block">Perdas 0</div>
                     </div>
                     {/* Card Crescimento */}
-                    <div className="flex-1 h-[33%] bg-[#d9f970] rounded-2xl p-3">
-                      <div className="bg-white/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-[#4d7c0f] inline-block">Crescimento 0</div>
+                    <div className="flex-1 h-[33%] bg-accent/50 rounded-2xl p-3">
+                      <div className="bg-card/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-accent-foreground inline-block">Crescimento 0</div>
                     </div>
                   </div>
             </div>
@@ -422,19 +428,19 @@ export default function DashboardPage() {
 
           {/* Right Column - Dragon AI Panel - compact for desktop */}
           <div className="xl:row-span-2 xl:col-start-3 xl:row-start-1 order-last xl:order-none">
-            <div className="bg-[#111] rounded-[24px] p-4 md:p-5 flex flex-col shadow-2xl relative overflow-hidden border border-white/5 h-full max-h-[420px]">
+            <div className="bg-foreground dark:bg-card rounded-[24px] p-4 md:p-5 flex flex-col shadow-2xl relative overflow-hidden border border-background/5 dark:border-border h-full max-h-[420px]">
               
               {/* Efeitos de fundo (Glow) */}
-              <div className="absolute top-0 right-0 w-20 h-20 bg-[#a3e635] opacity-10 blur-[40px] rounded-full"></div>
+              <div className="absolute top-0 right-0 w-20 h-20 bg-accent opacity-10 blur-[40px] rounded-full"></div>
               <div className="absolute bottom-0 left-0 w-20 h-20 bg-blue-500 opacity-5 blur-[40px] rounded-full"></div>
 
               {/* Cabeçalho */}
               <div className="flex justify-between items-center mb-4 relative z-10">
-                <button className="w-8 h-8 rounded-xl bg-[#1c1c1c] flex items-center justify-center border border-white/5 text-gray-400 hover:text-white transition-all">
+                <button className="w-8 h-8 rounded-xl bg-background/10 dark:bg-secondary flex items-center justify-center border border-background/5 dark:border-border text-muted-foreground hover:text-background dark:hover:text-foreground transition-all">
                   <Minus size={14} />
                 </button>
-                <span className="font-black text-sm text-white tracking-[0.15em] italic uppercase">Dragon AI</span>
-                <button className="w-8 h-8 rounded-xl bg-[#1c1c1c] flex items-center justify-center border border-white/5 text-gray-400 hover:text-white transition-all">
+                <span className="font-black text-sm text-background dark:text-foreground tracking-[0.15em] italic uppercase">Dragon AI</span>
+                <button className="w-8 h-8 rounded-xl bg-background/10 dark:bg-secondary flex items-center justify-center border border-background/5 dark:border-border text-muted-foreground hover:text-background dark:hover:text-foreground transition-all">
                   <Plus size={14} />
                 </button>
               </div>
@@ -443,7 +449,7 @@ export default function DashboardPage() {
               <div className="flex-1 flex flex-col items-center justify-center relative z-10 py-2">
                 <div className="relative w-24 h-24 mb-4 group">
                   {/* Esfera Principal com Gradiente Complexo */}
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-[#d9f970] via-[#22c55e] to-[#064e3b] shadow-[0_0_30px_rgba(163,230,53,0.3)] animate-pulse transition-transform duration-700 group-hover:scale-105"></div>
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent via-green-500 to-green-900 shadow-[0_0_30px_rgba(163,230,53,0.3)] animate-pulse transition-transform duration-700 group-hover:scale-105"></div>
                   
                   {/* Camada de Brilho e Reflexo (Efeito Vidro) */}
                   <div className="absolute inset-0 rounded-full shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.6),inset_10px_10px_20px_rgba(255,255,255,0.3)]"></div>
@@ -453,42 +459,42 @@ export default function DashboardPage() {
                   <div className="absolute bottom-5 right-5 w-10 h-10 rounded-full bg-cyan-400/20 blur-xl"></div>
                   
                   {/* Aro Externo Sutil */}
-                  <div className="absolute -inset-2 rounded-full border border-[#a3e635]/5 scale-95 group-hover:scale-100 transition-transform duration-1000"></div>
+                  <div className="absolute -inset-2 rounded-full border border-accent/5 scale-95 group-hover:scale-100 transition-transform duration-1000"></div>
                 </div>
                 
-                <h2 className="text-gray-200 text-sm font-medium text-center">Como posso ajudar?</h2>
+                <h2 className="text-background/70 dark:text-foreground/70 text-sm font-medium text-center">Como posso ajudar?</h2>
               </div>
 
               {/* Botões de Ação (Pro Analysis & Report) */}
               <div className="grid grid-cols-2 gap-2 mb-3 relative z-10">
-                <button className="bg-[#1c1c1c] hover:bg-[#252525] py-3 rounded-xl border border-white/5 flex flex-col items-center gap-1.5 transition-all group">
-                  <div className="w-8 h-8 rounded-full border-2 border-[#a3e635] flex items-center justify-center group-hover:shadow-[0_0_10px_rgba(163,230,53,0.4)] transition-all">
-                    <Clock size={14} className="text-[#a3e635]" />
+                <button className="bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 py-3 rounded-xl border border-background/5 dark:border-border flex flex-col items-center gap-1.5 transition-all group">
+                  <div className="w-8 h-8 rounded-full border-2 border-accent flex items-center justify-center group-hover:shadow-[0_0_10px_rgba(163,230,53,0.4)] transition-all">
+                    <Clock size={14} className="text-accent" />
                   </div>
-                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider">Análise Profunda</span>
+                  <span className="text-[8px] font-bold text-background/80 dark:text-foreground/80 uppercase tracking-wider">Análise Profunda</span>
                 </button>
                 
-                <button className="bg-[#1c1c1c] hover:bg-[#252525] py-3 rounded-xl border border-white/5 flex flex-col items-center gap-1.5 transition-all group">
-                  <div className="w-8 h-8 rounded-full bg-[#2a2a2a] flex items-center justify-center group-hover:bg-[#333]">
-                    <FileText size={14} className="text-gray-400" />
+                <button className="bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 py-3 rounded-xl border border-background/5 dark:border-border flex flex-col items-center gap-1.5 transition-all group">
+                  <div className="w-8 h-8 rounded-full bg-background/20 dark:bg-muted flex items-center justify-center group-hover:bg-background/30 dark:group-hover:bg-muted/80">
+                    <FileText size={14} className="text-muted-foreground" />
                   </div>
-                  <span className="text-[8px] font-bold text-white/80 uppercase tracking-wider">Reportar Problema</span>
+                  <span className="text-[8px] font-bold text-background/80 dark:text-foreground/80 uppercase tracking-wider">Reportar Problema</span>
                 </button>
               </div>
 
               {/* Barra de Input / Chat */}
               <div className="relative z-10">
-                <div className="bg-[#1c1c1c] rounded-xl p-1.5 pl-3 flex items-center border border-white/5 focus-within:border-[#a3e635]/30 transition-colors">
+                <div className="bg-background/10 dark:bg-secondary rounded-xl p-1.5 pl-3 flex items-center border border-background/5 dark:border-border focus-within:border-accent/30 transition-colors">
                   <input 
                     type="text" 
                     placeholder="Pergunte o que quiser..." 
-                    className="bg-transparent border-none outline-none text-xs text-white placeholder-gray-600 w-full font-medium"
+                    className="bg-transparent border-none outline-none text-xs text-background dark:text-foreground placeholder-muted-foreground w-full font-medium"
                   />
                   <div className="flex items-center gap-1">
-                    <button className="w-7 h-7 flex items-center justify-center text-gray-500 hover:text-white transition-colors">
+                    <button className="w-7 h-7 flex items-center justify-center text-muted-foreground hover:text-background dark:hover:text-foreground transition-colors">
                       <Send size={12} className="transform rotate-45" />
                     </button>
-                    <button className="w-8 h-8 rounded-lg bg-black flex items-center justify-center text-gray-400 hover:text-[#a3e635] transition-all border border-white/10">
+                    <button className="w-8 h-8 rounded-lg bg-background dark:bg-background flex items-center justify-center text-muted-foreground hover:text-accent transition-all border border-background/10 dark:border-border">
                       <Mic size={14} />
                     </button>
                   </div>
@@ -499,21 +505,21 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Table Section */}
-        <div className="mt-4 md:mt-5 bg-white rounded-[24px] p-4 md:p-6 shadow-sm border border-gray-100 mb-4">
+        <div className="mt-4 md:mt-5 bg-card rounded-[24px] p-4 md:p-6 shadow-sm border border-border mb-4">
             {/* Table Header */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3">
               <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-[#ebfcac] rounded flex items-center justify-center">
-                  <List size={12} className="text-[#4d7c0f]" />
+                <div className="w-5 h-5 bg-accent/30 rounded flex items-center justify-center">
+                  <List size={12} className="text-accent-foreground" />
                 </div>
-                <h3 className="font-semibold text-gray-900 text-base md:text-lg">
+                <h3 className="font-semibold text-foreground text-base md:text-lg">
                   Conversas Recentes
                 </h3>
               </div>
               <div className="flex items-center gap-2">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button className="flex items-center gap-2 text-sm font-medium text-gray-600 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors">
+                    <button className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-lg border border-border hover:bg-muted/80 transition-colors">
                       {tablePeriod === "week" ? "Semana" : tablePeriod === "month" ? "Mes" : "Ano"} 
                       <ChevronDown size={14} />
                     </button>
@@ -530,8 +536,8 @@ export default function DashboardPage() {
                           onClick={() => setTablePeriod(period.value)}
                           className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
                             tablePeriod === period.value 
-                              ? "bg-[#ebfcac] text-[#4d7c0f] font-medium" 
-                              : "hover:bg-gray-100 text-gray-600"
+                              ? "bg-accent/30 text-accent-foreground font-medium" 
+                              : "hover:bg-muted text-muted-foreground"
                           }`}
                         >
                           {period.label}
@@ -540,8 +546,8 @@ export default function DashboardPage() {
                     </div>
                   </PopoverContent>
                 </Popover>
-                <button className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
-                  <MoreVertical size={14} className="text-gray-400" />
+                <button className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                  <MoreVertical size={14} className="text-muted-foreground" />
                 </button>
               </div>
             </div>
@@ -550,7 +556,7 @@ export default function DashboardPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
-                  <tr className="text-xs text-gray-400 border-b border-gray-100">
+                  <tr className="text-xs text-muted-foreground border-b border-border">
                     <th className="pb-3 font-medium px-2">Usuário</th>
                     <th className="pb-3 font-medium px-2">Canal</th>
                     <th className="pb-3 font-medium px-2">Mensagens</th>
@@ -562,7 +568,7 @@ export default function DashboardPage() {
                 <tbody>
                   {/* Sem dados ainda */}
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
+                    <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
                       Nenhuma conversa registrada ainda
                     </td>
                   </tr>

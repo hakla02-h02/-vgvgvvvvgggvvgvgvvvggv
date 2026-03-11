@@ -61,10 +61,10 @@ export default function TrackingPage() {
                 </svg>
               </div>
               <div className="flex-1">
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">
                   Rastreamento
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Configure pixels e UTMs para suas campanhas
                 </p>
               </div>
@@ -78,18 +78,18 @@ export default function TrackingPage() {
                     Novo Pixel
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="bg-white border-0 shadow-2xl sm:max-w-md rounded-[24px]">
+                <DialogContent className="bg-card border-0 shadow-2xl sm:max-w-md rounded-[24px]">
                   <DialogHeader>
-                    <DialogTitle className="text-gray-900 text-lg font-bold">Adicionar Pixel</DialogTitle>
+                    <DialogTitle className="text-foreground text-lg font-bold">Adicionar Pixel</DialogTitle>
                   </DialogHeader>
                   <div className="flex flex-col gap-4 pt-4">
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-gray-700">Nome do Pixel</label>
-                      <Input placeholder="Ex: Facebook Pixel" className="bg-gray-50 border-gray-200 rounded-xl h-11" />
+                      <Input placeholder="Ex: Facebook Pixel" className="bg-muted border-gray-200 rounded-xl h-11" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-gray-700">ID do Pixel</label>
-                      <Input placeholder="Ex: FB-123456789" className="bg-gray-50 border-gray-200 rounded-xl h-11 font-mono" />
+                      <Input placeholder="Ex: FB-123456789" className="bg-muted border-gray-200 rounded-xl h-11 font-mono" />
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm font-medium text-gray-700">Plataforma</label>
@@ -110,17 +110,17 @@ export default function TrackingPage() {
             </div>
 
             {/* Pixels Section */}
-            <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden mb-6">
-              <div className="p-5 border-b border-gray-100">
+            <div className="bg-card rounded-[24px] border border-border shadow-sm overflow-hidden mb-6">
+              <div className="p-5 border-b border-border">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
-                  <h2 className="font-semibold text-gray-900">Pixels Instalados</h2>
-                  <span className="text-xs text-gray-400 ml-2">({pixels.length})</span>
+                  <h2 className="font-semibold text-foreground">Pixels Instalados</h2>
+                  <span className="text-xs text-muted-foreground ml-2">({pixels.length})</span>
                 </div>
               </div>
               <div className="divide-y divide-gray-50">
                 {pixels.map((pixel) => (
-                  <div key={pixel.id} className="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors">
+                  <div key={pixel.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center gap-4">
                       <div 
                         className="w-10 h-10 rounded-xl flex items-center justify-center"
@@ -151,15 +151,15 @@ export default function TrackingPage() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 text-sm">{pixel.nome}</p>
-                        <p className="text-xs text-gray-400 font-mono">{pixel.id}</p>
+                        <p className="font-medium text-foreground text-sm">{pixel.nome}</p>
+                        <p className="text-xs text-muted-foreground font-mono">{pixel.id}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <span className={`text-xs font-medium px-2 py-1 rounded-md ${
                         pixelStates[pixel.id] 
                           ? "bg-[#f0fdf4] text-[#166534]" 
-                          : "bg-gray-100 text-gray-500"
+                          : "bg-gray-100 text-muted-foreground"
                       }`}>
                         {pixelStates[pixel.id] ? "Ativo" : "Pausado"}
                       </span>
@@ -175,14 +175,14 @@ export default function TrackingPage() {
             </div>
 
             {/* UTM Section */}
-            <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-card rounded-[24px] border border-border shadow-sm overflow-hidden">
+              <div className="p-5 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <h2 className="font-semibold text-gray-900">Templates UTM</h2>
-                  <span className="text-xs text-gray-400 ml-2">({utms.length})</span>
+                  <h2 className="font-semibold text-foreground">Templates UTM</h2>
+                  <span className="text-xs text-muted-foreground ml-2">({utms.length})</span>
                 </div>
-                <button className="text-xs font-medium text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                <button className="text-xs font-medium text-muted-foreground hover:text-gray-700 flex items-center gap-1">
                   <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
@@ -192,9 +192,9 @@ export default function TrackingPage() {
               </div>
               <div className="divide-y divide-gray-50">
                 {utms.map((utm) => (
-                  <div key={utm.nome} className="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors">
+                  <div key={utm.nome} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
-                      <p className="font-medium text-gray-900 text-sm mb-1">{utm.nome}</p>
+                      <p className="font-medium text-foreground text-sm mb-1">{utm.nome}</p>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] font-mono bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
                           source={utm.source}
@@ -208,10 +208,10 @@ export default function TrackingPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <button className="text-xs font-medium text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button className="text-xs font-medium text-muted-foreground hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                         Copiar
                       </button>
-                      <button className="text-xs font-medium text-gray-400 hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+                      <button className="text-xs font-medium text-muted-foreground hover:text-gray-600 px-3 py-1.5 rounded-lg hover:bg-gray-100 transition-colors">
                         Editar
                       </button>
                     </div>

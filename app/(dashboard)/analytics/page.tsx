@@ -132,29 +132,29 @@ export default function AnalyticsPage() {
     <>
       <DashboardHeader title="Analytics" />
       <ScrollArea className="flex-1">
-        <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
+        <div className="p-4 md:p-8 bg-background min-h-full">
           
           {/* Header Section */}
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
                 Central de Analytics
               </h1>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Dados em tempo real e insights de performance
               </p>
             </div>
             <div className="flex items-center gap-3">
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+              <button className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-muted transition-all shadow-sm">
                 <Calendar size={16} />
                 Últimos 30 dias
-                <ChevronDown size={14} className="text-gray-400" />
+                <ChevronDown size={14} className="text-muted-foreground" />
               </button>
-              <button className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+              <button className="flex items-center gap-2 px-4 py-2.5 bg-card border border-border rounded-xl text-sm font-medium text-foreground hover:bg-muted transition-all shadow-sm">
                 <Filter size={16} />
                 Filtros
               </button>
-              <button className="p-2.5 bg-[#111] text-white rounded-xl hover:bg-[#222] transition-all shadow-sm">
+              <button className="p-2.5 bg-foreground dark:bg-card text-white rounded-xl hover:bg-[#222] transition-all shadow-sm">
                 <RefreshCw size={16} />
               </button>
             </div>
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-12 gap-5">
 
             {/* Realtime Card - Big Feature */}
-            <div className="col-span-12 lg:col-span-8 bg-[#111] rounded-[28px] p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="col-span-12 lg:col-span-8 bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 text-white relative overflow-hidden">
               {/* Decorative Elements */}
               <div className="absolute top-0 right-0 w-80 h-80 bg-[#a3e635] opacity-[0.07] blur-[100px] rounded-full pointer-events-none"></div>
               <div className="absolute bottom-0 left-0 w-60 h-60 bg-blue-500 opacity-[0.05] blur-[80px] rounded-full pointer-events-none"></div>
@@ -180,15 +180,15 @@ export default function AnalyticsPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                   <div className="flex items-center gap-3">
                     <div className="w-3 h-3 rounded-full bg-[#a3e635] animate-pulse"></div>
-                    <span className="text-sm font-medium text-gray-400">Tempo Real</span>
+                    <span className="text-sm font-medium text-muted-foreground">Tempo Real</span>
                     <span className="px-2 py-0.5 bg-[#a3e635]/20 text-[#a3e635] text-xs font-semibold rounded-full">
                       LIVE
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">Atualizado há 3s</span>
-                    <button className="p-1.5 hover:bg-white/10 rounded-lg transition-colors">
-                      <MoreHorizontal size={16} className="text-gray-400" />
+                    <span className="text-xs text-muted-foreground">Atualizado há 3s</span>
+                    <button className="p-1.5 hover:bg-card/10 rounded-lg transition-colors">
+                      <MoreHorizontal size={16} className="text-muted-foreground" />
                     </button>
                   </div>
                 </div>
@@ -250,14 +250,14 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Funnel Card */}
-            <div className="col-span-12 lg:col-span-4 bg-white rounded-[28px] p-6 shadow-sm border border-gray-100">
+            <div className="col-span-12 lg:col-span-4 bg-card rounded-[28px] p-6 shadow-sm border border-border">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Funil de Conversão</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Taxa geral: 4.8%</p>
+                  <h3 className="font-semibold text-foreground">Funil de Conversão</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Taxa geral: 4.8%</p>
                 </div>
-                <button className="p-2 hover:bg-gray-100 rounded-xl transition-colors">
-                  <ExternalLink size={16} className="text-gray-400" />
+                <button className="p-2 hover:bg-muted rounded-xl transition-colors">
+                  <ExternalLink size={16} className="text-muted-foreground" />
                 </button>
               </div>
 
@@ -265,15 +265,15 @@ export default function AnalyticsPage() {
                 {funnelData.map((item, idx) => (
                   <div key={item.stage} className="relative">
                     <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-sm font-medium text-gray-700">{item.stage}</span>
+                      <span className="text-sm font-medium text-foreground">{item.stage}</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-bold text-gray-900">
+                        <span className="text-sm font-bold text-foreground">
                           {item.value.toLocaleString()}
                         </span>
-                        <span className="text-xs text-gray-400">({item.percentage}%)</span>
+                        <span className="text-xs text-muted-foreground">({item.percentage}%)</span>
                       </div>
                     </div>
-                    <div className="h-2.5 bg-gray-100 rounded-full overflow-hidden">
+                    <div className="h-2.5 bg-muted rounded-full overflow-hidden">
                       <div 
                         className="h-full rounded-full transition-all duration-500"
                         style={{ 
@@ -291,47 +291,47 @@ export default function AnalyticsPage() {
                 ))}
               </div>
 
-              <div className="mt-6 pt-4 border-t border-gray-100">
+              <div className="mt-6 pt-4 border-t border-border">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Drop-off médio</span>
+                  <span className="text-sm text-muted-foreground">Drop-off médio</span>
                   <span className="text-sm font-semibold text-red-500">-37%</span>
                 </div>
               </div>
             </div>
 
             {/* Revenue Comparison */}
-            <div className="col-span-12 lg:col-span-8 bg-white rounded-[28px] p-6 shadow-sm border border-gray-100">
+            <div className="col-span-12 lg:col-span-8 bg-card rounded-[28px] p-6 shadow-sm border border-border">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Receita Comparativa</h3>
-                  <p className="text-sm text-gray-500">Período atual vs anterior</p>
+                  <h3 className="font-semibold text-foreground">Receita Comparativa</h3>
+                  <p className="text-sm text-muted-foreground">Período atual vs anterior</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-[#a3e635]"></div>
-                    <span className="text-xs text-gray-500">2026</span>
+                    <span className="text-xs text-muted-foreground">2026</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full bg-gray-300"></div>
-                    <span className="text-xs text-gray-500">2025</span>
+                    <span className="text-xs text-muted-foreground">2025</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-6">
                 <div className="bg-gradient-to-br from-[#f0ffd4] to-[#e8ffc4] rounded-2xl p-4">
-                  <p className="text-xs text-gray-600 mb-1">Receita Total</p>
-                  <p className="text-xl font-bold text-gray-900">R$ 333K</p>
+                  <p className="text-xs text-muted-foreground mb-1">Receita Total</p>
+                  <p className="text-xl font-bold text-foreground">R$ 333K</p>
                   <p className="text-xs text-[#4d7c0f] font-medium mt-1">+18.2% vs período</p>
                 </div>
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  <p className="text-xs text-gray-600 mb-1">Ticket Médio</p>
-                  <p className="text-xl font-bold text-gray-900">R$ 247</p>
+                <div className="bg-muted rounded-2xl p-4">
+                  <p className="text-xs text-muted-foreground mb-1">Ticket Médio</p>
+                  <p className="text-xl font-bold text-foreground">R$ 247</p>
                   <p className="text-xs text-green-600 font-medium mt-1">+5.8%</p>
                 </div>
-                <div className="bg-gray-50 rounded-2xl p-4">
-                  <p className="text-xs text-gray-600 mb-1">LTV Cliente</p>
-                  <p className="text-xl font-bold text-gray-900">R$ 1.2K</p>
+                <div className="bg-muted rounded-2xl p-4">
+                  <p className="text-xs text-muted-foreground mb-1">LTV Cliente</p>
+                  <p className="text-xl font-bold text-foreground">R$ 1.2K</p>
                   <p className="text-xs text-green-600 font-medium mt-1">+12.4%</p>
                 </div>
               </div>
@@ -383,13 +383,13 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Device Breakdown */}
-            <div className="col-span-12 lg:col-span-4 bg-[#111] rounded-[28px] p-6 text-white relative overflow-hidden">
+            <div className="col-span-12 lg:col-span-4 bg-foreground dark:bg-card rounded-[28px] p-6 text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-[#a3e635] opacity-10 blur-[60px] rounded-full"></div>
               
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="font-semibold">Dispositivos</h3>
-                  <span className="text-xs text-gray-500">45.5K sessões</span>
+                  <span className="text-xs text-muted-foreground">45.5K sessões</span>
                 </div>
 
                 <div className="space-y-4">
@@ -397,7 +397,7 @@ export default function AnalyticsPage() {
                     const Icon = device.icon
                     return (
                       <div key={device.device} className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-xl bg-card/10 flex items-center justify-center">
                           <Icon size={18} className="text-[#a3e635]" />
                         </div>
                         <div className="flex-1">
@@ -405,14 +405,14 @@ export default function AnalyticsPage() {
                             <span className="text-sm font-medium">{device.device}</span>
                             <span className="text-sm font-bold">{device.percentage}%</span>
                           </div>
-                          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-1.5 bg-card/10 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-[#a3e635] rounded-full"
                               style={{ width: `${device.percentage}%` }}
                             />
                           </div>
                         </div>
-                        <span className="text-xs text-gray-500 w-12 text-right">{device.sessions}</span>
+                        <span className="text-xs text-muted-foreground w-12 text-right">{device.sessions}</span>
                       </div>
                     )
                   })}
@@ -420,7 +420,7 @@ export default function AnalyticsPage() {
 
                 <div className="mt-6 pt-5 border-t border-white/10">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-400">Taxa de Rejeição Mobile</span>
+                    <span className="text-sm text-muted-foreground">Taxa de Rejeição Mobile</span>
                     <span className="text-sm font-semibold text-[#a3e635]">28%</span>
                   </div>
                 </div>
@@ -428,11 +428,11 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Traffic Sources Table */}
-            <div className="col-span-12 lg:col-span-7 bg-white rounded-[28px] p-6 shadow-sm border border-gray-100">
+            <div className="col-span-12 lg:col-span-7 bg-card rounded-[28px] p-6 shadow-sm border border-border">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Fontes de Tráfego</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Performance por canal de aquisição</p>
+                  <h3 className="font-semibold text-foreground">Fontes de Tráfego</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Performance por canal de aquisição</p>
                 </div>
                 <button className="text-sm text-[#4d7c0f] font-medium hover:underline flex items-center gap-1">
                   Ver detalhes <ChevronRight size={14} />
@@ -442,7 +442,7 @@ export default function AnalyticsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
+                    <tr className="text-left text-xs text-muted-foreground border-b border-border">
                       <th className="pb-3 font-medium">Fonte</th>
                       <th className="pb-3 font-medium text-right">Visitas</th>
                       <th className="pb-3 font-medium text-right">Conversões</th>
@@ -456,20 +456,20 @@ export default function AnalyticsPage() {
                         <td className="py-4">
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                              idx === 0 ? 'bg-[#f0ffd4]' : 'bg-gray-100'
+                              idx === 0 ? 'bg-[#f0ffd4]' : 'bg-muted'
                             }`}>
                               {idx === 0 && <Search size={14} className="text-[#4d7c0f]" />}
-                              {idx === 1 && <Share2 size={14} className="text-gray-500" />}
-                              {idx === 2 && <Globe2 size={14} className="text-gray-500" />}
-                              {idx === 3 && <Mail size={14} className="text-gray-500" />}
-                              {idx === 4 && <ExternalLink size={14} className="text-gray-500" />}
+                              {idx === 1 && <Share2 size={14} className="text-muted-foreground" />}
+                              {idx === 2 && <Globe2 size={14} className="text-muted-foreground" />}
+                              {idx === 3 && <Mail size={14} className="text-muted-foreground" />}
+                              {idx === 4 && <ExternalLink size={14} className="text-muted-foreground" />}
                             </div>
-                            <span className="font-medium text-gray-900">{source.source}</span>
+                            <span className="font-medium text-foreground">{source.source}</span>
                           </div>
                         </td>
-                        <td className="py-4 text-right text-gray-600">{source.visits.toLocaleString()}</td>
-                        <td className="py-4 text-right text-gray-600">{source.conversions.toLocaleString()}</td>
-                        <td className="py-4 text-right font-medium text-gray-900">R$ {(source.revenue/1000).toFixed(1)}K</td>
+                        <td className="py-4 text-right text-muted-foreground">{source.visits.toLocaleString()}</td>
+                        <td className="py-4 text-right text-muted-foreground">{source.conversions.toLocaleString()}</td>
+                        <td className="py-4 text-right font-medium text-foreground">R$ {(source.revenue/1000).toFixed(1)}K</td>
                         <td className="py-4 text-right">
                           <span className={`inline-flex items-center gap-1 text-xs font-medium ${
                             source.trend > 0 ? 'text-green-600' : 'text-red-500'
@@ -489,26 +489,26 @@ export default function AnalyticsPage() {
             <div className="col-span-12 lg:col-span-5 bg-gradient-to-br from-[#f8fff0] to-[#f0ffd4] rounded-[28px] p-6 border border-[#e2f89f]">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Distribuição Geográfica</h3>
-                  <p className="text-xs text-gray-600 mt-0.5">Receita por região</p>
+                  <h3 className="font-semibold text-foreground">Distribuição Geográfica</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Receita por região</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-white/70 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-card/70 flex items-center justify-center">
                   <Map size={18} className="text-[#4d7c0f]" />
                 </div>
               </div>
 
               <div className="space-y-3">
                 {geoData.map((region, idx) => (
-                  <div key={region.region} className="flex items-center gap-4 bg-white/60 rounded-2xl p-3">
+                  <div key={region.region} className="flex items-center gap-4 bg-card/60 rounded-2xl p-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                      idx === 0 ? 'bg-[#a3e635] text-[#111]' : 'bg-gray-200 text-gray-600'
+                      idx === 0 ? 'bg-[#a3e635] text-[#111]' : 'bg-gray-200 text-muted-foreground'
                     }`}>
                       {idx + 1}
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-gray-900">{region.region}</span>
-                        <span className="text-sm font-bold text-gray-900">{region.value}</span>
+                        <span className="text-sm font-medium text-foreground">{region.region}</span>
+                        <span className="text-sm font-bold text-foreground">{region.value}</span>
                       </div>
                       <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
                         <div 
@@ -517,43 +517,43 @@ export default function AnalyticsPage() {
                         />
                       </div>
                     </div>
-                    <span className="text-xs text-gray-500 w-10 text-right">{region.percentage}%</span>
+                    <span className="text-xs text-muted-foreground w-10 text-right">{region.percentage}%</span>
                   </div>
                 ))}
               </div>
             </div>
 
             {/* Top Pages */}
-            <div className="col-span-12 lg:col-span-6 bg-white rounded-[28px] p-6 shadow-sm border border-gray-100">
+            <div className="col-span-12 lg:col-span-6 bg-card rounded-[28px] p-6 shadow-sm border border-border">
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h3 className="font-semibold text-gray-900">Páginas Mais Acessadas</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">Performance de páginas do site</p>
+                  <h3 className="font-semibold text-foreground">Páginas Mais Acessadas</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">Performance de páginas do site</p>
                 </div>
-                <button className="text-xs text-gray-500 hover:text-gray-700 flex items-center gap-1 bg-gray-100 px-3 py-1.5 rounded-lg">
+                <button className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1 bg-muted px-3 py-1.5 rounded-lg">
                   Últimas 24h <ChevronDown size={12} />
                 </button>
               </div>
 
               <div className="space-y-3">
                 {pagePerformance.map((page, idx) => (
-                  <div key={page.page} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-xl transition-colors group">
-                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-sm font-bold text-gray-500 group-hover:bg-[#a3e635] group-hover:text-[#111] transition-colors">
+                  <div key={page.page} className="flex items-center gap-4 p-3 hover:bg-muted rounded-xl transition-colors group">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-[#a3e635] group-hover:text-[#111] transition-colors">
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{page.page}</p>
+                      <p className="text-sm font-medium text-foreground truncate">{page.page}</p>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Eye size={10} /> {page.views.toLocaleString()}
                         </span>
-                        <span className="text-xs text-gray-500 flex items-center gap-1">
+                        <span className="text-xs text-muted-foreground flex items-center gap-1">
                           <Timer size={10} /> {page.avgTime}
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-xs text-gray-500">Bounce</p>
+                      <p className="text-xs text-muted-foreground">Bounce</p>
                       <p className={`text-sm font-semibold ${page.bounceRate < 25 ? 'text-green-600' : 'text-orange-500'}`}>
                         {page.bounceRate}%
                       </p>
@@ -621,9 +621,9 @@ function RealtimeStat({
   icon: React.ElementType
 }) {
   return (
-    <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+    <div className="bg-card/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
       <div className="flex items-center justify-between mb-3">
-        <div className="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center">
+        <div className="w-8 h-8 rounded-lg bg-card/10 flex items-center justify-center">
           <Icon size={16} className="text-[#a3e635]" />
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
@@ -635,7 +635,7 @@ function RealtimeStat({
         </span>
       </div>
       <p className="text-2xl font-bold">{value}</p>
-      <p className="text-xs text-gray-500 mt-0.5">{label} <span className="text-gray-600">{subvalue}</span></p>
+      <p className="text-xs text-muted-foreground mt-0.5">{label} <span className="text-muted-foreground">{subvalue}</span></p>
     </div>
   )
 }
@@ -658,21 +658,21 @@ function QuickMetricCard({
 }) {
   const styles = {
     lime: 'bg-gradient-to-br from-[#d9f970] to-[#a3e635] text-[#111]',
-    dark: 'bg-[#111] text-white',
-    white: 'bg-white text-gray-900 border border-gray-100 shadow-sm'
+    dark: 'bg-foreground dark:bg-card text-white',
+    white: 'bg-card text-foreground border border-border shadow-sm'
   }
   
   const iconBg = {
-    lime: 'bg-[#111]/10',
-    dark: 'bg-white/10',
-    white: 'bg-gray-100'
+    lime: 'bg-foreground dark:bg-card/10',
+    dark: 'bg-card/10',
+    white: 'bg-muted'
   }
 
   return (
     <div className={`rounded-[24px] p-5 ${styles[color]}`}>
       <div className="flex items-start justify-between mb-4">
         <div className={`w-10 h-10 rounded-xl ${iconBg[color]} flex items-center justify-center`}>
-          <Icon size={18} className={color === 'dark' ? 'text-[#a3e635]' : color === 'lime' ? 'text-[#111]' : 'text-gray-600'} />
+          <Icon size={18} className={color === 'dark' ? 'text-[#a3e635]' : color === 'lime' ? 'text-[#111]' : 'text-muted-foreground'} />
         </div>
         <span className={`text-xs font-medium ${
           trend > 0 
@@ -682,11 +682,11 @@ function QuickMetricCard({
           {trend > 0 ? '+' : ''}{trend}%
         </span>
       </div>
-      <p className={`text-xs ${color === 'dark' ? 'text-gray-400' : color === 'lime' ? 'text-[#4d7c0f]' : 'text-gray-500'}`}>
+      <p className={`text-xs ${color === 'dark' ? 'text-muted-foreground' : color === 'lime' ? 'text-[#4d7c0f]' : 'text-muted-foreground'}`}>
         {title}
       </p>
       <p className="text-2xl font-bold mt-1">{value}</p>
-      <p className={`text-xs mt-0.5 ${color === 'dark' ? 'text-gray-500' : color === 'lime' ? 'text-[#4d7c0f]/70' : 'text-gray-400'}`}>
+      <p className={`text-xs mt-0.5 ${color === 'dark' ? 'text-muted-foreground' : color === 'lime' ? 'text-[#4d7c0f]/70' : 'text-muted-foreground'}`}>
         {subtitle}
       </p>
     </div>

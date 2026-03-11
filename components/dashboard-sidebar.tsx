@@ -98,7 +98,7 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          "flex h-screen flex-col bg-white border-r border-gray-100 transition-all duration-300 relative",
+          "flex h-screen flex-col bg-card border-r border-border transition-all duration-300 relative",
           collapsed ? "w-[68px]" : "w-[240px]"
         )}
       >
@@ -106,15 +106,15 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
         {/* Logo */}
         <div className={cn("flex items-center gap-3 px-6 pt-6 pb-4", collapsed && "justify-center px-2")}>
           {collapsed ? (
-            <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold text-lg leading-none">D</span>
+            <div className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center">
+              <span className="text-background font-semibold text-lg leading-none">D</span>
             </div>
           ) : (
             <>
-              <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center">
-                <span className="text-white font-semibold text-lg leading-none">D</span>
+              <div className="w-8 h-8 bg-foreground rounded-full flex items-center justify-center">
+                <span className="text-background font-semibold text-lg leading-none">D</span>
               </div>
-              <span className="font-bold text-xl tracking-tight text-gray-900">Dragon</span>
+              <span className="font-bold text-xl tracking-tight text-foreground">Dragon</span>
             </>
           )}
         </div>
@@ -122,7 +122,7 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
         {/* User Profile + Bot Switcher */}
         <div className={cn("px-4 pt-2 pb-2", collapsed && "px-2")}>
           <div className={cn(
-            "rounded-xl bg-gray-50 p-3 flex flex-col gap-3",
+            "rounded-xl bg-muted p-3 flex flex-col gap-3",
             collapsed && "items-center p-2 gap-2"
           )}>
             {/* Profile row */}
@@ -132,12 +132,12 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
                   <Link
                     href="/settings"
                     onClick={onNavigate}
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-black text-white text-xs font-bold transition-colors hover:bg-gray-800"
+                    className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background text-xs font-bold transition-colors hover:opacity-80"
                   >
                     {userInitial}
                   </Link>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="bg-white text-gray-900 border border-gray-100">
+                <TooltipContent side="right" className="bg-card text-foreground border border-border">
                   {userName}
                 </TooltipContent>
               </Tooltip>
@@ -146,21 +146,21 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
                 <Link
                   href="/settings"
                   onClick={onNavigate}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black text-white text-sm font-bold transition-colors hover:bg-gray-800"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-foreground text-background text-sm font-bold transition-colors hover:opacity-80"
                 >
                   {userInitial}
                 </Link>
                 <div className="flex flex-col min-w-0 flex-1">
-                  <span className="text-[13px] font-semibold text-gray-900 truncate">
+                  <span className="text-[13px] font-semibold text-foreground truncate">
                     {userName}
                   </span>
-                  <span className="text-[11px] text-gray-500 truncate">
+                  <span className="text-[11px] text-muted-foreground truncate">
                     {session?.email || ""}
                   </span>
                 </div>
                 <button
                   onClick={logout}
-                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 transition-colors hover:text-red-500 hover:bg-red-50"
+                  className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/20"
                   aria-label="Sair"
                 >
                   <LogOut className="h-3.5 w-3.5" />
@@ -181,7 +181,7 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
                 {/* Category divider */}
                 {!collapsed ? (
                   <div className="flex items-center gap-2.5 px-2 pb-2 pt-1">
-                    <span className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+                    <span className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
                       {section.category}
                     </span>
                   </div>
@@ -244,8 +244,8 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
                         "group relative flex items-center gap-3 rounded-2xl px-4 py-3 transition-all duration-200",
                         collapsed && "justify-center px-0",
                         isActive
-                          ? "bg-[#111111] text-white shadow-[0_8px_20px_-6px_rgba(163,230,53,0.5)]"
-                          : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                          ? "bg-foreground text-background shadow-[0_8px_20px_-6px_hsl(var(--accent)/0.5)]"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       )}
                     >
                       {/* Active indicator bar */}
@@ -253,8 +253,8 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
                         "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
                         collapsed ? "h-9 w-9" : "",
                         isActive
-                          ? "text-[#a3e635]"
-                          : "text-gray-500 group-hover:text-gray-900"
+                          ? "text-accent"
+                          : "text-muted-foreground group-hover:text-foreground"
                       )}>
                         <item.icon className="h-[18px] w-[18px]" />
                       </span>
@@ -263,8 +263,8 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
                         <span className={cn(
                           "text-[13px] font-medium truncate transition-colors duration-200",
                           isActive
-                            ? "text-white"
-                            : "text-gray-500 group-hover:text-gray-900"
+                            ? "text-background"
+                            : "text-muted-foreground group-hover:text-foreground"
                         )}>
                           {item.label}
                         </span>
@@ -297,7 +297,7 @@ export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: Dashb
             variant="ghost"
             size="sm"
             onClick={() => setCollapsed(!collapsed)}
-            className="hidden md:flex w-full justify-center text-gray-400 hover:text-gray-900 hover:bg-gray-50 h-7"
+            className="hidden md:flex w-full justify-center text-muted-foreground hover:text-foreground hover:bg-muted h-7"
           >
             {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
           </Button>

@@ -37,7 +37,7 @@ const receitaData = [
 const statusConfig: Record<string, { bg: string; text: string; icon: React.ElementType; label: string }> = {
   aprovada: { bg: "bg-[#22c55e]/10", text: "text-[#22c55e]", icon: CheckCircle, label: "Aprovada" },
   pendente: { bg: "bg-amber-500/10", text: "text-amber-500", icon: Clock, label: "Pendente" },
-  expirada: { bg: "bg-gray-100", text: "text-gray-500", icon: XCircle, label: "Expirada" },
+  expirada: { bg: "bg-muted", text: "text-muted-foreground", icon: XCircle, label: "Expirada" },
   cancelada: { bg: "bg-red-500/10", text: "text-red-500", icon: XCircle, label: "Cancelada" },
 }
 
@@ -86,7 +86,7 @@ export default function PaymentsPage() {
                     <div className="w-8 h-8 rounded-lg bg-[#a3e635]/20 flex items-center justify-center">
                       <Wallet className="h-4 w-4 text-[#a3e635]" />
                     </div>
-                    <span className="text-sm text-gray-400">Saldo Disponivel</span>
+                    <span className="text-sm text-muted-foreground">Saldo Disponivel</span>
                   </div>
                   <div className="flex items-baseline gap-3">
                     <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">
@@ -128,15 +128,15 @@ export default function PaymentsPage() {
               {/* Quick Stats */}
               <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Pendente</p>
+                  <p className="text-xs text-muted-foreground mb-1">Pendente</p>
                   <p className="text-lg font-bold text-amber-400">R$ {totalPendente}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Ticket Medio</p>
+                  <p className="text-xs text-muted-foreground mb-1">Ticket Medio</p>
                   <p className="text-lg font-bold text-white">R$ {ticketMedio}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500 mb-1">Taxa Conv.</p>
+                  <p className="text-xs text-muted-foreground mb-1">Taxa Conv.</p>
                   <p className="text-lg font-bold text-[#a3e635]">87.5%</p>
                 </div>
               </div>
@@ -146,7 +146,7 @@ export default function PaymentsPage() {
           {/* Stats Grid - Novo Layout */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Receita Hoje */}
-            <div className="bg-white rounded-[24px] p-5 border border-gray-100 relative overflow-hidden group hover:border-[#a3e635]/30 transition-colors">
+            <div className="bg-card rounded-[24px] p-5 border border-border relative overflow-hidden group hover:border-[#a3e635]/30 transition-colors">
               <div className="absolute top-0 right-0 w-20 h-20 bg-[#a3e635] opacity-0 group-hover:opacity-5 blur-[40px] rounded-full transition-opacity" />
               <div className="flex items-center justify-between mb-4">
                 <div className="w-11 h-11 rounded-2xl bg-[#a3e635]/10 flex items-center justify-center">
@@ -157,24 +157,24 @@ export default function PaymentsPage() {
                   32%
                 </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">R$ 1.847</p>
-              <p className="text-xs text-gray-500 mt-1">Receita Hoje</p>
+              <p className="text-2xl font-bold text-foreground">R$ 1.847</p>
+              <p className="text-xs text-muted-foreground mt-1">Receita Hoje</p>
             </div>
 
             {/* Transacoes */}
-            <div className="bg-white rounded-[24px] p-5 border border-gray-100">
+            <div className="bg-card rounded-[24px] p-5 border border-border">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center">
                   <CreditCard className="h-5 w-5 text-blue-600" />
                 </div>
-                <span className="text-xs text-gray-400">Hoje</span>
+                <span className="text-xs text-muted-foreground">Hoje</span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">24</p>
-              <p className="text-xs text-gray-500 mt-1">Transacoes</p>
+              <p className="text-2xl font-bold text-foreground">24</p>
+              <p className="text-xs text-muted-foreground mt-1">Transacoes</p>
             </div>
 
             {/* Reembolsos */}
-            <div className="bg-white rounded-[24px] p-5 border border-gray-100">
+            <div className="bg-card rounded-[24px] p-5 border border-border">
               <div className="flex items-center justify-between mb-4">
                 <div className="w-11 h-11 rounded-2xl bg-red-50 flex items-center justify-center">
                   <RefreshCw className="h-5 w-5 text-red-500" />
@@ -184,13 +184,13 @@ export default function PaymentsPage() {
                   2
                 </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">R$ 97</p>
-              <p className="text-xs text-gray-500 mt-1">Reembolsos</p>
+              <p className="text-2xl font-bold text-foreground">R$ 97</p>
+              <p className="text-xs text-muted-foreground mt-1">Reembolsos</p>
             </div>
 
             {/* Projecao */}
             <div className="bg-[#a3e635] rounded-[24px] p-5 relative overflow-hidden">
-              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-white opacity-10 blur-[30px] rounded-full" />
+              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-card opacity-10 blur-[30px] rounded-full" />
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-11 h-11 rounded-2xl bg-[#111]/10 flex items-center justify-center">
@@ -207,10 +207,10 @@ export default function PaymentsPage() {
           {/* Quick Actions + Metodos de Pagamento */}
           <div className="grid lg:grid-cols-3 gap-4">
             {/* Metodos */}
-            <div className="lg:col-span-2 bg-white rounded-[24px] p-6 border border-gray-100">
+            <div className="lg:col-span-2 bg-card rounded-[24px] p-6 border border-border">
               <div className="flex items-center justify-between mb-5">
-                <h3 className="font-bold text-gray-900">Metodos de Pagamento</h3>
-                <button className="text-xs text-gray-500 hover:text-[#65a30d] font-medium transition-colors">Ver relatorio</button>
+                <h3 className="font-bold text-foreground">Metodos de Pagamento</h3>
+                <button className="text-xs text-muted-foreground hover:text-[#65a30d] font-medium transition-colors">Ver relatorio</button>
               </div>
               <div className="space-y-4">
                 {[
@@ -224,17 +224,17 @@ export default function PaymentsPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-medium text-gray-900">{item.metodo}</span>
-                        <span className="text-sm font-semibold text-gray-900">{item.valor}</span>
+                        <span className="text-sm font-medium text-foreground">{item.metodo}</span>
+                        <span className="text-sm font-semibold text-foreground">{item.valor}</span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
                         <div 
                           className="h-full rounded-full transition-all duration-500"
                           style={{ width: `${item.percent}%`, backgroundColor: item.cor }}
                         />
                       </div>
                     </div>
-                    <span className="text-xs text-gray-500 w-10 text-right">{item.percent}%</span>
+                    <span className="text-xs text-muted-foreground w-10 text-right">{item.percent}%</span>
                   </div>
                 ))}
               </div>
@@ -253,10 +253,10 @@ export default function PaymentsPage() {
                   ].map((acao) => (
                     <button
                       key={acao.label}
-                      className="w-full flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors group"
+                      className="w-full flex items-center justify-between p-3 rounded-xl bg-card/5 hover:bg-card/10 transition-colors group"
                     >
                       <div className="flex items-center gap-3">
-                        <acao.icon className="h-4 w-4 text-gray-400" />
+                        <acao.icon className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm text-gray-300">{acao.label}</span>
                       </div>
                       <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-[#a3e635] transition-colors" />
@@ -282,12 +282,12 @@ export default function PaymentsPage() {
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   filtro === tab.key 
                     ? "bg-[#111] text-white shadow-lg shadow-black/10" 
-                    : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
+                    : "bg-card text-gray-600 hover:bg-muted border border-border"
                 }`}
               >
                 {tab.label}
                 <span className={`text-xs px-1.5 py-0.5 rounded-md ${
-                  filtro === tab.key ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
+                  filtro === tab.key ? "bg-card/20 text-white" : "bg-muted text-muted-foreground"
                 }`}>
                   {tab.count}
                 </span>
@@ -296,29 +296,29 @@ export default function PaymentsPage() {
           </div>
 
           {/* Transactions List - Novo Design */}
-          <div className="bg-white rounded-[24px] border border-gray-100 overflow-hidden">
+          <div className="bg-card rounded-[24px] border border-border overflow-hidden">
             {/* Header */}
-            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-gray-100">
+            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
                   <Receipt className="h-5 w-5 text-gray-600" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900">Transacoes Recentes</h3>
-                  <p className="text-xs text-gray-500">Ultimas 24 horas</p>
+                  <h3 className="font-bold text-foreground">Transacoes Recentes</h3>
+                  <p className="text-xs text-muted-foreground">Ultimas 24 horas</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative flex-1 sm:w-56">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     placeholder="Buscar..."
                     value={busca}
                     onChange={(e) => setBusca(e.target.value)}
-                    className="bg-gray-50 pl-9 border-0 rounded-xl text-sm"
+                    className="bg-muted pl-9 border-0 rounded-xl text-sm"
                   />
                 </div>
-                <button className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-500 hover:bg-gray-100 transition-colors">
+                <button className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors">
                   <Filter className="h-4 w-4" />
                 </button>
                 <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#111] text-white text-sm font-medium hover:bg-gray-800 transition-colors">
@@ -334,7 +334,7 @@ export default function PaymentsPage() {
                 const status = statusConfig[v.status]
                 const Icon = status.icon
                 return (
-                  <div key={v.id} className="flex items-center gap-4 p-4 hover:bg-gray-50/50 transition-colors">
+                  <div key={v.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
                     {/* Avatar */}
                     <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-sm font-bold text-[#65a30d]">
                       {v.avatar}
@@ -343,21 +343,21 @@ export default function PaymentsPage() {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900">{v.user}</span>
-                        <span className="text-xs text-gray-400 font-mono">{v.id}</span>
+                        <span className="font-semibold text-foreground">{v.user}</span>
+                        <span className="text-xs text-muted-foreground font-mono">{v.id}</span>
                       </div>
                       <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-gray-500">{v.plano}</span>
+                        <span className="text-xs text-muted-foreground">{v.plano}</span>
                         <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <span className="text-xs text-gray-500">{v.metodo}</span>
+                        <span className="text-xs text-muted-foreground">{v.metodo}</span>
                         <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <span className="text-xs text-gray-400">{v.hora}</span>
+                        <span className="text-xs text-muted-foreground">{v.hora}</span>
                       </div>
                     </div>
 
                     {/* Amount */}
                     <div className="text-right">
-                      <p className="font-bold text-gray-900">{v.valor}</p>
+                      <p className="font-bold text-foreground">{v.valor}</p>
                       <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${status.bg} mt-1`}>
                         <Icon className={`h-3 w-3 ${status.text}`} />
                         <span className={`text-xs font-medium ${status.text}`}>{status.label}</span>
@@ -365,8 +365,8 @@ export default function PaymentsPage() {
                     </div>
 
                     {/* Action */}
-                    <button className="w-9 h-9 rounded-xl hover:bg-gray-100 flex items-center justify-center transition-colors">
-                      <Eye className="h-4 w-4 text-gray-400" />
+                    <button className="w-9 h-9 rounded-xl hover:bg-muted flex items-center justify-center transition-colors">
+                      <Eye className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </div>
                 )
@@ -374,8 +374,8 @@ export default function PaymentsPage() {
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-5 py-4 border-t border-gray-100 bg-gray-50/50">
-              <p className="text-sm text-gray-500">Mostrando {filtradas.length} de {vendas.length}</p>
+            <div className="flex items-center justify-between px-5 py-4 border-t border-border bg-muted/50">
+              <p className="text-sm text-muted-foreground">Mostrando {filtradas.length} de {vendas.length}</p>
               <button className="flex items-center gap-2 text-sm font-medium text-[#65a30d] hover:text-[#4d7c0f] transition-colors">
                 Ver todas
                 <ArrowRight className="h-4 w-4" />

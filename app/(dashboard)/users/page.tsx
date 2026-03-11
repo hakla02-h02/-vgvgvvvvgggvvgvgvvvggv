@@ -67,15 +67,15 @@ function KPICard({ icon: Icon, label, value, suffix, iconBg, iconColor, isDark }
   iconBg: string; iconColor: string; isDark?: boolean
 }) {
   return (
-    <div className={`rounded-[24px] p-5 relative overflow-hidden ${isDark ? 'bg-[#111]' : 'bg-white border border-gray-100 shadow-sm'}`}>
+    <div className={`rounded-[24px] p-5 relative overflow-hidden ${isDark ? 'bg-[#111]' : 'bg-card border border-border shadow-sm'}`}>
       {isDark && <div className="absolute top-0 right-0 w-20 h-20 bg-[#a3e635] opacity-10 blur-[40px] rounded-full" />}
       <div className="relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1.5">
-            <span className={`text-xs font-medium ${isDark ? 'text-gray-500' : 'text-gray-500'}`}>{label}</span>
+            <span className={`text-xs font-medium ${isDark ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{label}</span>
             <div className="flex items-baseline gap-1">
-              <span className={`text-2xl md:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-gray-900'}`}>{value}</span>
-              {suffix && <span className={`text-sm font-medium ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{suffix}</span>}
+              <span className={`text-2xl md:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-foreground'}`}>{value}</span>
+              {suffix && <span className={`text-sm font-medium ${isDark ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{suffix}</span>}
             </div>
           </div>
           <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${iconBg}`}>
@@ -103,12 +103,12 @@ function FunnelVisual({ funnel }: { funnel: FunnelStep[] }) {
   const maxCount = funnel[0]?.count || 1
 
   return (
-    <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm">
+    <div className="bg-card rounded-[24px] border border-border shadow-sm">
       <div className="p-5 md:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-base font-bold text-gray-900">Funil de Conversao</h3>
-            <p className="text-xs text-gray-500 mt-1">Acompanhe onde seus usuarios estao parando</p>
+            <h3 className="text-base font-bold text-foreground">Funil de Conversao</h3>
+            <p className="text-xs text-muted-foreground mt-1">Acompanhe onde seus usuarios estao parando</p>
           </div>
           {funnel.length >= 2 && funnel[0].count > 0 && (
             <span className="bg-[#a3e635]/10 text-[#65a30d] px-3 py-1.5 rounded-full text-xs font-semibold">
@@ -370,13 +370,13 @@ export default function UsersPage() {
       {/* Header */}
       <header className="px-4 md:px-8 py-5 flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">Usuarios</h1>
-          <p className="text-sm text-gray-500 mt-0.5">Gerencie os usuarios do seu bot</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Usuarios</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Gerencie os usuarios do seu bot</p>
         </div>
         <button
           onClick={fetchData}
           disabled={loading}
-          className="flex items-center gap-2 bg-white px-4 py-2.5 rounded-xl shadow-sm border border-gray-100 text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+          className="flex items-center gap-2 bg-card px-4 py-2.5 rounded-xl shadow-sm border border-border text-sm font-medium text-gray-600 hover:bg-gray-50 disabled:opacity-50"
         >
           <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
           Atualizar
@@ -411,13 +411,13 @@ export default function UsersPage() {
           <FunnelVisual funnel={funnel} />
 
           {/* Users List */}
-          <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm">
+          <div className="bg-card rounded-[24px] border border-border shadow-sm">
             <div className="p-5 md:p-6">
               <div className="flex flex-col gap-4 mb-5">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-1">
-                    <h3 className="text-base font-bold text-gray-900">Gerenciamento de Usuarios</h3>
-                    <p className="text-xs text-gray-500">Usuarios que interagiram com seu bot</p>
+                    <h3 className="text-base font-bold text-foreground">Gerenciamento de Usuarios</h3>
+                    <p className="text-xs text-muted-foreground">Usuarios que interagiram com seu bot</p>
                   </div>
                   <button
                     onClick={fetchData}
@@ -441,7 +441,7 @@ export default function UsersPage() {
                       >
                         {tab.label}
                         <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${
-                          filtro === tab.key ? "bg-white/20 text-white" : "bg-gray-200 text-gray-500"
+                          filtro === tab.key ? "bg-card/20 text-white" : "bg-gray-200 text-muted-foreground"
                         }`}>
                           {tab.count}
                         </span>
@@ -449,7 +449,7 @@ export default function UsersPage() {
                     ))}
                   </div>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       placeholder="Buscar..."
                       value={busca}

@@ -67,10 +67,10 @@ export default function RewardsPage() {
               </svg>
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
                 Premiacoes
               </h1>
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 Conquiste metas e desbloqueie recompensas exclusivas
               </p>
             </div>
@@ -86,7 +86,7 @@ export default function RewardsPage() {
               {/* Top Row - Stats */}
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
-                  <p className="text-gray-400 text-sm mb-1">Seu faturamento</p>
+                  <p className="text-muted-foreground text-sm mb-1">Seu faturamento</p>
                   <p className="text-4xl md:text-5xl font-bold text-white tracking-tight">
                     R$ {faturamentoAtual.toLocaleString("pt-BR")}
                   </p>
@@ -94,12 +94,12 @@ export default function RewardsPage() {
                 
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <p className="text-gray-500 text-xs mb-0.5">Proxima meta</p>
+                    <p className="text-muted-foreground text-xs mb-0.5">Proxima meta</p>
                     <p className="text-[#a3e635] font-bold text-xl">{proximaMeta.metaLabel}</p>
                   </div>
-                  <div className="w-px h-10 bg-white/10"></div>
+                  <div className="w-px h-10 bg-card/10"></div>
                   <div className="text-right">
-                    <p className="text-gray-500 text-xs mb-0.5">Faltam</p>
+                    <p className="text-muted-foreground text-xs mb-0.5">Faltam</p>
                     <p className="text-white font-bold text-xl">R$ {faltaParaMeta.toLocaleString("pt-BR")}</p>
                   </div>
                 </div>
@@ -107,7 +107,7 @@ export default function RewardsPage() {
 
               {/* Progress Bar */}
               <div className="relative">
-                <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                <div className="h-3 bg-card/10 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-[#a3e635] to-[#84cc16] rounded-full transition-all duration-500 relative"
                     style={{ width: `${Math.max(progressoGeral, 2)}%` }}
@@ -127,8 +127,8 @@ export default function RewardsPage() {
                         className="flex flex-col items-center"
                         style={{ position: 'absolute', left: `${posicao}%`, transform: 'translateX(-50%)' }}
                       >
-                        <div className={`w-2 h-2 rounded-full ${conquistado ? 'bg-[#a3e635]' : 'bg-white/30'}`}></div>
-                        <span className={`text-[10px] mt-1 ${conquistado ? 'text-[#a3e635]' : 'text-gray-500'}`}>
+                        <div className={`w-2 h-2 rounded-full ${conquistado ? 'bg-[#a3e635]' : 'bg-card/30'}`}></div>
+                        <span className={`text-[10px] mt-1 ${conquistado ? 'text-[#a3e635]' : 'text-muted-foreground'}`}>
                           {p.metaLabel}
                         </span>
                       </div>
@@ -141,7 +141,7 @@ export default function RewardsPage() {
 
           {/* Section Title */}
           <div className="mb-5">
-            <h2 className="text-lg font-semibold text-gray-900">Suas Recompensas</h2>
+            <h2 className="text-lg font-semibold text-foreground">Suas Recompensas</h2>
           </div>
 
           {/* Grid de Premiacoes - Layout responsivo */}
@@ -157,7 +157,7 @@ export default function RewardsPage() {
                   className={`rounded-[20px] overflow-hidden transition-all duration-300 ${
                     desbloqueado 
                       ? 'bg-[#111] shadow-[0_0_20px_rgba(163,230,53,0.1)]' 
-                      : 'bg-white border border-gray-100'
+                      : 'bg-card border border-border'
                   }`}
                 >
                   {/* Image - Compacta */}
@@ -173,7 +173,7 @@ export default function RewardsPage() {
                     <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-[10px] font-bold ${
                       desbloqueado 
                         ? 'bg-[#a3e635] text-black' 
-                        : 'bg-white/95 text-gray-600'
+                        : 'bg-card/95 text-gray-600'
                     }`}>
                       {premio.metaLabel}
                     </div>
@@ -189,10 +189,10 @@ export default function RewardsPage() {
 
                   {/* Content - Compacto */}
                   <div className="p-4">
-                    <h3 className={`font-semibold text-sm mb-1 ${desbloqueado ? 'text-white' : 'text-gray-900'}`}>
+                    <h3 className={`font-semibold text-sm mb-1 ${desbloqueado ? 'text-white' : 'text-foreground'}`}>
                       {premio.titulo}
                     </h3>
-                    <p className={`text-xs mb-3 line-clamp-2 ${desbloqueado ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <p className={`text-xs mb-3 line-clamp-2 ${desbloqueado ? 'text-muted-foreground' : 'text-muted-foreground'}`}>
                       {premio.descricao}
                     </p>
 
@@ -204,7 +204,7 @@ export default function RewardsPage() {
                             style={{ width: `${Math.max(progresso, 3)}%` }}
                           ></div>
                         </div>
-                        <p className="text-[10px] text-gray-400">
+                        <p className="text-[10px] text-muted-foreground">
                           Faltam <span className="font-medium text-gray-600">R$ {falta.toLocaleString("pt-BR")}</span>
                         </p>
                       </div>

@@ -226,7 +226,7 @@ export default function BioLinkPage() {
       <>
         <DashboardHeader title="Dragon Sites" />
         <div className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
       </>
     )
@@ -265,7 +265,7 @@ export default function BioLinkPage() {
                       <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">
                         Crie paginas de alta conversao
                       </h1>
-                      <p className="text-gray-400 text-sm md:text-base max-w-md">
+                      <p className="text-muted-foreground text-sm md:text-base max-w-md">
                         Construa presells, paginas de vendas, checkouts e links na bio em minutos. Tudo otimizado para converter.
                       </p>
                     </div>
@@ -274,11 +274,11 @@ export default function BioLinkPage() {
                     <div className="flex gap-3">
                       <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5 min-w-[100px]">
                         <div className="text-2xl font-bold text-white mb-1">0</div>
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wide">Paginas</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Paginas</div>
                       </div>
                       <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5 min-w-[100px]">
                         <div className="text-2xl font-bold text-white mb-1">0</div>
-                        <div className="text-[10px] text-gray-500 uppercase tracking-wide">Visitas</div>
+                        <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Visitas</div>
                       </div>
                     </div>
                   </div>
@@ -287,8 +287,8 @@ export default function BioLinkPage() {
                 {/* Section Title */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-semibold text-gray-900">Escolha um tipo de pagina</h2>
-                    <p className="text-sm text-gray-500">Selecione o modelo ideal para seu objetivo</p>
+                    <h2 className="text-lg font-semibold text-foreground">Escolha um tipo de pagina</h2>
+                    <p className="text-sm text-muted-foreground">Selecione o modelo ideal para seu objetivo</p>
                   </div>
                 </div>
 
@@ -305,7 +305,7 @@ export default function BioLinkPage() {
                     }}>
                       <DialogTrigger asChild>
                         <button 
-                          className="group bg-white rounded-[20px] p-5 border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4"
+                          className="group bg-card rounded-[20px] p-5 border border-border hover:border-gray-200 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4"
                         >
                           {/* Icon com gradiente */}
                           <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform`}>
@@ -341,22 +341,22 @@ export default function BioLinkPage() {
                           
                           {/* Content */}
                           <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-[#111] transition-colors">
+                            <h3 className="font-semibold text-foreground mb-1 group-hover:text-[#111] transition-colors">
                               {type.name}
                             </h3>
-                            <p className="text-sm text-gray-500 line-clamp-1">
+                            <p className="text-sm text-muted-foreground line-clamp-1">
                               {type.description}
                             </p>
                           </div>
                           
                           {/* Arrow */}
-                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-[#111] transition-colors flex-shrink-0">
-                            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-[#111] transition-colors flex-shrink-0">
+                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-white transition-colors" />
                           </div>
                         </button>
                       </DialogTrigger>
                       
-                      <DialogContent className="bg-white border-gray-200 sm:max-w-md rounded-[24px]">
+                      <DialogContent className="bg-card border-gray-200 sm:max-w-md rounded-[24px]">
                         <DialogHeader>
                           <div className="flex items-center gap-3">
                             <Button
@@ -389,7 +389,7 @@ export default function BioLinkPage() {
                                 </svg>
                               )}
                             </div>
-                            <DialogTitle className="text-gray-900">
+                            <DialogTitle className="text-foreground">
                               {type.name}
                             </DialogTitle>
                           </div>
@@ -399,15 +399,15 @@ export default function BioLinkPage() {
                             <Label className="text-gray-700 text-sm">Nome da Pagina</Label>
                             <Input 
                               placeholder="Ex: Minha Pagina de Vendas" 
-                              className="bg-gray-50 border-gray-200 rounded-xl h-11"
+                              className="bg-muted border-gray-200 rounded-xl h-11"
                               value={pageName}
                               onChange={(e) => setPageName(e.target.value)}
                             />
                           </div>
                           <div className="flex flex-col gap-2">
                             <Label className="text-gray-700 text-sm">Slug (URL)</Label>
-                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
-                              <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
+                            <div className="flex items-center gap-2 bg-muted border border-gray-200 rounded-xl px-3">
+                              <span className="text-sm text-muted-foreground whitespace-nowrap">/s/</span>
                               <Input 
                                 placeholder="minha-pagina" 
                                 className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
@@ -440,9 +440,9 @@ export default function BioLinkPage() {
                 </div>
 
                 {/* Tip Module - Footer */}
-                <div className="flex items-start gap-3 text-gray-400 mt-4">
+                <div className="flex items-start gap-3 text-muted-foreground mt-4">
                   <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <svg viewBox="0 0 24 24" className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg viewBox="0 0 24 24" className="w-3 h-3 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10"/>
                       <path d="M12 16v-4M12 8h.01"/>
                     </svg>
@@ -471,7 +471,7 @@ export default function BioLinkPage() {
                         </div>
                         <div>
                           <h2 className="text-white font-semibold">Seus Dragon Sites</h2>
-                          <p className="text-gray-500 text-xs">Performance geral das suas paginas</p>
+                          <p className="text-muted-foreground text-xs">Performance geral das suas paginas</p>
                         </div>
                       </div>
                       
@@ -481,14 +481,14 @@ export default function BioLinkPage() {
                             Criar Site
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="bg-white border-gray-200 sm:max-w-lg rounded-[24px]">
+                        <DialogContent className="bg-card border-gray-200 sm:max-w-lg rounded-[24px]">
                           {!selectedType ? (
                             <>
                               <DialogHeader>
-                                <DialogTitle className="text-gray-900 text-center">
+                                <DialogTitle className="text-foreground text-center">
                                   Escolha o tipo de pagina
                                 </DialogTitle>
-                                <p className="text-sm text-gray-500 text-center">
+                                <p className="text-sm text-muted-foreground text-center">
                                   Selecione o modelo ideal para seu objetivo
                                 </p>
                               </DialogHeader>
@@ -497,7 +497,7 @@ export default function BioLinkPage() {
                                   <button
                                     key={type.id}
                                     onClick={() => handleSelectType(type.id)}
-                                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 hover:shadow-md transition-all text-center"
+                                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl border border-border bg-muted/50 hover:bg-card hover:border-gray-200 hover:shadow-md transition-all text-center"
                                   >
                                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform`}>
                                       {type.id === "presell" && (
@@ -525,10 +525,10 @@ export default function BioLinkPage() {
                                       )}
                                     </div>
                                     <div>
-                                      <h3 className="text-sm font-semibold text-gray-900 mb-0.5">
+                                      <h3 className="text-sm font-semibold text-foreground mb-0.5">
                                         {type.name}
                                       </h3>
-                                      <p className="text-xs text-gray-500 line-clamp-2">
+                                      <p className="text-xs text-muted-foreground line-clamp-2">
                                         {type.description}
                                       </p>
                                     </div>
@@ -548,7 +548,7 @@ export default function BioLinkPage() {
                                   >
                                     <ChevronLeft className="h-4 w-4" />
                                   </Button>
-                                  <DialogTitle className="text-gray-900">
+                                  <DialogTitle className="text-foreground">
                                     {pageTypes.find(p => p.id === selectedType)?.name}
                                   </DialogTitle>
                                 </div>
@@ -558,15 +558,15 @@ export default function BioLinkPage() {
                                   <Label className="text-gray-700 text-sm">Nome da Pagina</Label>
                                   <Input 
                                     placeholder="Ex: Minha Pagina de Vendas" 
-                                    className="bg-gray-50 border-gray-200 rounded-xl h-11"
+                                    className="bg-muted border-gray-200 rounded-xl h-11"
                                     value={pageName}
                                     onChange={(e) => setPageName(e.target.value)}
                                   />
                                 </div>
                                 <div className="flex flex-col gap-2">
                                   <Label className="text-gray-700 text-sm">Slug (URL)</Label>
-                                  <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
-                                    <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
+                                  <div className="flex items-center gap-2 bg-muted border border-gray-200 rounded-xl px-3">
+                                    <span className="text-sm text-muted-foreground whitespace-nowrap">/s/</span>
                                     <Input 
                                       placeholder="minha-pagina" 
                                       className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
@@ -602,14 +602,14 @@ export default function BioLinkPage() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-4">
                       <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5">
-                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
                           <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
                           Paginas Ativas
                         </div>
                         <div className="text-2xl font-bold text-white">{totalPages}</div>
                       </div>
                       <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5">
-                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs mb-2">
                           <div className="w-2 h-2 rounded-full bg-blue-400"></div>
                           Visitas Totais
                         </div>
@@ -620,15 +620,15 @@ export default function BioLinkPage() {
                 </div>
 
                 {/* Pages List */}
-                <div className="bg-white rounded-[24px] border border-gray-100">
-                  <div className="p-5 border-b border-gray-100">
-                    <h3 className="font-semibold text-gray-900">Suas Paginas</h3>
+                <div className="bg-card rounded-[24px] border border-border">
+                  <div className="p-5 border-b border-border">
+                    <h3 className="font-semibold text-foreground">Suas Paginas</h3>
                   </div>
                   <div className="divide-y divide-gray-50">
                     {dragonBioSites.map((site) => {
                       const typeInfo = pageTypes[2] // Dragon Bio
                       return (
-                        <div key={site.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                        <div key={site.id} className="p-5 flex items-center justify-between hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-4">
                             <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${typeInfo.gradient} flex items-center justify-center shadow-sm`}>
                               <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
@@ -637,12 +637,12 @@ export default function BioLinkPage() {
                             </div>
                             <div>
                               <div className="flex items-center gap-2 mb-0.5">
-                                <h4 className="font-medium text-gray-900">{site.nome}</h4>
-                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${site.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                <h4 className="font-medium text-foreground">{site.nome}</h4>
+                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${site.published ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-muted-foreground'}`}>
                                   {site.published ? 'Publicado' : 'Rascunho'}
                                 </span>
                               </div>
-                              <p className="text-xs text-gray-500">/s/{site.slug} • {site.views || 0} visitas</p>
+                              <p className="text-xs text-muted-foreground">/s/{site.slug} • {site.views || 0} visitas</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
@@ -650,7 +650,7 @@ export default function BioLinkPage() {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleEditPage(site)}
-                              className="h-9 px-3 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                              className="h-9 px-3 rounded-lg bg-muted text-gray-600 hover:bg-gray-100 hover:text-foreground"
                             >
                               <Edit3 className="w-4 h-4 mr-2" />
                               Editar
@@ -660,7 +660,7 @@ export default function BioLinkPage() {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  className="h-9 w-9 rounded-lg bg-gray-50 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+                                  className="h-9 w-9 rounded-lg bg-muted text-muted-foreground hover:bg-gray-100 hover:text-gray-600"
                                 >
                                   <MoreHorizontal className="w-4 h-4" />
                                 </Button>

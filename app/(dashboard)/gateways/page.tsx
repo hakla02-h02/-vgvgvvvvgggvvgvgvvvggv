@@ -123,10 +123,10 @@ export default function GatewaysPage() {
                 </svg>
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                <h1 className="text-2xl font-bold text-foreground tracking-tight">
                   Conectar Gateway
                 </h1>
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-muted-foreground">
                   Escolha um gateway para receber pagamentos no seu bot
                 </p>
               </div>
@@ -136,7 +136,7 @@ export default function GatewaysPage() {
             <div className={`rounded-[24px] transition-all ${
                 isConnected 
                   ? "bg-[#111] text-white" 
-                  : "bg-white border border-gray-200 hover:border-[#00bcff] hover:shadow-lg cursor-pointer group"
+                  : "bg-card border border-gray-200 hover:border-[#00bcff] hover:shadow-lg cursor-pointer group"
               }`} onClick={!isConnected ? handleOpenConnect : undefined}>
                 
                 {isConnected ? (
@@ -157,7 +157,7 @@ export default function GatewaysPage() {
                           </div>
                           <div>
                             <h3 className="font-bold text-lg">{mercadoPago.name}</h3>
-                            <p className="text-sm text-gray-400">{mercadoPago.description}</p>
+                            <p className="text-sm text-muted-foreground">{mercadoPago.description}</p>
                           </div>
                         </div>
                         <span className="inline-flex items-center gap-1.5 bg-[#22c55e]/20 text-[#4ade80] text-xs font-semibold px-2.5 py-1 rounded-full">
@@ -173,14 +173,14 @@ export default function GatewaysPage() {
                             checked={gatewayData?.is_active ?? false}
                             onCheckedChange={handleToggleActive}
                           />
-                          <span className="text-sm text-gray-400">
+                          <span className="text-sm text-muted-foreground">
                             {gatewayData?.is_active ? "Gateway ativo" : "Gateway pausado"}
                           </span>
                         </div>
                         <div className="flex items-center gap-2">
                           <button
                             onClick={(e) => { e.stopPropagation(); handleOpenConnect(); }}
-                            className="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-gray-300 transition-colors"
+                            className="w-9 h-9 rounded-xl bg-card/10 hover:bg-card/20 flex items-center justify-center text-gray-300 transition-colors"
                           >
                             <Settings className="h-4 w-4" />
                           </button>
@@ -194,7 +194,7 @@ export default function GatewaysPage() {
                       </div>
 
                       {/* Connected date */}
-                      <p className="text-xs text-gray-500 mt-4">
+                      <p className="text-xs text-muted-foreground mt-4">
                         Conectado em {new Date(gatewayData!.created_at).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
@@ -211,8 +211,8 @@ export default function GatewaysPage() {
                           </svg>
                         </div>
                         <div>
-                          <h3 className="text-lg font-bold text-gray-900">{mercadoPago.name}</h3>
-                          <p className="text-sm text-gray-500">{mercadoPago.description}</p>
+                          <h3 className="text-lg font-bold text-foreground">{mercadoPago.name}</h3>
+                          <p className="text-sm text-muted-foreground">{mercadoPago.description}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-2 text-[#00bcff] font-medium text-sm group-hover:gap-3 transition-all">
@@ -222,7 +222,7 @@ export default function GatewaysPage() {
                     </div>
 
                     {/* Features */}
-                    <div className="flex items-center gap-2 mt-5 pt-5 border-t border-gray-100">
+                    <div className="flex items-center gap-2 mt-5 pt-5 border-t border-border">
                       <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">PIX</span>
                       <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">Credito</span>
                       <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">Debito</span>
@@ -232,8 +232,8 @@ export default function GatewaysPage() {
             </div>
 
             {/* Help Section - Footer da pagina */}
-            <div className="mt-auto pt-12 flex items-center gap-3 text-gray-500 pb-4">
-              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="mt-auto pt-12 flex items-center gap-3 text-muted-foreground pb-4">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 16v-4M12 8h.01"/>
               </svg>
@@ -258,9 +258,9 @@ export default function GatewaysPage() {
 
       {/* Connect Dialog */}
       <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
-        <DialogContent className="sm:max-w-md bg-white border-0 rounded-[24px] p-0 overflow-hidden">
+        <DialogContent className="sm:max-w-md bg-card border-0 rounded-[24px] p-0 overflow-hidden">
           {/* Header */}
-          <div className="p-5 pb-4 border-b border-gray-100">
+          <div className="p-5 pb-4 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="w-11 h-11 rounded-xl bg-[#00bcff]/10 flex items-center justify-center">
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
@@ -269,10 +269,10 @@ export default function GatewaysPage() {
                 </svg>
               </div>
               <div>
-                <DialogTitle className="text-lg font-bold text-gray-900">
+                <DialogTitle className="text-lg font-bold text-foreground">
                   {isConnected ? "Configurar" : "Conectar"} Mercado Pago
                 </DialogTitle>
-                <DialogDescription className="text-sm text-gray-500">
+                <DialogDescription className="text-sm text-muted-foreground">
                   {isConnected ? "Atualize seu Access Token" : "Insira seu Access Token para conectar"}
                 </DialogDescription>
               </div>
@@ -296,7 +296,7 @@ export default function GatewaysPage() {
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-gray-600 transition-colors"
                     onClick={() => setShowToken(!showToken)}
                   >
                     {showToken ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

@@ -266,38 +266,38 @@ export default function SettingsPage() {
                   <h1 className="text-2xl font-bold text-white">
                     {profile?.name || session?.name || "Usuario"}
                   </h1>
-                  <p className="text-sm text-gray-400 mt-1">{profile?.email || session?.email}</p>
+                  <p className="text-sm text-muted-foreground mt-1">{profile?.email || session?.email}</p>
                 </div>
 
                 {/* ID badge */}
                 <button
                   onClick={handleCopyId}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:border-[#a3e635]/30 transition-colors group/id"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-card/5 border border-white/10 hover:border-[#a3e635]/30 transition-colors group/id"
                 >
-                  <span className="text-xs font-mono text-gray-400 tracking-wider">ID: {accountId}</span>
+                  <span className="text-xs font-mono text-muted-foreground tracking-wider">ID: {accountId}</span>
                   {copiedId ? (
                     <Check className="h-3.5 w-3.5 text-[#a3e635]" />
                   ) : (
-                    <Copy className="h-3.5 w-3.5 text-gray-500 group-hover/id:text-[#a3e635] transition-colors" />
+                    <Copy className="h-3.5 w-3.5 text-muted-foreground group-hover/id:text-[#a3e635] transition-colors" />
                   )}
                 </button>
               </div>
 
               {/* Stats row - horizontal pills */}
               <div className="mt-8 flex flex-wrap justify-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card/5 border border-white/10">
                   <CalendarDays className="h-4 w-4 text-[#a3e635]" />
-                  <span className="text-xs text-gray-500">Desde</span>
+                  <span className="text-xs text-muted-foreground">Desde</span>
                   <span className="text-xs font-semibold text-white">{memberSince}</span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-white/5 border border-white/10">
+                <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card/5 border border-white/10">
                   <Clock className="h-4 w-4 text-blue-400" />
-                  <span className="text-xs text-gray-500">Acesso</span>
+                  <span className="text-xs text-muted-foreground">Acesso</span>
                   <span className="text-xs font-semibold text-white">{lastAccess}</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#a3e635]/10 border border-[#a3e635]/20">
                   <DollarSign className="h-4 w-4 text-[#a3e635]" />
-                  <span className="text-xs text-gray-400">Taxa</span>
+                  <span className="text-xs text-muted-foreground">Taxa</span>
                   <span className="text-xs font-bold text-[#a3e635]">R$ 0,50</span>
                 </div>
               </div>
@@ -317,7 +317,7 @@ export default function SettingsPage() {
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeSection === tab.id
                     ? "bg-[#111] text-white shadow-lg"
-                    : "text-gray-500 hover:text-gray-900"
+                    : "text-muted-foreground hover:text-foreground"
                 }`}
               >
                 <tab.icon className="h-4 w-4" />
@@ -328,14 +328,14 @@ export default function SettingsPage() {
 
           {/* ── PERSONAL INFO SECTION ── */}
           {activeSection === "perfil" && (
-            <section className="rounded-[24px] border border-gray-200 bg-white overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-300 shadow-sm">
+            <section className="rounded-[24px] border border-gray-200 bg-card overflow-hidden animate-in fade-in-0 slide-in-from-bottom-2 duration-300 shadow-sm">
               {/* Header with inline edit toggle */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border">
                 <div className="flex items-center gap-3">
                   <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#a3e635]/10">
                     <User className="h-5 w-5 text-[#65a30d]" />
                   </div>
-                  <h2 className="text-base font-semibold text-gray-900">Informacoes Pessoais</h2>
+                  <h2 className="text-base font-semibold text-foreground">Informacoes Pessoais</h2>
                 </div>
                 <Button
                   variant="ghost"
