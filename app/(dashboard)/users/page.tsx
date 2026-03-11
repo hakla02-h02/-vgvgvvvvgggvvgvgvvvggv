@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
-import { ScrollArea } from "@/components/ui/scroll-area"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
@@ -556,7 +556,7 @@ export default function UsersPage() {
             </div>
           </div>
         </div>
-      </ScrollArea>
+      </div>
 
       {selectedUser && (
         <UserDetailDrawer user={selectedUser} onClose={() => setSelectedUser(null)} funnel={funnel} />
