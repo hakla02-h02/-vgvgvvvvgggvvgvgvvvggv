@@ -3,9 +3,7 @@
 import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -13,41 +11,42 @@ import {
 } from "@/components/ui/dialog"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
-import { 
-  LinkIcon, Plus, ExternalLink, Eye, MousePointerClick, Copy, 
-  FileText, Target, Link2, ShoppingCart, ArrowRight, ChevronLeft
-} from "lucide-react"
+import { ArrowRight, ChevronLeft } from "lucide-react"
 
 type PageType = "presell" | "conversion" | "dragonbio" | "checkout" | null
 
 const pageTypes = [
   {
     id: "presell" as const,
-    name: "Presell / Obrigado",
-    description: "Paginas de pre-venda ou agradecimento para aquecer o lead",
-    icon: FileText,
-    color: "bg-orange-500/10 text-orange-500 border-orange-500/20",
+    name: "Presell",
+    description: "Paginas de pre-venda para aquecer o lead",
+    gradient: "from-orange-500 to-amber-400",
+    iconBg: "bg-orange-500/10",
+    iconColor: "text-orange-500",
   },
   {
     id: "conversion" as const,
-    name: "Conversao Direta",
-    description: "Paginas focadas em conversao imediata com CTA direto",
-    icon: Target,
-    color: "bg-green-500/10 text-green-500 border-green-500/20",
+    name: "Conversao",
+    description: "Paginas focadas em conversao direta",
+    gradient: "from-emerald-500 to-green-400",
+    iconBg: "bg-emerald-500/10",
+    iconColor: "text-emerald-500",
   },
   {
     id: "dragonbio" as const,
     name: "Dragon Bio",
-    description: "Sua pagina de links na bio estilo Linktree",
-    icon: Link2,
-    color: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+    description: "Sua pagina de links na bio",
+    gradient: "from-violet-500 to-purple-400",
+    iconBg: "bg-violet-500/10",
+    iconColor: "text-violet-500",
   },
   {
     id: "checkout" as const,
     name: "Checkout",
-    description: "Pagina de checkout para finalizar vendas",
-    icon: ShoppingCart,
-    color: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+    description: "Pagina de checkout para vendas",
+    gradient: "from-blue-500 to-cyan-400",
+    iconBg: "bg-blue-500/10",
+    iconColor: "text-blue-500",
   },
 ]
 
@@ -61,10 +60,6 @@ const biolinks: Array<{
   ativo: boolean
   tipo: string
 }> = []
-
-function getTypeInfo(tipo: string) {
-  return pageTypes.find(p => p.id === tipo) || pageTypes[0]
-}
 
 export default function BioLinkPage() {
   const { selectedBot } = useBots()
@@ -84,7 +79,6 @@ export default function BioLinkPage() {
   }
 
   const handleCreate = () => {
-    // TODO: Implementar criacao da pagina
     console.log("Criando pagina:", { type: selectedType, name: pageName, slug: pageSlug })
     setDialogOpen(false)
     setSelectedType(null)
@@ -110,10 +104,7 @@ export default function BioLinkPage() {
     )
   }
 
-  // Estado vazio - sem paginas criadas
   const hasPages = biolinks.length > 0
-
-  // Calcula estatisticas
   const totalPages = biolinks.length
   const totalVisitas = biolinks.reduce((acc, bl) => acc + bl.visitas, 0)
   const totalCliques = biolinks.reduce((acc, bl) => acc + bl.cliques, 0)
@@ -122,208 +113,129 @@ export default function BioLinkPage() {
     <>
       <DashboardHeader title="Dragon Sites" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-          
-          {!hasPages ? (
-            // Estado vazio com CTA central
-            <div className="flex flex-col items-center justify-center min-h-[60vh] gap-6">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-accent/10 border border-accent/20">
-                <LinkIcon className="h-10 w-10 text-accent" />
-              </div>
-              <div className="text-center max-w-md">
-                <h2 className="text-xl font-bold text-foreground mb-2">
-                  Vamos criar sua primeira pagina?
-                </h2>
-                <p className="text-sm text-muted-foreground">
-                  Crie paginas de alta conversao para vender mais. Escolha entre presell, pagina de conversao, link na bio ou checkout.
-                </p>
-              </div>
-              <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-                <DialogTrigger asChild>
-                  <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl px-8">
-                    <Plus className="mr-2 h-5 w-5" />
-                    Criar Meu Primeiro Site
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-card border-border sm:max-w-lg">
-                  {!selectedType ? (
-                    <>
-                      <DialogHeader>
-                        <DialogTitle className="text-foreground text-center">
-                          Vamos criar seu site
-                        </DialogTitle>
-                        <p className="text-sm text-muted-foreground text-center">
-                          Escolha o tipo de pagina que deseja criar
-                        </p>
-                      </DialogHeader>
-                      <div className="grid grid-cols-2 gap-3 pt-4">
-                        {pageTypes.map((type) => {
-                          const Icon = type.icon
-                          return (
-                            <button
-                              key={type.id}
-                              onClick={() => handleSelectType(type.id)}
-                              className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all text-left group"
-                            >
-                              <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${type.color}`}>
-                                <Icon className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
-                                  {type.name}
-                                </h3>
-                                <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                  {type.description}
-                                </p>
-                              </div>
-                              <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors ml-auto" />
-                            </button>
-                          )
-                        })}
+        <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
+          <div className="max-w-5xl mx-auto">
+            
+            {!hasPages ? (
+              /* Estado Vazio - Layout Inovador */
+              <div className="flex flex-col gap-8">
+                
+                {/* Hero Module - Card Principal Escuro */}
+                <div className="bg-[#111] rounded-[28px] p-8 md:p-10 relative overflow-hidden">
+                  {/* Glows decorativos */}
+                  <div className="absolute -top-20 -right-20 w-60 h-60 bg-[#a3e635] opacity-10 blur-[80px] rounded-full pointer-events-none"></div>
+                  <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-blue-500 opacity-5 blur-[60px] rounded-full pointer-events-none"></div>
+                  
+                  <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+                    {/* Texto e CTA */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-10 h-10 rounded-xl bg-[#a3e635] flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" className="w-5 h-5 text-black" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                          </svg>
+                        </div>
+                        <span className="text-[#a3e635] text-xs font-bold uppercase tracking-wider">Dragon Sites</span>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <DialogHeader>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg"
-                            onClick={handleBack}
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </Button>
-                          <DialogTitle className="text-foreground">
-                            {pageTypes.find(p => p.id === selectedType)?.name}
-                          </DialogTitle>
-                        </div>
-                      </DialogHeader>
-                      <div className="flex flex-col gap-4 pt-4">
-                        <div className="flex flex-col gap-2">
-                          <Label className="text-foreground">Nome da Pagina</Label>
-                          <Input 
-                            placeholder="Ex: Minha Pagina de Vendas" 
-                            className="bg-secondary border-border rounded-xl"
-                            value={pageName}
-                            onChange={(e) => setPageName(e.target.value)}
-                          />
-                        </div>
-                        <div className="flex flex-col gap-2">
-                          <Label className="text-foreground">Slug (URL)</Label>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm text-muted-foreground">dragon.bio/</span>
-                            <Input 
-                              placeholder="minha-pagina" 
-                              className="bg-secondary border-border rounded-xl flex-1"
-                              value={pageSlug}
-                              onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
-                            />
-                          </div>
-                        </div>
-                        <Button 
-                          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl mt-2"
-                          onClick={handleCreate}
-                          disabled={!pageName.trim() || !pageSlug.trim()}
-                        >
-                          Criar e Personalizar
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
+                      
+                      <h1 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                        Crie paginas de alta conversao
+                      </h1>
+                      <p className="text-gray-400 text-sm md:text-base max-w-md">
+                        Construa presells, paginas de vendas, checkouts e links na bio em minutos. Tudo otimizado para converter.
+                      </p>
+                    </div>
+                    
+                    {/* Stats Preview - Mini Widgets */}
+                    <div className="flex gap-3">
+                      <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5 min-w-[100px]">
+                        <div className="text-2xl font-bold text-white mb-1">0</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide">Paginas</div>
                       </div>
-                    </>
-                  )}
-                </DialogContent>
-              </Dialog>
-            </div>
-          ) : (
-            // Estado com paginas existentes
-            <>
-              <div className="grid gap-3 md:gap-4 grid-cols-3">
-                <Card className="bg-card border-border rounded-2xl">
-                  <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                    <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                      <LinkIcon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
+                      <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5 min-w-[100px]">
+                        <div className="text-2xl font-bold text-white mb-1">0</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-wide">Visitas</div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Paginas</p>
-                      <p className="text-lg md:text-2xl font-bold text-foreground">{totalPages}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card border-border rounded-2xl">
-                  <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                    <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                      <Eye className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Visitas</p>
-                      <p className="text-lg md:text-2xl font-bold text-foreground">{totalVisitas.toLocaleString('pt-BR')}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="bg-card border-border rounded-2xl">
-                  <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-                    <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-                      <MousePointerClick className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs md:text-sm text-muted-foreground">Cliques</p>
-                      <p className="text-lg md:text-2xl font-bold text-foreground">{totalCliques.toLocaleString('pt-BR')}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </div>
 
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Crie paginas de alta conversao</p>
-                <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Criar Site
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="bg-card border-border sm:max-w-lg">
-                    {!selectedType ? (
-                      <>
+                {/* Section Title */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-lg font-semibold text-gray-900">Escolha um tipo de pagina</h2>
+                    <p className="text-sm text-gray-500">Selecione o modelo ideal para seu objetivo</p>
+                  </div>
+                </div>
+
+                {/* Grid de Tipos - Cards Horizontais */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {pageTypes.map((type) => (
+                    <Dialog key={type.id} open={dialogOpen && selectedType === type.id} onOpenChange={(open) => {
+                      if (open) {
+                        setSelectedType(type.id)
+                        setDialogOpen(true)
+                      } else {
+                        handleDialogChange(false)
+                      }
+                    }}>
+                      <DialogTrigger asChild>
+                        <button 
+                          className="group bg-white rounded-[20px] p-5 border border-gray-100 hover:border-gray-200 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4"
+                        >
+                          {/* Icon com gradiente */}
+                          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform`}>
+                            {type.id === "presell" && (
+                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                              </svg>
+                            )}
+                            {type.id === "conversion" && (
+                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <circle cx="12" cy="12" r="6"/>
+                                <circle cx="12" cy="12" r="2"/>
+                              </svg>
+                            )}
+                            {type.id === "dragonbio" && (
+                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                              </svg>
+                            )}
+                            {type.id === "checkout" && (
+                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                <circle cx="9" cy="21" r="1"/>
+                                <circle cx="20" cy="21" r="1"/>
+                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                              </svg>
+                            )}
+                          </div>
+                          
+                          {/* Content */}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-gray-900 mb-1 group-hover:text-[#111] transition-colors">
+                              {type.name}
+                            </h3>
+                            <p className="text-sm text-gray-500 line-clamp-1">
+                              {type.description}
+                            </p>
+                          </div>
+                          
+                          {/* Arrow */}
+                          <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center group-hover:bg-[#111] transition-colors flex-shrink-0">
+                            <ArrowRight className="w-4 h-4 text-gray-400 group-hover:text-white transition-colors" />
+                          </div>
+                        </button>
+                      </DialogTrigger>
+                      
+                      <DialogContent className="bg-white border-gray-200 sm:max-w-md rounded-[24px]">
                         <DialogHeader>
-                          <DialogTitle className="text-foreground text-center">
-                            Vamos criar seu site
-                          </DialogTitle>
-                          <p className="text-sm text-muted-foreground text-center">
-                            Escolha o tipo de pagina que deseja criar
-                          </p>
-                        </DialogHeader>
-                        <div className="grid grid-cols-2 gap-3 pt-4">
-                          {pageTypes.map((type) => {
-                            const Icon = type.icon
-                            return (
-                              <button
-                                key={type.id}
-                                onClick={() => handleSelectType(type.id)}
-                                className="flex flex-col items-start gap-3 p-4 rounded-xl border border-border bg-secondary/50 hover:bg-secondary hover:border-accent/50 transition-all text-left group"
-                              >
-                                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${type.color}`}>
-                                  <Icon className="h-5 w-5" />
-                                </div>
-                                <div>
-                                  <h3 className="text-sm font-semibold text-foreground group-hover:text-accent transition-colors">
-                                    {type.name}
-                                  </h3>
-                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                                    {type.description}
-                                  </p>
-                                </div>
-                                <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors ml-auto" />
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <DialogHeader>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             <Button
                               variant="ghost"
                               size="icon"
@@ -332,35 +244,57 @@ export default function BioLinkPage() {
                             >
                               <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <DialogTitle className="text-foreground">
-                              {pageTypes.find(p => p.id === selectedType)?.name}
+                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${type.gradient} flex items-center justify-center`}>
+                              {type.id === "presell" && (
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                </svg>
+                              )}
+                              {type.id === "conversion" && (
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="12" cy="12" r="10"/>
+                                </svg>
+                              )}
+                              {type.id === "dragonbio" && (
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                </svg>
+                              )}
+                              {type.id === "checkout" && (
+                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <circle cx="9" cy="21" r="1"/>
+                                </svg>
+                              )}
+                            </div>
+                            <DialogTitle className="text-gray-900">
+                              {type.name}
                             </DialogTitle>
                           </div>
                         </DialogHeader>
-                        <div className="flex flex-col gap-4 pt-4">
+                        <div className="flex flex-col gap-5 pt-4">
                           <div className="flex flex-col gap-2">
-                            <Label className="text-foreground">Nome da Pagina</Label>
+                            <Label className="text-gray-700 text-sm">Nome da Pagina</Label>
                             <Input 
                               placeholder="Ex: Minha Pagina de Vendas" 
-                              className="bg-secondary border-border rounded-xl"
+                              className="bg-gray-50 border-gray-200 rounded-xl h-11"
                               value={pageName}
                               onChange={(e) => setPageName(e.target.value)}
                             />
                           </div>
                           <div className="flex flex-col gap-2">
-                            <Label className="text-foreground">Slug (URL)</Label>
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">dragon.bio/</span>
+                            <Label className="text-gray-700 text-sm">Slug (URL)</Label>
+                            <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
+                              <span className="text-sm text-gray-400 whitespace-nowrap">dragon.bio/</span>
                               <Input 
                                 placeholder="minha-pagina" 
-                                className="bg-secondary border-border rounded-xl flex-1"
+                                className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
                                 value={pageSlug}
                                 onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
                               />
                             </div>
                           </div>
                           <Button 
-                            className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl mt-2"
+                            className="bg-[#111] text-white hover:bg-[#222] rounded-xl h-11 mt-2"
                             onClick={handleCreate}
                             disabled={!pageName.trim() || !pageSlug.trim()}
                           >
@@ -368,58 +302,238 @@ export default function BioLinkPage() {
                             <ArrowRight className="ml-2 h-4 w-4" />
                           </Button>
                         </div>
-                      </>
-                    )}
-                  </DialogContent>
-                </Dialog>
-              </div>
+                      </DialogContent>
+                    </Dialog>
+                  ))}
+                </div>
 
-              <div className="flex flex-col gap-3">
-                {biolinks.map((bl) => {
-                  const typeInfo = getTypeInfo(bl.tipo)
-                  const Icon = typeInfo.icon
-                  return (
-                    <Card key={bl.id} className="bg-card border-border rounded-2xl">
-                      <CardContent className="flex items-center justify-between p-4">
-                        <div className="flex items-center gap-3">
-                          <div className={`flex h-10 w-10 items-center justify-center rounded-xl border ${typeInfo.color}`}>
-                            <Icon className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h3 className="text-sm font-semibold text-foreground">{bl.nome}</h3>
-                              <Badge
-                                variant="outline"
-                                className={`rounded-lg ${
-                                  bl.ativo
-                                    ? "bg-success/10 text-success border-success/20"
-                                    : "bg-secondary text-muted-foreground border-border"
-                                }`}
-                              >
-                                {bl.ativo ? "ativo" : "inativo"}
-                              </Badge>
-                              <Badge variant="outline" className="rounded-lg bg-secondary text-muted-foreground border-border text-xs">
-                                {typeInfo.name}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground">{bl.url} - {bl.visitas} visitas, {bl.cliques} cliques</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg">
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-lg">
-                            <ExternalLink className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
+                {/* Tip Module - Footer */}
+                <div className="flex items-start gap-3 text-gray-400 mt-4">
+                  <div className="w-5 h-5 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <svg viewBox="0 0 24 24" className="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10"/>
+                      <path d="M12 16v-4M12 8h.01"/>
+                    </svg>
+                  </div>
+                  <p className="text-sm">
+                    <span className="text-gray-600 font-medium">Dica:</span> Comece com uma pagina de Presell para aquecer seus leads antes de enviar para a oferta principal.
+                  </p>
+                </div>
               </div>
-            </>
-          )}
+            ) : (
+              /* Estado Com Paginas */
+              <div className="flex flex-col gap-6">
+                
+                {/* Hero Stats Module */}
+                <div className="bg-[#111] rounded-[28px] p-6 md:p-8 relative overflow-hidden">
+                  <div className="absolute -top-20 -right-20 w-60 h-60 bg-[#a3e635] opacity-10 blur-[80px] rounded-full pointer-events-none"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-[#a3e635] flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" className="w-5 h-5 text-black" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h2 className="text-white font-semibold">Seus Dragon Sites</h2>
+                          <p className="text-gray-500 text-xs">Performance geral das suas paginas</p>
+                        </div>
+                      </div>
+                      
+                      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
+                        <DialogTrigger asChild>
+                          <Button className="bg-[#a3e635] text-black hover:bg-[#b4f04a] rounded-xl h-10 px-5 font-semibold">
+                            Criar Site
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-white border-gray-200 sm:max-w-lg rounded-[24px]">
+                          {!selectedType ? (
+                            <>
+                              <DialogHeader>
+                                <DialogTitle className="text-gray-900 text-center">
+                                  Escolha o tipo de pagina
+                                </DialogTitle>
+                                <p className="text-sm text-gray-500 text-center">
+                                  Selecione o modelo ideal para seu objetivo
+                                </p>
+                              </DialogHeader>
+                              <div className="grid grid-cols-2 gap-3 pt-4">
+                                {pageTypes.map((type) => (
+                                  <button
+                                    key={type.id}
+                                    onClick={() => handleSelectType(type.id)}
+                                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:border-gray-200 hover:shadow-md transition-all text-center"
+                                  >
+                                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform`}>
+                                      {type.id === "presell" && (
+                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                        </svg>
+                                      )}
+                                      {type.id === "conversion" && (
+                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <circle cx="12" cy="12" r="10"/>
+                                          <circle cx="12" cy="12" r="2"/>
+                                        </svg>
+                                      )}
+                                      {type.id === "dragonbio" && (
+                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                        </svg>
+                                      )}
+                                      {type.id === "checkout" && (
+                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <circle cx="9" cy="21" r="1"/>
+                                          <circle cx="20" cy="21" r="1"/>
+                                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                                        </svg>
+                                      )}
+                                    </div>
+                                    <div>
+                                      <h3 className="text-sm font-semibold text-gray-900 mb-0.5">
+                                        {type.name}
+                                      </h3>
+                                      <p className="text-xs text-gray-500 line-clamp-2">
+                                        {type.description}
+                                      </p>
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <DialogHeader>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg"
+                                    onClick={handleBack}
+                                  >
+                                    <ChevronLeft className="h-4 w-4" />
+                                  </Button>
+                                  <DialogTitle className="text-gray-900">
+                                    {pageTypes.find(p => p.id === selectedType)?.name}
+                                  </DialogTitle>
+                                </div>
+                              </DialogHeader>
+                              <div className="flex flex-col gap-5 pt-4">
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-gray-700 text-sm">Nome da Pagina</Label>
+                                  <Input 
+                                    placeholder="Ex: Minha Pagina de Vendas" 
+                                    className="bg-gray-50 border-gray-200 rounded-xl h-11"
+                                    value={pageName}
+                                    onChange={(e) => setPageName(e.target.value)}
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-2">
+                                  <Label className="text-gray-700 text-sm">Slug (URL)</Label>
+                                  <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-xl px-3">
+                                    <span className="text-sm text-gray-400 whitespace-nowrap">dragon.bio/</span>
+                                    <Input 
+                                      placeholder="minha-pagina" 
+                                      className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
+                                      value={pageSlug}
+                                      onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-'))}
+                                    />
+                                  </div>
+                                </div>
+                                <Button 
+                                  className="bg-[#111] text-white hover:bg-[#222] rounded-xl h-11 mt-2"
+                                  onClick={handleCreate}
+                                  disabled={!pageName.trim() || !pageSlug.trim()}
+                                >
+                                  Criar e Personalizar
+                                  <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </DialogContent>
+                      </Dialog>
+                    </div>
+                    
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5">
+                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
+                          <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
+                          Paginas Ativas
+                        </div>
+                        <div className="text-2xl font-bold text-white">{totalPages}</div>
+                      </div>
+                      <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5">
+                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
+                          <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+                          Visitas Totais
+                        </div>
+                        <div className="text-2xl font-bold text-white">{totalVisitas.toLocaleString('pt-BR')}</div>
+                      </div>
+                      <div className="bg-[#1c1c1c] rounded-2xl p-4 border border-white/5">
+                        <div className="flex items-center gap-2 text-gray-500 text-xs mb-2">
+                          <div className="w-2 h-2 rounded-full bg-purple-400"></div>
+                          Cliques
+                        </div>
+                        <div className="text-2xl font-bold text-white">{totalCliques.toLocaleString('pt-BR')}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pages List */}
+                <div className="bg-white rounded-[24px] border border-gray-100">
+                  <div className="p-5 border-b border-gray-100">
+                    <h3 className="font-semibold text-gray-900">Suas Paginas</h3>
+                  </div>
+                  <div className="divide-y divide-gray-50">
+                    {biolinks.map((bl) => {
+                      const typeInfo = pageTypes.find(t => t.id === bl.tipo) || pageTypes[0]
+                      return (
+                        <div key={bl.id} className="p-5 flex items-center justify-between hover:bg-gray-50/50 transition-colors">
+                          <div className="flex items-center gap-4">
+                            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${typeInfo.gradient} flex items-center justify-center shadow-sm`}>
+                              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                              </svg>
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2 mb-0.5">
+                                <h4 className="font-medium text-gray-900">{bl.nome}</h4>
+                                <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${bl.ativo ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                                  {bl.ativo ? 'Ativo' : 'Inativo'}
+                                </span>
+                              </div>
+                              <p className="text-xs text-gray-500">{bl.url} • {bl.visitas} visitas</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <button className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                              </svg>
+                            </button>
+                            <button className="w-9 h-9 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors">
+                              <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                                <polyline points="15 3 21 3 21 9"/>
+                                <line x1="10" y1="14" x2="21" y2="3"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </ScrollArea>
     </>
