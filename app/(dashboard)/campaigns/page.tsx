@@ -13,9 +13,10 @@ import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
 import {
-  Plus, Megaphone, Send, Eye, X, Loader2, Trash2,
+  Plus, Megaphone, Send, X, Loader2, Trash2,
   Clock, MessageSquare, Image as ImageIcon, Link2,
-  ChevronRight, Zap, Play, Pause, ArrowLeft,
+  ChevronRight, Zap, Play, Pause, ArrowLeft, Search,
+  MoreHorizontal, Calendar, Target, Users, Sparkles,
 } from "lucide-react"
 
 // ==================== TYPES ====================
@@ -39,11 +40,11 @@ interface Campaign {
   nodes: CampaignNode[]
 }
 
-const STATUS_STYLES: Record<string, { badge: string; dot: string; label: string }> = {
-  rascunho: { badge: "bg-secondary text-muted-foreground border-border", dot: "bg-muted-foreground", label: "Rascunho" },
-  ativa: { badge: "bg-accent/10 text-accent border-accent/20", dot: "bg-accent", label: "Ativa" },
-  pausada: { badge: "bg-amber-500/10 text-amber-500 border-amber-500/20", dot: "bg-amber-500", label: "Pausada" },
-  concluida: { badge: "bg-blue-500/10 text-blue-400 border-blue-500/20", dot: "bg-blue-400", label: "Concluida" },
+const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; label: string }> = {
+  rascunho: { bg: "bg-[#1a1a1a]", text: "text-zinc-400", dot: "bg-zinc-500", label: "Rascunho" },
+  ativa: { bg: "bg-[#1a2a1a]", text: "text-[#a3e635]", dot: "bg-[#a3e635]", label: "Ativa" },
+  pausada: { bg: "bg-[#2a2a1a]", text: "text-amber-400", dot: "bg-amber-400", label: "Pausada" },
+  concluida: { bg: "bg-[#1a1a2a]", text: "text-blue-400", dot: "bg-blue-400", label: "Concluida" },
 }
 
 const DELAY_OPTIONS = [
@@ -65,6 +66,8 @@ export default function CampaignsPage() {
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null)
   const [showWizard, setShowWizard] = useState(false)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [filterStatus, setFilterStatus] = useState<string>("all")
 
   const fetchCampaigns = useCallback(async () => {
     if (!selectedBot) return
@@ -121,29 +124,52 @@ export default function CampaignsPage() {
     )
   }
 
-  const totalCampaigns = campaigns.length
-  const activeCampaigns = campaigns.filter((c) => c.status === "ativa").length
+  const filteredCampaigns = campaigns.filter((c) => {
+    const matchesSearch = c.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const matchesFilter = filterStatus === "all" || c.status === filterStatus
+    return matchesSearch && matchesFilter
+  })
 
   return (
     <>
       <DashboardHeader title="Remarketing" />
       <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
-          {/* Stats */}
-          <div className="grid gap-3 md:gap-4 grid-cols-3">
-            <StatCard icon={Megaphone} label="Total" value={totalCampaigns} />
-            <StatCard icon={Send} label="Enviadas" value={0} />
-            <StatCard icon={Eye} label="Abertura" value="0%" />
-          </div>
-
-          {/* Header + Create button */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-muted-foreground">Crie campanhas de remarketing para reengajar seus usuarios</p>
+        <div className="flex flex-col gap-6 p-4 md:p-6">
+          
+          {/* Header com busca e filtros */}
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1 md:w-72">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Input
+                  placeholder="Buscar campanhas..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 bg-[#111] border-zinc-800 rounded-xl h-10 text-sm"
+                />
+              </div>
+              
+              {/* Filtros de status */}
+              <div className="flex items-center gap-1 p-1 bg-[#111] rounded-xl border border-zinc-800">
+                {["all", "ativa", "pausada", "rascunho"].map((status) => (
+                  <button
+                    key={status}
+                    onClick={() => setFilterStatus(status)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      filterStatus === status
+                        ? "bg-[#a3e635] text-black"
+                        : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                    }`}
+                  >
+                    {status === "all" ? "Todas" : STATUS_CONFIG[status]?.label || status}
+                  </button>
+                ))}
+              </div>
             </div>
+
             <Button
               onClick={() => setShowWizard(true)}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2"
+              className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-10"
             >
               <Plus className="h-4 w-4" />
               Nova Campanha
@@ -152,16 +178,28 @@ export default function CampaignsPage() {
 
           {/* Content */}
           {isLoading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="flex items-center justify-center py-32">
+              <div className="flex flex-col items-center gap-3">
+                <div className="relative">
+                  <div className="h-12 w-12 rounded-full border-2 border-zinc-800" />
+                  <div className="absolute inset-0 h-12 w-12 rounded-full border-2 border-[#a3e635] border-t-transparent animate-spin" />
+                </div>
+                <p className="text-sm text-zinc-500">Carregando campanhas...</p>
+              </div>
             </div>
           ) : campaigns.length === 0 ? (
             <EmptyState onCreateClick={() => setShowWizard(true)} />
+          ) : filteredCampaigns.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20">
+              <Search className="h-10 w-10 text-zinc-700 mb-3" />
+              <p className="text-zinc-400 text-sm">Nenhuma campanha encontrada</p>
+              <p className="text-zinc-600 text-xs mt-1">Tente ajustar sua busca ou filtros</p>
+            </div>
           ) : (
-            <div className="grid gap-4 md:gap-6 lg:grid-cols-5">
-              {/* Campaign list */}
+            <div className="grid gap-6 lg:grid-cols-5">
+              {/* Lista de campanhas */}
               <div className="flex flex-col gap-3 lg:col-span-3">
-                {campaigns.map((campaign) => (
+                {filteredCampaigns.map((campaign) => (
                   <CampaignCard
                     key={campaign.id}
                     campaign={campaign}
@@ -175,21 +213,18 @@ export default function CampaignsPage() {
                 ))}
               </div>
 
-              {/* Detail panel */}
+              {/* Painel de detalhes */}
               <div className="lg:col-span-2">
                 {selectedCampaign ? (
                   <CampaignDetail campaign={selectedCampaign} />
                 ) : (
-                  <Card className="bg-card border-border rounded-2xl">
-                    <CardContent className="flex flex-col items-center justify-center py-16 px-6">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary mb-3">
-                        <Megaphone className="h-5 w-5 text-muted-foreground" />
-                      </div>
-                      <p className="text-sm text-muted-foreground text-center">
-                        Selecione uma campanha para ver os detalhes
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <div className="h-full min-h-[400px] rounded-[28px] border border-zinc-800 bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
+                    <div className="h-16 w-16 rounded-2xl bg-zinc-900 flex items-center justify-center mb-4">
+                      <Megaphone className="h-7 w-7 text-zinc-600" />
+                    </div>
+                    <p className="text-zinc-400 text-sm font-medium">Selecione uma campanha</p>
+                    <p className="text-zinc-600 text-xs mt-1">Clique em uma campanha para ver detalhes</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -214,44 +249,50 @@ export default function CampaignsPage() {
   )
 }
 
-// ==================== STAT CARD ====================
-function StatCard({ icon: Icon, label, value }: { icon: React.ElementType; label: string; value: number | string }) {
-  return (
-    <Card className="bg-card border-border rounded-2xl">
-      <CardContent className="flex items-center gap-3 md:gap-4 p-3 md:p-5">
-        <div className="flex h-9 w-9 md:h-11 md:w-11 shrink-0 items-center justify-center rounded-xl bg-secondary">
-          <Icon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
-        </div>
-        <div>
-          <p className="text-xs md:text-sm text-muted-foreground">{label}</p>
-          <p className="text-lg md:text-2xl font-bold text-foreground">{typeof value === "number" ? value.toLocaleString("pt-BR") : value}</p>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
 // ==================== EMPTY STATE ====================
 function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
   return (
-    <Card className="bg-card border-border rounded-2xl">
-      <CardContent className="flex flex-col items-center justify-center py-20 px-6">
-        <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 mb-4">
-          <Megaphone className="h-7 w-7 text-accent" />
+    <div className="rounded-[28px] border border-zinc-800 bg-gradient-to-b from-[#0f0f0f] to-[#0a0a0a] p-8 md:p-12">
+      <div className="max-w-md mx-auto flex flex-col items-center text-center">
+        {/* Icone animado */}
+        <div className="relative mb-6">
+          <div className="h-20 w-20 rounded-3xl bg-[#111] border border-zinc-800 flex items-center justify-center">
+            <Target className="h-9 w-9 text-[#a3e635]" />
+          </div>
+          <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#a3e635] flex items-center justify-center">
+            <Sparkles className="h-3 w-3 text-black" />
+          </div>
         </div>
-        <h3 className="text-base font-semibold text-foreground mb-1">Nenhuma campanha ainda</h3>
-        <p className="text-sm text-muted-foreground text-center max-w-xs mb-6">
-          Crie sua primeira campanha de remarketing para reengajar usuarios que pararam no meio do funil
+
+        <h2 className="text-xl font-bold text-white mb-2">Crie sua primeira campanha</h2>
+        <p className="text-zinc-400 text-sm leading-relaxed mb-6">
+          Campanhas de remarketing ajudam a reengajar usuarios que pararam no meio do funil. 
+          Envie sequencias automaticas de mensagens.
         </p>
+
         <Button
           onClick={onCreateClick}
-          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2"
+          className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-11 px-6"
         >
           <Plus className="h-4 w-4" />
           Criar Campanha
         </Button>
-      </CardContent>
-    </Card>
+
+        {/* Features */}
+        <div className="grid grid-cols-3 gap-4 mt-8 w-full">
+          {[
+            { icon: MessageSquare, label: "Mensagens" },
+            { icon: Clock, label: "Delays" },
+            { icon: Users, label: "Segmentacao" },
+          ].map(({ icon: Icon, label }) => (
+            <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-zinc-900/50">
+              <Icon className="h-5 w-5 text-zinc-500" />
+              <span className="text-[11px] text-zinc-500">{label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   )
 }
 
@@ -267,46 +308,54 @@ function CampaignCard({
   onDelete: () => void
   onToggleStatus: () => void
 }) {
-  const st = STATUS_STYLES[campaign.status] || STATUS_STYLES.rascunho
+  const st = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.rascunho
   const msgCount = campaign.nodes.filter((n) => n.type === "message").length
   const delayCount = campaign.nodes.filter((n) => n.type === "delay").length
 
   return (
-    <Card
-      className={`cursor-pointer bg-card border-border rounded-2xl transition-all hover:bg-secondary/30 ${
-        isSelected ? "ring-1 ring-accent/60" : ""
-      }`}
+    <div
       onClick={onSelect}
+      className={`group relative rounded-[20px] border transition-all cursor-pointer overflow-hidden ${
+        isSelected 
+          ? "border-[#a3e635]/40 bg-[#0f0f0f]" 
+          : "border-zinc-800/60 bg-[#0a0a0a] hover:border-zinc-700 hover:bg-[#0f0f0f]"
+      }`}
     >
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-start gap-3 min-w-0 flex-1">
-            {/* Status dot */}
-            <div className="mt-1.5">
-              <div className={`h-2.5 w-2.5 rounded-full ${st.dot}`} />
+      {/* Accent bar quando selecionado */}
+      {isSelected && (
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#a3e635]" />
+      )}
+
+      <div className="p-4 md:p-5">
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start gap-4 min-w-0 flex-1">
+            {/* Icone com status */}
+            <div className={`relative shrink-0 h-12 w-12 rounded-2xl ${st.bg} flex items-center justify-center`}>
+              <Megaphone className={`h-5 w-5 ${st.text}`} />
+              <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ${st.dot} border-2 border-[#0a0a0a]`} />
             </div>
+
             <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="text-sm font-semibold text-foreground truncate">{campaign.name}</h3>
-                <Badge variant="outline" className={`rounded-lg text-[10px] px-2 py-0.5 ${st.badge}`}>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h3 className="text-sm font-semibold text-white truncate">{campaign.name}</h3>
+                <Badge className={`${st.bg} ${st.text} border-0 text-[10px] px-2 py-0 h-5 rounded-md font-medium`}>
                   {st.label}
                 </Badge>
-                <Badge variant="outline" className="rounded-lg text-[10px] px-2 py-0.5 border-border text-muted-foreground">
-                  {campaign.campaign_type === "basic" ? "Basica" : "Completa"}
-                </Badge>
               </div>
-              <div className="flex items-center gap-3 mt-1.5">
-                <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+
+              <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                <span className="flex items-center gap-1">
                   <MessageSquare className="h-3 w-3" />
-                  {msgCount} {msgCount === 1 ? "mensagem" : "mensagens"}
+                  {msgCount} {msgCount === 1 ? "msg" : "msgs"}
                 </span>
                 {delayCount > 0 && (
-                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <span className="flex items-center gap-1">
                     <Clock className="h-3 w-3" />
                     {delayCount} {delayCount === 1 ? "delay" : "delays"}
                   </span>
                 )}
-                <span className="text-[11px] text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Calendar className="h-3 w-3" />
                   {new Date(campaign.created_at).toLocaleDateString("pt-BR")}
                 </span>
               </div>
@@ -314,125 +363,139 @@ function CampaignCard({
           </div>
 
           {/* Actions */}
-          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
             {campaign.status !== "concluida" && (
               <button
                 onClick={onToggleStatus}
                 disabled={isActivating}
-                className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
+                className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
+                  campaign.status === "ativa"
+                    ? "bg-amber-500/10 hover:bg-amber-500/20"
+                    : "bg-[#a3e635]/10 hover:bg-[#a3e635]/20"
+                }`}
                 title={campaign.status === "ativa" ? "Pausar" : "Ativar"}
               >
                 {isActivating ? (
-                  <Loader2 className="h-3.5 w-3.5 text-accent animate-spin" />
+                  <Loader2 className="h-4 w-4 text-[#a3e635] animate-spin" />
                 ) : campaign.status === "ativa" ? (
-                  <Pause className="h-3.5 w-3.5 text-amber-500" />
+                  <Pause className="h-4 w-4 text-amber-400" />
                 ) : (
-                  <Play className="h-3.5 w-3.5 text-accent" />
+                  <Play className="h-4 w-4 text-[#a3e635]" />
                 )}
               </button>
             )}
             <button
               onClick={onDelete}
               disabled={isDeleting}
-              className="flex h-8 w-8 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-colors"
             >
               {isDeleting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
               ) : (
-                <Trash2 className="h-3.5 w-3.5 text-destructive/70" />
+                <Trash2 className="h-4 w-4 text-red-400" />
               )}
             </button>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
 
 // ==================== CAMPAIGN DETAIL ====================
 function CampaignDetail({ campaign }: { campaign: Campaign }) {
-  const st = STATUS_STYLES[campaign.status] || STATUS_STYLES.rascunho
+  const st = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.rascunho
 
   return (
-    <Card className="bg-card border-border rounded-2xl">
-      <CardContent className="p-5">
-        <div className="flex items-center justify-between mb-5">
+    <div className="rounded-[28px] border border-zinc-800 bg-[#0a0a0a] overflow-hidden">
+      {/* Header com gradiente */}
+      <div className="p-5 bg-gradient-to-b from-zinc-900/50 to-transparent border-b border-zinc-800/50">
+        <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-base font-semibold text-foreground">{campaign.name}</h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <h2 className="text-base font-bold text-white">{campaign.name}</h2>
+            <p className="text-xs text-zinc-500 mt-0.5">
               Criada em {new Date(campaign.created_at).toLocaleDateString("pt-BR")}
             </p>
           </div>
-          <Badge variant="outline" className={`rounded-lg text-[10px] px-2 py-0.5 ${st.badge}`}>
+          <Badge className={`${st.bg} ${st.text} border-0 text-[10px] px-2.5 py-0.5 rounded-lg font-medium`}>
             {st.label}
           </Badge>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="rounded-xl bg-secondary/50 p-3">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Enviadas</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">0</p>
-          </div>
-          <div className="rounded-xl bg-secondary/50 p-3">
-            <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Abertura</p>
-            <p className="text-lg font-bold text-foreground mt-0.5">0%</p>
-          </div>
-        </div>
-
-        {/* Timeline dos nodes */}
-        <div>
-          <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-3">Sequencia da Campanha</p>
-          {campaign.nodes.length === 0 ? (
-            <p className="text-xs text-muted-foreground/60 text-center py-4">Nenhuma etapa configurada</p>
-          ) : (
-            <div className="flex flex-col">
-              {campaign.nodes.map((node, i) => {
-                const isMsg = node.type === "message"
-                const text = (node.config?.text as string) || ""
-                const hasMedia = !!(node.config?.media_url as string)
-                const delayLabel = (node.config?.delay_label as string) || ""
-
-                return (
-                  <div key={node.id || i} className="flex gap-3">
-                    {/* Timeline line */}
-                    <div className="flex flex-col items-center shrink-0">
-                      <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                        isMsg ? "bg-accent/10" : "bg-blue-500/10"
-                      }`}>
-                        {isMsg ? (
-                          <MessageSquare className="h-3.5 w-3.5 text-accent" />
-                        ) : (
-                          <Clock className="h-3.5 w-3.5 text-blue-400" />
-                        )}
-                      </div>
-                      {i < campaign.nodes.length - 1 && (
-                        <div className="w-px flex-1 bg-border/50 my-1" />
-                      )}
-                    </div>
-
-                    {/* Content */}
-                    <div className="pb-4 min-w-0 flex-1">
-                      <p className="text-xs font-medium text-foreground">
-                        {isMsg ? (node.label || "Mensagem") : `Aguardar ${delayLabel}`}
-                      </p>
-                      {isMsg && text && (
-                        <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{text}</p>
-                      )}
-                      {isMsg && hasMedia && (
-                        <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1 mt-0.5">
-                          <ImageIcon className="h-3 w-3" /> Midia anexada
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                )
-              })}
+        {/* Quick stats */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="rounded-2xl bg-[#111] border border-zinc-800/50 p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Send className="h-3.5 w-3.5 text-zinc-500" />
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Enviadas</span>
             </div>
-          )}
+            <p className="text-lg font-bold text-white">0</p>
+          </div>
+          <div className="rounded-2xl bg-[#111] border border-zinc-800/50 p-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Users className="h-3.5 w-3.5 text-zinc-500" />
+              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Alcance</span>
+            </div>
+            <p className="text-lg font-bold text-white">0%</p>
+          </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+
+      {/* Timeline dos nodes */}
+      <div className="p-5">
+        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-4">Sequencia</p>
+        
+        {campaign.nodes.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-xs text-zinc-600">Nenhuma etapa configurada</p>
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {campaign.nodes.map((node, i) => {
+              const isMsg = node.type === "message"
+              const text = (node.config?.text as string) || ""
+              const hasMedia = !!(node.config?.media_url as string)
+              const delayLabel = (node.config?.delay_label as string) || ""
+
+              return (
+                <div key={node.id || i} className="flex gap-3">
+                  {/* Timeline */}
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+                      isMsg ? "bg-[#a3e635]/10" : "bg-blue-500/10"
+                    }`}>
+                      {isMsg ? (
+                        <MessageSquare className="h-4 w-4 text-[#a3e635]" />
+                      ) : (
+                        <Clock className="h-4 w-4 text-blue-400" />
+                      )}
+                    </div>
+                    {i < campaign.nodes.length - 1 && (
+                      <div className="w-px flex-1 bg-zinc-800 my-1.5" />
+                    )}
+                  </div>
+
+                  {/* Content */}
+                  <div className="pb-4 min-w-0 flex-1">
+                    <p className="text-xs font-medium text-white">
+                      {isMsg ? (node.label || "Mensagem") : `Aguardar ${delayLabel}`}
+                    </p>
+                    {isMsg && text && (
+                      <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{text}</p>
+                    )}
+                    {isMsg && hasMedia && (
+                      <span className="text-[10px] text-zinc-600 flex items-center gap-1 mt-0.5">
+                        <ImageIcon className="h-3 w-3" /> Midia anexada
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -523,7 +586,6 @@ function CampaignWizard({
       })
       const data = await res.json()
       if (data.campaign) {
-        // Refetch to get the complete campaign with nodes
         const refetch = await fetch(`/api/campaigns?bot_id=${botId}`)
         const refetchData = await refetch.json()
         const created = (refetchData.campaigns || []).find((c: Campaign) => c.id === data.campaign.id)
@@ -534,30 +596,31 @@ function CampaignWizard({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] bg-card border border-border rounded-2xl shadow-2xl flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      
+      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] bg-[#0a0a0a] border border-zinc-800 rounded-[28px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 pb-0">
+        <div className="flex items-center justify-between p-5 border-b border-zinc-800/50">
           <div className="flex items-center gap-3">
-            <span className="text-accent font-bold text-lg">{stepNumber}</span>
-            <span className="text-xs text-muted-foreground">/ {totalSteps}</span>
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: totalSteps }).map((_, i) => (
+                <div
+                  key={i}
+                  className={`h-2 rounded-full transition-all ${
+                    i < stepNumber ? "w-6 bg-[#a3e635]" : "w-2 bg-zinc-800"
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs text-zinc-500 ml-2">Passo {stepNumber} de {totalSteps}</span>
           </div>
-          <button onClick={onClose} className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 transition-colors">
-            <X className="h-4 w-4 text-muted-foreground" />
+          <button 
+            onClick={onClose} 
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 hover:bg-zinc-800 transition-colors"
+          >
+            <X className="h-4 w-4 text-zinc-400" />
           </button>
-        </div>
-
-        {/* Progress */}
-        <div className="flex gap-1.5 px-5 pt-3">
-          {Array.from({ length: totalSteps }).map((_, i) => (
-            <div
-              key={i}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                i < stepNumber ? "bg-accent" : "bg-secondary"
-              }`}
-            />
-          ))}
         </div>
 
         {/* Content */}
@@ -618,17 +681,18 @@ function CampaignWizard({
 
         {/* Footer */}
         {(step === "basic" || step === "complete") && (
-          <div className="flex items-center justify-between p-5 pt-3 border-t border-border">
+          <div className="flex items-center justify-between p-5 border-t border-zinc-800/50">
             <button
               onClick={() => setStep("type")}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
             >
+              <ArrowLeft className="h-4 w-4" />
               Voltar
             </button>
             <Button
               onClick={handleSave}
               disabled={isSaving || !campaignName.trim() || (step === "basic" && !basicText.trim())}
-              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2"
+              className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-10 px-5"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
               Criar Campanha
@@ -644,16 +708,16 @@ function CampaignWizard({
 
 function StepName({ value, onChange, onNext }: { value: string; onChange: (v: string) => void; onNext: () => void }) {
   return (
-    <div className="flex flex-col gap-6 pt-2">
+    <div className="flex flex-col gap-6 pt-4">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Nome da Campanha</h2>
-        <p className="text-sm text-muted-foreground mt-1">Escolha um nome para identificar sua campanha</p>
+        <h2 className="text-xl font-bold text-white">Nome da Campanha</h2>
+        <p className="text-sm text-zinc-500 mt-1">Escolha um nome para identificar sua campanha</p>
       </div>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Ex: Remarketing Black Friday"
-        className="bg-secondary border-border rounded-xl h-12 text-foreground"
+        className="bg-[#111] border-zinc-800 rounded-xl h-12 text-white placeholder:text-zinc-600"
         autoFocus
         onKeyDown={(e) => { if (e.key === "Enter" && value.trim()) onNext() }}
       />
@@ -661,7 +725,7 @@ function StepName({ value, onChange, onNext }: { value: string; onChange: (v: st
         <Button
           onClick={onNext}
           disabled={!value.trim()}
-          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2"
+          className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold"
         >
           Proximo
           <ChevronRight className="h-4 w-4" />
@@ -677,24 +741,24 @@ function StepType({ selected, onSelect, onBack }: {
   onBack: () => void
 }) {
   return (
-    <div className="flex flex-col gap-6 pt-2">
+    <div className="flex flex-col gap-6 pt-4">
       <div>
-        <h2 className="text-lg font-semibold text-foreground">Tipo de Campanha</h2>
-        <p className="text-sm text-muted-foreground mt-1">Escolha como quer construir sua campanha</p>
+        <h2 className="text-xl font-bold text-white">Tipo de Campanha</h2>
+        <p className="text-sm text-zinc-500 mt-1">Escolha como quer construir sua campanha</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Basic */}
         <button
           onClick={() => onSelect("basic")}
-          className="flex flex-col items-start gap-3 p-5 rounded-2xl border-2 border-border bg-secondary/30 hover:border-accent/50 hover:bg-accent/[0.03] transition-all text-left group"
+          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-[#111] hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.03] transition-all text-left"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 group-hover:bg-accent/15 transition-colors">
-            <Zap className="h-5 w-5 text-accent" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#a3e635]/10 group-hover:bg-[#a3e635]/20 transition-colors">
+            <Zap className="h-6 w-6 text-[#a3e635]" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Mensagem Rapida</h3>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+            <h3 className="text-sm font-bold text-white">Mensagem Rapida</h3>
+            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
               Uma unica mensagem com imagem, texto e botoes. Pronta em segundos.
             </p>
           </div>
@@ -703,15 +767,15 @@ function StepType({ selected, onSelect, onBack }: {
         {/* Complete */}
         <button
           onClick={() => onSelect("complete")}
-          className="flex flex-col items-start gap-3 p-5 rounded-2xl border-2 border-border bg-secondary/30 hover:border-accent/50 hover:bg-accent/[0.03] transition-all text-left group"
+          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-[#111] hover:border-blue-500/40 hover:bg-blue-500/[0.03] transition-all text-left"
         >
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 group-hover:bg-blue-500/15 transition-colors">
-            <MessageSquare className="h-5 w-5 text-blue-400" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
+            <MessageSquare className="h-6 w-6 text-blue-400" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-foreground">Sequencia Completa</h3>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Varias mensagens com delays entre elas. Remarketing ate o usuario converter.
+            <h3 className="text-sm font-bold text-white">Sequencia Completa</h3>
+            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+              Varias mensagens com delays entre elas. Remarketing ate converter.
             </p>
           </div>
         </button>
@@ -720,9 +784,9 @@ function StepType({ selected, onSelect, onBack }: {
       <div className="flex justify-start">
         <button
           onClick={onBack}
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+          className="text-sm text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
         >
-          <ArrowLeft className="h-3.5 w-3.5" />
+          <ArrowLeft className="h-4 w-4" />
           Voltar
         </button>
       </div>
@@ -745,19 +809,19 @@ function StepBasic({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 pt-2">
+    <div className="flex flex-col lg:flex-row gap-6 pt-4">
       {/* Left - form */}
       <div className="flex-1 flex flex-col gap-5">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Mensagem da Campanha</h2>
-          <p className="text-sm text-muted-foreground mt-1">Configure o conteudo que sera enviado</p>
+          <h2 className="text-xl font-bold text-white">Mensagem da Campanha</h2>
+          <p className="text-sm text-zinc-500 mt-1">Configure o conteudo que sera enviado</p>
         </div>
 
         {/* Media upload */}
         <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Midia (opcional)</p>
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Midia (opcional)</p>
           {mediaUrl ? (
-            <div className="relative rounded-xl overflow-hidden bg-secondary/50 h-32 flex items-center justify-center">
+            <div className="relative rounded-2xl overflow-hidden bg-[#111] border border-zinc-800 h-32 flex items-center justify-center">
               {mediaType === "video" ? (
                 <video src={mediaUrl} className="max-h-full max-w-full object-contain" />
               ) : (
@@ -766,23 +830,23 @@ function StepBasic({
               )}
               <button
                 onClick={onRemoveMedia}
-                className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg bg-background/80 hover:bg-background transition-colors"
+                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 hover:bg-black/80 transition-colors"
               >
-                <X className="h-3.5 w-3.5 text-foreground" />
+                <X className="h-4 w-4 text-white" />
               </button>
             </div>
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full h-24 rounded-xl border-2 border-dashed border-border bg-secondary/20 hover:border-accent/40 hover:bg-accent/[0.02] transition-all flex flex-col items-center justify-center gap-1"
+              className="w-full h-28 rounded-2xl border-2 border-dashed border-zinc-800 bg-[#111] hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.02] transition-all flex flex-col items-center justify-center gap-2"
             >
               {isUploading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
               ) : (
                 <>
-                  <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Clique para enviar foto ou video</span>
+                  <ImageIcon className="h-6 w-6 text-zinc-600" />
+                  <span className="text-xs text-zinc-500">Clique para enviar foto ou video</span>
                 </>
               )}
             </button>
@@ -802,24 +866,24 @@ function StepBasic({
 
         {/* Text */}
         <div>
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">Mensagem</p>
+          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Mensagem</p>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Escreva sua mensagem de remarketing..."
-            className="bg-secondary border-border rounded-xl text-foreground min-h-[100px]"
+            className="bg-[#111] border-zinc-800 rounded-xl text-white min-h-[120px] placeholder:text-zinc-600"
           />
         </div>
 
         {/* Buttons toggle */}
-        <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/50">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#111] border border-zinc-800">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
-              <Link2 className="h-4 w-4 text-accent" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#a3e635]/10">
+              <Link2 className="h-4 w-4 text-[#a3e635]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-foreground">Adicionar botoes</p>
-              <p className="text-[11px] text-muted-foreground">Opcional</p>
+              <p className="text-sm font-medium text-white">Adicionar botoes</p>
+              <p className="text-[11px] text-zinc-500">Links clicaveis na mensagem</p>
             </div>
           </div>
           <Switch checked={hasButtons} onCheckedChange={setHasButtons} />
@@ -838,7 +902,7 @@ function StepBasic({
                     setButtons(next)
                   }}
                   placeholder="Texto do botao"
-                  className="bg-secondary border-border rounded-xl text-foreground flex-1"
+                  className="bg-[#111] border-zinc-800 rounded-xl text-white flex-1"
                 />
                 <Input
                   value={btn.url}
@@ -848,21 +912,21 @@ function StepBasic({
                     setButtons(next)
                   }}
                   placeholder="https://..."
-                  className="bg-secondary border-border rounded-xl text-foreground flex-1"
+                  className="bg-[#111] border-zinc-800 rounded-xl text-white flex-1"
                 />
                 <button
                   onClick={() => setButtons(buttons.filter((_, j) => j !== i))}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg hover:bg-destructive/10 transition-colors"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-colors"
                 >
-                  <X className="h-3.5 w-3.5 text-destructive/70" />
+                  <X className="h-4 w-4 text-red-400" />
                 </button>
               </div>
             ))}
             <button
               onClick={() => setButtons([...buttons, { text: "", url: "" }])}
-              className="flex items-center gap-2 text-xs text-accent hover:text-accent/80 transition-colors"
+              className="flex items-center gap-2 text-xs font-medium text-[#a3e635] hover:text-[#bef264] transition-colors"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               Adicionar botao
             </button>
           </div>
@@ -871,7 +935,7 @@ function StepBasic({
 
       {/* Right - preview */}
       <div className="w-full lg:w-72 shrink-0">
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-3 text-center">Preview no Telegram</p>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 text-center">Preview</p>
         <TelegramPreview text={text} mediaUrl={mediaUrl} mediaType={mediaType} buttons={hasButtons ? buttons : []} />
       </div>
     </div>
@@ -921,12 +985,12 @@ function StepComplete({
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 pt-2">
+    <div className="flex flex-col lg:flex-row gap-6 pt-4">
       {/* Left - builder */}
       <div className="flex-1 flex flex-col gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-foreground">Sequencia de Remarketing</h2>
-          <p className="text-sm text-muted-foreground mt-1">Monte sua sequencia de mensagens e delays</p>
+          <h2 className="text-xl font-bold text-white">Sequencia de Remarketing</h2>
+          <p className="text-sm text-zinc-500 mt-1">Monte sua sequencia de mensagens e delays</p>
         </div>
 
         <div className="flex flex-col">
@@ -934,29 +998,29 @@ function StepComplete({
             <div key={i} className="flex flex-col">
               {/* Node card */}
               <div
-                className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer ${
+                className={`flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
                   editingIndex === i
-                    ? "border-accent/40 bg-accent/[0.03]"
-                    : "border-border bg-secondary/20 hover:bg-secondary/40"
+                    ? "border-[#a3e635]/40 bg-[#a3e635]/[0.03]"
+                    : "border-zinc-800 bg-[#111] hover:bg-[#151515]"
                 }`}
                 onClick={() => setEditingIndex(editingIndex === i ? null : i)}
               >
-                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-                  node.type === "message" ? "bg-accent/10" : "bg-blue-500/10"
+                <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                  node.type === "message" ? "bg-[#a3e635]/10" : "bg-blue-500/10"
                 }`}>
                   {node.type === "message" ? (
-                    <MessageSquare className="h-4 w-4 text-accent" />
+                    <MessageSquare className="h-4 w-4 text-[#a3e635]" />
                   ) : (
                     <Clock className="h-4 w-4 text-blue-400" />
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground">
+                  <p className="text-sm font-medium text-white">
                     {node.type === "message" ? (node.label || "Mensagem") : `Aguardar ${(node.config?.delay_label as string) || "1 dia"}`}
                   </p>
                   {node.type === "message" && (node.config?.text as string) && (
-                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">{node.config.text as string}</p>
+                    <p className="text-[11px] text-zinc-500 truncate mt-0.5">{node.config.text as string}</p>
                   )}
                 </div>
 
@@ -964,9 +1028,9 @@ function StepComplete({
                   {nodes.length > 1 && (
                     <button
                       onClick={() => removeNode(i)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md hover:bg-destructive/10 transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
                     >
-                      <Trash2 className="h-3 w-3 text-destructive/70" />
+                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
                     </button>
                   )}
                 </div>
@@ -985,19 +1049,19 @@ function StepComplete({
               )}
 
               {/* Add button between nodes */}
-              <div className="flex items-center justify-center py-1.5">
-                <div className="w-px h-4 bg-border/40" />
+              <div className="flex items-center justify-center py-2">
+                <div className="w-px h-4 bg-zinc-800" />
               </div>
-              <div className="flex items-center justify-center gap-2 pb-1.5">
+              <div className="flex items-center justify-center gap-2 pb-2">
                 <button
                   onClick={() => addNode("message", i)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary hover:text-foreground transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-white transition-all"
                 >
                   <MessageSquare className="h-3 w-3" /> Mensagem
                 </button>
                 <button
                   onClick={() => addNode("delay", i)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-medium text-muted-foreground bg-secondary/50 hover:bg-secondary hover:text-foreground transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-white transition-all"
                 >
                   <Clock className="h-3 w-3" /> Delay
                 </button>
@@ -1009,40 +1073,38 @@ function StepComplete({
 
       {/* Right - preview timeline */}
       <div className="w-full lg:w-72 shrink-0">
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-3 text-center">Preview da Sequencia</p>
-        <Card className="bg-secondary/30 border-border rounded-xl">
-          <CardContent className="p-4">
-            <div className="flex flex-col">
-              {nodes.map((node, i) => {
-                const isMsg = node.type === "message"
-                return (
-                  <div key={i} className="flex gap-2.5">
-                    <div className="flex flex-col items-center shrink-0">
-                      <div className={`flex h-7 w-7 items-center justify-center rounded-md ${
-                        isMsg ? "bg-accent/15" : "bg-blue-500/15"
-                      }`}>
-                        {isMsg ? (
-                          <MessageSquare className="h-3 w-3 text-accent" />
-                        ) : (
-                          <Clock className="h-3 w-3 text-blue-400" />
-                        )}
-                      </div>
-                      {i < nodes.length - 1 && <div className="w-px flex-1 bg-border/40 my-1" />}
-                    </div>
-                    <div className="pb-3 min-w-0 flex-1">
-                      <p className="text-[11px] font-medium text-foreground">
-                        {isMsg ? (node.label || "Mensagem") : `Aguardar ${(node.config?.delay_label as string) || ""}`}
-                      </p>
-                      {isMsg && (node.config?.text as string) && (
-                        <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{node.config.text as string}</p>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 text-center">Preview da Sequencia</p>
+        <div className="rounded-2xl bg-[#111] border border-zinc-800 p-4">
+          <div className="flex flex-col">
+            {nodes.map((node, i) => {
+              const isMsg = node.type === "message"
+              return (
+                <div key={i} className="flex gap-2.5">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
+                      isMsg ? "bg-[#a3e635]/15" : "bg-blue-500/15"
+                    }`}>
+                      {isMsg ? (
+                        <MessageSquare className="h-3.5 w-3.5 text-[#a3e635]" />
+                      ) : (
+                        <Clock className="h-3.5 w-3.5 text-blue-400" />
                       )}
                     </div>
+                    {i < nodes.length - 1 && <div className="w-px flex-1 bg-zinc-800 my-1" />}
                   </div>
-                )
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  <div className="pb-3 min-w-0 flex-1">
+                    <p className="text-[11px] font-medium text-white">
+                      {isMsg ? (node.label || "Mensagem") : `Aguardar ${(node.config?.delay_label as string) || ""}`}
+                    </p>
+                    {isMsg && (node.config?.text as string) && (
+                      <p className="text-[10px] text-zinc-500 line-clamp-1 mt-0.5">{node.config.text as string}</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
       </div>
     </div>
   )
@@ -1081,17 +1143,17 @@ function NodeEditor({
   if (node.type === "delay") {
     const currentValue = (node.config?.delay_value as string) || "1d"
     return (
-      <div className="mt-2 mb-1 p-3 rounded-xl bg-secondary/30 border border-border">
-        <p className="text-xs font-medium text-muted-foreground mb-2">Tempo de espera</p>
+      <div className="mt-3 mb-2 p-4 rounded-2xl bg-[#0f0f0f] border border-zinc-800">
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tempo de espera</p>
         <div className="flex flex-wrap gap-2">
           {DELAY_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               onClick={() => onUpdateConfig({ delay_value: opt.value, delay_label: opt.label })}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+              className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 currentValue === opt.value
                   ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                  : "bg-secondary text-muted-foreground border border-border hover:border-blue-500/30"
+                  : "bg-zinc-900 text-zinc-400 border border-zinc-800 hover:border-blue-500/30"
               }`}
             >
               {opt.label}
@@ -1107,23 +1169,23 @@ function NodeEditor({
   const mediaType = (node.config?.media_type as string) || "photo"
 
   return (
-    <div className="mt-2 mb-1 p-3 rounded-xl bg-secondary/30 border border-border flex flex-col gap-3">
+    <div className="mt-3 mb-2 p-4 rounded-2xl bg-[#0f0f0f] border border-zinc-800 flex flex-col gap-4">
       {/* Label */}
       <div>
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Nome da etapa</p>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Nome da etapa</p>
         <Input
           value={node.label}
           onChange={(e) => onUpdateLabel(e.target.value)}
           placeholder="Nome da mensagem"
-          className="bg-secondary border-border rounded-lg h-8 text-foreground text-xs"
+          className="bg-[#111] border-zinc-800 rounded-xl h-10 text-white text-sm"
         />
       </div>
 
       {/* Media */}
       <div>
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Midia (opcional)</p>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Midia (opcional)</p>
         {mediaUrl ? (
-          <div className="relative rounded-lg overflow-hidden bg-secondary h-20 flex items-center justify-center">
+          <div className="relative rounded-xl overflow-hidden bg-zinc-900 h-24 flex items-center justify-center">
             {mediaType === "video" ? (
               <video src={mediaUrl} className="max-h-full max-w-full object-contain" />
             ) : (
@@ -1132,23 +1194,23 @@ function NodeEditor({
             )}
             <button
               onClick={() => onUpdateConfig({ media_url: "", media_type: "" })}
-              className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-md bg-background/80 hover:bg-background"
+              className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/60 hover:bg-black/80"
             >
-              <X className="h-3 w-3 text-foreground" />
+              <X className="h-3.5 w-3.5 text-white" />
             </button>
           </div>
         ) : (
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="w-full h-16 rounded-lg border border-dashed border-border bg-secondary/20 hover:border-accent/40 transition-all flex items-center justify-center gap-1.5"
+            className="w-full h-20 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/50 hover:border-[#a3e635]/40 transition-all flex items-center justify-center gap-2"
           >
             {isUploading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
             ) : (
               <>
-                <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                <span className="text-[11px] text-muted-foreground">Enviar midia</span>
+                <ImageIcon className="h-4 w-4 text-zinc-600" />
+                <span className="text-[11px] text-zinc-500">Enviar midia</span>
               </>
             )}
           </button>
@@ -1175,20 +1237,20 @@ function NodeEditor({
 
       {/* Text */}
       <div>
-        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider mb-1">Mensagem</p>
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Mensagem</p>
         <Textarea
           value={(node.config?.text as string) || ""}
           onChange={(e) => onUpdateConfig({ text: e.target.value })}
           placeholder="Escreva a mensagem..."
-          className="bg-secondary border-border rounded-lg text-foreground text-xs min-h-[70px]"
+          className="bg-[#111] border-zinc-800 rounded-xl text-white text-sm min-h-[80px]"
         />
       </div>
 
       {/* Buttons */}
-      <div className="flex items-center justify-between p-2 rounded-lg bg-secondary/50">
+      <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50">
         <div className="flex items-center gap-2">
-          <Link2 className="h-3.5 w-3.5 text-accent" />
-          <span className="text-xs text-foreground">Botoes</span>
+          <Link2 className="h-4 w-4 text-[#a3e635]" />
+          <span className="text-xs text-white">Botoes</span>
         </div>
         <Switch checked={hasButtons} onCheckedChange={setHasButtons} />
       </div>
@@ -1196,7 +1258,7 @@ function NodeEditor({
       {hasButtons && (
         <div className="flex flex-col gap-2">
           {localButtons.map((btn, i) => (
-            <div key={i} className="flex items-center gap-1.5">
+            <div key={i} className="flex items-center gap-2">
               <Input
                 value={btn.text}
                 onChange={(e) => {
@@ -1205,7 +1267,7 @@ function NodeEditor({
                   setLocalButtons(next)
                 }}
                 placeholder="Texto"
-                className="bg-secondary border-border rounded-lg h-7 text-foreground text-[11px] flex-1"
+                className="bg-[#111] border-zinc-800 rounded-lg h-9 text-white text-xs flex-1"
               />
               <Input
                 value={btn.url}
@@ -1215,21 +1277,21 @@ function NodeEditor({
                   setLocalButtons(next)
                 }}
                 placeholder="https://..."
-                className="bg-secondary border-border rounded-lg h-7 text-foreground text-[11px] flex-1"
+                className="bg-[#111] border-zinc-800 rounded-lg h-9 text-white text-xs flex-1"
               />
               <button
                 onClick={() => setLocalButtons(localButtons.filter((_, j) => j !== i))}
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md hover:bg-destructive/10"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20"
               >
-                <X className="h-3 w-3 text-destructive/70" />
+                <X className="h-3.5 w-3.5 text-red-400" />
               </button>
             </div>
           ))}
           <button
             onClick={() => setLocalButtons([...localButtons, { text: "", url: "" }])}
-            className="flex items-center gap-1 text-[10px] text-accent hover:text-accent/80 transition-colors"
+            className="flex items-center gap-1 text-[11px] font-medium text-[#a3e635] hover:text-[#bef264] transition-colors"
           >
-            <Plus className="h-3 w-3" /> Adicionar botao
+            <Plus className="h-3.5 w-3.5" /> Adicionar botao
           </button>
         </div>
       )}
@@ -1245,21 +1307,21 @@ function TelegramPreview({
   buttons: { text: string; url: string }[]
 }) {
   return (
-    <div className="rounded-xl bg-[#1a2332] p-4">
-      <div className="flex items-center gap-2 mb-3">
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/20">
-          <Zap className="h-3.5 w-3.5 text-accent" />
+    <div className="rounded-2xl bg-[#0f1419] p-4 border border-zinc-800">
+      <div className="flex items-center gap-2 mb-4">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#a3e635]/20">
+          <Zap className="h-4 w-4 text-[#a3e635]" />
         </div>
         <div>
-          <p className="text-xs font-semibold text-foreground">Seu Bot</p>
-          <p className="text-[10px] text-muted-foreground">online</p>
+          <p className="text-xs font-semibold text-white">Seu Bot</p>
+          <p className="text-[10px] text-zinc-500">online</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
         {/* Media */}
         {mediaUrl && (
-          <div className="rounded-lg overflow-hidden bg-[#1e2c3d] flex items-center justify-center h-28">
+          <div className="rounded-xl overflow-hidden bg-[#1a2332] flex items-center justify-center h-28">
             {mediaType === "video" ? (
               <video src={mediaUrl} className="max-h-full max-w-full object-contain" />
             ) : (
@@ -1271,14 +1333,14 @@ function TelegramPreview({
 
         {/* Text bubble */}
         {text && (
-          <div className="rounded-lg bg-[#1e2c3d] px-3 py-2">
-            <p className="text-xs text-foreground whitespace-pre-wrap break-words">{text}</p>
+          <div className="rounded-xl bg-[#1a2332] px-3 py-2.5">
+            <p className="text-xs text-white whitespace-pre-wrap break-words leading-relaxed">{text}</p>
           </div>
         )}
 
         {/* Buttons */}
         {buttons.filter((b) => b.text.trim()).map((btn, i) => (
-          <div key={i} className="rounded-lg bg-[#2a4054] px-3 py-2 text-center">
+          <div key={i} className="rounded-xl bg-[#2a4054] px-3 py-2.5 text-center">
             <p className="text-xs font-medium text-blue-400">{btn.text}</p>
           </div>
         ))}
