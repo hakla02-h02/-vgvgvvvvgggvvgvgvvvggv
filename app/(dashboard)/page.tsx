@@ -477,7 +477,7 @@ export default function DashboardPage() {
                   <List size={12} className="text-[#4d7c0f]" />
                 </div>
                 <h3 className="font-semibold text-gray-900 text-base md:text-lg">
-                  Top Oportunidades
+                  Conversas Recentes
                 </h3>
               </div>
               <div className="flex items-center gap-2">
@@ -521,19 +521,19 @@ export default function DashboardPage() {
               <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
                   <tr className="text-xs text-gray-400 border-b border-gray-100">
-                    <th className="pb-3 font-medium px-2">Nome</th>
-                    <th className="pb-3 font-medium px-2">Região</th>
-                    <th className="pb-3 font-medium px-2">Score</th>
-                    <th className="pb-3 font-medium px-2">Nível de Risco</th>
-                    <th className="pb-3 font-medium px-2">Lead Process</th>
-                    <th className="pb-3 font-medium px-2 text-right">Valor</th>
+                    <th className="pb-3 font-medium px-2">Usuário</th>
+                    <th className="pb-3 font-medium px-2">Canal</th>
+                    <th className="pb-3 font-medium px-2">Mensagens</th>
+                    <th className="pb-3 font-medium px-2">Status</th>
+                    <th className="pb-3 font-medium px-2">Tempo de Resposta</th>
+                    <th className="pb-3 font-medium px-2 text-right">Satisfação</th>
                   </tr>
                 </thead>
                 <tbody>
                   {/* Sem dados ainda */}
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-sm text-gray-400">
-                      Nenhuma oportunidade registrada ainda
+                      Nenhuma conversa registrada ainda
                     </td>
                   </tr>
                 </tbody>
