@@ -132,11 +132,8 @@ export default function GatewaysPage() {
               </div>
             </div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-              
-              {/* Gateway Card - Takes 3 columns */}
-              <div className={`lg:col-span-3 rounded-[24px] transition-all ${
+            {/* Gateway Card */}
+            <div className={`rounded-[24px] transition-all ${
                 isConnected 
                   ? "bg-[#111] text-white" 
                   : "bg-white border border-gray-200 hover:border-[#00bcff] hover:shadow-lg cursor-pointer group"
@@ -232,39 +229,27 @@ export default function GatewaysPage() {
                     </div>
                   </div>
                 )}
-              </div>
+            </div>
 
-              {/* Help Card - Takes 2 columns */}
-              <div className="lg:col-span-2 bg-[#111] rounded-[24px] p-5 relative overflow-hidden">
-                {/* Decorative */}
-                <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-[#a3e635] opacity-10 blur-[40px] rounded-full pointer-events-none"></div>
-                
-                <div className="relative z-10">
-                  <div className="w-9 h-9 rounded-xl bg-[#a3e635]/20 flex items-center justify-center mb-4">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="12" cy="12" r="10"/>
-                      <path d="M12 16v-4M12 8h.01"/>
-                    </svg>
-                  </div>
-                  
-                  <h3 className="text-white font-semibold text-sm mb-2">
-                    Como obter o Access Token?
-                  </h3>
-                  <p className="text-gray-400 text-xs leading-relaxed mb-4">
-                    Acesse o painel de desenvolvedores do Mercado Pago, va em "Suas integracoes" e copie o token de producao.
-                  </p>
-                  
-                  <a
-                    href={mercadoPago.helpUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 text-[#a3e635] text-xs font-medium hover:underline"
-                  >
-                    Acessar Mercado Pago
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                </div>
-              </div>
+            {/* Help Section - Simples e separado */}
+            <div className="mt-10 flex items-center gap-3 text-gray-500">
+              <svg viewBox="0 0 24 24" className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+              </svg>
+              <p className="text-sm">
+                <span className="text-gray-600 font-medium">Como obter o Access Token?</span>
+                {" "}Acesse o{" "}
+                <a
+                  href={mercadoPago.helpUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[#00bcff] hover:underline"
+                >
+                  Mercado Pago Developers
+                </a>
+                , va em "Suas integracoes" e copie o token de producao.
+              </p>
             </div>
 
           </div>
