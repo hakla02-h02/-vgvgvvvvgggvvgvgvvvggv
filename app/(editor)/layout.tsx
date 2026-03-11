@@ -1,3 +1,4 @@
+import { DashboardShell } from "@/components/dashboard-shell"
 import { AuthGuard } from "@/components/auth-guard"
 
 export default function EditorLayout({
@@ -7,7 +8,7 @@ export default function EditorLayout({
 }) {
   return (
     <AuthGuard>
-      {children}
+      <DashboardShell sidebarCollapsed={true}>{children}</DashboardShell>
     </AuthGuard>
   )
 }

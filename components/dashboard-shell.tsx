@@ -8,7 +8,12 @@ import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { Menu } from "lucide-react"
 
-export function DashboardShell({ children }: { children: React.ReactNode }) {
+interface DashboardShellProps {
+  children: React.ReactNode
+  sidebarCollapsed?: boolean
+}
+
+export function DashboardShell({ children, sidebarCollapsed = false }: DashboardShellProps) {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
@@ -17,7 +22,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <div className="flex h-screen overflow-hidden bg-[#f4f5f8]">
         {/* Desktop sidebar */}
         <div className="hidden md:block">
-          <DashboardSidebar />
+          <DashboardSidebar defaultCollapsed={sidebarCollapsed} />
         </div>
 
         {/* Mobile hamburger + sheet */}

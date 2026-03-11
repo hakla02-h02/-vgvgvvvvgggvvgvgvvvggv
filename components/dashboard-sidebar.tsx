@@ -78,11 +78,12 @@ const navSections: NavSection[] = [
 
 interface DashboardSidebarProps {
   onNavigate?: () => void
+  defaultCollapsed?: boolean
 }
 
-export function DashboardSidebar({ onNavigate }: DashboardSidebarProps) {
+export function DashboardSidebar({ onNavigate, defaultCollapsed = false }: DashboardSidebarProps) {
   const pathname = usePathname()
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(defaultCollapsed)
   const { session, logout } = useAuth()
 
   const userInitial = session?.name
