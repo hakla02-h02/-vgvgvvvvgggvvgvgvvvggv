@@ -140,17 +140,17 @@ export default function CampaignsPage() {
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
               <div className="relative flex-1 md:w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar campanhas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-[#111] border-zinc-800 rounded-xl h-10 text-sm"
+                  className="pl-9 bg-card border-zinc-200 dark:border-zinc-800 rounded-xl h-10 text-sm"
                 />
               </div>
               
               {/* Filtros de status */}
-              <div className="flex items-center gap-1 p-1 bg-[#111] rounded-xl border border-zinc-800">
+              <div className="flex items-center gap-1 p-1 bg-card rounded-xl border border-zinc-200 dark:border-zinc-800">
                 {["all", "ativa", "pausada", "rascunho"].map((status) => (
                   <button
                     key={status}
@@ -158,7 +158,7 @@ export default function CampaignsPage() {
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       filterStatus === status
                         ? "bg-[#a3e635] text-black"
-                        : "text-zinc-400 hover:text-white hover:bg-zinc-800"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >
                     {status === "all" ? "Todas" : STATUS_CONFIG[status]?.label || status}
@@ -218,12 +218,12 @@ export default function CampaignsPage() {
                 {selectedCampaign ? (
                   <CampaignDetail campaign={selectedCampaign} />
                 ) : (
-                  <div className="h-full min-h-[400px] rounded-[28px] border border-zinc-800 bg-[#0a0a0a] flex flex-col items-center justify-center p-6">
-                    <div className="h-16 w-16 rounded-2xl bg-zinc-900 flex items-center justify-center mb-4">
-                      <Megaphone className="h-7 w-7 text-zinc-600" />
+                  <div className="h-full min-h-[400px] rounded-[28px] border border-zinc-200 dark:border-zinc-800 bg-card flex flex-col items-center justify-center p-6">
+                    <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                      <Megaphone className="h-7 w-7 text-muted-foreground" />
                     </div>
-                    <p className="text-zinc-400 text-sm font-medium">Selecione uma campanha</p>
-                    <p className="text-zinc-600 text-xs mt-1">Clique em uma campanha para ver detalhes</p>
+                    <p className="text-foreground text-sm font-medium">Selecione uma campanha</p>
+                    <p className="text-muted-foreground text-xs mt-1">Clique em uma campanha para ver detalhes</p>
                   </div>
                 )}
               </div>
@@ -252,45 +252,43 @@ export default function CampaignsPage() {
 // ==================== EMPTY STATE ====================
 function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
   return (
-    <div className="rounded-[28px] border border-zinc-800 bg-gradient-to-b from-[#0f0f0f] to-[#0a0a0a] p-8 md:p-12">
-      <div className="max-w-md mx-auto flex flex-col items-center text-center">
-        {/* Icone animado */}
-        <div className="relative mb-6">
-          <div className="h-20 w-20 rounded-3xl bg-[#111] border border-zinc-800 flex items-center justify-center">
-            <Target className="h-9 w-9 text-[#a3e635]" />
-          </div>
-          <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#a3e635] flex items-center justify-center">
-            <Sparkles className="h-3 w-3 text-black" />
-          </div>
+    <div className="flex flex-col items-center justify-center py-16 px-4">
+      {/* Icone */}
+      <div className="relative mb-6">
+        <div className="h-20 w-20 rounded-3xl bg-[#111] border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shadow-sm">
+          <Target className="h-9 w-9 text-[#a3e635]" />
         </div>
-
-        <h2 className="text-xl font-bold text-white mb-2">Crie sua primeira campanha</h2>
-        <p className="text-zinc-400 text-sm leading-relaxed mb-6">
-          Campanhas de remarketing ajudam a reengajar usuarios que pararam no meio do funil. 
-          Envie sequencias automaticas de mensagens.
-        </p>
-
-        <Button
-          onClick={onCreateClick}
-          className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-11 px-6"
-        >
-          <Plus className="h-4 w-4" />
-          Criar Campanha
-        </Button>
-
-        {/* Features */}
-        <div className="grid grid-cols-3 gap-4 mt-8 w-full">
-          {[
-            { icon: MessageSquare, label: "Mensagens" },
-            { icon: Clock, label: "Delays" },
-            { icon: Users, label: "Segmentacao" },
-          ].map(({ icon: Icon, label }) => (
-            <div key={label} className="flex flex-col items-center gap-2 p-3 rounded-xl bg-zinc-900/50">
-              <Icon className="h-5 w-5 text-zinc-500" />
-              <span className="text-[11px] text-zinc-500">{label}</span>
-            </div>
-          ))}
+        <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#a3e635] flex items-center justify-center shadow-lg">
+          <Sparkles className="h-3 w-3 text-black" />
         </div>
+      </div>
+
+      <h2 className="text-xl font-bold text-foreground mb-2">Crie sua primeira campanha</h2>
+      <p className="text-muted-foreground text-sm leading-relaxed mb-6 text-center max-w-md">
+        Campanhas de remarketing ajudam a reengajar usuarios que pararam no meio do funil. 
+        Envie sequencias automaticas de mensagens.
+      </p>
+
+      <Button
+        onClick={onCreateClick}
+        className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-11 px-6"
+      >
+        <Plus className="h-4 w-4" />
+        Criar Campanha
+      </Button>
+
+      {/* Features */}
+      <div className="grid grid-cols-3 gap-4 mt-8 w-full max-w-sm">
+        {[
+          { icon: MessageSquare, label: "Mensagens" },
+          { icon: Clock, label: "Delays" },
+          { icon: Users, label: "Segmentacao" },
+        ].map(({ icon: Icon, label }) => (
+          <div key={label} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-card">
+            <Icon className="h-5 w-5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground font-medium">{label}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
@@ -317,8 +315,8 @@ function CampaignCard({
       onClick={onSelect}
       className={`group relative rounded-[20px] border transition-all cursor-pointer overflow-hidden ${
         isSelected 
-          ? "border-[#a3e635]/40 bg-[#0f0f0f]" 
-          : "border-zinc-800/60 bg-[#0a0a0a] hover:border-zinc-700 hover:bg-[#0f0f0f]"
+          ? "border-[#a3e635]/40 bg-card shadow-lg" 
+          : "border-zinc-200 dark:border-zinc-800 bg-card hover:border-[#a3e635]/30 hover:shadow-md"
       }`}
     >
       {/* Accent bar quando selecionado */}
@@ -332,7 +330,7 @@ function CampaignCard({
             {/* Icone com status */}
             <div className={`relative shrink-0 h-12 w-12 rounded-2xl ${st.bg} flex items-center justify-center`}>
               <Megaphone className={`h-5 w-5 ${st.text}`} />
-              <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ${st.dot} border-2 border-[#0a0a0a]`} />
+              <div className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full ${st.dot} border-2 border-card`} />
             </div>
 
             <div className="min-w-0 flex-1">
