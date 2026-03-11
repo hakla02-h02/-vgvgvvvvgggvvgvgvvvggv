@@ -293,6 +293,76 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               {/* Visual Tab */}
               <TabsContent value="visual" className="p-4 m-0">
                 <div className="flex flex-col gap-5">
+                  {/* Models Selection */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Escolha um Modelo
+                    </Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {/* Modelo 1: Botoes */}
+                      <button
+                        className="relative group rounded-lg overflow-hidden border-2 border-[#111] ring-2 ring-[#111]/10"
+                      >
+                        <div className="aspect-[9/16] bg-[#0f172a]">
+                          <div className="flex flex-col items-center justify-center h-full p-2">
+                            <div className="w-4 h-4 rounded-full bg-white/30 mb-1" />
+                            <div className="w-6 h-0.5 rounded bg-white/40 mb-0.5" />
+                            <div className="w-5 h-0.5 rounded bg-white/30 mb-1.5" />
+                            <div className="w-full space-y-0.5 px-1">
+                              <div className="h-1.5 rounded-full bg-white/50" />
+                              <div className="h-1.5 rounded-full bg-white/50" />
+                              <div className="h-1.5 rounded-full bg-white/50" />
+                            </div>
+                          </div>
+                        </div>
+                        <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#111] flex items-center justify-center">
+                          <Check className="w-2 h-2 text-white" />
+                        </div>
+                      </button>
+
+                      {/* Modelo 2: Cards com Imagem */}
+                      <button
+                        className="relative group rounded-lg overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all"
+                      >
+                        <div className="aspect-[9/16] bg-[#0f172a]">
+                          <div className="flex flex-col items-center justify-center h-full p-2">
+                            <div className="w-4 h-4 rounded-full bg-white/30 mb-1" />
+                            <div className="w-6 h-0.5 rounded bg-white/40 mb-0.5" />
+                            <div className="w-5 h-0.5 rounded bg-white/30 mb-1.5" />
+                            <div className="w-full space-y-0.5 px-1">
+                              <div className="h-3 rounded bg-white/30 mb-0.5" />
+                              <div className="h-1 rounded bg-white/50" />
+                              <div className="h-3 rounded bg-white/30 mb-0.5" />
+                              <div className="h-1 rounded bg-white/50" />
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+
+                      {/* Modelo 3: Mix */}
+                      <button
+                        className="relative group rounded-lg overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all"
+                      >
+                        <div className="aspect-[9/16] bg-[#0f172a]">
+                          <div className="flex flex-col items-center justify-center h-full p-2">
+                            <div className="w-4 h-4 rounded-full bg-white/30 mb-1" />
+                            <div className="w-6 h-0.5 rounded bg-white/40 mb-0.5" />
+                            <div className="w-5 h-0.5 rounded bg-white/30 mb-1.5" />
+                            <div className="w-full space-y-0.5 px-1">
+                              <div className="h-1.5 rounded-full bg-white/50" />
+                              <div className="h-3 rounded bg-white/30 mb-0.5" />
+                              <div className="h-1 rounded bg-white/50" />
+                              <div className="h-1.5 rounded-full bg-white/50" />
+                            </div>
+                          </div>
+                        </div>
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1.5 text-center">
+                      Botoes - Layout classico com botoes
+                    </p>
+                  </div>
+
                   {/* Color Presets */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
