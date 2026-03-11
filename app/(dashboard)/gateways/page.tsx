@@ -18,7 +18,6 @@ import {
 } from "@/components/ui/dialog"
 import {
   CreditCard,
-  Plus,
   Settings,
   Trash2,
   Eye,
@@ -27,10 +26,9 @@ import {
   Loader2,
   ExternalLink,
   Zap,
-  ChevronRight,
-  Sparkles,
-  Shield,
-  Link2,
+  HelpCircle,
+  Copy,
+  Check,
 } from "lucide-react"
 
 export default function GatewaysPage() {
@@ -44,6 +42,7 @@ export default function GatewaysPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [expandedTutorial, setExpandedTutorial] = useState(false)
 
   if (!selectedBot) {
     return (
@@ -54,19 +53,13 @@ export default function GatewaysPage() {
     )
   }
 
-  const isGatewayConnected = (gatewayId: string) => {
-    return gateways.some((g) => g.gateway_name === gatewayId && g.is_active)
-  }
+  const mercadoPago = AVAILABLE_GATEWAYS[0]
+  const gatewayData = gateways.find((g) => g.gateway_name === "mercadopago")
+  const isConnected = gatewayData?.is_active ?? false
 
-  const getGatewayData = (gatewayId: string) => {
-    return gateways.find((g) => g.gateway_name === gatewayId)
-  }
-
-  const handleOpenConnect = (gatewayId: string) => {
-    setSelectedGatewayId(gatewayId)
-    const existing = getGatewayData(gatewayId)
-    if (existing) {
-      setAccessToken(existing.access_token)
+  const handleOpenConnect = () => {
+    if (gatewayData) {
+      setAccessToken(gatewayData.access_token)
     } else {
       setAccessToken("")
     }
@@ -76,7 +69,6 @@ export default function GatewaysPage() {
   }
 
   const handleConnect = async () => {
-    if (!selectedGatewayId) return
     if (!accessToken.trim()) {
       setError("Digite o Access Token")
       return
@@ -87,7 +79,7 @@ export default function GatewaysPage() {
     setSuccess("")
 
     try {
-      await connectGateway(selectedGatewayId, accessToken.trim())
+      await connectGateway("mercadopago", accessToken.trim())
       setSuccess("Gateway conectado com sucesso!")
       setTimeout(() => {
         setConnectDialogOpen(false)
@@ -101,237 +93,258 @@ export default function GatewaysPage() {
     }
   }
 
-  const handleDisconnect = async (gatewayId: string) => {
-    const gateway = getGatewayData(gatewayId)
-    if (!gateway) return
+  const handleDisconnect = async () => {
+    if (!gatewayData) return
 
     try {
-      await disconnectGateway(gateway.id)
+      await disconnectGateway(gatewayData.id)
     } catch (err) {
       console.error("Error disconnecting gateway:", err)
     }
   }
 
-  const handleToggleActive = async (gatewayId: string, isActive: boolean) => {
-    const gateway = getGatewayData(gatewayId)
-    if (!gateway) return
+  const handleToggleActive = async (isActive: boolean) => {
+    if (!gatewayData) return
 
     try {
-      await updateGateway(gateway.id, { is_active: isActive })
+      await updateGateway(gatewayData.id, { is_active: isActive })
     } catch (err) {
       console.error("Error toggling gateway:", err)
     }
   }
 
-  const selectedGatewayInfo = AVAILABLE_GATEWAYS.find((g) => g.id === selectedGatewayId)
-
-  // Separar gateways conectados dos disponiveis
-  const connectedGatewaysList = AVAILABLE_GATEWAYS.filter(gw => isGatewayConnected(gw.id))
-  const availableGatewaysList = AVAILABLE_GATEWAYS.filter(gw => !isGatewayConnected(gw.id))
+  const tutorialSteps = [
+    {
+      step: 1,
+      title: "Acesse sua conta do Mercado Pago",
+      description: "Entre em mercadopago.com.br e faca login na sua conta",
+    },
+    {
+      step: 2,
+      title: "Va ate Suas Integracoes",
+      description: "No menu, clique em 'Seu negocio' > 'Configuracoes' > 'Gestao e Administracao' > 'Credenciais'",
+    },
+    {
+      step: 3,
+      title: "Crie uma aplicacao",
+      description: "Clique em 'Criar aplicacao' e preencha os dados solicitados",
+    },
+    {
+      step: 4,
+      title: "Copie o Access Token",
+      description: "Na aba 'Credenciais de producao', copie o Access Token e cole aqui",
+    },
+  ]
 
   return (
     <>
       <DashboardHeader title="Gateways" />
       <ScrollArea className="flex-1">
         <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
-          
-          {/* Hero Section - Clean and Simple */}
-          <div className="mb-8">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-10 h-10 rounded-2xl bg-[#111] flex items-center justify-center">
-                <Link2 className="h-5 w-5 text-[#a3e635]" />
-              </div>
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-                  Conectar Gateway
-                </h1>
-                <p className="text-sm text-gray-500">
-                  Escolha um gateway para receber pagamentos no seu bot
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Connected Gateways Section */}
-          {connectedGatewaysList.length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center gap-2 mb-4">
-                <span className="w-2 h-2 rounded-full bg-[#22c55e] animate-pulse"></span>
-                <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                  Conectado
-                </h2>
-              </div>
-              
-              <div className="flex flex-col gap-4">
-                {connectedGatewaysList.map((gw) => {
-                  const gatewayData = getGatewayData(gw.id)
-                  
-                  return (
-                    <div
-                      key={gw.id}
-                      className="bg-[#111] rounded-[28px] p-6 md:p-8 relative overflow-hidden group"
-                    >
-                      {/* Glow Effect */}
-                      <div className="absolute top-0 right-0 w-60 h-60 bg-[#a3e635] opacity-[0.08] blur-[80px] rounded-full pointer-events-none"></div>
-                      <div className="absolute bottom-0 left-0 w-40 h-40 opacity-[0.05] blur-[60px] rounded-full pointer-events-none" style={{ backgroundColor: gw.color }}></div>
-                      
-                      <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                        <div className="flex items-center gap-5">
-                          {/* Gateway Icon */}
-                          <div
-                            className="flex h-16 w-16 items-center justify-center rounded-2xl border border-white/10"
-                            style={{ backgroundColor: `${gw.color}20` }}
-                          >
-                            <CreditCard
-                              className="h-8 w-8"
-                              style={{ color: gw.color }}
-                            />
-                          </div>
-
-                          {/* Gateway Info */}
-                          <div>
-                            <div className="flex items-center gap-3 flex-wrap">
-                              <h3 className="text-xl font-bold text-white">
-                                {gw.name}
-                              </h3>
-                              <span className="inline-flex items-center gap-1.5 bg-[#22c55e]/20 text-[#4ade80] text-xs font-semibold px-3 py-1 rounded-full">
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                                Ativo
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-400 mt-1">{gw.description}</p>
-                            {gatewayData?.created_at && (
-                              <p className="text-xs text-gray-500 mt-2">
-                                Conectado em {new Date(gatewayData.created_at).toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-3 bg-white/5 rounded-2xl px-4 py-2.5 border border-white/10">
-                            <span className="text-sm text-gray-400">Gateway</span>
-                            <Switch
-                              checked={gatewayData?.is_active ?? false}
-                              onCheckedChange={(checked) => handleToggleActive(gw.id, checked)}
-                            />
-                          </div>
-                          
-                          <button
-                            className="w-12 h-12 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-center transition-all"
-                            onClick={() => handleOpenConnect(gw.id)}
-                          >
-                            <Settings className="h-5 w-5 text-gray-400" />
-                          </button>
-                          
-                          <button
-                            className="w-12 h-12 rounded-2xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 flex items-center justify-center transition-all group"
-                            onClick={() => handleDisconnect(gw.id)}
-                          >
-                            <Trash2 className="h-5 w-5 text-red-400 group-hover:text-red-300" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Available Gateways Section */}
-          <div>
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-4 h-4 text-gray-400" />
-              <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wider">
-                Gateways Disponiveis
-              </h2>
-            </div>
+          <div className="max-w-3xl mx-auto">
             
-            {isLoading ? (
-              <div className="flex items-center justify-center py-16 bg-white rounded-[28px] border border-gray-100">
-                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {availableGatewaysList.map((gw) => {
-                  const isComingSoon = gw.comingSoon
-
-                  return (
-                    <div
-                      key={gw.id}
-                      className={`bg-white rounded-[24px] border transition-all overflow-hidden group cursor-pointer ${
-                        isComingSoon 
-                          ? "opacity-60 border-gray-100 cursor-not-allowed" 
-                          : "border-gray-100 hover:border-gray-200 hover:shadow-lg hover:-translate-y-1"
-                      }`}
-                      onClick={() => !isComingSoon && handleOpenConnect(gw.id)}
-                    >
-                      <div className="p-6">
-                        {/* Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div
-                            className="flex h-14 w-14 items-center justify-center rounded-2xl transition-transform group-hover:scale-110"
-                            style={{ backgroundColor: `${gw.color}15` }}
-                          >
-                            <CreditCard
-                              className="h-7 w-7"
-                              style={{ color: gw.color }}
-                            />
-                          </div>
-                          
-                          {isComingSoon ? (
-                            <span className="text-xs text-gray-400 bg-gray-100 px-3 py-1.5 rounded-full font-medium">
-                              Em breve
-                            </span>
-                          ) : (
-                            <div className="w-10 h-10 rounded-xl bg-[#111] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <ChevronRight className="h-5 w-5 text-white" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <h3 className="text-lg font-bold text-gray-900 mb-1">
-                          {gw.name}
-                        </h3>
-                        <p className="text-sm text-gray-500">{gw.description}</p>
-
-                        {/* Features */}
-                        {!isComingSoon && (
-                          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-gray-100">
-                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                              <Zap className="h-3.5 w-3.5 text-[#a3e635]" />
-                              PIX Instantaneo
-                            </div>
-                            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                              <Shield className="h-3.5 w-3.5 text-blue-500" />
-                              Seguro
-                            </div>
-                          </div>
+            {/* Main Gateway Card */}
+            <div className={`rounded-[32px] overflow-hidden transition-all ${
+              isConnected 
+                ? "bg-[#111]" 
+                : "bg-white border border-gray-200"
+            }`}>
+              
+              {/* Header */}
+              <div className={`p-6 md:p-8 ${isConnected ? "" : "border-b border-gray-100"}`}>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    {/* Icon */}
+                    <div className={`w-16 h-16 rounded-2xl flex items-center justify-center ${
+                      isConnected 
+                        ? "bg-[#00bcff]/20" 
+                        : "bg-[#00bcff]/10"
+                    }`}>
+                      <CreditCard className="w-8 h-8 text-[#00bcff]" />
+                    </div>
+                    
+                    {/* Info */}
+                    <div>
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <h2 className={`text-xl md:text-2xl font-bold ${
+                          isConnected ? "text-white" : "text-gray-900"
+                        }`}>
+                          {mercadoPago.name}
+                        </h2>
+                        {isConnected && (
+                          <span className="inline-flex items-center gap-1.5 bg-[#22c55e]/20 text-[#4ade80] text-xs font-semibold px-3 py-1 rounded-full">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Conectado
+                          </span>
                         )}
                       </div>
+                      <p className={`text-sm mt-1 ${
+                        isConnected ? "text-gray-400" : "text-gray-500"
+                      }`}>
+                        {mercadoPago.description}
+                      </p>
                     </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+                  </div>
 
-          {/* Help Card */}
-          <div className="mt-8 bg-gradient-to-br from-[#f0ffd4] to-[#e8ffc4] rounded-[28px] p-6 border border-[#d9f970]/50">
-            <div className="flex items-start gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-[#4d7c0f]/10 flex items-center justify-center flex-shrink-0">
-                <Shield className="h-6 w-6 text-[#4d7c0f]" />
+                  {/* Status Toggle - Only when connected */}
+                  {isConnected && (
+                    <div className="flex items-center gap-2 bg-white/5 rounded-xl px-4 py-2 border border-white/10">
+                      <span className="text-sm text-gray-400">
+                        {gatewayData?.is_active ? "Ativo" : "Pausado"}
+                      </span>
+                      <Switch
+                        checked={gatewayData?.is_active ?? false}
+                        onCheckedChange={handleToggleActive}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Connected Info */}
+                {isConnected && gatewayData && (
+                  <div className="mt-6 pt-6 border-t border-white/10">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div className="flex items-center gap-6">
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Conectado em</p>
+                          <p className="text-sm text-white font-medium">
+                            {new Date(gatewayData.created_at).toLocaleDateString('pt-BR', {
+                              day: '2-digit',
+                              month: 'long',
+                              year: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                        <div className="h-8 w-px bg-white/10"></div>
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wider mb-1">Status</p>
+                          <p className={`text-sm font-medium ${gatewayData.is_active ? "text-[#4ade80]" : "text-yellow-400"}`}>
+                            {gatewayData.is_active ? "Recebendo pagamentos" : "Pagamentos pausados"}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={handleOpenConnect}
+                          className="h-11 px-5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-white text-sm font-medium flex items-center gap-2 transition-all"
+                        >
+                          <Settings className="h-4 w-4" />
+                          Configurar
+                        </button>
+                        <button
+                          onClick={handleDisconnect}
+                          className="h-11 px-5 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-sm font-medium flex items-center gap-2 transition-all"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                          Desconectar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Connect Button - Only when not connected */}
+                {!isConnected && (
+                  <div className="mt-6">
+                    <button
+                      onClick={handleOpenConnect}
+                      className="w-full h-14 rounded-2xl bg-[#111] hover:bg-[#222] text-white text-base font-semibold flex items-center justify-center gap-2 transition-all"
+                    >
+                      <Zap className="h-5 w-5 text-[#a3e635]" />
+                      Conectar Mercado Pago
+                    </button>
+                  </div>
+                )}
               </div>
-              <div>
-                <h3 className="font-semibold text-gray-900 mb-1">Seus dados estao seguros</h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
-                  Seus tokens de acesso sao criptografados com AES-256 e armazenados de forma segura. 
-                  Nunca compartilhamos suas credenciais.
-                </p>
-              </div>
+
+              {/* Features - Only when not connected */}
+              {!isConnected && (
+                <div className="px-6 md:px-8 pb-6 md:pb-8">
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-[#a3e635]/20 flex items-center justify-center mx-auto mb-2">
+                        <Zap className="h-5 w-5 text-[#65a30d]" />
+                      </div>
+                      <p className="text-xs font-medium text-gray-700">PIX Instantaneo</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-[#00bcff]/20 flex items-center justify-center mx-auto mb-2">
+                        <CreditCard className="h-5 w-5 text-[#00bcff]" />
+                      </div>
+                      <p className="text-xs font-medium text-gray-700">Cartao de Credito</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-xl p-4 text-center">
+                      <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center mx-auto mb-2">
+                        <CreditCard className="h-5 w-5 text-purple-600" />
+                      </div>
+                      <p className="text-xs font-medium text-gray-700">Cartao de Debito</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Tutorial Card */}
+            <div className="mt-6 bg-white rounded-[28px] border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setExpandedTutorial(!expandedTutorial)}
+                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-[#00bcff]/10 flex items-center justify-center">
+                    <HelpCircle className="h-6 w-6 text-[#00bcff]" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold text-gray-900">
+                      Como obter o Access Token do Mercado Pago?
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-0.5">
+                      Siga o passo a passo para conectar sua conta
+                    </p>
+                  </div>
+                </div>
+                <div className={`w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center transition-transform ${
+                  expandedTutorial ? "rotate-180" : ""
+                }`}>
+                  <svg className="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </button>
+
+              {expandedTutorial && (
+                <div className="px-6 pb-6 border-t border-gray-100">
+                  <div className="pt-6 space-y-4">
+                    {tutorialSteps.map((item, index) => (
+                      <div key={item.step} className="flex gap-4">
+                        <div className="flex flex-col items-center">
+                          <div className="w-8 h-8 rounded-full bg-[#111] text-white text-sm font-bold flex items-center justify-center">
+                            {item.step}
+                          </div>
+                          {index < tutorialSteps.length - 1 && (
+                            <div className="w-px h-full bg-gray-200 mt-2"></div>
+                          )}
+                        </div>
+                        <div className="pb-4">
+                          <h4 className="font-medium text-gray-900">{item.title}</h4>
+                          <p className="text-sm text-gray-500 mt-1">{item.description}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <a
+                    href={mercadoPago.helpUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-4 flex items-center justify-center gap-2 w-full h-12 rounded-xl bg-[#00bcff]/10 hover:bg-[#00bcff]/20 text-[#0284c7] font-medium text-sm transition-colors"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Abrir pagina de credenciais do Mercado Pago
+                  </a>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -340,38 +353,24 @@ export default function GatewaysPage() {
       {/* Connect Dialog */}
       <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
         <DialogContent className="sm:max-w-md bg-white border-0 rounded-[28px] p-0 overflow-hidden">
-          {/* Header com cor do gateway */}
-          <div 
-            className="p-6 pb-4"
-            style={{ backgroundColor: selectedGatewayInfo ? `${selectedGatewayInfo.color}10` : '#f4f5f7' }}
-          >
+          {/* Header */}
+          <div className="p-6 pb-4 bg-[#00bcff]/5">
             <div className="flex items-center gap-4">
-              {selectedGatewayInfo && (
-                <div
-                  className="flex h-14 w-14 items-center justify-center rounded-2xl"
-                  style={{ backgroundColor: `${selectedGatewayInfo.color}20` }}
-                >
-                  <CreditCard
-                    className="h-7 w-7"
-                    style={{ color: selectedGatewayInfo.color }}
-                  />
-                </div>
-              )}
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#00bcff]/20">
+                <CreditCard className="h-7 w-7 text-[#00bcff]" />
+              </div>
               <div>
                 <DialogTitle className="text-xl font-bold text-gray-900">
-                  Conectar {selectedGatewayInfo?.name}
+                  {isConnected ? "Configurar" : "Conectar"} Mercado Pago
                 </DialogTitle>
                 <DialogDescription className="text-sm text-gray-500 mt-0.5">
-                  {isGatewayConnected(selectedGatewayId || '') 
-                    ? 'Atualize suas credenciais' 
-                    : 'Insira seu Access Token para conectar'
-                  }
+                  {isConnected ? "Atualize seu Access Token" : "Insira seu Access Token para conectar"}
                 </DialogDescription>
               </div>
             </div>
           </div>
           
-          <div className="p-6 pt-2">
+          <div className="p-6 pt-4">
             <div className="space-y-5">
               <div>
                 <Label htmlFor="accessToken" className="text-sm font-medium text-gray-700">
@@ -381,10 +380,10 @@ export default function GatewaysPage() {
                   <Input
                     id="accessToken"
                     type={showToken ? "text" : "password"}
-                    placeholder="Cole seu access token aqui"
+                    placeholder="APP_USR-0000000000000000-000000-..."
                     value={accessToken}
                     onChange={(e) => setAccessToken(e.target.value)}
-                    className="pr-12 h-12 rounded-xl border-gray-200 focus:border-gray-300 focus:ring-0"
+                    className="pr-12 h-12 rounded-xl border-gray-200 focus:border-[#00bcff] focus:ring-[#00bcff]/20"
                   />
                   <button
                     type="button"
@@ -394,6 +393,9 @@ export default function GatewaysPage() {
                     {showToken ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                   </button>
                 </div>
+                <p className="text-xs text-gray-400 mt-2">
+                  Use o Access Token de producao, nao o de teste
+                </p>
               </div>
 
               {error && (
@@ -409,18 +411,6 @@ export default function GatewaysPage() {
                 </div>
               )}
 
-              {selectedGatewayInfo?.helpUrl && (
-                <a
-                  href={selectedGatewayInfo.helpUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  <ExternalLink className="h-4 w-4" />
-                  Como obter o Access Token do {selectedGatewayInfo.name}?
-                </a>
-              )}
-
               <button
                 onClick={handleConnect}
                 disabled={isSubmitting}
@@ -434,10 +424,22 @@ export default function GatewaysPage() {
                 ) : (
                   <>
                     <Zap className="h-4 w-4" />
-                    {isGatewayConnected(selectedGatewayId || '') ? 'Atualizar' : 'Conectar Gateway'}
+                    {isConnected ? "Atualizar Token" : "Conectar Gateway"}
                   </>
                 )}
               </button>
+
+              {!isConnected && (
+                <a
+                  href={mercadoPago.helpUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Como obter o Access Token?
+                </a>
+              )}
             </div>
           </div>
         </DialogContent>

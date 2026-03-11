@@ -54,24 +54,7 @@ export const AVAILABLE_GATEWAYS = [
     icon: "mercadopago",
     color: "#00bcff",
     methods: ["pix", "credit_card", "debit_card"],
-  },
-  {
-    id: "stripe",
-    name: "Stripe",
-    description: "Cartao Internacional",
-    icon: "stripe",
-    color: "#635bff",
-    methods: ["credit_card"],
-    comingSoon: true,
-  },
-  {
-    id: "pagseguro",
-    name: "PagSeguro",
-    description: "PIX e Boleto",
-    icon: "pagseguro",
-    color: "#41ce68",
-    methods: ["pix", "boleto"],
-    comingSoon: true,
+    helpUrl: "https://www.mercadopago.com.br/developers/pt/docs/your-integrations/credentials",
   },
 ] as const
 
