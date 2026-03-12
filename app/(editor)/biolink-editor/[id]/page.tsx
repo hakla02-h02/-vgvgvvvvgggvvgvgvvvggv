@@ -38,6 +38,8 @@ export type BioPageData = {
   profile_name: string
   profile_bio: string
   profile_image: string
+  background_image_mobile?: string // Imagem de fundo para formato stories/mobile
+  background_image_desktop?: string // Imagem de fundo para formato desktop
   colors: {
     primary: string
     secondary: string
@@ -251,9 +253,21 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     }
   }
 
-  // Get background style - simple solid color
+// Get background style - with optional background image
   const getBackgroundStyle = () => {
-    return { backgroundColor: pageData.colors.background }
+    const baseStyle: React.CSSProperties = { backgroundColor: pageData.colors.background }
+    
+    // Use mobile image if available (preview is in mobile format)
+    if (pageData.background_image_mobile) {
+      return {
+        ...baseStyle,
+        backgroundImage: `url(${pageData.background_image_mobile})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    }
+    
+    return baseStyle
   }
 
   if (loading) {
@@ -540,6 +554,83 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                             onChange={(e) => updatePageData({ colors: { ...pageData.colors, primary: e.target.value } })}
                             className="flex-1 h-5 bg-transparent border-0 text-[10px] font-mono px-1"
                           />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Background Image (Optional) */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Imagem de Fundo (Opcional)
+                    </Label>
+                    <p className="text-[10px] text-gray-400 mb-2">
+                      Adicione uma imagem de fundo personalizada para seu site
+                    </p>
+                    <div className="space-y-3">
+                      {/* Mobile/Stories */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-4 h-6 border border-gray-300 rounded-sm flex items-center justify-center">
+                            <div className="w-2 h-4 bg-gray-200 rounded-[1px]" />
+                          </div>
+                          <span className="text-[10px] font-medium text-gray-600">Mobile / Stories</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {pageData.background_image_mobile ? (
+                              <img src={pageData.background_image_mobile} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                          <Input
+                            placeholder="URL da imagem (9:16)"
+                            value={pageData.background_image_mobile || ""}
+                            onChange={(e) => updatePageData({ background_image_mobile: e.target.value })}
+                            className="h-8 text-xs flex-1"
+                          />
+                          {pageData.background_image_mobile && (
+                            <button
+                              onClick={() => updatePageData({ background_image_mobile: "" })}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Desktop */}
+                      <div className="border border-gray-200 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <div className="w-6 h-4 border border-gray-300 rounded-sm flex items-center justify-center">
+                            <div className="w-4 h-2 bg-gray-200 rounded-[1px]" />
+                          </div>
+                          <span className="text-[10px] font-medium text-gray-600">Desktop</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-10 h-10 rounded bg-gray-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                            {pageData.background_image_desktop ? (
+                              <img src={pageData.background_image_desktop} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                              <ImageIcon className="w-4 h-4 text-gray-400" />
+                            )}
+                          </div>
+                          <Input
+                            placeholder="URL da imagem (16:9)"
+                            value={pageData.background_image_desktop || ""}
+                            onChange={(e) => updatePageData({ background_image_desktop: e.target.value })}
+                            className="h-8 text-xs flex-1"
+                          />
+                          {pageData.background_image_desktop && (
+                            <button
+                              onClick={() => updatePageData({ background_image_desktop: "" })}
+                              className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

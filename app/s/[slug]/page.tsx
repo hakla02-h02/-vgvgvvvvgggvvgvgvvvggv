@@ -56,11 +56,50 @@ export default async function DragonBioPage({ params }: PageProps) {
     text: "#ffffff"
   }
 
+  // Background images
+  const backgroundImageMobile = site.background_image_mobile
+  const backgroundImageDesktop = site.background_image_desktop
+
+  // Background style
+  const getBackgroundStyle = () => {
+    const baseStyle: React.CSSProperties = { backgroundColor: colors.background }
+    
+    if (backgroundImageMobile || backgroundImageDesktop) {
+      return {
+        ...baseStyle,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }
+    }
+    
+    return baseStyle
+  }
+
   return (
     <div 
       className="min-h-screen flex flex-col items-center justify-start pt-16 pb-8 px-4"
-      style={{ backgroundColor: colors.background }}
+      style={getBackgroundStyle()}
     >
+      {/* Background Images - Mobile first, then desktop */}
+      {(backgroundImageMobile || backgroundImageDesktop) && (
+        <style dangerouslySetInnerHTML={{
+          __html: `
+            .bg-container {
+              background-image: url('${backgroundImageMobile || backgroundImageDesktop}');
+            }
+            @media (min-width: 768px) {
+              .bg-container {
+                background-image: url('${backgroundImageDesktop || backgroundImageMobile}');
+              }
+            }
+          `
+        }} />
+      )}
+      <div 
+        className={`fixed inset-0 -z-10 ${(backgroundImageMobile || backgroundImageDesktop) ? 'bg-container bg-cover bg-center bg-no-repeat' : ''}`}
+        style={{ backgroundColor: colors.background }}
+      />
       {/* Profile Section */}
       <div className="flex flex-col items-center mb-8">
         {site.profile_image ? (
