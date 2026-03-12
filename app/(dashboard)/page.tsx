@@ -110,7 +110,7 @@ export default function DashboardPage() {
   return (
     <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
       {/* Top Header */}
-      <header className="px-4 md:px-8 py-4 md:py-5 flex items-center justify-between flex-shrink-0">
+      <header className="px-8 py-5 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-4 bg-card px-4 py-2.5 rounded-full shadow-sm w-full max-w-[400px]">
           <Search size={18} className="text-muted-foreground" />
           <input
@@ -123,22 +123,22 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-4">
           <button 
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-            className="w-9 h-9 md:w-10 md:h-10 bg-card rounded-full flex items-center justify-center text-muted-foreground shadow-sm hover:bg-muted transition-colors"
+            className="w-10 h-10 bg-card rounded-full flex items-center justify-center text-muted-foreground shadow-sm hover:bg-muted transition-colors"
           >
             {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
           </button>
           <Link href="/bots">
-            <button className="w-9 h-9 md:w-10 md:h-10 bg-accent/30 rounded-full flex items-center justify-center text-accent-foreground shadow-sm hover:bg-accent/40 transition-colors">
+            <button className="w-10 h-10 bg-accent/30 rounded-full flex items-center justify-center text-accent-foreground shadow-sm hover:bg-accent/40 transition-colors">
               <Bot size={18} />
             </button>
           </Link>
-          <div className="h-6 w-px bg-border mx-1 md:mx-2 hidden md:block"></div>
+          <div className="h-6 w-px bg-border mx-2"></div>
           <Popover>
             <PopoverTrigger asChild>
-              <div className="hidden md:flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
+              <div className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent to-accent/70 flex items-center justify-center shadow-sm">
                   <Bot size={20} className="text-accent-foreground" />
                 </div>
@@ -178,10 +178,10 @@ export default function DashboardPage() {
       </header>
 
       {/* Dashboard Content Area */}
-      <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
+      <div className="flex-1 overflow-y-auto px-8 pb-8">
         {/* Content Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-6 gap-4">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">
+        <div className="flex flex-row items-end justify-between mb-6 gap-4">
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">
             Painel Analítico
           </h1>
           <div className="flex items-center gap-3">
@@ -245,58 +245,58 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Grid Layout - 2 column layout with Dragon AI on right */}
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr_240px] gap-4">
-          {/* Sales Distribution Card - Top Left, spans 2 columns */}
-          <div className="bg-foreground dark:bg-card rounded-[24px] p-4 md:p-5 text-background dark:text-foreground relative overflow-hidden shadow-lg xl:col-span-2">
+        {/* Grid Layout - Fixed 3 column layout with Dragon AI on right */}
+        <div className="grid grid-cols-[1fr_240px] gap-4">
+          {/* Sales Distribution Card - Top Left */}
+          <div className="bg-foreground dark:bg-card rounded-[24px] p-5 text-background dark:text-foreground relative overflow-hidden shadow-lg">
               {/* Glow effect */}
               <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
 
               <div className="relative z-10">
-                <h2 className="text-lg md:text-xl font-semibold mb-1">Distribuição de Vendas</h2>
-                <p className="text-muted-foreground text-xs md:text-sm mb-4 md:mb-6">
+                <h2 className="text-xl font-semibold mb-1">Distribuição de Vendas</h2>
+                <p className="text-muted-foreground text-sm mb-6">
                   Métricas de vendas mostrando crescimento em leads, receita e performance
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   {/* Metric 1 */}
-                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-4 md:p-5 border border-background/5 dark:border-border">
-                    <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-2">
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
                       <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
                       Receita Total
                     </div>
-                    <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
+                    <div className="text-3xl font-bold flex items-end gap-1">
                       0 <span className="text-sm font-normal text-muted-foreground mb-1">R$</span>
                     </div>
                   </div>
                   {/* Metric 2 */}
-                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-4 md:p-5 border border-background/5 dark:border-border">
-                    <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-2">
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
                       <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
                       ROI
                     </div>
-                    <div className="text-2xl md:text-3xl font-bold flex items-end gap-1">
+                    <div className="text-3xl font-bold flex items-end gap-1">
                       0 <span className="text-sm font-normal text-muted-foreground mb-1">%</span>
                     </div>
                   </div>
                   {/* Metric 3 */}
-                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-4 md:p-5 border border-background/5 dark:border-border">
-                    <div className="flex items-center gap-2 text-muted-foreground text-xs md:text-sm mb-2">
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
                       <div className="w-4 h-4 rounded-full bg-background/10 dark:bg-secondary flex items-center justify-center border border-muted-foreground/50">
                         <span className="text-[8px]">±</span>
                       </div>
                       Usuários Ativos
                     </div>
-                    <div className="text-2xl md:text-3xl font-bold">0</div>
+                    <div className="text-3xl font-bold">0</div>
                   </div>
                 </div>
               </div>
             </div>
 
           {/* Container para Análise de Vendas e Análise de Negócios lado a lado */}
-          <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+          <div className="flex flex-row gap-6">
             {/* Sales Analysis Card */}
-            <div className="flex-1 bg-card rounded-[24px] p-4 md:p-5 shadow-sm border border-border flex flex-col">
+            <div className="flex-1 bg-card rounded-[24px] p-5 shadow-sm border border-border flex flex-col">
                   <div className="flex justify-between items-center mb-4">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-accent"></span>
@@ -375,7 +375,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Deal Analysis Card */}
-            <div className="flex-1 bg-accent/20 dark:bg-accent/10 rounded-[24px] p-4 md:p-5 shadow-sm border border-accent/30 dark:border-accent/20 flex flex-col relative overflow-hidden min-h-[220px]">
+            <div className="flex-1 bg-accent/20 dark:bg-accent/10 rounded-[24px] p-5 shadow-sm border border-accent/30 dark:border-accent/20 flex flex-col relative overflow-hidden min-h-[220px]">
                   {/* Background Stripes */}
                   <div className="absolute inset-0 opacity-30 dark:opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, hsl(100 71% 65% / 0.3) 8px, hsl(100 71% 65% / 0.3) 16px)" }}></div>
                   <div className="flex justify-between items-center mb-3 relative z-10">
@@ -428,9 +428,9 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Right Column - Dragon AI Panel - compact for desktop */}
-          <div className="xl:row-span-2 xl:col-start-3 xl:row-start-1 order-last xl:order-none">
-            <div className="bg-foreground dark:bg-card rounded-[24px] p-4 md:p-5 flex flex-col shadow-2xl relative overflow-hidden border border-background/5 dark:border-border h-full max-h-[420px]">
+          {/* Right Column - Dragon AI Panel - Fixed position */}
+          <div className="row-span-2 col-start-2 row-start-1">
+            <div className="bg-foreground dark:bg-card rounded-[24px] p-5 flex flex-col shadow-2xl relative overflow-hidden border border-background/5 dark:border-border h-full max-h-[420px]">
               
               {/* Efeitos de fundo (Glow) */}
               <div className="absolute top-0 right-0 w-20 h-20 bg-accent opacity-10 blur-[40px] rounded-full"></div>
@@ -507,14 +507,14 @@ export default function DashboardPage() {
         </div>
 
         {/* Bottom Table Section */}
-        <div className="mt-4 md:mt-5 bg-card rounded-[24px] p-4 md:p-6 shadow-sm border border-border mb-4">
+        <div className="mt-5 bg-card rounded-[24px] p-6 shadow-sm border border-border mb-4">
             {/* Table Header */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 md:mb-6 gap-3">
+            <div className="flex flex-row justify-between items-center mb-6 gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-5 h-5 bg-accent/30 rounded flex items-center justify-center">
                   <List size={12} className="text-accent-foreground" />
                 </div>
-                <h3 className="font-semibold text-foreground text-base md:text-lg">
+                <h3 className="font-semibold text-foreground text-lg">
                   Conversas Recentes
                 </h3>
               </div>
