@@ -255,7 +255,7 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
     <div className="flex flex-col items-center justify-center py-16 px-4">
       {/* Icone */}
       <div className="relative mb-6">
-        <div className="h-20 w-20 rounded-3xl bg-[#111] border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shadow-sm">
+        <div className="h-20 w-20 rounded-3xl bg-foreground dark:bg-card border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shadow-sm">
           <Target className="h-9 w-9 text-[#a3e635]" />
         </div>
         <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#a3e635] flex items-center justify-center shadow-lg">
@@ -335,7 +335,7 @@ function CampaignCard({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h3 className="text-sm font-semibold text-white truncate">{campaign.name}</h3>
+                <h3 className="text-sm font-semibold text-background dark:text-foreground truncate">{campaign.name}</h3>
                 <Badge className={`${st.bg} ${st.text} border-0 text-[10px] px-2 py-0 h-5 rounded-md font-medium`}>
                   {st.label}
                 </Badge>
@@ -410,7 +410,7 @@ function CampaignDetail({ campaign }: { campaign: Campaign }) {
       <div className="p-5 bg-gradient-to-b from-zinc-900/50 to-transparent border-b border-zinc-800/50">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-white">{campaign.name}</h2>
+            <h2 className="text-base font-bold text-background dark:text-foreground">{campaign.name}</h2>
             <p className="text-xs text-zinc-500 mt-0.5">
               Criada em {new Date(campaign.created_at).toLocaleDateString("pt-BR")}
             </p>
@@ -422,19 +422,19 @@ function CampaignDetail({ campaign }: { campaign: Campaign }) {
 
         {/* Quick stats */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-[#111] border border-zinc-800/50 p-3">
+          <div className="rounded-2xl bg-foreground dark:bg-card border border-zinc-800/50 p-3">
             <div className="flex items-center gap-2 mb-1">
               <Send className="h-3.5 w-3.5 text-zinc-500" />
               <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Enviadas</span>
             </div>
-            <p className="text-lg font-bold text-white">0</p>
+            <p className="text-lg font-bold text-background dark:text-foreground">0</p>
           </div>
-          <div className="rounded-2xl bg-[#111] border border-zinc-800/50 p-3">
+          <div className="rounded-2xl bg-foreground dark:bg-card border border-zinc-800/50 p-3">
             <div className="flex items-center gap-2 mb-1">
               <Users className="h-3.5 w-3.5 text-zinc-500" />
               <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Alcance</span>
             </div>
-            <p className="text-lg font-bold text-white">0%</p>
+            <p className="text-lg font-bold text-background dark:text-foreground">0%</p>
           </div>
         </div>
       </div>
@@ -475,7 +475,7 @@ function CampaignDetail({ campaign }: { campaign: Campaign }) {
 
                   {/* Content */}
                   <div className="pb-4 min-w-0 flex-1">
-                    <p className="text-xs font-medium text-white">
+                    <p className="text-xs font-medium text-background dark:text-foreground">
                       {isMsg ? (node.label || "Mensagem") : `Aguardar ${delayLabel}`}
                     </p>
                     {isMsg && text && (
@@ -682,7 +682,7 @@ function CampaignWizard({
           <div className="flex items-center justify-between p-5 border-t border-zinc-800/50">
             <button
               onClick={() => setStep("type")}
-              className="text-sm text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
+              className="text-sm text-zinc-500 hover:text-background dark:text-foreground transition-colors flex items-center gap-1"
             >
               <ArrowLeft className="h-4 w-4" />
               Voltar
@@ -708,14 +708,14 @@ function StepName({ value, onChange, onNext }: { value: string; onChange: (v: st
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div>
-        <h2 className="text-xl font-bold text-white">Nome da Campanha</h2>
+        <h2 className="text-xl font-bold text-background dark:text-foreground">Nome da Campanha</h2>
         <p className="text-sm text-zinc-500 mt-1">Escolha um nome para identificar sua campanha</p>
       </div>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Ex: Remarketing Black Friday"
-        className="bg-[#111] border-zinc-800 rounded-xl h-12 text-white placeholder:text-zinc-600"
+        className="bg-foreground dark:bg-card border-zinc-800 rounded-xl h-12 text-background dark:text-foreground placeholder:text-zinc-600"
         autoFocus
         onKeyDown={(e) => { if (e.key === "Enter" && value.trim()) onNext() }}
       />
@@ -741,7 +741,7 @@ function StepType({ selected, onSelect, onBack }: {
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div>
-        <h2 className="text-xl font-bold text-white">Tipo de Campanha</h2>
+        <h2 className="text-xl font-bold text-background dark:text-foreground">Tipo de Campanha</h2>
         <p className="text-sm text-zinc-500 mt-1">Escolha como quer construir sua campanha</p>
       </div>
 
@@ -749,13 +749,13 @@ function StepType({ selected, onSelect, onBack }: {
         {/* Basic */}
         <button
           onClick={() => onSelect("basic")}
-          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-[#111] hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.03] transition-all text-left"
+          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-foreground dark:bg-card hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.03] transition-all text-left"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#a3e635]/10 group-hover:bg-[#a3e635]/20 transition-colors">
             <Zap className="h-6 w-6 text-[#a3e635]" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Mensagem Rapida</h3>
+            <h3 className="text-sm font-bold text-background dark:text-foreground">Mensagem Rapida</h3>
             <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
               Uma unica mensagem com imagem, texto e botoes. Pronta em segundos.
             </p>
@@ -765,13 +765,13 @@ function StepType({ selected, onSelect, onBack }: {
         {/* Complete */}
         <button
           onClick={() => onSelect("complete")}
-          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-[#111] hover:border-blue-500/40 hover:bg-blue-500/[0.03] transition-all text-left"
+          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-foreground dark:bg-card hover:border-blue-500/40 hover:bg-blue-500/[0.03] transition-all text-left"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
             <MessageSquare className="h-6 w-6 text-blue-400" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Sequencia Completa</h3>
+            <h3 className="text-sm font-bold text-background dark:text-foreground">Sequencia Completa</h3>
             <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
               Varias mensagens com delays entre elas. Remarketing ate converter.
             </p>
@@ -782,7 +782,7 @@ function StepType({ selected, onSelect, onBack }: {
       <div className="flex justify-start">
         <button
           onClick={onBack}
-          className="text-sm text-zinc-500 hover:text-white transition-colors flex items-center gap-1"
+          className="text-sm text-zinc-500 hover:text-background dark:text-foreground transition-colors flex items-center gap-1"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar
@@ -811,7 +811,7 @@ function StepBasic({
       {/* Left - form */}
       <div className="flex-1 flex flex-col gap-5">
         <div>
-          <h2 className="text-xl font-bold text-white">Mensagem da Campanha</h2>
+          <h2 className="text-xl font-bold text-background dark:text-foreground">Mensagem da Campanha</h2>
           <p className="text-sm text-zinc-500 mt-1">Configure o conteudo que sera enviado</p>
         </div>
 
@@ -819,7 +819,7 @@ function StepBasic({
         <div>
           <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Midia (opcional)</p>
           {mediaUrl ? (
-            <div className="relative rounded-2xl overflow-hidden bg-[#111] border border-zinc-800 h-32 flex items-center justify-center">
+            <div className="relative rounded-2xl overflow-hidden bg-foreground dark:bg-card border border-zinc-800 h-32 flex items-center justify-center">
               {mediaType === "video" ? (
                 <video src={mediaUrl} className="max-h-full max-w-full object-contain" />
               ) : (
@@ -830,14 +830,14 @@ function StepBasic({
                 onClick={onRemoveMedia}
                 className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 hover:bg-black/80 transition-colors"
               >
-                <X className="h-4 w-4 text-white" />
+                <X className="h-4 w-4 text-background dark:text-foreground" />
               </button>
             </div>
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full h-28 rounded-2xl border-2 border-dashed border-zinc-800 bg-[#111] hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.02] transition-all flex flex-col items-center justify-center gap-2"
+              className="w-full h-28 rounded-2xl border-2 border-dashed border-zinc-800 bg-foreground dark:bg-card hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.02] transition-all flex flex-col items-center justify-center gap-2"
             >
               {isUploading ? (
                 <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
@@ -869,18 +869,18 @@ function StepBasic({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Escreva sua mensagem de remarketing..."
-            className="bg-[#111] border-zinc-800 rounded-xl text-white min-h-[120px] placeholder:text-zinc-600"
+            className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground min-h-[120px] placeholder:text-zinc-600"
           />
         </div>
 
         {/* Buttons toggle */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-[#111] border border-zinc-800">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-foreground dark:bg-card border border-zinc-800">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#a3e635]/10">
               <Link2 className="h-4 w-4 text-[#a3e635]" />
             </div>
             <div>
-              <p className="text-sm font-medium text-white">Adicionar botoes</p>
+              <p className="text-sm font-medium text-background dark:text-foreground">Adicionar botoes</p>
               <p className="text-[11px] text-zinc-500">Links clicaveis na mensagem</p>
             </div>
           </div>
@@ -900,7 +900,7 @@ function StepBasic({
                     setButtons(next)
                   }}
                   placeholder="Texto do botao"
-                  className="bg-[#111] border-zinc-800 rounded-xl text-white flex-1"
+                  className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground flex-1"
                 />
                 <Input
                   value={btn.url}
@@ -910,7 +910,7 @@ function StepBasic({
                     setButtons(next)
                   }}
                   placeholder="https://..."
-                  className="bg-[#111] border-zinc-800 rounded-xl text-white flex-1"
+                  className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground flex-1"
                 />
                 <button
                   onClick={() => setButtons(buttons.filter((_, j) => j !== i))}
@@ -987,7 +987,7 @@ function StepComplete({
       {/* Left - builder */}
       <div className="flex-1 flex flex-col gap-4">
         <div>
-          <h2 className="text-xl font-bold text-white">Sequencia de Remarketing</h2>
+          <h2 className="text-xl font-bold text-background dark:text-foreground">Sequencia de Remarketing</h2>
           <p className="text-sm text-zinc-500 mt-1">Monte sua sequencia de mensagens e delays</p>
         </div>
 
@@ -999,7 +999,7 @@ function StepComplete({
                 className={`flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
                   editingIndex === i
                     ? "border-[#a3e635]/40 bg-[#a3e635]/[0.03]"
-                    : "border-zinc-800 bg-[#111] hover:bg-[#151515]"
+                    : "border-zinc-800 bg-foreground dark:bg-card hover:bg-[#151515]"
                 }`}
                 onClick={() => setEditingIndex(editingIndex === i ? null : i)}
               >
@@ -1014,7 +1014,7 @@ function StepComplete({
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-white">
+                  <p className="text-sm font-medium text-background dark:text-foreground">
                     {node.type === "message" ? (node.label || "Mensagem") : `Aguardar ${(node.config?.delay_label as string) || "1 dia"}`}
                   </p>
                   {node.type === "message" && (node.config?.text as string) && (
@@ -1053,13 +1053,13 @@ function StepComplete({
               <div className="flex items-center justify-center gap-2 pb-2">
                 <button
                   onClick={() => addNode("message", i)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-white transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-background dark:text-foreground transition-all"
                 >
                   <MessageSquare className="h-3 w-3" /> Mensagem
                 </button>
                 <button
                   onClick={() => addNode("delay", i)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-white transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-background dark:text-foreground transition-all"
                 >
                   <Clock className="h-3 w-3" /> Delay
                 </button>
@@ -1072,7 +1072,7 @@ function StepComplete({
       {/* Right - preview timeline */}
       <div className="w-full lg:w-72 shrink-0">
         <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 text-center">Preview da Sequencia</p>
-        <div className="rounded-2xl bg-[#111] border border-zinc-800 p-4">
+        <div className="rounded-2xl bg-foreground dark:bg-card border border-zinc-800 p-4">
           <div className="flex flex-col">
             {nodes.map((node, i) => {
               const isMsg = node.type === "message"
@@ -1091,7 +1091,7 @@ function StepComplete({
                     {i < nodes.length - 1 && <div className="w-px flex-1 bg-zinc-800 my-1" />}
                   </div>
                   <div className="pb-3 min-w-0 flex-1">
-                    <p className="text-[11px] font-medium text-white">
+                    <p className="text-[11px] font-medium text-background dark:text-foreground">
                       {isMsg ? (node.label || "Mensagem") : `Aguardar ${(node.config?.delay_label as string) || ""}`}
                     </p>
                     {isMsg && (node.config?.text as string) && (
@@ -1175,7 +1175,7 @@ function NodeEditor({
           value={node.label}
           onChange={(e) => onUpdateLabel(e.target.value)}
           placeholder="Nome da mensagem"
-          className="bg-[#111] border-zinc-800 rounded-xl h-10 text-white text-sm"
+          className="bg-foreground dark:bg-card border-zinc-800 rounded-xl h-10 text-background dark:text-foreground text-sm"
         />
       </div>
 
@@ -1194,7 +1194,7 @@ function NodeEditor({
               onClick={() => onUpdateConfig({ media_url: "", media_type: "" })}
               className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/60 hover:bg-black/80"
             >
-              <X className="h-3.5 w-3.5 text-white" />
+              <X className="h-3.5 w-3.5 text-background dark:text-foreground" />
             </button>
           </div>
         ) : (
@@ -1240,7 +1240,7 @@ function NodeEditor({
           value={(node.config?.text as string) || ""}
           onChange={(e) => onUpdateConfig({ text: e.target.value })}
           placeholder="Escreva a mensagem..."
-          className="bg-[#111] border-zinc-800 rounded-xl text-white text-sm min-h-[80px]"
+          className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground text-sm min-h-[80px]"
         />
       </div>
 
@@ -1248,7 +1248,7 @@ function NodeEditor({
       <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50">
         <div className="flex items-center gap-2">
           <Link2 className="h-4 w-4 text-[#a3e635]" />
-          <span className="text-xs text-white">Botoes</span>
+          <span className="text-xs text-background dark:text-foreground">Botoes</span>
         </div>
         <Switch checked={hasButtons} onCheckedChange={setHasButtons} />
       </div>
@@ -1265,7 +1265,7 @@ function NodeEditor({
                   setLocalButtons(next)
                 }}
                 placeholder="Texto"
-                className="bg-[#111] border-zinc-800 rounded-lg h-9 text-white text-xs flex-1"
+                className="bg-foreground dark:bg-card border-zinc-800 rounded-lg h-9 text-background dark:text-foreground text-xs flex-1"
               />
               <Input
                 value={btn.url}
@@ -1275,7 +1275,7 @@ function NodeEditor({
                   setLocalButtons(next)
                 }}
                 placeholder="https://..."
-                className="bg-[#111] border-zinc-800 rounded-lg h-9 text-white text-xs flex-1"
+                className="bg-foreground dark:bg-card border-zinc-800 rounded-lg h-9 text-background dark:text-foreground text-xs flex-1"
               />
               <button
                 onClick={() => setLocalButtons(localButtons.filter((_, j) => j !== i))}
@@ -1311,7 +1311,7 @@ function TelegramPreview({
           <Zap className="h-4 w-4 text-[#a3e635]" />
         </div>
         <div>
-          <p className="text-xs font-semibold text-white">Seu Bot</p>
+          <p className="text-xs font-semibold text-background dark:text-foreground">Seu Bot</p>
           <p className="text-[10px] text-zinc-500">online</p>
         </div>
       </div>
@@ -1332,7 +1332,7 @@ function TelegramPreview({
         {/* Text bubble */}
         {text && (
           <div className="rounded-xl bg-[#1a2332] px-3 py-2.5">
-            <p className="text-xs text-white whitespace-pre-wrap break-words leading-relaxed">{text}</p>
+            <p className="text-xs text-background dark:text-foreground whitespace-pre-wrap break-words leading-relaxed">{text}</p>
           </div>
         )}
 

@@ -220,7 +220,7 @@ export default function BotsPage() {
           <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
             
             {/* Bot Status Hero */}
-            <div className="bg-[#111] rounded-[28px] p-6 md:p-8 relative overflow-hidden">
+            <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-[#a3e635] opacity-[0.08] blur-[100px] rounded-full" />
               <div className="absolute bottom-0 left-20 w-[150px] h-[150px] bg-[#22c55e] opacity-[0.05] blur-[60px] rounded-full" />
               
@@ -234,7 +234,7 @@ export default function BotsPage() {
                       }`} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-white mb-1">{configBot.name}</h2>
+                      <h2 className="text-2xl font-bold text-background dark:text-foreground mb-1">{configBot.name}</h2>
                       <div className="flex items-center gap-4">
                         <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
                           configBot.status === "active" 
@@ -268,7 +268,7 @@ export default function BotsPage() {
                 {/* Quick Stats */}
                 <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-white">0</p>
+                    <p className="text-3xl font-bold text-background dark:text-foreground">0</p>
                     <p className="text-xs text-muted-foreground mt-1">Mensagens Hoje</p>
                   </div>
                   <div className="text-center">
@@ -276,7 +276,7 @@ export default function BotsPage() {
                     <p className="text-xs text-muted-foreground mt-1">Planos Ativos</p>
                   </div>
                   <div className="text-center">
-                    <p className="text-3xl font-bold text-white">100%</p>
+                    <p className="text-3xl font-bold text-background dark:text-foreground">100%</p>
                     <p className="text-xs text-muted-foreground mt-1">Uptime</p>
                   </div>
                 </div>
@@ -459,7 +459,7 @@ export default function BotsPage() {
                   <button
                     onClick={handleAddPlan}
                     disabled={addingPlan || !newPlanName.trim() || !newPlanPrice.trim()}
-                    className="mt-4 flex items-center gap-2 bg-[#111] text-white px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    className="mt-4 flex items-center gap-2 bg-foreground dark:bg-card text-background dark:text-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50"
                   >
                     {addingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Adicionar Plano
@@ -482,7 +482,7 @@ export default function BotsPage() {
                 </div>
                 <button
                   onClick={() => handleDelete(configBot.id)}
-                  className="flex items-center gap-2 bg-red-500 text-white px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-red-600 transition-colors"
+                  className="flex items-center gap-2 bg-red-500 text-background dark:text-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-red-600 transition-colors"
                 >
                   <Trash2 className="h-4 w-4" />
                   Excluir Bot

@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
                 <Filter size={16} />
                 Filtros
               </button>
-              <button className="p-2.5 bg-foreground dark:bg-card text-white rounded-xl hover:bg-[#222] transition-all shadow-sm">
+              <button className="p-2.5 bg-foreground dark:bg-card text-background dark:text-foreground rounded-xl hover:bg-[#222] transition-all shadow-sm">
                 <RefreshCw size={16} />
               </button>
             </div>
@@ -164,7 +164,7 @@ export default function AnalyticsPage() {
           <div className="grid grid-cols-12 gap-5">
 
             {/* Realtime Card - Big Feature */}
-            <div className="col-span-12 lg:col-span-8 bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 text-white relative overflow-hidden">
+            <div className="col-span-12 lg:col-span-8 bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 text-background dark:text-foreground relative overflow-hidden">
               {/* Decorative Elements */}
               <div className="absolute top-0 right-0 w-80 h-80 bg-[#a3e635] opacity-[0.07] blur-[100px] rounded-full pointer-events-none"></div>
               <div className="absolute bottom-0 left-0 w-60 h-60 bg-blue-500 opacity-[0.05] blur-[80px] rounded-full pointer-events-none"></div>
@@ -383,7 +383,7 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Device Breakdown */}
-            <div className="col-span-12 lg:col-span-4 bg-foreground dark:bg-card rounded-[28px] p-6 text-white relative overflow-hidden">
+            <div className="col-span-12 lg:col-span-4 bg-foreground dark:bg-card rounded-[28px] p-6 text-background dark:text-foreground relative overflow-hidden">
               <div className="absolute top-0 right-0 w-40 h-40 bg-[#a3e635] opacity-10 blur-[60px] rounded-full"></div>
               
               <div className="relative z-10">
@@ -658,7 +658,7 @@ function QuickMetricCard({
 }) {
   const styles = {
     lime: 'bg-gradient-to-br from-[#d9f970] to-[#a3e635] text-[#111]',
-    dark: 'bg-foreground dark:bg-card text-white',
+    dark: 'bg-foreground dark:bg-card text-background dark:text-foreground',
     white: 'bg-card text-foreground border border-border shadow-sm'
   }
   

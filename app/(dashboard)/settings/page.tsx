@@ -220,7 +220,7 @@ export default function SettingsPage() {
         <div className="flex flex-col gap-5 p-4 md:p-6 max-w-5xl mx-auto w-full">
 
           {/* ── PROFILE CARD - Premium Dashboard Style ── */}
-          <section className="relative rounded-[24px] bg-[#111] overflow-hidden">
+          <section className="relative rounded-[24px] bg-foreground dark:bg-card overflow-hidden">
             {/* Glow Effects */}
             <div className="absolute top-0 right-0 w-40 h-40 bg-[#a3e635] opacity-10 blur-[80px] rounded-full" />
             <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500 opacity-5 blur-[60px] rounded-full" />
@@ -263,7 +263,7 @@ export default function SettingsPage() {
 
                 {/* Name & email centered */}
                 <div className="text-center">
-                  <h1 className="text-2xl font-bold text-white">
+                  <h1 className="text-2xl font-bold text-background dark:text-foreground">
                     {profile?.name || session?.name || "Usuario"}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-1">{profile?.email || session?.email}</p>
@@ -288,12 +288,12 @@ export default function SettingsPage() {
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card/5 border border-white/10">
                   <CalendarDays className="h-4 w-4 text-[#a3e635]" />
                   <span className="text-xs text-muted-foreground">Desde</span>
-                  <span className="text-xs font-semibold text-white">{memberSince}</span>
+                  <span className="text-xs font-semibold text-background dark:text-foreground">{memberSince}</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-card/5 border border-white/10">
                   <Clock className="h-4 w-4 text-blue-400" />
                   <span className="text-xs text-muted-foreground">Acesso</span>
-                  <span className="text-xs font-semibold text-white">{lastAccess}</span>
+                  <span className="text-xs font-semibold text-background dark:text-foreground">{lastAccess}</span>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#a3e635]/10 border border-[#a3e635]/20">
                   <DollarSign className="h-4 w-4 text-[#a3e635]" />
@@ -316,7 +316,7 @@ export default function SettingsPage() {
                 onClick={() => setActiveSection(tab.id)}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeSection === tab.id
-                    ? "bg-[#111] text-white shadow-lg"
+                    ? "bg-foreground dark:bg-card text-background dark:text-foreground shadow-lg"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >

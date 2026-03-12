@@ -116,7 +116,7 @@ export default function GatewaysPage() {
             
             {/* Header - Nunca muda */}
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-[#111] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-foreground dark:bg-card flex items-center justify-center">
                 <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                   <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
@@ -135,7 +135,7 @@ export default function GatewaysPage() {
             {/* Gateway Card */}
             <div className={`rounded-[24px] transition-all ${
                 isConnected 
-                  ? "bg-[#111] text-white" 
+                  ? "bg-foreground dark:bg-card text-background dark:text-foreground" 
                   : "bg-card border border-gray-200 hover:border-[#00bcff] hover:shadow-lg cursor-pointer group"
               }`} onClick={!isConnected ? handleOpenConnect : undefined}>
                 
@@ -320,7 +320,7 @@ export default function GatewaysPage() {
               <button
                 onClick={handleConnect}
                 disabled={isSubmitting}
-                className="w-full bg-[#111] text-white hover:bg-[#222] h-11 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                className="w-full bg-foreground dark:bg-card text-background dark:text-foreground hover:bg-[#222] h-11 rounded-xl font-medium text-sm flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
               >
                 {isSubmitting ? (
                   <>

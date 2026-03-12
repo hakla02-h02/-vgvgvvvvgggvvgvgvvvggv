@@ -1840,8 +1840,8 @@ if (sv === "end") {
                             <Zap className="h-4 w-4 text-accent" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-white truncate">{selectedBot?.name || "Seu Bot"}</p>
-                            <p className="text-[10px] text-white/40">online</p>
+                            <p className="text-xs font-medium text-background dark:text-foreground truncate">{selectedBot?.name || "Seu Bot"}</p>
+                            <p className="text-[10px] text-background dark:text-foreground/40">online</p>
                           </div>
                         </div>
 
@@ -1862,21 +1862,21 @@ if (sv === "end") {
                                   <div className="bg-[#182533] rounded-lg p-1.5">
                                     <div className="bg-[#0d1318] rounded h-24 flex items-center justify-center">
                                       {mediaType === "photo" ? (
-                                        <Image className="h-8 w-8 text-white/20" />
+                                        <Image className="h-8 w-8 text-background dark:text-foreground/20" />
                                       ) : (
-                                        <Video className="h-8 w-8 text-white/20" />
+                                        <Video className="h-8 w-8 text-background dark:text-foreground/20" />
                                       )}
                                     </div>
                                   </div>
                                 )}
                                 <div className="bg-[#182533] rounded-lg p-2.5">
-                                  <p className="text-[11px] text-white/90 whitespace-pre-wrap break-words leading-relaxed">
+                                  <p className="text-[11px] text-background dark:text-foreground/90 whitespace-pre-wrap break-words leading-relaxed">
                                     {(msgNode.config?.text as string) || "Mensagem..."}
                                   </p>
                                 </div>
                                 {buttons.map((btn, i) => (
                                   <div key={i} className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
-                                    <span className="text-[10px] text-white font-medium">{btn.text}</span>
+                                    <span className="text-[10px] text-background dark:text-foreground font-medium">{btn.text}</span>
                                   </div>
                                 ))}
                               </div>
@@ -1889,8 +1889,8 @@ if (sv === "end") {
                                 <CreditCard className="h-3 w-3 text-green-400" />
                                 <span className="text-[10px] text-green-400 font-medium">Pagamento PIX</span>
                               </div>
-                              <p className="text-[10px] text-white/70">{payNode.config?.description as string || "Produto"}</p>
-                              <p className="text-xs text-white font-bold mt-0.5">R$ {payNode.config?.amount as string || "0"}</p>
+                              <p className="text-[10px] text-background dark:text-foreground/70">{payNode.config?.description as string || "Produto"}</p>
+                              <p className="text-xs text-background dark:text-foreground font-bold mt-0.5">R$ {payNode.config?.amount as string || "0"}</p>
                             </div>
                           ))}
                         </div>
@@ -2551,8 +2551,8 @@ if (sv === "end") {
                         <Zap className="h-3.5 w-3.5 text-accent" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-medium text-white truncate">{selectedBot?.name || "Seu Bot"}</p>
-                        <p className="text-[9px] text-white/40">online</p>
+                        <p className="text-[11px] font-medium text-background dark:text-foreground truncate">{selectedBot?.name || "Seu Bot"}</p>
+                        <p className="text-[9px] text-background dark:text-foreground/40">online</p>
                       </div>
                     </div>
 
@@ -2566,10 +2566,10 @@ if (sv === "end") {
                               basicMediaUrl.startsWith("http") ? (
                                 <img src={basicMediaUrl} alt="Preview" className="w-full h-full object-cover" />
                               ) : (
-                                <Image className="h-6 w-6 text-white/20" />
+                                <Image className="h-6 w-6 text-background dark:text-foreground/20" />
                               )
                             ) : (
-                              <Video className="h-6 w-6 text-white/20" />
+                              <Video className="h-6 w-6 text-background dark:text-foreground/20" />
                             )}
                           </div>
                         </div>
@@ -2577,7 +2577,7 @@ if (sv === "end") {
 
                       {/* Message bubble */}
                       <div className="bg-[#182533] rounded-lg p-2 max-w-full">
-                        <p className="text-[10px] text-white/90 whitespace-pre-wrap break-words leading-relaxed">
+                        <p className="text-[10px] text-background dark:text-foreground/90 whitespace-pre-wrap break-words leading-relaxed">
                           {basicWelcomeMsg.trim() || "Sua mensagem aqui..."}
                         </p>
                       </div>
@@ -2585,7 +2585,7 @@ if (sv === "end") {
                       {/* Button previews */}
                       {basicHasButtons && basicButtons.filter(b => b.text).map((btn, i) => (
                         <div key={i} className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
-                          <span className="text-[10px] text-white font-medium">{btn.text}</span>
+                          <span className="text-[10px] text-background dark:text-foreground font-medium">{btn.text}</span>
                         </div>
                       ))}
                     </div>

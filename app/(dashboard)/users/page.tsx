@@ -67,14 +67,14 @@ function KPICard({ icon: Icon, label, value, suffix, iconBg, iconColor, isDark }
   iconBg: string; iconColor: string; isDark?: boolean
 }) {
   return (
-    <div className={`rounded-[24px] p-5 relative overflow-hidden ${isDark ? 'bg-[#111]' : 'bg-card border border-border shadow-sm'}`}>
+    <div className={`rounded-[24px] p-5 relative overflow-hidden ${isDark ? 'bg-foreground dark:bg-card' : 'bg-card border border-border shadow-sm'}`}>
       {isDark && <div className="absolute top-0 right-0 w-20 h-20 bg-[#a3e635] opacity-10 blur-[40px] rounded-full" />}
       <div className="relative z-10">
         <div className="flex items-start justify-between">
           <div className="flex flex-col gap-1.5">
             <span className={`text-xs font-medium ${isDark ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{label}</span>
             <div className="flex items-baseline gap-1">
-              <span className={`text-2xl md:text-3xl font-bold tracking-tight ${isDark ? 'text-white' : 'text-foreground'}`}>{value}</span>
+              <span className={`text-2xl md:text-3xl font-bold tracking-tight ${isDark ? 'text-background dark:text-foreground' : 'text-foreground'}`}>{value}</span>
               {suffix && <span className={`text-sm font-medium ${isDark ? 'text-muted-foreground' : 'text-muted-foreground'}`}>{suffix}</span>}
             </div>
           </div>
@@ -366,7 +366,7 @@ export default function UsersPage() {
   const etapaLabels = funnel.map(f => f.label)
 
   return (
-    <div className="flex flex-1 flex-col h-full overflow-hidden bg-[#f4f5f8]">
+    <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
       {/* Header */}
       <header className="px-4 md:px-8 py-5 flex items-center justify-between flex-shrink-0">
         <div>
@@ -435,13 +435,13 @@ export default function UsersPage() {
                         onClick={() => setFiltro(tab.key)}
                         className={`flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all ${
                           filtro === tab.key
-                            ? "bg-[#111] text-white"
+                            ? "bg-foreground dark:bg-card text-background dark:text-foreground"
                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                         }`}
                       >
                         {tab.label}
                         <span className={`rounded-md px-1.5 py-0.5 text-xs font-semibold ${
-                          filtro === tab.key ? "bg-card/20 text-white" : "bg-gray-200 text-muted-foreground"
+                          filtro === tab.key ? "bg-card/20 text-background dark:text-foreground" : "bg-gray-200 text-muted-foreground"
                         }`}>
                           {tab.count}
                         </span>

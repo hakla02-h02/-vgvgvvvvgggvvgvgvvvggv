@@ -190,7 +190,7 @@ export default function ReferralPage() {
             
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-[#111] flex items-center justify-center relative">
+              <div className="w-12 h-12 rounded-2xl bg-foreground dark:bg-card flex items-center justify-center relative">
                 <div className="absolute inset-0 rounded-2xl bg-[#a3e635] opacity-20 blur-md"></div>
                 <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635] relative z-10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/>
@@ -207,7 +207,7 @@ export default function ReferralPage() {
             </div>
 
             {/* Main Hero Card - Dark */}
-            <div className="bg-[#111] rounded-[28px] p-6 md:p-8 mb-6 relative overflow-hidden">
+            <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 mb-6 relative overflow-hidden">
               {/* Glows */}
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#a3e635] opacity-15 blur-[60px] rounded-full pointer-events-none"></div>
               <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500 opacity-10 blur-[50px] rounded-full pointer-events-none"></div>
@@ -218,7 +218,7 @@ export default function ReferralPage() {
                     <span className="text-[#a3e635] text-xs font-semibold">Plano Basico</span>
                   </div>
                   <div className="px-3 py-1 bg-card/10 rounded-full">
-                    <span className="text-white/70 text-xs">R$ 0,10 por venda</span>
+                    <span className="text-background dark:text-foreground/70 text-xs">R$ 0,10 por venda</span>
                   </div>
                 </div>
 
@@ -229,21 +229,21 @@ export default function ReferralPage() {
                       <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
                       <span className="text-muted-foreground text-xs">Indicados</span>
                     </div>
-                    <p className="text-2xl md:text-3xl font-bold text-white">{totalReferrals}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-background dark:text-foreground">{totalReferrals}</p>
                   </div>
                   <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-2 h-2 rounded-full bg-blue-400"></div>
                       <span className="text-muted-foreground text-xs">Vendas</span>
                     </div>
-                    <p className="text-2xl md:text-3xl font-bold text-white">{totalSales}</p>
+                    <p className="text-2xl md:text-3xl font-bold text-background dark:text-foreground">{totalSales}</p>
                   </div>
                   <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
                       <span className="text-muted-foreground text-xs">Ganhos</span>
                     </div>
-                    <p className="text-2xl md:text-3xl font-bold text-white">
+                    <p className="text-2xl md:text-3xl font-bold text-background dark:text-foreground">
                       R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </p>
                   </div>
@@ -256,7 +256,7 @@ export default function ReferralPage() {
                       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
                       <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
                     </svg>
-                    <span className="text-white text-sm font-medium">Seu Link de Indicacao</span>
+                    <span className="text-background dark:text-foreground text-sm font-medium">Seu Link de Indicacao</span>
                   </div>
 
                   {coupon ? (
@@ -271,7 +271,7 @@ export default function ReferralPage() {
                                 setEditInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                                 setEditError("")
                               }}
-                              className="bg-[#111] border-white/10 rounded-xl text-white placeholder:text-muted-foreground focus:border-[#a3e635]/50"
+                              className="bg-foreground dark:bg-card border-white/10 rounded-xl text-background dark:text-foreground placeholder:text-muted-foreground focus:border-[#a3e635]/50"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault()
@@ -296,7 +296,7 @@ export default function ReferralPage() {
                               variant="outline"
                               onClick={handleCancelEdit}
                               disabled={isUpdating}
-                              className="border-white/10 text-white hover:bg-card/5 rounded-xl"
+                              className="border-white/10 text-background dark:text-foreground hover:bg-card/5 rounded-xl"
                             >
                               Cancelar
                             </Button>
@@ -305,7 +305,7 @@ export default function ReferralPage() {
                         </div>
                       ) : (
                         <div className="flex gap-2">
-                          <div className="flex-1 bg-[#111] border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 font-mono truncate">
+                          <div className="flex-1 bg-foreground dark:bg-card border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 font-mono truncate">
                             {referralLink}
                           </div>
                           <Button
@@ -314,7 +314,7 @@ export default function ReferralPage() {
                               "rounded-xl px-4 transition-all",
                               copied 
                                 ? "bg-[#a3e635] text-black" 
-                                : "bg-card/10 text-white hover:bg-card/20"
+                                : "bg-card/10 text-background dark:text-foreground hover:bg-card/20"
                             )}
                           >
                             {copied ? "Copiado!" : "Copiar"}
@@ -322,7 +322,7 @@ export default function ReferralPage() {
                           <Button
                             variant="outline"
                             onClick={handleStartEdit}
-                            className="border-white/10 text-white hover:bg-card/5 rounded-xl"
+                            className="border-white/10 text-background dark:text-foreground hover:bg-card/5 rounded-xl"
                           >
                             Editar
                           </Button>
@@ -339,7 +339,7 @@ export default function ReferralPage() {
                             setCouponInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                             setCreateError("")
                           }}
-                          className="bg-[#111] border-white/10 rounded-xl text-white placeholder:text-muted-foreground focus:border-[#a3e635]/50"
+                          className="bg-foreground dark:bg-card border-white/10 rounded-xl text-background dark:text-foreground placeholder:text-muted-foreground focus:border-[#a3e635]/50"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault()
@@ -409,7 +409,7 @@ export default function ReferralPage() {
                     >
                       <div className="flex items-center gap-3">
                         <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a3e635] to-[#16a34a] flex items-center justify-center text-white font-bold text-sm">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a3e635] to-[#16a34a] flex items-center justify-center text-background dark:text-foreground font-bold text-sm">
                             {ref.name.charAt(0).toUpperCase()}
                           </div>
                           <span
@@ -453,15 +453,15 @@ export default function ReferralPage() {
 
       {/* User Details Dialog */}
       <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-        <DialogContent className="bg-[#111] border-white/10 text-white rounded-[24px] max-w-md">
+        <DialogContent className="bg-foreground dark:bg-card border-white/10 text-background dark:text-foreground rounded-[24px] max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-white">Detalhes do Indicado</DialogTitle>
+            <DialogTitle className="text-background dark:text-foreground">Detalhes do Indicado</DialogTitle>
           </DialogHeader>
           
           {selectedUser && (
             <div className="space-y-4 pt-4">
               <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#a3e635] to-[#16a34a] flex items-center justify-center text-white font-bold text-xl">
+                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#a3e635] to-[#16a34a] flex items-center justify-center text-background dark:text-foreground font-bold text-xl">
                   {selectedUser.name.charAt(0).toUpperCase()}
                 </div>
                 <div>

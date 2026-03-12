@@ -55,7 +55,7 @@ export default function RewardsPage() {
           
           {/* Header Section */}
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 rounded-2xl bg-[#111] flex items-center justify-center relative overflow-hidden">
+            <div className="w-12 h-12 rounded-2xl bg-foreground dark:bg-card flex items-center justify-center relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-[#a3e635]/20 to-transparent"></div>
               <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635] relative z-10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
@@ -77,7 +77,7 @@ export default function RewardsPage() {
           </div>
 
           {/* Hero Progress Module */}
-          <div className="bg-[#111] rounded-[28px] p-6 md:p-8 mb-8 relative overflow-hidden">
+          <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 mb-8 relative overflow-hidden">
             {/* Glows */}
             <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#a3e635] opacity-15 blur-[60px] rounded-full pointer-events-none"></div>
             <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-[#a3e635] opacity-10 blur-[50px] rounded-full pointer-events-none"></div>
@@ -87,7 +87,7 @@ export default function RewardsPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                   <p className="text-muted-foreground text-sm mb-1">Seu faturamento</p>
-                  <p className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                  <p className="text-4xl md:text-5xl font-bold text-background dark:text-foreground tracking-tight">
                     R$ {faturamentoAtual.toLocaleString("pt-BR")}
                   </p>
                 </div>
@@ -100,7 +100,7 @@ export default function RewardsPage() {
                   <div className="w-px h-10 bg-card/10"></div>
                   <div className="text-right">
                     <p className="text-muted-foreground text-xs mb-0.5">Faltam</p>
-                    <p className="text-white font-bold text-xl">R$ {faltaParaMeta.toLocaleString("pt-BR")}</p>
+                    <p className="text-background dark:text-foreground font-bold text-xl">R$ {faltaParaMeta.toLocaleString("pt-BR")}</p>
                   </div>
                 </div>
               </div>
@@ -156,7 +156,7 @@ export default function RewardsPage() {
                   key={premio.id}
                   className={`rounded-[20px] overflow-hidden transition-all duration-300 ${
                     desbloqueado 
-                      ? 'bg-[#111] shadow-[0_0_20px_rgba(163,230,53,0.1)]' 
+                      ? 'bg-foreground dark:bg-card shadow-[0_0_20px_rgba(163,230,53,0.1)]' 
                       : 'bg-card border border-border'
                   }`}
                 >
@@ -189,7 +189,7 @@ export default function RewardsPage() {
 
                   {/* Content - Compacto */}
                   <div className="p-4">
-                    <h3 className={`font-semibold text-sm mb-1 ${desbloqueado ? 'text-white' : 'text-foreground'}`}>
+                    <h3 className={`font-semibold text-sm mb-1 ${desbloqueado ? 'text-background dark:text-foreground' : 'text-foreground'}`}>
                       {premio.titulo}
                     </h3>
                     <p className={`text-xs mb-3 line-clamp-2 ${desbloqueado ? 'text-muted-foreground' : 'text-muted-foreground'}`}>

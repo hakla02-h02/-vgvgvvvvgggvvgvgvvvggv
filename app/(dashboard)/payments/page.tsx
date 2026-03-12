@@ -74,7 +74,7 @@ export default function PaymentsPage() {
         <div className="flex flex-col gap-6 p-4 md:p-6">
           
           {/* Hero Finance Card - Totalmente Novo */}
-          <div className="bg-[#111] rounded-[28px] p-6 md:p-8 relative overflow-hidden">
+          <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#a3e635] opacity-[0.08] blur-[100px] rounded-full" />
             <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-[#22c55e] opacity-[0.05] blur-[80px] rounded-full" />
             
@@ -89,7 +89,7 @@ export default function PaymentsPage() {
                     <span className="text-sm text-muted-foreground">Saldo Disponivel</span>
                   </div>
                   <div className="flex items-baseline gap-3">
-                    <span className="text-4xl md:text-5xl font-bold text-white tracking-tight">
+                    <span className="text-4xl md:text-5xl font-bold text-background dark:text-foreground tracking-tight">
                       R$ {totalAprovado.toLocaleString('pt-BR')}
                     </span>
                     <span className="flex items-center gap-1 text-[#22c55e] text-sm font-medium bg-[#22c55e]/10 px-2 py-1 rounded-full">
@@ -133,7 +133,7 @@ export default function PaymentsPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Ticket Medio</p>
-                  <p className="text-lg font-bold text-white">R$ {ticketMedio}</p>
+                  <p className="text-lg font-bold text-background dark:text-foreground">R$ {ticketMedio}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Taxa Conv.</p>
@@ -193,7 +193,7 @@ export default function PaymentsPage() {
               <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-card opacity-10 blur-[30px] rounded-full" />
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-11 h-11 rounded-2xl bg-[#111]/10 flex items-center justify-center">
+                  <div className="w-11 h-11 rounded-2xl bg-foreground dark:bg-card/10 flex items-center justify-center">
                     <TrendingUp className="h-5 w-5 text-[#111]" />
                   </div>
                   <Sparkles className="h-4 w-4 text-[#111]/60" />
@@ -241,10 +241,10 @@ export default function PaymentsPage() {
             </div>
 
             {/* Acoes Rapidas */}
-            <div className="bg-[#111] rounded-[24px] p-6 relative overflow-hidden">
+            <div className="bg-foreground dark:bg-card rounded-[24px] p-6 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#a3e635] opacity-[0.08] blur-[60px] rounded-full" />
               <div className="relative z-10">
-                <h3 className="font-bold text-white mb-5">Acoes Rapidas</h3>
+                <h3 className="font-bold text-background dark:text-foreground mb-5">Acoes Rapidas</h3>
                 <div className="space-y-3">
                   {[
                     { label: "Gerar Relatorio", icon: BarChart3 },
@@ -281,13 +281,13 @@ export default function PaymentsPage() {
                 onClick={() => setFiltro(tab.key)}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   filtro === tab.key 
-                    ? "bg-[#111] text-white shadow-lg shadow-black/10" 
+                    ? "bg-foreground dark:bg-card text-background dark:text-foreground shadow-lg shadow-black/10" 
                     : "bg-card text-gray-600 hover:bg-muted border border-border"
                 }`}
               >
                 {tab.label}
                 <span className={`text-xs px-1.5 py-0.5 rounded-md ${
-                  filtro === tab.key ? "bg-card/20 text-white" : "bg-muted text-muted-foreground"
+                  filtro === tab.key ? "bg-card/20 text-background dark:text-foreground" : "bg-muted text-muted-foreground"
                 }`}>
                   {tab.count}
                 </span>
@@ -321,7 +321,7 @@ export default function PaymentsPage() {
                 <button className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors">
                   <Filter className="h-4 w-4" />
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#111] text-white text-sm font-medium hover:bg-gray-800 transition-colors">
+                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground dark:bg-card text-background dark:text-foreground text-sm font-medium hover:bg-gray-800 transition-colors">
                   <Download className="h-4 w-4" />
                   Exportar
                 </button>

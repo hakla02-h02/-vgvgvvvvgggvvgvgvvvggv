@@ -48,12 +48,12 @@ export default function TrackingPage() {
     <>
       <DashboardHeader title="Trackeamento" />
       <ScrollArea className="flex-1">
-        <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
+        <div className="p-4 md:p-8 bg-background min-h-full">
           <div className="max-w-5xl mx-auto">
 
             {/* Header */}
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-[#111] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-foreground dark:bg-card flex items-center justify-center">
                 <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <circle cx="12" cy="12" r="10"/>
                   <circle cx="12" cy="12" r="6"/>
@@ -70,7 +70,7 @@ export default function TrackingPage() {
               </div>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button className="bg-[#111] text-white hover:bg-[#222] rounded-xl gap-2 px-5 h-11">
+                  <Button className="bg-foreground dark:bg-card text-background dark:text-foreground hover:bg-[#222] rounded-xl gap-2 px-5 h-11">
                     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19"/>
                       <line x1="5" y1="12" x2="19" y2="12"/>
@@ -101,7 +101,7 @@ export default function TrackingPage() {
                         ))}
                       </div>
                     </div>
-                    <Button className="bg-[#111] text-white hover:bg-[#222] rounded-xl h-11 mt-2">
+                    <Button className="bg-foreground dark:bg-card text-background dark:text-foreground hover:bg-[#222] rounded-xl h-11 mt-2">
                       Adicionar Pixel
                     </Button>
                   </div>
