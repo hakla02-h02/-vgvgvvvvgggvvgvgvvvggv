@@ -375,15 +375,15 @@ export default function DashboardPage() {
             </div>
 
             {/* Deal Analysis Card */}
-            <div className="flex-1 bg-accent/30 dark:bg-accent/20 rounded-[24px] p-4 md:p-5 shadow-sm border border-accent/40 flex flex-col relative overflow-hidden min-h-[220px]">
+            <div className="flex-1 bg-card rounded-[24px] p-4 md:p-5 shadow-sm border border-border flex flex-col relative overflow-hidden min-h-[220px]">
                   <div className="flex justify-between items-center mb-3 relative z-10">
                     <div className="flex items-center gap-2">
-                      <BarChart2 size={14} className="text-accent-foreground" />
+                      <BarChart2 size={14} className="text-accent" />
                       <h3 className="font-semibold text-foreground text-sm">Análise de Negócios</h3>
                     </div>
                     <Popover>
                       <PopoverTrigger asChild>
-                        <button className="text-[10px] font-medium text-accent-foreground flex items-center hover:opacity-80 transition-colors">
+                        <button className="text-[10px] font-medium text-muted-foreground flex items-center hover:text-foreground transition-colors">
                           {dealDateRange} <ChevronDown size={12} className="ml-1" />
                         </button>
                       </PopoverTrigger>
@@ -395,8 +395,8 @@ export default function DashboardPage() {
                               onClick={() => setDealDateRange(range)}
                               className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
                                 dealDateRange === range 
-                                  ? "bg-accent/50 text-accent-foreground font-medium" 
-                                  : "hover:bg-accent/30 text-accent-foreground"
+                                  ? "bg-accent text-accent-foreground font-medium" 
+                                  : "hover:bg-muted text-foreground"
                               }`}
                             >
                               {range}
@@ -410,17 +410,17 @@ export default function DashboardPage() {
                   {/* Cards em Fileira */}
                   <div className="flex-1 flex items-end gap-3 mt-1 z-10">
                     {/* Card Ganhos */}
-                    <div className="flex-1 h-[33%] bg-accent/50 rounded-2xl p-3 relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, hsl(var(--accent)) 5px, hsl(var(--accent)) 10px)" }}></div>
-                      <div className="relative z-10 bg-card/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-accent-foreground inline-block">Ganhos 0</div>
+                    <div className="flex-1 h-[33%] bg-accent rounded-2xl p-3 relative overflow-hidden">
+                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px)" }}></div>
+                      <div className="relative z-10 bg-white/90 dark:bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Ganhos 0</div>
                     </div>
                     {/* Card Perdas */}
-                    <div className="flex-1 h-[33%] bg-foreground dark:bg-secondary rounded-2xl p-3 shadow-lg">
-                      <div className="bg-background/60 dark:bg-card/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground dark:text-foreground inline-block">Perdas 0</div>
+                    <div className="flex-1 h-[33%] bg-secondary rounded-2xl p-3 shadow-lg">
+                      <div className="bg-card/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Perdas 0</div>
                     </div>
                     {/* Card Crescimento */}
-                    <div className="flex-1 h-[33%] bg-accent/50 rounded-2xl p-3">
-                      <div className="bg-card/60 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-accent-foreground inline-block">Crescimento 0</div>
+                    <div className="flex-1 h-[33%] bg-accent rounded-2xl p-3">
+                      <div className="bg-white/90 dark:bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Crescimento 0</div>
                     </div>
                   </div>
             </div>
