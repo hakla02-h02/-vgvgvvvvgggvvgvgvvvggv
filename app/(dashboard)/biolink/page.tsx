@@ -24,40 +24,7 @@ import { toast } from "sonner"
 
 type PageType = "presell" | "conversion" | "dragonbio" | "checkout" | null
 
-// Templates para Dragon Bio
-const dragonBioTemplates = [
-  {
-    id: "buttons",
-    name: "Botoes",
-    description: "Layout classico com botoes",
-    preview: [
-      { type: "button", label: "Botao 1" },
-      { type: "button", label: "Botao 2" },
-      { type: "button", label: "Botao 3" },
-    ],
-  },
-  {
-    id: "photo-buttons",
-    name: "Foto + Botoes",
-    description: "Destaque com imagem e botoes",
-    preview: [
-      { type: "photo", label: "Foto" },
-      { type: "button", label: "Botao 1" },
-      { type: "button", label: "Botao 2" },
-    ],
-  },
-  {
-    id: "mixed",
-    name: "Misto",
-    description: "Combinacao de botoes e fotos",
-    preview: [
-      { type: "button", label: "Botao 1" },
-      { type: "photo", label: "Foto 1" },
-      { type: "photo", label: "Foto 2" },
-      { type: "button", label: "Botao 2" },
-    ],
-  },
-]
+
 
 const pageTypes = [
   {
@@ -117,7 +84,6 @@ export default function BioLinkPage() {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<PageType>(null)
-  const [selectedTemplate, setSelectedTemplate] = useState("buttons")
   const [pageName, setPageName] = useState("")
   const [pageSlug, setPageSlug] = useState("")
   const [sites, setSites] = useState<DragonBioSite[]>([])
@@ -155,7 +121,6 @@ export default function BioLinkPage() {
 
   const handleBack = () => {
     setSelectedType(null)
-    setSelectedTemplate("buttons")
     setPageName("")
     setPageSlug("")
   }
@@ -175,7 +140,7 @@ export default function BioLinkPage() {
             userName: session.name,
             nome: pageName,
             slug: pageSlug,
-            template: selectedTemplate,
+            template: "buttons",
           }),
         })
 
@@ -190,7 +155,6 @@ export default function BioLinkPage() {
         setSites([data.site, ...sites])
         setDialogOpen(false)
         setSelectedType(null)
-        setSelectedTemplate("buttons")
         setPageName("")
         setPageSlug("")
       } catch (error) {
@@ -434,51 +398,6 @@ export default function BioLinkPage() {
                           </div>
                         </DialogHeader>
                         <div className="flex flex-col gap-5 pt-4">
-                          {/* Seleção de Templates - apenas para Dragon Bot */}
-                          {type.id === "dragonbio" && (
-                            <div className="flex flex-col gap-3">
-                              <Label className="text-muted-foreground dark:text-muted-foreground text-xs uppercase tracking-wider">Escolha um modelo</Label>
-                              <div className="grid grid-cols-3 gap-3">
-                                {dragonBioTemplates.map((template) => (
-                                  <button
-                                    key={template.id}
-                                    onClick={() => setSelectedTemplate(template.id)}
-                                    className={`relative aspect-[3/4] rounded-2xl p-3 flex flex-col items-center justify-center transition-all ${
-                                      selectedTemplate === template.id
-                                        ? "bg-secondary ring-2 ring-accent"
-                                        : "bg-secondary/60 hover:bg-secondary"
-                                    }`}
-                                  >
-                                    {selectedTemplate === template.id && (
-                                      <div className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                                        <svg viewBox="0 0 24 24" className="w-3 h-3 text-accent-foreground" fill="none" stroke="currentColor" strokeWidth="3">
-                                          <polyline points="20 6 9 17 4 12"/>
-                                        </svg>
-                                      </div>
-                                    )}
-                                    {/* Preview do template */}
-                                    <div className="flex flex-col items-center gap-1.5 w-full">
-                                      {/* Avatar */}
-                                      <div className="w-6 h-6 rounded-full bg-muted-foreground/30"></div>
-                                      {/* Items do preview */}
-                                      {template.preview.map((item, idx) => (
-                                        <div
-                                          key={idx}
-                                          className={`w-full rounded-md ${
-                                            item.type === "photo" ? "h-4 bg-muted-foreground/20" : "h-2.5 bg-muted-foreground/40"
-                                          }`}
-                                        ></div>
-                                      ))}
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                              <p className="text-xs text-muted-foreground text-center">
-                                {dragonBioTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBioTemplates.find(t => t.id === selectedTemplate)?.description}
-                              </p>
-                            </div>
-                          )}
-
                           <div className="flex flex-col gap-2">
                             <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Nome da Pagina</Label>
                             <Input 
