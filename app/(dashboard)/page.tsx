@@ -375,7 +375,9 @@ export default function DashboardPage() {
             </div>
 
             {/* Deal Analysis Card */}
-            <div className="flex-1 bg-card rounded-[24px] p-4 md:p-5 shadow-sm border border-border flex flex-col relative overflow-hidden min-h-[220px]">
+            <div className="flex-1 bg-accent/20 dark:bg-accent/10 rounded-[24px] p-4 md:p-5 shadow-sm border border-accent/30 dark:border-accent/20 flex flex-col relative overflow-hidden min-h-[220px]">
+                  {/* Background Stripes */}
+                  <div className="absolute inset-0 opacity-30 dark:opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, hsl(100 71% 65% / 0.3) 8px, hsl(100 71% 65% / 0.3) 16px)" }}></div>
                   <div className="flex justify-between items-center mb-3 relative z-10">
                     <div className="flex items-center gap-2">
                       <BarChart2 size={14} className="text-accent" />
