@@ -65,6 +65,43 @@ const colorPresets = [
   { bg: "#1b262c", btn: "#bbe1fa", text: "#ffffff", btnText: "#1b262c", accent: "#bbe1fa" },
 ]
 
+// Modelos de layout pre-prontos
+type ModelType = "buttons" | "photo-buttons" | "mixed"
+
+const layoutModels: { id: ModelType; name: string; description: string; defaultLinks: BioLink[] }[] = [
+  {
+    id: "buttons",
+    name: "Botoes",
+    description: "Layout classico com botoes",
+    defaultLinks: [
+      { id: "1", type: "button", title: "Botao 1", url: "https://" },
+      { id: "2", type: "button", title: "Botao 2", url: "https://" },
+      { id: "3", type: "button", title: "Botao 3", url: "https://" },
+    ],
+  },
+  {
+    id: "photo-buttons",
+    name: "Foto + Botoes",
+    description: "Destaque com imagem e botoes",
+    defaultLinks: [
+      { id: "1", type: "card", title: "Destaque", url: "https://", image: "" },
+      { id: "2", type: "button", title: "Botao 1", url: "https://" },
+      { id: "3", type: "button", title: "Botao 2", url: "https://" },
+    ],
+  },
+  {
+    id: "mixed",
+    name: "Misto",
+    description: "Combinacao de botoes e fotos",
+    defaultLinks: [
+      { id: "1", type: "button", title: "Botao 1", url: "https://" },
+      { id: "2", type: "card", title: "Foto 1", url: "https://", image: "" },
+      { id: "3", type: "card", title: "Foto 2", url: "https://", image: "" },
+      { id: "4", type: "button", title: "Botao 2", url: "https://" },
+    ],
+  },
+]
+
 interface PageProps {
   params: Promise<{ id: string }>
 }
@@ -83,6 +120,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     links: [],
   })
   const [activeTab, setActiveTab] = useState("visual")
+  const [selectedModel, setSelectedModel] = useState<ModelType>("buttons")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
@@ -200,6 +238,19 @@ export default function DragonBioEditorPage({ params }: PageProps) {
     })
   }
 
+  const applyModel = (modelId: ModelType) => {
+    const model = layoutModels.find(m => m.id === modelId)
+    if (model) {
+      setSelectedModel(modelId)
+      // Gera novos IDs para os links para evitar conflitos
+      const newLinks = model.defaultLinks.map((link, idx) => ({
+        ...link,
+        id: `${Date.now()}-${idx}`,
+      }))
+      updatePageData({ links: newLinks })
+    }
+  }
+
   // Get background style - simple solid color
   const getBackgroundStyle = () => {
     return { backgroundColor: pageData.colors.background }
@@ -301,7 +352,13 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                     <div className="grid grid-cols-3 gap-2">
                       {/* Modelo 1: Botoes */}
                       <button
-                        className="relative group rounded-lg overflow-hidden border-2 border-[#111] ring-2 ring-[#111]/10"
+                        onClick={() => applyModel("buttons")}
+                        className={cn(
+                          "relative group rounded-lg overflow-hidden border-2 transition-all",
+                          selectedModel === "buttons" 
+                            ? "border-[#111] ring-2 ring-[#111]/10" 
+                            : "border-gray-100 hover:border-gray-200"
+                        )}
                       >
                         <div className="aspect-[9/16] bg-[#0f172a]">
                           <div className="flex flex-col items-center justify-center h-full p-2">
@@ -315,14 +372,22 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                             </div>
                           </div>
                         </div>
-                        <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#111] flex items-center justify-center">
-                          <Check className="w-2 h-2 text-white" />
-                        </div>
+                        {selectedModel === "buttons" && (
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#111] flex items-center justify-center">
+                            <Check className="w-2 h-2 text-white" />
+                          </div>
+                        )}
                       </button>
 
-                      {/* Modelo 2: Cards com Imagem */}
+                      {/* Modelo 2: Foto + Botoes */}
                       <button
-                        className="relative group rounded-lg overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all"
+                        onClick={() => applyModel("photo-buttons")}
+                        className={cn(
+                          "relative group rounded-lg overflow-hidden border-2 transition-all",
+                          selectedModel === "photo-buttons" 
+                            ? "border-[#111] ring-2 ring-[#111]/10" 
+                            : "border-gray-100 hover:border-gray-200"
+                        )}
                       >
                         <div className="aspect-[9/16] bg-[#0f172a]">
                           <div className="flex flex-col items-center justify-center h-full p-2">
@@ -331,17 +396,27 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                             <div className="w-5 h-0.5 rounded bg-white/30 mb-1.5" />
                             <div className="w-full space-y-0.5 px-1">
                               <div className="h-3 rounded bg-white/30 mb-0.5" />
-                              <div className="h-1 rounded bg-white/50" />
-                              <div className="h-3 rounded bg-white/30 mb-0.5" />
-                              <div className="h-1 rounded bg-white/50" />
+                              <div className="h-1.5 rounded-full bg-white/50" />
+                              <div className="h-1.5 rounded-full bg-white/50" />
                             </div>
                           </div>
                         </div>
+                        {selectedModel === "photo-buttons" && (
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#111] flex items-center justify-center">
+                            <Check className="w-2 h-2 text-white" />
+                          </div>
+                        )}
                       </button>
 
-                      {/* Modelo 3: Mix */}
+                      {/* Modelo 3: Misto */}
                       <button
-                        className="relative group rounded-lg overflow-hidden border-2 border-gray-100 hover:border-gray-200 transition-all"
+                        onClick={() => applyModel("mixed")}
+                        className={cn(
+                          "relative group rounded-lg overflow-hidden border-2 transition-all",
+                          selectedModel === "mixed" 
+                            ? "border-[#111] ring-2 ring-[#111]/10" 
+                            : "border-gray-100 hover:border-gray-200"
+                        )}
                       >
                         <div className="aspect-[9/16] bg-[#0f172a]">
                           <div className="flex flex-col items-center justify-center h-full p-2">
@@ -351,15 +426,20 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                             <div className="w-full space-y-0.5 px-1">
                               <div className="h-1.5 rounded-full bg-white/50" />
                               <div className="h-3 rounded bg-white/30 mb-0.5" />
-                              <div className="h-1 rounded bg-white/50" />
+                              <div className="h-3 rounded bg-white/30 mb-0.5" />
                               <div className="h-1.5 rounded-full bg-white/50" />
                             </div>
                           </div>
                         </div>
+                        {selectedModel === "mixed" && (
+                          <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-[#111] flex items-center justify-center">
+                            <Check className="w-2 h-2 text-white" />
+                          </div>
+                        )}
                       </button>
                     </div>
                     <p className="text-[10px] text-gray-400 mt-1.5 text-center">
-                      Botoes - Layout classico com botoes
+                      {layoutModels.find(m => m.id === selectedModel)?.name} - {layoutModels.find(m => m.id === selectedModel)?.description}
                     </p>
                   </div>
 
