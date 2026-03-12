@@ -50,13 +50,13 @@ import {
   ComposedChart
 } from "recharts"
 
-// Funnel Data
+// Funnel Data - usando variações de #95e468
 const funnelData = [
-  { stage: "Visitantes", value: 45200, percentage: 100, color: "#a3e635" },
-  { stage: "Engajados", value: 28400, percentage: 63, color: "#84cc16" },
-  { stage: "Leads", value: 12800, percentage: 28, color: "#65a30d" },
-  { stage: "Qualificados", value: 6400, percentage: 14, color: "#4d7c0f" },
-  { stage: "Clientes", value: 2180, percentage: 5, color: "#3f6212" },
+  { stage: "Visitantes", value: 45200, percentage: 100, color: "#95e468" },
+  { stage: "Engajados", value: 28400, percentage: 63, color: "#7dd350" },
+  { stage: "Leads", value: 12800, percentage: 28, color: "#65c238" },
+  { stage: "Qualificados", value: 6400, percentage: 14, color: "#4dab20" },
+  { stage: "Clientes", value: 2180, percentage: 5, color: "#3a8a15" },
 ]
 
 // Realtime Data
@@ -154,7 +154,7 @@ export default function AnalyticsPage() {
                 <Filter size={16} />
                 Filtros
               </button>
-              <button className="p-2.5 bg-foreground dark:bg-card text-background dark:text-foreground rounded-xl hover:bg-[#222] transition-all shadow-sm">
+              <button className="p-2.5 bg-foreground dark:bg-secondary text-background dark:text-foreground rounded-xl hover:bg-secondary transition-all shadow-sm">
                 <RefreshCw size={16} />
               </button>
             </div>
@@ -166,7 +166,7 @@ export default function AnalyticsPage() {
             {/* Realtime Card - Big Feature */}
             <div className="col-span-12 lg:col-span-8 bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 text-background dark:text-foreground relative overflow-hidden">
               {/* Decorative Elements */}
-              <div className="absolute top-0 right-0 w-80 h-80 bg-[#a3e635] opacity-[0.07] blur-[100px] rounded-full pointer-events-none"></div>
+              <div className="absolute top-0 right-0 w-80 h-80 bg-[#95e468] opacity-[0.07] blur-[100px] rounded-full pointer-events-none"></div>
               <div className="absolute bottom-0 left-0 w-60 h-60 bg-blue-500 opacity-[0.05] blur-[80px] rounded-full pointer-events-none"></div>
               
               {/* Grid Pattern */}
@@ -179,9 +179,9 @@ export default function AnalyticsPage() {
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                   <div className="flex items-center gap-3">
-                    <div className="w-3 h-3 rounded-full bg-[#a3e635] animate-pulse"></div>
+                    <div className="w-3 h-3 rounded-full bg-[#95e468] animate-pulse"></div>
                     <span className="text-sm font-medium text-muted-foreground">Tempo Real</span>
-                    <span className="px-2 py-0.5 bg-[#a3e635]/20 text-[#a3e635] text-xs font-semibold rounded-full">
+                    <span className="px-2 py-0.5 bg-[#95e468]/20 text-[#95e468] text-xs font-semibold rounded-full">
                       LIVE
                     </span>
                   </div>
@@ -231,14 +231,14 @@ export default function AnalyticsPage() {
                     <AreaChart data={realtimeData}>
                       <defs>
                         <linearGradient id="realtimeGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#a3e635" stopOpacity={0.4}/>
-                          <stop offset="100%" stopColor="#a3e635" stopOpacity={0}/>
+                          <stop offset="0%" stopColor="#95e468" stopOpacity={0.4}/>
+                          <stop offset="100%" stopColor="#95e468" stopOpacity={0}/>
                         </linearGradient>
                       </defs>
                       <Area 
                         type="monotone" 
                         dataKey="users" 
-                        stroke="#a3e635" 
+                        stroke="#95e468" 
                         strokeWidth={2}
                         fill="url(#realtimeGrad)"
                         dot={false}
@@ -308,21 +308,21 @@ export default function AnalyticsPage() {
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-[#a3e635]"></div>
+                    <div className="w-3 h-3 rounded-full bg-[#95e468]"></div>
                     <span className="text-xs text-muted-foreground">2026</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-gray-300"></div>
+                    <div className="w-3 h-3 rounded-full bg-muted-foreground/50"></div>
                     <span className="text-xs text-muted-foreground">2025</span>
                   </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-gradient-to-br from-[#f0ffd4] to-[#e8ffc4] rounded-2xl p-4">
+                <div className="bg-accent/20 rounded-2xl p-4">
                   <p className="text-xs text-muted-foreground mb-1">Receita Total</p>
                   <p className="text-xl font-bold text-foreground">R$ 333K</p>
-                  <p className="text-xs text-[#4d7c0f] font-medium mt-1">+18.2% vs período</p>
+                  <p className="text-xs text-accent font-medium mt-1">+18.2% vs período</p>
                 </div>
                 <div className="bg-muted rounded-2xl p-4">
                   <p className="text-xs text-muted-foreground mb-1">Ticket Médio</p>
@@ -341,8 +341,8 @@ export default function AnalyticsPage() {
                   <ComposedChart data={revenueTimeline}>
                     <defs>
                       <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#a3e635" stopOpacity={0.2}/>
-                        <stop offset="100%" stopColor="#a3e635" stopOpacity={0}/>
+                        <stop offset="0%" stopColor="#95e468" stopOpacity={0.2}/>
+                        <stop offset="100%" stopColor="#95e468" stopOpacity={0}/>
                       </linearGradient>
                     </defs>
                     <XAxis 
@@ -359,23 +359,23 @@ export default function AnalyticsPage() {
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#111",
-                        border: "none",
+                        backgroundColor: "hsl(222 41% 12%)",
+                        border: "1px solid hsl(222 25% 20%)",
                         borderRadius: "12px",
-                        color: "#fff",
+                        color: "#fafafa",
                         fontSize: 12,
                         padding: "12px 16px"
                       }}
                       formatter={(value: number) => [`R$ ${(value/1000).toFixed(1)}K`, ""]}
                     />
-                    <Bar dataKey="anterior" fill="#e5e7eb" radius={[6, 6, 0, 0]} barSize={24} />
+                    <Bar dataKey="anterior" fill="hsl(222 30% 25%)" radius={[6, 6, 0, 0]} barSize={24} />
                     <Line 
                       type="monotone" 
                       dataKey="atual" 
-                      stroke="#a3e635" 
+                      stroke="#95e468" 
                       strokeWidth={3}
-                      dot={{ fill: "#a3e635", strokeWidth: 0, r: 4 }}
-                      activeDot={{ r: 6, fill: "#a3e635" }}
+                      dot={{ fill: "#95e468", strokeWidth: 0, r: 4 }}
+                      activeDot={{ r: 6, fill: "#95e468" }}
                     />
                   </ComposedChart>
                 </ResponsiveContainer>
@@ -384,7 +384,7 @@ export default function AnalyticsPage() {
 
             {/* Device Breakdown */}
             <div className="col-span-12 lg:col-span-4 bg-foreground dark:bg-card rounded-[28px] p-6 text-background dark:text-foreground relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-40 h-40 bg-[#a3e635] opacity-10 blur-[60px] rounded-full"></div>
+              <div className="absolute top-0 right-0 w-40 h-40 bg-[#95e468] opacity-10 blur-[60px] rounded-full"></div>
               
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-6">
@@ -398,7 +398,7 @@ export default function AnalyticsPage() {
                     return (
                       <div key={device.device} className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-xl bg-card/10 flex items-center justify-center">
-                          <Icon size={18} className="text-[#a3e635]" />
+                          <Icon size={18} className="text-[#95e468]" />
                         </div>
                         <div className="flex-1">
                           <div className="flex items-center justify-between mb-1.5">
@@ -407,7 +407,7 @@ export default function AnalyticsPage() {
                           </div>
                           <div className="h-1.5 bg-card/10 rounded-full overflow-hidden">
                             <div 
-                              className="h-full bg-[#a3e635] rounded-full"
+                              className="h-full bg-[#95e468] rounded-full"
                               style={{ width: `${device.percentage}%` }}
                             />
                           </div>
@@ -421,7 +421,7 @@ export default function AnalyticsPage() {
                 <div className="mt-6 pt-5 border-t border-white/10">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">Taxa de Rejeição Mobile</span>
-                    <span className="text-sm font-semibold text-[#a3e635]">28%</span>
+                    <span className="text-sm font-semibold text-[#95e468]">28%</span>
                   </div>
                 </div>
               </div>
@@ -434,7 +434,7 @@ export default function AnalyticsPage() {
                   <h3 className="font-semibold text-foreground">Fontes de Tráfego</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Performance por canal de aquisição</p>
                 </div>
-                <button className="text-sm text-[#4d7c0f] font-medium hover:underline flex items-center gap-1">
+                <button className="text-sm text-accent font-medium hover:underline flex items-center gap-1">
                   Ver detalhes <ChevronRight size={14} />
                 </button>
               </div>
@@ -452,13 +452,13 @@ export default function AnalyticsPage() {
                   </thead>
                   <tbody className="text-sm">
                     {sourcesData.map((source, idx) => (
-                      <tr key={source.source} className="border-b border-gray-50 last:border-0">
+                      <tr key={source.source} className="border-b border-border last:border-0">
                         <td className="py-4">
                           <div className="flex items-center gap-3">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-                              idx === 0 ? 'bg-[#f0ffd4]' : 'bg-muted'
+                              idx === 0 ? 'bg-accent/20' : 'bg-muted'
                             }`}>
-                              {idx === 0 && <Search size={14} className="text-[#4d7c0f]" />}
+                              {idx === 0 && <Search size={14} className="text-accent" />}
                               {idx === 1 && <Share2 size={14} className="text-muted-foreground" />}
                               {idx === 2 && <Globe2 size={14} className="text-muted-foreground" />}
                               {idx === 3 && <Mail size={14} className="text-muted-foreground" />}
@@ -486,22 +486,22 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Geography Card */}
-            <div className="col-span-12 lg:col-span-5 bg-gradient-to-br from-[#f8fff0] to-[#f0ffd4] rounded-[28px] p-6 border border-[#e2f89f]">
+            <div className="col-span-12 lg:col-span-5 bg-card dark:bg-card rounded-[28px] p-6 border border-border shadow-sm">
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="font-semibold text-foreground">Distribuição Geográfica</h3>
                   <p className="text-xs text-muted-foreground mt-0.5">Receita por região</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-card/70 flex items-center justify-center">
-                  <Map size={18} className="text-[#4d7c0f]" />
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                  <Map size={18} className="text-accent" />
                 </div>
               </div>
 
               <div className="space-y-3">
                 {geoData.map((region, idx) => (
-                  <div key={region.region} className="flex items-center gap-4 bg-card/60 rounded-2xl p-3">
+                  <div key={region.region} className="flex items-center gap-4 bg-muted/50 rounded-2xl p-3">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                      idx === 0 ? 'bg-[#a3e635] text-[#111]' : 'bg-gray-200 text-muted-foreground'
+                      idx === 0 ? 'bg-accent text-accent-foreground' : 'bg-muted text-muted-foreground'
                     }`}>
                       {idx + 1}
                     </div>
@@ -510,9 +510,9 @@ export default function AnalyticsPage() {
                         <span className="text-sm font-medium text-foreground">{region.region}</span>
                         <span className="text-sm font-bold text-foreground">{region.value}</span>
                       </div>
-                      <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
                         <div 
-                          className="h-full bg-[#a3e635] rounded-full"
+                          className="h-full bg-accent rounded-full"
                           style={{ width: `${region.percentage}%` }}
                         />
                       </div>
@@ -538,7 +538,7 @@ export default function AnalyticsPage() {
               <div className="space-y-3">
                 {pagePerformance.map((page, idx) => (
                   <div key={page.page} className="flex items-center gap-4 p-3 hover:bg-muted rounded-xl transition-colors group">
-                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-[#a3e635] group-hover:text-[#111] transition-colors">
+                    <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center text-sm font-bold text-muted-foreground group-hover:bg-accent group-hover:text-accent-foreground transition-colors">
                       {idx + 1}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -621,14 +621,14 @@ function RealtimeStat({
   icon: React.ElementType
 }) {
   return (
-    <div className="bg-card/5 backdrop-blur-sm rounded-2xl p-4 border border-white/10">
+    <div className="bg-muted/30 backdrop-blur-sm rounded-2xl p-4 border border-border/30">
       <div className="flex items-center justify-between mb-3">
-        <div className="w-8 h-8 rounded-lg bg-card/10 flex items-center justify-center">
-          <Icon size={16} className="text-[#a3e635]" />
+        <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
+          <Icon size={16} className="text-accent" />
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
           trend > 0 
-            ? 'text-[#a3e635] bg-[#a3e635]/20' 
+            ? 'text-accent bg-accent/20' 
             : 'text-red-400 bg-red-400/20'
         }`}>
           {trend > 0 ? '+' : ''}{trend}%
@@ -657,14 +657,14 @@ function QuickMetricCard({
   color: 'lime' | 'dark' | 'white'
 }) {
   const styles = {
-    lime: 'bg-gradient-to-br from-[#d9f970] to-[#a3e635] text-[#111]',
-    dark: 'bg-foreground dark:bg-card text-background dark:text-foreground',
+    lime: 'bg-accent text-accent-foreground',
+    dark: 'bg-secondary text-foreground',
     white: 'bg-card text-foreground border border-border shadow-sm'
   }
   
   const iconBg = {
-    lime: 'bg-foreground dark:bg-card/10',
-    dark: 'bg-card/10',
+    lime: 'bg-accent-foreground/20',
+    dark: 'bg-muted',
     white: 'bg-muted'
   }
 
@@ -672,21 +672,21 @@ function QuickMetricCard({
     <div className={`rounded-[24px] p-5 ${styles[color]}`}>
       <div className="flex items-start justify-between mb-4">
         <div className={`w-10 h-10 rounded-xl ${iconBg[color]} flex items-center justify-center`}>
-          <Icon size={18} className={color === 'dark' ? 'text-[#a3e635]' : color === 'lime' ? 'text-[#111]' : 'text-muted-foreground'} />
+          <Icon size={18} className={color === 'dark' ? 'text-accent' : color === 'lime' ? 'text-accent-foreground' : 'text-muted-foreground'} />
         </div>
         <span className={`text-xs font-medium ${
           trend > 0 
-            ? color === 'dark' ? 'text-[#a3e635]' : 'text-green-600' 
+            ? color === 'dark' ? 'text-accent' : 'text-accent-foreground' 
             : 'text-red-500'
         }`}>
           {trend > 0 ? '+' : ''}{trend}%
         </span>
       </div>
-      <p className={`text-xs ${color === 'dark' ? 'text-muted-foreground' : color === 'lime' ? 'text-[#4d7c0f]' : 'text-muted-foreground'}`}>
+      <p className={`text-xs ${color === 'dark' ? 'text-muted-foreground' : color === 'lime' ? 'text-accent-foreground/70' : 'text-muted-foreground'}`}>
         {title}
       </p>
       <p className="text-2xl font-bold mt-1">{value}</p>
-      <p className={`text-xs mt-0.5 ${color === 'dark' ? 'text-muted-foreground' : color === 'lime' ? 'text-[#4d7c0f]/70' : 'text-muted-foreground'}`}>
+      <p className={`text-xs mt-0.5 ${color === 'dark' ? 'text-muted-foreground' : color === 'lime' ? 'text-accent-foreground/70' : 'text-muted-foreground'}`}>
         {subtitle}
       </p>
     </div>

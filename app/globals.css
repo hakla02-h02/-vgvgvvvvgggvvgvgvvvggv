@@ -44,40 +44,51 @@
   }
 
   .dark {
-    --background: 220 27% 7%;
+    /* Base: #0d111d */
+    --background: 222 41% 8%;
+    /* Foreground: #fafafa */
     --foreground: 0 0% 98%;
-    --card: 220 25% 10%;
+    /* Card: ligeiramente mais claro que o background */
+    --card: 222 35% 12%;
     --card-foreground: 0 0% 98%;
-    --popover: 220 25% 10%;
+    --popover: 222 35% 12%;
     --popover-foreground: 0 0% 98%;
+    /* Primary: branco */
     --primary: 0 0% 98%;
-    --primary-foreground: 220 27% 7%;
-    --secondary: 220 20% 14%;
+    --primary-foreground: 222 41% 8%;
+    /* Secondary: tom médio para contraste */
+    --secondary: 222 30% 18%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 220 20% 14%;
-    --muted-foreground: 220 10% 55%;
-    --accent: 100 60% 55%;
-    --accent-foreground: 220 27% 7%;
+    /* Muted: para backgrounds sutis */
+    --muted: 222 30% 16%;
+    --muted-foreground: 220 15% 60%;
+    /* Accent: #95e468 */
+    --accent: 100 71% 65%;
+    --accent-foreground: 222 41% 8%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 20% 16%;
-    --input: 220 20% 14%;
-    --ring: 100 60% 55%;
-    --chart-1: 100 60% 55%;
+    /* Borders: sutis mas visíveis */
+    --border: 222 25% 20%;
+    --input: 222 30% 16%;
+    --ring: 100 71% 65%;
+    /* Charts */
+    --chart-1: 100 71% 65%;
     --chart-2: 250 60% 60%;
     --chart-3: 220 70% 55%;
     --chart-4: 140 60% 40%;
     --chart-5: 180 50% 45%;
-    --sidebar-background: 220 27% 7%;
-    --sidebar-foreground: 220 10% 65%;
+    /* Sidebar */
+    --sidebar-background: 222 41% 8%;
+    --sidebar-foreground: 220 15% 70%;
     --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 220 27% 7%;
-    --sidebar-accent: 100 60% 55%;
-    --sidebar-accent-foreground: 220 27% 7%;
-    --sidebar-border: 220 20% 14%;
-    --sidebar-ring: 100 60% 55%;
-    --success: 100 60% 55%;
-    --success-foreground: 220 27% 7%;
+    --sidebar-primary-foreground: 222 41% 8%;
+    --sidebar-accent: 100 71% 65%;
+    --sidebar-accent-foreground: 222 41% 8%;
+    --sidebar-border: 222 25% 18%;
+    --sidebar-ring: 100 71% 65%;
+    /* Status */
+    --success: 100 71% 65%;
+    --success-foreground: 222 41% 8%;
     --warning: 38 92% 50%;
     --warning-foreground: 38 92% 10%;
   }
