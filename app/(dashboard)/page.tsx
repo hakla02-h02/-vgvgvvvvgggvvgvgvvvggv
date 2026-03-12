@@ -430,7 +430,7 @@ export default function DashboardPage() {
 
           {/* Right Column - Dragon AI Panel - Fixed position */}
           <div className="row-span-2 col-start-2 row-start-1">
-            <div className="bg-foreground dark:bg-card rounded-[24px] p-5 flex flex-col shadow-2xl relative overflow-hidden border border-background/5 dark:border-border h-full max-h-[420px]">
+            <div className="bg-foreground dark:bg-card rounded-[24px] p-5 flex flex-col shadow-2xl relative overflow-hidden border border-background/5 dark:border-border h-full">
               
               {/* Efeitos de fundo (Glow) */}
               <div className="absolute top-0 right-0 w-20 h-20 bg-accent opacity-10 blur-[40px] rounded-full"></div>
