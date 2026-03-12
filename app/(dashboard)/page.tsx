@@ -55,7 +55,7 @@ function getCurrentMonthWeekRanges() {
   const now = new Date()
   const currentMonth = now.getMonth()
   const currentYear = now.getFullYear()
-  
+
   // Nomes dos meses em português
   const monthNames = [
     "Jan", "Fev", "Mar", "Abr", "Mai", "Jun",
@@ -65,26 +65,26 @@ function getCurrentMonthWeekRanges() {
     "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
     "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
   ]
-  
+
   const monthAbbr = monthNames[currentMonth]
   const fullMonthName = fullMonthNames[currentMonth]
-  
+
   // Último dia do mês
   const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate()
-  
+
   // Gerar semanas
   const weeks: string[] = []
   let startDay = 1
-  
+
   while (startDay <= lastDay) {
     const endDay = Math.min(startDay + 6, lastDay)
     weeks.push(`${String(startDay).padStart(2, '0')}-${String(endDay).padStart(2, '0')} ${monthAbbr}`)
     startDay = endDay + 1
   }
-  
+
   // Adicionar opção "Todo [Mês]"
   weeks.push(`Todo ${fullMonthName}`)
-  
+
   return { weeks, firstWeek: weeks[0] }
 }
 
@@ -94,7 +94,7 @@ export default function DashboardPage() {
   const { theme, setTheme } = useTheme()
   const [selectedDateRange, setSelectedDateRange] = useState("7days")
   const [selectedFilter, setSelectedFilter] = useState("all")
-  
+
   // Usar o mês atual para os intervalos
   const { weeks: currentMonthWeeks, firstWeek } = getCurrentMonthWeekRanges()
   const [salesDateRange, setSalesDateRange] = useState(firstWeek)
@@ -124,7 +124,7 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
             className="w-10 h-10 bg-card rounded-full flex items-center justify-center text-muted-foreground shadow-sm hover:bg-muted transition-colors"
           >
@@ -155,11 +155,10 @@ export default function DashboardPage() {
                   <button
                     key={bot.id}
                     onClick={() => setSelectedBot(bot)}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
-                      selectedBot?.id === bot.id 
-                        ? "bg-accent/30 text-accent-foreground font-medium" 
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${selectedBot?.id === bot.id
+                        ? "bg-accent/30 text-accent-foreground font-medium"
                         : "hover:bg-muted text-foreground"
-                    }`}
+                      }`}
                   >
                     <div className={`w-2 h-2 rounded-full ${bot.status === "active" ? "bg-accent" : "bg-muted-foreground"}`} />
                     <span className="truncate">{bot.name}</span>
@@ -199,11 +198,10 @@ export default function DashboardPage() {
                     <button
                       key={range.value}
                       onClick={() => setSelectedDateRange(range.value)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                        selectedDateRange === range.value 
-                          ? "bg-accent/30 text-accent-foreground font-medium" 
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${selectedDateRange === range.value
+                          ? "bg-accent/30 text-accent-foreground font-medium"
                           : "hover:bg-muted text-foreground"
-                      }`}
+                        }`}
                     >
                       {range.label}
                       {selectedDateRange === range.value && <Check size={14} />}
@@ -215,11 +213,10 @@ export default function DashboardPage() {
 
             <Popover>
               <PopoverTrigger asChild>
-                <button className={`w-10 h-10 rounded-xl shadow-sm border flex items-center justify-center hover:bg-muted ${
-                  selectedFilter !== "all" 
-                    ? "bg-accent/30 border-accent text-accent-foreground" 
+                <button className={`w-10 h-10 rounded-xl shadow-sm border flex items-center justify-center hover:bg-muted ${selectedFilter !== "all"
+                    ? "bg-accent/30 border-accent text-accent-foreground"
                     : "bg-card border-border text-muted-foreground"
-                }`}>
+                  }`}>
                   <Filter size={16} />
                 </button>
               </PopoverTrigger>
@@ -229,11 +226,10 @@ export default function DashboardPage() {
                     <button
                       key={option.value}
                       onClick={() => setSelectedFilter(option.value)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${
-                        selectedFilter === option.value 
-                          ? "bg-accent/30 text-accent-foreground font-medium" 
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors ${selectedFilter === option.value
+                          ? "bg-accent/30 text-accent-foreground font-medium"
                           : "hover:bg-muted text-foreground"
-                      }`}
+                        }`}
                     >
                       {option.label}
                       {selectedFilter === option.value && <Check size={14} />}
@@ -249,189 +245,187 @@ export default function DashboardPage() {
         <div className="grid grid-cols-[1fr_240px] gap-4">
           {/* Sales Distribution Card - Top Left */}
           <div className="bg-foreground dark:bg-card rounded-[24px] p-5 text-background dark:text-foreground relative overflow-hidden shadow-lg">
-              {/* Glow effect */}
-              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
+            {/* Glow effect */}
+            <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
 
-              <div className="relative z-10">
-                <h2 className="text-xl font-semibold mb-1">Distribuição de Vendas</h2>
-                <p className="text-muted-foreground text-sm mb-6">
-                  Métricas de vendas mostrando crescimento em leads, receita e performance
-                </p>
+            <div className="relative z-10">
+              <h2 className="text-xl font-semibold mb-1">Distribuição de Vendas</h2>
+              <p className="text-muted-foreground text-sm mb-6">
+                Métricas de vendas mostrando crescimento em leads, receita e performance
+              </p>
 
-                <div className="grid grid-cols-3 gap-4">
-                  {/* Metric 1 */}
-                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-                      <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
-                      Receita Total
-                    </div>
-                    <div className="text-3xl font-bold flex items-end gap-1">
-                      0 <span className="text-sm font-normal text-muted-foreground mb-1">R$</span>
-                    </div>
+              <div className="grid grid-cols-3 gap-4">
+                {/* Metric 1 */}
+                <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                    <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
+                    Receita Total
                   </div>
-                  {/* Metric 2 */}
-                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-                      <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
-                      ROI
-                    </div>
-                    <div className="text-3xl font-bold flex items-end gap-1">
-                      0 <span className="text-sm font-normal text-muted-foreground mb-1">%</span>
-                    </div>
+                  <div className="text-3xl font-bold flex items-end gap-1">
+                    0 <span className="text-sm font-normal text-muted-foreground mb-1">R$</span>
                   </div>
-                  {/* Metric 3 */}
-                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
-                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
-                      <div className="w-4 h-4 rounded-full bg-background/10 dark:bg-secondary flex items-center justify-center border border-muted-foreground/50">
-                        <span className="text-[8px]">±</span>
-                      </div>
-                      Usuários Ativos
-                    </div>
-                    <div className="text-3xl font-bold">0</div>
+                </div>
+                {/* Metric 2 */}
+                <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                    <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
+                    ROI
                   </div>
+                  <div className="text-3xl font-bold flex items-end gap-1">
+                    0 <span className="text-sm font-normal text-muted-foreground mb-1">%</span>
+                  </div>
+                </div>
+                {/* Metric 3 */}
+                <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                    <div className="w-4 h-4 rounded-full bg-background/10 dark:bg-secondary flex items-center justify-center border border-muted-foreground/50">
+                      <span className="text-[8px]">±</span>
+                    </div>
+                    Usuários Ativos
+                  </div>
+                  <div className="text-3xl font-bold">0</div>
                 </div>
               </div>
             </div>
+          </div>
 
           {/* Container para Análise de Vendas e Análise de Negócios lado a lado */}
           <div className="flex flex-row gap-6">
             {/* Sales Analysis Card */}
             <div className="flex-1 bg-card rounded-[24px] p-5 shadow-sm border border-border flex flex-col">
-                  <div className="flex justify-between items-center mb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-accent"></span>
-                      <h3 className="font-semibold text-foreground text-sm">Análise de Vendas</h3>
-                    </div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="text-[10px] font-medium text-muted-foreground flex items-center hover:text-foreground transition-colors">
-                          {salesDateRange} <ChevronDown size={12} className="ml-1" />
+              <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-accent"></span>
+                  <h3 className="font-semibold text-foreground text-sm">Análise de Vendas</h3>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-[10px] font-medium text-muted-foreground flex items-center hover:text-foreground transition-colors">
+                      {salesDateRange} <ChevronDown size={12} className="ml-1" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-36 p-2" align="end">
+                    <div className="flex flex-col gap-1">
+                      {currentMonthWeeks.map((range) => (
+                        <button
+                          key={range}
+                          onClick={() => setSalesDateRange(range)}
+                          className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${salesDateRange === range
+                              ? "bg-accent/30 text-accent-foreground font-medium"
+                              : "hover:bg-muted text-muted-foreground"
+                            }`}
+                        >
+                          {range}
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-36 p-2" align="end">
-                        <div className="flex flex-col gap-1">
-                          {currentMonthWeeks.map((range) => (
-                            <button
-                              key={range}
-                              onClick={() => setSalesDateRange(range)}
-                              className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
-                                salesDateRange === range 
-                                  ? "bg-accent/30 text-accent-foreground font-medium" 
-                                  : "hover:bg-muted text-muted-foreground"
-                              }`}
-                            >
-                              {range}
-                            </button>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
-
-                  <div className="flex-1 flex items-center gap-4">
-                    {/* Donut Chart Simulation */}
-                    <div className="relative w-24 h-24 flex-shrink-0">
-                      <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
-                        <circle cx="50" cy="50" r="40" fill="transparent" className="stroke-muted" strokeWidth="12" strokeDasharray="4 4" />
-                        <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
-                        <circle cx="50" cy="50" r="40" fill="transparent" className="stroke-accent" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="-180" strokeLinecap="round" />
-                        <defs>
-                          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" stopColor="#8b5cf6" />
-                            <stop offset="100%" stopColor="#3b82f6" />
-                          </linearGradient>
-                        </defs>
-                      </svg>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xs font-bold text-foreground">R$0</span>
-                        <span className="text-[8px] text-muted-foreground">Receita Total</span>
-                      </div>
+                      ))}
                     </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-                    {/* Legend */}
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-sm bg-blue-600"></span>
-                        <span className="text-xs font-bold text-foreground">0</span>
-                        <span className="text-xs text-muted-foreground">Leads</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-sm bg-muted"></span>
-                        <span className="text-xs font-bold text-foreground">0</span>
-                        <span className="text-xs text-muted-foreground">Receita</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-sm bg-accent"></span>
-                        <span className="text-xs font-bold text-foreground">0</span>
-                        <span className="text-xs text-muted-foreground">Crescimento</span>
-                      </div>
-                    </div>
+              <div className="flex-1 flex items-center gap-4">
+                {/* Donut Chart Simulation */}
+                <div className="relative w-24 h-24 flex-shrink-0">
+                  <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
+                    <circle cx="50" cy="50" r="40" fill="transparent" className="stroke-muted" strokeWidth="12" strokeDasharray="4 4" />
+                    <circle cx="50" cy="50" r="40" fill="transparent" stroke="url(#gradient)" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="0" className="drop-shadow-sm" strokeLinecap="round" />
+                    <circle cx="50" cy="50" r="40" fill="transparent" className="stroke-accent" strokeWidth="14" strokeDasharray="0 251" strokeDashoffset="-180" strokeLinecap="round" />
+                    <defs>
+                      <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stopColor="#8b5cf6" />
+                        <stop offset="100%" stopColor="#3b82f6" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-xs font-bold text-foreground">R$0</span>
+                    <span className="text-[8px] text-muted-foreground">Receita Total</span>
                   </div>
+                </div>
 
-                  <div className="mt-4 pt-3 border-t border-border text-[10px] text-muted-foreground flex items-center gap-1">
-                    <HelpCircle size={10} />
-                    Calculado a partir da atividade agregada do período
+                {/* Legend */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-sm bg-blue-600"></span>
+                    <span className="text-xs font-bold text-foreground">0</span>
+                    <span className="text-xs text-muted-foreground">Leads</span>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-sm bg-muted"></span>
+                    <span className="text-xs font-bold text-foreground">0</span>
+                    <span className="text-xs text-muted-foreground">Receita</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-sm bg-accent"></span>
+                    <span className="text-xs font-bold text-foreground">0</span>
+                    <span className="text-xs text-muted-foreground">Crescimento</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 pt-3 border-t border-border text-[10px] text-muted-foreground flex items-center gap-1">
+                <HelpCircle size={10} />
+                Calculado a partir da atividade agregada do período
+              </div>
             </div>
 
             {/* Deal Analysis Card */}
             <div className="flex-1 bg-accent/20 dark:bg-accent/10 rounded-[24px] p-5 shadow-sm border border-accent/30 dark:border-accent/20 flex flex-col relative overflow-hidden min-h-[220px]">
-                  {/* Background Stripes */}
-                  <div className="absolute inset-0 opacity-30 dark:opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, hsl(100 71% 65% / 0.3) 8px, hsl(100 71% 65% / 0.3) 16px)" }}></div>
-                  <div className="flex justify-between items-center mb-3 relative z-10">
-                    <div className="flex items-center gap-2">
-                      <BarChart2 size={14} className="text-accent" />
-                      <h3 className="font-semibold text-foreground text-sm">Análise de Negócios</h3>
-                    </div>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <button className="text-[10px] font-medium text-muted-foreground flex items-center hover:text-foreground transition-colors">
-                          {dealDateRange} <ChevronDown size={12} className="ml-1" />
+              {/* Background Stripes */}
+              <div className="absolute inset-0 opacity-30 dark:opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 8px, hsl(100 71% 65% / 0.3) 8px, hsl(100 71% 65% / 0.3) 16px)" }}></div>
+              <div className="flex justify-between items-center mb-3 relative z-10">
+                <div className="flex items-center gap-2">
+                  <BarChart2 size={14} className="text-accent" />
+                  <h3 className="font-semibold text-foreground text-sm">Análise de Negócios</h3>
+                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button className="text-[10px] font-medium text-muted-foreground flex items-center hover:text-foreground transition-colors">
+                      {dealDateRange} <ChevronDown size={12} className="ml-1" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-36 p-2" align="end">
+                    <div className="flex flex-col gap-1">
+                      {currentMonthWeeks.map((range) => (
+                        <button
+                          key={range}
+                          onClick={() => setDealDateRange(range)}
+                          className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${dealDateRange === range
+                              ? "bg-accent text-accent-foreground font-medium"
+                              : "hover:bg-muted text-foreground"
+                            }`}
+                        >
+                          {range}
                         </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-36 p-2" align="end">
-                        <div className="flex flex-col gap-1">
-                          {currentMonthWeeks.map((range) => (
-                            <button
-                              key={range}
-                              onClick={() => setDealDateRange(range)}
-                              className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
-                                dealDateRange === range 
-                                  ? "bg-accent text-accent-foreground font-medium" 
-                                  : "hover:bg-muted text-foreground"
-                              }`}
-                            >
-                              {range}
-                            </button>
-                          ))}
-                        </div>
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+                      ))}
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              </div>
 
-                  {/* Cards em Fileira */}
-                  <div className="flex-1 flex items-end gap-3 mt-1 z-10">
-                    {/* Card Ganhos */}
-                    <div className="flex-1 h-[33%] bg-accent rounded-2xl p-3 relative overflow-hidden">
-                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px)" }}></div>
-                      <div className="relative z-10 bg-white/90 dark:bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Ganhos 0</div>
-                    </div>
-                    {/* Card Perdas */}
-                    <div className="flex-1 h-[33%] bg-secondary rounded-2xl p-3 shadow-lg">
-                      <div className="bg-card/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Perdas 0</div>
-                    </div>
-                    {/* Card Crescimento */}
-                    <div className="flex-1 h-[33%] bg-accent rounded-2xl p-3">
-                      <div className="bg-white/90 dark:bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Crescimento 0</div>
-                    </div>
-                  </div>
+              {/* Cards em Fileira */}
+              <div className="flex-1 flex items-end gap-3 mt-1 z-10">
+                {/* Card Ganhos */}
+                <div className="flex-1 h-[33%] bg-accent rounded-2xl p-3 relative overflow-hidden">
+                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: "repeating-linear-gradient(45deg, transparent, transparent 5px, rgba(255,255,255,0.3) 5px, rgba(255,255,255,0.3) 10px)" }}></div>
+                  <div className="relative z-10 bg-white/90 dark:bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Ganhos 0</div>
+                </div>
+                {/* Card Perdas */}
+                <div className="flex-1 h-[33%] bg-secondary rounded-2xl p-3 shadow-lg">
+                  <div className="bg-card/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Perdas 0</div>
+                </div>
+                {/* Card Crescimento */}
+                <div className="flex-1 h-[33%] bg-accent rounded-2xl p-3">
+                  <div className="bg-white/90 dark:bg-background/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] font-bold text-foreground inline-block">Avanço 0</div>
+                </div>
+              </div>
             </div>
           </div>
 
           {/* Right Column - Dragon AI Panel - Fixed position */}
           <div className="row-span-2 col-start-2 row-start-1">
             <div className="bg-foreground dark:bg-card rounded-[24px] p-5 flex flex-col shadow-2xl relative overflow-hidden border border-background/5 dark:border-border h-full">
-              
+
               {/* Efeitos de fundo (Glow) */}
               <div className="absolute top-0 right-0 w-20 h-20 bg-accent opacity-10 blur-[40px] rounded-full"></div>
               <div className="absolute bottom-0 left-0 w-20 h-20 bg-blue-500 opacity-5 blur-[40px] rounded-full"></div>
@@ -452,18 +446,18 @@ export default function DashboardPage() {
                 <div className="relative w-24 h-24 mb-4 group">
                   {/* Esfera Principal com Gradiente Complexo */}
                   <div className="absolute inset-0 rounded-full bg-gradient-to-br from-accent via-green-500 to-green-900 shadow-[0_0_30px_rgba(163,230,53,0.3)] animate-pulse transition-transform duration-700 group-hover:scale-105"></div>
-                  
+
                   {/* Camada de Brilho e Reflexo (Efeito Vidro) */}
                   <div className="absolute inset-0 rounded-full shadow-[inset_-10px_-10px_20px_rgba(0,0,0,0.6),inset_10px_10px_20px_rgba(255,255,255,0.3)]"></div>
-                  
+
                   {/* Pontos de Luz Internos */}
                   <div className="absolute top-3 left-5 w-6 h-6 rounded-full bg-white/30 blur-md"></div>
                   <div className="absolute bottom-5 right-5 w-10 h-10 rounded-full bg-cyan-400/20 blur-xl"></div>
-                  
+
                   {/* Aro Externo Sutil */}
                   <div className="absolute -inset-2 rounded-full border border-accent/5 scale-95 group-hover:scale-100 transition-transform duration-1000"></div>
                 </div>
-                
+
                 <h2 className="text-background/70 dark:text-foreground/70 text-sm font-medium text-center">Como posso ajudar?</h2>
               </div>
 
@@ -475,7 +469,7 @@ export default function DashboardPage() {
                   </div>
                   <span className="text-[8px] font-bold text-background/80 dark:text-foreground/80 uppercase tracking-wider">Análise Profunda</span>
                 </button>
-                
+
                 <button className="bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 py-3 rounded-xl border border-background/5 dark:border-border flex flex-col items-center gap-1.5 transition-all group">
                   <div className="w-8 h-8 rounded-full bg-background/20 dark:bg-muted flex items-center justify-center group-hover:bg-background/30 dark:group-hover:bg-muted/80">
                     <FileText size={14} className="text-muted-foreground" />
@@ -487,9 +481,9 @@ export default function DashboardPage() {
               {/* Barra de Input / Chat */}
               <div className="relative z-10">
                 <div className="bg-background/10 dark:bg-secondary rounded-xl p-1.5 pl-3 flex items-center border border-background/5 dark:border-border focus-within:border-accent/30 transition-colors">
-                  <input 
-                    type="text" 
-                    placeholder="Pergunte o que quiser..." 
+                  <input
+                    type="text"
+                    placeholder="Pergunte o que quiser..."
                     className="bg-transparent border-none outline-none text-xs text-background dark:text-foreground placeholder-muted-foreground w-full font-medium"
                   />
                   <div className="flex items-center gap-1">
@@ -508,76 +502,75 @@ export default function DashboardPage() {
 
         {/* Bottom Table Section */}
         <div className="mt-5 bg-card rounded-[24px] p-6 shadow-sm border border-border mb-4">
-            {/* Table Header */}
-            <div className="flex flex-row justify-between items-center mb-6 gap-3">
-              <div className="flex items-center gap-2">
-                <div className="w-5 h-5 bg-accent/30 rounded flex items-center justify-center">
-                  <List size={12} className="text-accent-foreground" />
-                </div>
-                <h3 className="font-semibold text-foreground text-lg">
-                  Conversas Recentes
-                </h3>
+          {/* Table Header */}
+          <div className="flex flex-row justify-between items-center mb-6 gap-3">
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 bg-accent/30 rounded flex items-center justify-center">
+                <List size={12} className="text-accent-foreground" />
               </div>
-              <div className="flex items-center gap-2">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <button className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-lg border border-border hover:bg-muted/80 transition-colors">
-                      {tablePeriod === "week" ? "Semana" : tablePeriod === "month" ? "Mes" : "Ano"} 
-                      <ChevronDown size={14} />
-                    </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-32 p-2" align="end">
-                    <div className="flex flex-col gap-1">
-                      {[
-                        { label: "Semana", value: "week" },
-                        { label: "Mes", value: "month" },
-                        { label: "Ano", value: "year" },
-                      ].map((period) => (
-                        <button
-                          key={period.value}
-                          onClick={() => setTablePeriod(period.value)}
-                          className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${
-                            tablePeriod === period.value 
-                              ? "bg-accent/30 text-accent-foreground font-medium" 
-                              : "hover:bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {period.label}
-                        </button>
-                      ))}
-                    </div>
-                  </PopoverContent>
-                </Popover>
-                <button className="p-1.5 rounded-lg hover:bg-muted transition-colors">
-                  <MoreVertical size={14} className="text-muted-foreground" />
-                </button>
-              </div>
+              <h3 className="font-semibold text-foreground text-lg">
+                Conversas Recentes
+              </h3>
             </div>
-
-            {/* Table Content */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="text-xs text-muted-foreground border-b border-border">
-                    <th className="pb-3 font-medium px-2">Usuário</th>
-                    <th className="pb-3 font-medium px-2">Canal</th>
-                    <th className="pb-3 font-medium px-2">Mensagens</th>
-                    <th className="pb-3 font-medium px-2">Status</th>
-                    <th className="pb-3 font-medium px-2">Tempo de Resposta</th>
-                    <th className="pb-3 font-medium px-2 text-right">Resultado</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {/* Sem dados ainda */}
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                      Nenhuma conversa registrada ainda
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button className="flex items-center gap-2 text-sm font-medium text-muted-foreground bg-muted px-3 py-1.5 rounded-lg border border-border hover:bg-muted/80 transition-colors">
+                    {tablePeriod === "week" ? "Semana" : tablePeriod === "month" ? "Mes" : "Ano"}
+                    <ChevronDown size={14} />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent className="w-32 p-2" align="end">
+                  <div className="flex flex-col gap-1">
+                    {[
+                      { label: "Semana", value: "week" },
+                      { label: "Mes", value: "month" },
+                      { label: "Ano", value: "year" },
+                    ].map((period) => (
+                      <button
+                        key={period.value}
+                        onClick={() => setTablePeriod(period.value)}
+                        className={`px-3 py-1.5 rounded text-xs text-left transition-colors ${tablePeriod === period.value
+                            ? "bg-accent/30 text-accent-foreground font-medium"
+                            : "hover:bg-muted text-muted-foreground"
+                          }`}
+                      >
+                        {period.label}
+                      </button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+              <button className="p-1.5 rounded-lg hover:bg-muted transition-colors">
+                <MoreVertical size={14} className="text-muted-foreground" />
+              </button>
             </div>
           </div>
+
+          {/* Table Content */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[600px]">
+              <thead>
+                <tr className="text-xs text-muted-foreground border-b border-border">
+                  <th className="pb-3 font-medium px-2">Usuário</th>
+                  <th className="pb-3 font-medium px-2">Canal</th>
+                  <th className="pb-3 font-medium px-2">Mensagens</th>
+                  <th className="pb-3 font-medium px-2">Status</th>
+                  <th className="pb-3 font-medium px-2">Tempo de Resposta</th>
+                  <th className="pb-3 font-medium px-2 text-right">Resultado</th>
+                </tr>
+              </thead>
+              <tbody>
+                {/* Sem dados ainda */}
+                <tr>
+                  <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                    Nenhuma conversa registrada ainda
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
   )
