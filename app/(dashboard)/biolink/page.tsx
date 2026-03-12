@@ -24,6 +24,41 @@ import { toast } from "sonner"
 
 type PageType = "presell" | "conversion" | "dragonbio" | "checkout" | null
 
+// Templates para Dragon Bot
+const dragonBotTemplates = [
+  {
+    id: "buttons",
+    name: "Botoes",
+    description: "Layout classico com botoes",
+    preview: [
+      { type: "button", label: "Botao 1" },
+      { type: "button", label: "Botao 2" },
+      { type: "button", label: "Botao 3" },
+    ],
+  },
+  {
+    id: "photo-buttons",
+    name: "Foto + Botoes",
+    description: "Destaque com imagem e botoes",
+    preview: [
+      { type: "photo", label: "Foto" },
+      { type: "button", label: "Botao 1" },
+      { type: "button", label: "Botao 2" },
+    ],
+  },
+  {
+    id: "mixed",
+    name: "Misto",
+    description: "Combinacao de botoes e fotos",
+    preview: [
+      { type: "button", label: "Botao 1" },
+      { type: "photo", label: "Foto 1" },
+      { type: "photo", label: "Foto 2" },
+      { type: "button", label: "Botao 2" },
+    ],
+  },
+]
+
 const pageTypes = [
   {
     id: "presell" as const,
@@ -43,7 +78,7 @@ const pageTypes = [
   },
   {
     id: "dragonbio" as const,
-    name: "Dragon Bio",
+    name: "Dragon Bot",
     description: "Sua pagina de links na bio",
     gradient: "from-violet-500 to-purple-400",
     iconBg: "bg-violet-500/10",
@@ -82,6 +117,7 @@ export default function BioLinkPage() {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedType, setSelectedType] = useState<PageType>(null)
+  const [selectedTemplate, setSelectedTemplate] = useState("buttons")
   const [pageName, setPageName] = useState("")
   const [pageSlug, setPageSlug] = useState("")
   const [sites, setSites] = useState<DragonBioSite[]>([])
@@ -119,6 +155,7 @@ export default function BioLinkPage() {
 
   const handleBack = () => {
     setSelectedType(null)
+    setSelectedTemplate("buttons")
     setPageName("")
     setPageSlug("")
   }
@@ -138,6 +175,7 @@ export default function BioLinkPage() {
             userName: session.name,
             nome: pageName,
             slug: pageSlug,
+            template: selectedTemplate,
           }),
         })
 
@@ -152,6 +190,7 @@ export default function BioLinkPage() {
         setSites([data.site, ...sites])
         setDialogOpen(false)
         setSelectedType(null)
+        setSelectedTemplate("buttons")
         setPageName("")
         setPageSlug("")
       } catch (error) {
@@ -395,18 +434,63 @@ export default function BioLinkPage() {
                           </div>
                         </DialogHeader>
                         <div className="flex flex-col gap-5 pt-4">
+                          {/* Seleção de Templates - apenas para Dragon Bot */}
+                          {type.id === "dragonbio" && (
+                            <div className="flex flex-col gap-3">
+                              <Label className="text-muted-foreground dark:text-muted-foreground text-xs uppercase tracking-wider">Escolha um modelo</Label>
+                              <div className="grid grid-cols-3 gap-3">
+                                {dragonBotTemplates.map((template) => (
+                                  <button
+                                    key={template.id}
+                                    onClick={() => setSelectedTemplate(template.id)}
+                                    className={`relative aspect-[3/4] rounded-2xl p-3 flex flex-col items-center justify-center transition-all ${
+                                      selectedTemplate === template.id
+                                        ? "bg-secondary ring-2 ring-accent"
+                                        : "bg-secondary/60 hover:bg-secondary"
+                                    }`}
+                                  >
+                                    {selectedTemplate === template.id && (
+                                      <div className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                                        <svg viewBox="0 0 24 24" className="w-3 h-3 text-accent-foreground" fill="none" stroke="currentColor" strokeWidth="3">
+                                          <polyline points="20 6 9 17 4 12"/>
+                                        </svg>
+                                      </div>
+                                    )}
+                                    {/* Preview do template */}
+                                    <div className="flex flex-col items-center gap-1.5 w-full">
+                                      {/* Avatar */}
+                                      <div className="w-6 h-6 rounded-full bg-muted-foreground/30"></div>
+                                      {/* Items do preview */}
+                                      {template.preview.map((item, idx) => (
+                                        <div
+                                          key={idx}
+                                          className={`w-full rounded-md ${
+                                            item.type === "photo" ? "h-4 bg-muted-foreground/20" : "h-2.5 bg-muted-foreground/40"
+                                          }`}
+                                        ></div>
+                                      ))}
+                                    </div>
+                                  </button>
+                                ))}
+                              </div>
+                              <p className="text-xs text-muted-foreground text-center">
+                                {dragonBotTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBotTemplates.find(t => t.id === selectedTemplate)?.description}
+                              </p>
+                            </div>
+                          )}
+
                           <div className="flex flex-col gap-2">
-                            <Label className="text-gray-700 text-sm">Nome da Pagina</Label>
+                            <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Nome da Pagina</Label>
                             <Input 
                               placeholder="Ex: Minha Pagina de Vendas" 
-                              className="bg-muted border-gray-200 rounded-xl h-11"
+                              className="bg-muted border-border rounded-xl h-11"
                               value={pageName}
                               onChange={(e) => setPageName(e.target.value)}
                             />
                           </div>
                           <div className="flex flex-col gap-2">
-                            <Label className="text-gray-700 text-sm">Slug (URL)</Label>
-                            <div className="flex items-center gap-2 bg-muted border border-gray-200 rounded-xl px-3">
+                            <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Slug (URL)</Label>
+                            <div className="flex items-center gap-2 bg-muted border border-border rounded-xl px-3">
                               <span className="text-sm text-muted-foreground whitespace-nowrap">/s/</span>
                               <Input 
                                 placeholder="minha-pagina" 
@@ -417,7 +501,7 @@ export default function BioLinkPage() {
                             </div>
                           </div>
                           <Button 
-                            className="bg-foreground dark:bg-card text-background dark:text-foreground hover:bg-[#222] rounded-xl h-11 mt-2"
+                            className="bg-foreground dark:bg-accent text-background dark:text-accent-foreground hover:opacity-90 rounded-xl h-11 mt-2"
                             onClick={handleCreate}
                             disabled={!pageName.trim() || !pageSlug.trim() || creating}
                           >
@@ -554,18 +638,63 @@ export default function BioLinkPage() {
                                 </div>
                               </DialogHeader>
                               <div className="flex flex-col gap-5 pt-4">
+                                {/* Seleção de Templates - apenas para Dragon Bot */}
+                                {selectedType === "dragonbio" && (
+                                  <div className="flex flex-col gap-3">
+                                    <Label className="text-muted-foreground dark:text-muted-foreground text-xs uppercase tracking-wider">Escolha um modelo</Label>
+                                    <div className="grid grid-cols-3 gap-3">
+                                      {dragonBotTemplates.map((template) => (
+                                        <button
+                                          key={template.id}
+                                          onClick={() => setSelectedTemplate(template.id)}
+                                          className={`relative aspect-[3/4] rounded-2xl p-3 flex flex-col items-center justify-center transition-all ${
+                                            selectedTemplate === template.id
+                                              ? "bg-secondary ring-2 ring-accent"
+                                              : "bg-secondary/60 hover:bg-secondary"
+                                          }`}
+                                        >
+                                          {selectedTemplate === template.id && (
+                                            <div className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
+                                              <svg viewBox="0 0 24 24" className="w-3 h-3 text-accent-foreground" fill="none" stroke="currentColor" strokeWidth="3">
+                                                <polyline points="20 6 9 17 4 12"/>
+                                              </svg>
+                                            </div>
+                                          )}
+                                          {/* Preview do template */}
+                                          <div className="flex flex-col items-center gap-1.5 w-full">
+                                            {/* Avatar */}
+                                            <div className="w-6 h-6 rounded-full bg-muted-foreground/30"></div>
+                                            {/* Items do preview */}
+                                            {template.preview.map((item, idx) => (
+                                              <div
+                                                key={idx}
+                                                className={`w-full rounded-md ${
+                                                  item.type === "photo" ? "h-4 bg-muted-foreground/20" : "h-2.5 bg-muted-foreground/40"
+                                                }`}
+                                              ></div>
+                                            ))}
+                                          </div>
+                                        </button>
+                                      ))}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground text-center">
+                                      {dragonBotTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBotTemplates.find(t => t.id === selectedTemplate)?.description}
+                                    </p>
+                                  </div>
+                                )}
+
                                 <div className="flex flex-col gap-2">
-                                  <Label className="text-gray-700 text-sm">Nome da Pagina</Label>
+                                  <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Nome da Pagina</Label>
                                   <Input 
                                     placeholder="Ex: Minha Pagina de Vendas" 
-                                    className="bg-muted border-gray-200 rounded-xl h-11"
+                                    className="bg-muted border-border rounded-xl h-11"
                                     value={pageName}
                                     onChange={(e) => setPageName(e.target.value)}
                                   />
                                 </div>
                                 <div className="flex flex-col gap-2">
-                                  <Label className="text-gray-700 text-sm">Slug (URL)</Label>
-                                  <div className="flex items-center gap-2 bg-muted border border-gray-200 rounded-xl px-3">
+                                  <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Slug (URL)</Label>
+                                  <div className="flex items-center gap-2 bg-muted border border-border rounded-xl px-3">
                                     <span className="text-sm text-muted-foreground whitespace-nowrap">/s/</span>
                                     <Input 
                                       placeholder="minha-pagina" 
@@ -576,7 +705,7 @@ export default function BioLinkPage() {
                                   </div>
                                 </div>
                                 <Button 
-                                  className="bg-foreground dark:bg-card text-background dark:text-foreground hover:bg-[#222] rounded-xl h-11 mt-2"
+                                  className="bg-foreground dark:bg-accent text-background dark:text-accent-foreground hover:opacity-90 rounded-xl h-11 mt-2"
                                   onClick={handleCreate}
                                   disabled={!pageName.trim() || !pageSlug.trim() || creating}
                                 >
@@ -626,7 +755,7 @@ export default function BioLinkPage() {
                   </div>
                   <div className="divide-y divide-gray-50">
                     {dragonBioSites.map((site) => {
-                      const typeInfo = pageTypes[2] // Dragon Bio
+                      const typeInfo = pageTypes[2] // Dragon Bot
                       return (
                         <div key={site.id} className="p-5 flex items-center justify-between hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-4">
