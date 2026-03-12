@@ -340,9 +340,9 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-hidden flex flex-col">
+            <div className="flex-1 min-h-0 relative">
               {/* Visual Tab */}
-              <TabsContent value="visual" className="p-4 m-0 overflow-y-auto flex-1 data-[state=inactive]:hidden">
+              <TabsContent value="visual" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-5">
                   {/* Models Selection */}
                   <div>
@@ -548,7 +548,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               </TabsContent>
 
               {/* Profile Tab */}
-              <TabsContent value="profile" className="p-4 m-0 overflow-y-auto flex-1 data-[state=inactive]:hidden">
+              <TabsContent value="profile" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-4">
                   {/* Profile Image */}
                   <div>
@@ -605,7 +605,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               </TabsContent>
 
               {/* Links Tab */}
-              <TabsContent value="links" className="p-4 m-0 flex flex-col flex-1 data-[state=inactive]:hidden">
+              <TabsContent value="links" className="absolute inset-0 p-4 m-0 flex flex-col data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
