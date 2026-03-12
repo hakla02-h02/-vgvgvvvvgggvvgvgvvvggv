@@ -24,8 +24,8 @@ import { toast } from "sonner"
 
 type PageType = "presell" | "conversion" | "dragonbio" | "checkout" | null
 
-// Templates para Dragon Bot
-const dragonBotTemplates = [
+// Templates para Dragon Bio
+const dragonBioTemplates = [
   {
     id: "buttons",
     name: "Botoes",
@@ -78,7 +78,7 @@ const pageTypes = [
   },
   {
     id: "dragonbio" as const,
-    name: "Dragon Bot",
+    name: "Dragon Bio",
     description: "Sua pagina de links na bio",
     gradient: "from-violet-500 to-purple-400",
     iconBg: "bg-violet-500/10",
@@ -439,7 +439,7 @@ export default function BioLinkPage() {
                             <div className="flex flex-col gap-3">
                               <Label className="text-muted-foreground dark:text-muted-foreground text-xs uppercase tracking-wider">Escolha um modelo</Label>
                               <div className="grid grid-cols-3 gap-3">
-                                {dragonBotTemplates.map((template) => (
+                                {dragonBioTemplates.map((template) => (
                                   <button
                                     key={template.id}
                                     onClick={() => setSelectedTemplate(template.id)}
@@ -474,7 +474,7 @@ export default function BioLinkPage() {
                                 ))}
                               </div>
                               <p className="text-xs text-muted-foreground text-center">
-                                {dragonBotTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBotTemplates.find(t => t.id === selectedTemplate)?.description}
+                                {dragonBioTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBioTemplates.find(t => t.id === selectedTemplate)?.description}
                               </p>
                             </div>
                           )}
@@ -643,7 +643,7 @@ export default function BioLinkPage() {
                                   <div className="flex flex-col gap-3">
                                     <Label className="text-muted-foreground dark:text-muted-foreground text-xs uppercase tracking-wider">Escolha um modelo</Label>
                                     <div className="grid grid-cols-3 gap-3">
-                                      {dragonBotTemplates.map((template) => (
+                                      {dragonBioTemplates.map((template) => (
                                         <button
                                           key={template.id}
                                           onClick={() => setSelectedTemplate(template.id)}
@@ -678,7 +678,7 @@ export default function BioLinkPage() {
                                       ))}
                                     </div>
                                     <p className="text-xs text-muted-foreground text-center">
-                                      {dragonBotTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBotTemplates.find(t => t.id === selectedTemplate)?.description}
+                                      {dragonBioTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBioTemplates.find(t => t.id === selectedTemplate)?.description}
                                     </p>
                                   </div>
                                 )}
