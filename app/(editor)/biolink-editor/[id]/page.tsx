@@ -340,9 +340,9 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               </TabsList>
             </div>
 
-            <ScrollArea className="flex-1">
+            <div className="flex-1 overflow-hidden flex flex-col">
               {/* Visual Tab */}
-              <TabsContent value="visual" className="p-4 m-0">
+              <TabsContent value="visual" className="p-4 m-0 overflow-y-auto flex-1">
                 <div className="flex flex-col gap-5">
                   {/* Models Selection */}
                   <div>
@@ -548,7 +548,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               </TabsContent>
 
               {/* Profile Tab */}
-              <TabsContent value="profile" className="p-4 m-0">
+              <TabsContent value="profile" className="p-4 m-0 overflow-y-auto flex-1">
                 <div className="flex flex-col gap-4">
                   {/* Profile Image */}
                   <div>
@@ -605,8 +605,8 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               </TabsContent>
 
               {/* Links Tab */}
-              <TabsContent value="links" className="p-4 m-0">
-                <div className="flex flex-col gap-3">
+              <TabsContent value="links" className="p-4 m-0 flex flex-col h-full">
+                <div className="flex flex-col gap-3 flex-shrink-0">
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
                       Seus Links ({pageData.links.length})
@@ -634,7 +634,10 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                       Card com Imagem
                     </Button>
                   </div>
+                </div>
 
+                {/* Lista de links com scroll proprio */}
+                <div className="flex-1 overflow-y-auto mt-3 -mx-4 px-4 pb-4">
                   <div className="flex flex-col gap-2">
                     {pageData.links.map((link, index) => (
                       <div
@@ -696,7 +699,7 @@ export default function DragonBioEditorPage({ params }: PageProps) {
               </TabsContent>
 
 
-            </ScrollArea>
+            </div>
           </Tabs>
         </div>
 
