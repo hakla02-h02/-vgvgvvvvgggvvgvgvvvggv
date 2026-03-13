@@ -185,78 +185,110 @@ export default function ReferralPage() {
     <>
       <DashboardHeader title="Indique e Ganhe" />
       <ScrollArea className="flex-1">
-        <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
-          <div className="max-w-5xl mx-auto">
+        <div className="p-8 bg-background dark:bg-background min-h-full">
+          <div className="max-w-6xl mx-auto">
             
-            {/* Header */}
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-2xl bg-foreground dark:bg-card flex items-center justify-center relative">
-                <div className="absolute inset-0 rounded-2xl bg-[#a3e635] opacity-20 blur-md"></div>
-                <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635] relative z-10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/>
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                  Indique e Ganhe
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                  Convide amigos e ganhe comissao por cada venda
-                </p>
-              </div>
-            </div>
-
-            {/* Main Hero Card - Dark */}
-            <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 mb-6 relative overflow-hidden">
-              {/* Glows */}
-              <div className="absolute -top-10 -right-10 w-40 h-40 bg-[#a3e635] opacity-15 blur-[60px] rounded-full pointer-events-none"></div>
-              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-blue-500 opacity-10 blur-[50px] rounded-full pointer-events-none"></div>
+            {/* Two Column Layout - Main Content + Side Panel */}
+            <div className="grid grid-cols-[1fr_320px] gap-6">
               
-              <div className="relative z-10">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="px-3 py-1 bg-[#a3e635]/20 rounded-full">
-                    <span className="text-[#a3e635] text-xs font-semibold">Plano Basico</span>
-                  </div>
-                  <div className="px-3 py-1 bg-card/10 rounded-full">
-                    <span className="text-background dark:text-foreground/70 text-xs">R$ 0,10 por venda</span>
+              {/* Left Column - Main Content */}
+              <div className="flex flex-col gap-6">
+                
+                {/* Hero Analytics Panel */}
+                <div className="bg-foreground dark:bg-card rounded-[24px] p-8 relative overflow-hidden shadow-xl">
+                  {/* Ambient Glows */}
+                  <div className="absolute -top-20 -right-20 w-60 h-60 bg-[#a3e635] opacity-20 blur-[80px] rounded-full pointer-events-none"></div>
+                  <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-emerald-500 opacity-15 blur-[60px] rounded-full pointer-events-none"></div>
+                  
+                  <div className="relative z-10">
+                    {/* Header with Plan Badge */}
+                    <div className="flex items-center justify-between mb-8">
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-2xl bg-[#a3e635]/20 flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M12 2L15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2z"/>
+                          </svg>
+                        </div>
+                        <div>
+                          <h1 className="text-2xl font-bold text-white tracking-tight">
+                            Programa de Indicacao
+                          </h1>
+                          <p className="text-white/60 text-sm">
+                            Convide amigos e ganhe comissao por cada venda
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="px-4 py-1.5 bg-[#a3e635]/20 rounded-full border border-[#a3e635]/30">
+                          <span className="text-[#a3e635] text-xs font-semibold">Plano Basico</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Stats Grid - 3 Column */}
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:border-[#a3e635]/30 transition-all group">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-white/50 text-xs font-medium uppercase tracking-wider">Indicados</span>
+                          <div className="w-8 h-8 rounded-xl bg-[#a3e635]/20 flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                              <circle cx="9" cy="7" r="4"/>
+                              <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <p className="text-4xl font-bold text-white">{totalReferrals}</p>
+                        <p className="text-white/40 text-xs mt-1">pessoas indicadas</p>
+                      </div>
+                      
+                      <div className="bg-white/5 backdrop-blur-sm rounded-2xl p-5 border border-white/10 hover:border-blue-400/30 transition-all group">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-white/50 text-xs font-medium uppercase tracking-wider">Vendas</span>
+                          <div className="w-8 h-8 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" strokeWidth="2">
+                              <circle cx="9" cy="21" r="1"/>
+                              <circle cx="20" cy="21" r="1"/>
+                              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <p className="text-4xl font-bold text-white">{totalSales}</p>
+                        <p className="text-white/40 text-xs mt-1">conversoes realizadas</p>
+                      </div>
+                      
+                      <div className="bg-gradient-to-br from-[#a3e635]/20 to-emerald-500/10 backdrop-blur-sm rounded-2xl p-5 border border-[#a3e635]/20 hover:border-[#a3e635]/40 transition-all group">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-white/50 text-xs font-medium uppercase tracking-wider">Ganhos Totais</span>
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" strokeWidth="2">
+                              <line x1="12" y1="1" x2="12" y2="23"/>
+                              <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <p className="text-4xl font-bold text-[#a3e635]">
+                          R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="text-white/40 text-xs mt-1">R$ 0,10 por venda</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-3 gap-4 mb-8">
-                  <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2 h-2 rounded-full bg-[#a3e635]"></div>
-                      <span className="text-muted-foreground text-xs">Indicados</span>
+                {/* Link Module */}
+                <div className="bg-card rounded-[20px] p-6 border border-border shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-[#a3e635]/10 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                      </svg>
                     </div>
-                    <p className="text-2xl md:text-3xl font-bold text-background dark:text-foreground">{totalReferrals}</p>
-                  </div>
-                  <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2 h-2 rounded-full bg-blue-400"></div>
-                      <span className="text-muted-foreground text-xs">Vendas</span>
+                    <div>
+                      <h2 className="font-semibold text-foreground">Seu Link de Indicacao</h2>
+                      <p className="text-xs text-muted-foreground">Compartilhe este link com seus amigos</p>
                     </div>
-                    <p className="text-2xl md:text-3xl font-bold text-background dark:text-foreground">{totalSales}</p>
-                  </div>
-                  <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-2 h-2 rounded-full bg-emerald-400"></div>
-                      <span className="text-muted-foreground text-xs">Ganhos</span>
-                    </div>
-                    <p className="text-2xl md:text-3xl font-bold text-background dark:text-foreground">
-                      R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Link Section */}
-                <div className="bg-[#1a1a1a] rounded-2xl p-4 border border-white/5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                    </svg>
-                    <span className="text-background dark:text-foreground text-sm font-medium">Seu Link de Indicacao</span>
                   </div>
 
                   {coupon ? (
@@ -271,7 +303,7 @@ export default function ReferralPage() {
                                 setEditInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                                 setEditError("")
                               }}
-                              className="bg-foreground dark:bg-card border-white/10 rounded-xl text-background dark:text-foreground placeholder:text-muted-foreground focus:border-[#a3e635]/50"
+                              className="bg-muted border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:border-[#a3e635]/50 h-11"
                               onKeyDown={(e) => {
                                 if (e.key === "Enter") {
                                   e.preventDefault()
@@ -288,7 +320,7 @@ export default function ReferralPage() {
                             <Button
                               onClick={handleUpdateCoupon}
                               disabled={isUpdating || editInput.trim().length < 3}
-                              className="bg-[#a3e635] text-black hover:bg-[#95d62e] rounded-xl px-4"
+                              className="bg-[#a3e635] text-black hover:bg-[#95d62e] rounded-xl px-5 h-11"
                             >
                               {isUpdating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Salvar"}
                             </Button>
@@ -296,33 +328,33 @@ export default function ReferralPage() {
                               variant="outline"
                               onClick={handleCancelEdit}
                               disabled={isUpdating}
-                              className="border-white/10 text-background dark:text-foreground hover:bg-card/5 rounded-xl"
+                              className="border-border text-foreground hover:bg-muted rounded-xl h-11"
                             >
                               Cancelar
                             </Button>
                           </div>
-                          {editError && <p className="text-xs text-red-400">{editError}</p>}
+                          {editError && <p className="text-xs text-red-500">{editError}</p>}
                         </div>
                       ) : (
-                        <div className="flex gap-2">
-                          <div className="flex-1 bg-foreground dark:bg-card border border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-300 font-mono truncate">
+                        <div className="flex gap-3">
+                          <div className="flex-1 bg-muted border border-border rounded-xl px-4 py-3 text-sm text-foreground font-mono truncate flex items-center">
                             {referralLink}
                           </div>
                           <Button
                             onClick={handleCopy}
                             className={cn(
-                              "rounded-xl px-4 transition-all",
+                              "rounded-xl px-5 h-11 transition-all font-medium",
                               copied 
                                 ? "bg-[#a3e635] text-black" 
-                                : "bg-card/10 text-background dark:text-foreground hover:bg-card/20"
+                                : "bg-foreground text-background hover:bg-foreground/90"
                             )}
                           >
-                            {copied ? "Copiado!" : "Copiar"}
+                            {copied ? "Copiado!" : "Copiar Link"}
                           </Button>
                           <Button
                             variant="outline"
                             onClick={handleStartEdit}
-                            className="border-white/10 text-background dark:text-foreground hover:bg-card/5 rounded-xl"
+                            className="border-border text-foreground hover:bg-muted rounded-xl h-11"
                           >
                             Editar
                           </Button>
@@ -330,16 +362,16 @@ export default function ReferralPage() {
                       )}
                     </>
                   ) : (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex gap-2">
+                    <div className="flex flex-col gap-4">
+                      <div className="flex gap-3">
                         <Input
-                          placeholder="Digite seu cupom (ex: joao10)"
+                          placeholder="Digite seu cupom personalizado (ex: joao10)"
                           value={couponInput}
                           onChange={(e) => {
                             setCouponInput(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))
                             setCreateError("")
                           }}
-                          className="bg-foreground dark:bg-card border-white/10 rounded-xl text-background dark:text-foreground placeholder:text-muted-foreground focus:border-[#a3e635]/50"
+                          className="bg-muted border-border rounded-xl text-foreground placeholder:text-muted-foreground focus:border-[#a3e635]/50 h-11"
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               e.preventDefault()
@@ -352,99 +384,198 @@ export default function ReferralPage() {
                         <Button
                           onClick={handleCreateCoupon}
                           disabled={isCreating || couponInput.length < 3}
-                          className="bg-[#a3e635] text-black hover:bg-[#95d62e] rounded-xl px-6"
+                          className="bg-[#a3e635] text-black hover:bg-[#95d62e] rounded-xl px-6 h-11 font-medium"
                         >
-                          {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar"}
+                          {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Criar Cupom"}
                         </Button>
                       </div>
-                      {createError && <p className="text-xs text-red-400">{createError}</p>}
+                      {createError && <p className="text-xs text-red-500">{createError}</p>}
                       <p className="text-xs text-muted-foreground">
                         Apenas letras minusculas, numeros e hifens. Entre 3 e 20 caracteres.
                       </p>
                     </div>
                   )}
                 </div>
-              </div>
-            </div>
 
-            {/* Referrals List */}
-            <div className="bg-card rounded-[24px] p-6 border border-border shadow-sm">
-              <div className="flex items-center justify-between mb-5">
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-xl bg-[#f0fdf4] flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#16a34a]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="font-semibold text-foreground">Seus Indicados</h2>
-                    <p className="text-xs text-muted-foreground">{referrals.length} {referrals.length === 1 ? "pessoa" : "pessoas"}</p>
-                  </div>
-                </div>
-              </div>
-
-              {referrals.length === 0 ? (
-                <div className="flex flex-col items-center gap-3 py-12 text-center">
-                  <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">Nenhum indicado ainda</p>
-                    <p className="text-sm text-muted-foreground mt-1">Compartilhe seu link e veja seus indicados aqui</p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {referrals.map((ref) => (
-                    <div
-                      key={ref.id}
-                      onClick={() => setSelectedUser(ref)}
-                      className="flex items-center justify-between p-4 rounded-xl bg-muted hover:bg-gray-100 transition-colors cursor-pointer group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="relative">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#a3e635] to-[#16a34a] flex items-center justify-center text-background dark:text-foreground font-bold text-sm">
-                            {ref.name.charAt(0).toUpperCase()}
-                          </div>
-                          <span
-                            className={cn(
-                              "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white",
-                              ref.banned ? "bg-red-500" : "bg-green-500"
-                            )}
-                          />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground text-sm">{ref.name}</p>
-                          <p className="text-xs text-muted-foreground">{ref.email}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <div className="text-right hidden sm:block">
-                          <p className="text-xs text-muted-foreground">Indicado em</p>
-                          <p className="text-xs font-medium text-gray-600">{formatDate(ref.referral_date)}</p>
-                        </div>
-                        <div className={cn(
-                          "px-2.5 py-1 rounded-lg text-xs font-medium",
-                          ref.banned 
-                            ? "bg-red-100 text-red-600" 
-                            : "bg-green-100 text-green-600"
-                        )}>
-                          {ref.banned ? "Inativo" : "Ativo"}
-                        </div>
-                        <svg viewBox="0 0 24 24" className="w-4 h-4 text-muted-foreground group-hover:text-gray-600 transition-colors" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M9 18l6-6-6-6"/>
+                {/* Referrals List Module */}
+                <div className="bg-card rounded-[20px] p-6 border border-border shadow-sm">
+                  <div className="flex items-center justify-between mb-5">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
                         </svg>
                       </div>
+                      <div>
+                        <h2 className="font-semibold text-foreground">Seus Indicados</h2>
+                        <p className="text-xs text-muted-foreground">{referrals.length} {referrals.length === 1 ? "pessoa indicada" : "pessoas indicadas"}</p>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+
+                  {referrals.length === 0 ? (
+                    <div className="flex flex-col items-center gap-4 py-16 text-center">
+                      <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" className="w-8 h-8 text-muted-foreground" fill="none" stroke="currentColor" strokeWidth="1.5">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground text-lg">Nenhum indicado ainda</p>
+                        <p className="text-sm text-muted-foreground mt-1 max-w-sm">
+                          Compartilhe seu link de indicacao com amigos e veja seus indicados aparecerem aqui
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {referrals.map((ref) => (
+                        <div
+                          key={ref.id}
+                          onClick={() => setSelectedUser(ref)}
+                          className="flex items-center justify-between p-4 rounded-xl bg-muted/50 hover:bg-muted transition-all cursor-pointer group border border-transparent hover:border-border"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#a3e635] to-emerald-500 flex items-center justify-center text-white font-bold text-sm shadow-lg">
+                                {ref.name.charAt(0).toUpperCase()}
+                              </div>
+                              <span
+                                className={cn(
+                                  "absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card",
+                                  ref.banned ? "bg-red-500" : "bg-emerald-500"
+                                )}
+                              />
+                            </div>
+                            <div>
+                              <p className="font-medium text-foreground">{ref.name}</p>
+                              <p className="text-xs text-muted-foreground">{ref.email}</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="text-xs text-muted-foreground">Indicado em</p>
+                              <p className="text-xs font-medium text-foreground">{formatDate(ref.referral_date)}</p>
+                            </div>
+                            <div className={cn(
+                              "px-3 py-1.5 rounded-lg text-xs font-medium",
+                              ref.banned 
+                                ? "bg-red-100 dark:bg-red-500/20 text-red-600 dark:text-red-400" 
+                                : "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
+                            )}>
+                              {ref.banned ? "Inativo" : "Ativo"}
+                            </div>
+                            <svg viewBox="0 0 24 24" className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M9 18l6-6-6-6"/>
+                            </svg>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
+
+              {/* Right Column - Side Panel */}
+              <div className="flex flex-col gap-6">
+                
+                {/* How It Works Module */}
+                <div className="bg-card rounded-[20px] p-6 border border-border shadow-sm">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                        <line x1="12" y1="17" x2="12.01" y2="17"/>
+                      </svg>
+                    </div>
+                    <h2 className="font-semibold text-foreground">Como Funciona</h2>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-[#a3e635]/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-[#a3e635] text-xs font-bold">1</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Compartilhe seu link</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Envie seu link personalizado para amigos</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-blue-500 text-xs font-bold">2</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Eles se cadastram</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Seus amigos criam uma conta pelo seu link</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-6 h-6 rounded-full bg-emerald-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <span className="text-emerald-500 text-xs font-bold">3</span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Voce ganha</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">Receba R$ 0,10 por cada venda realizada</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tips Module */}
+                <div className="bg-gradient-to-br from-[#a3e635]/10 to-emerald-500/5 rounded-[20px] p-6 border border-[#a3e635]/20">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-xl bg-[#a3e635]/20 flex items-center justify-center">
+                      <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#a3e635]" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                      </svg>
+                    </div>
+                    <h2 className="font-semibold text-foreground">Dicas para Ganhar Mais</h2>
+                  </div>
+
+                  <ul className="space-y-3">
+                    <li className="flex items-start gap-2">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#a3e635] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <p className="text-sm text-muted-foreground">Compartilhe nas redes sociais</p>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#a3e635] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <p className="text-sm text-muted-foreground">Envie para grupos de WhatsApp</p>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <svg viewBox="0 0 24 24" className="w-4 h-4 text-[#a3e635] mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                      <p className="text-sm text-muted-foreground">Fale sobre os beneficios da plataforma</p>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Support Card */}
+                <div className="bg-foreground dark:bg-card rounded-[20px] p-5 border border-white/5 relative overflow-hidden">
+                  <div className="absolute -top-8 -right-8 w-24 h-24 bg-[#a3e635] opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
+                  <div className="relative z-10">
+                    <h3 className="font-semibold text-white text-sm mb-2">Precisa de Ajuda?</h3>
+                    <p className="text-white/60 text-xs mb-4">Fale com nosso suporte para tirar duvidas sobre o programa</p>
+                    <Button
+                      variant="outline"
+                      className="w-full border-white/20 text-white hover:bg-white/10 rounded-xl h-9 text-xs"
+                    >
+                      <ExternalLink className="w-3 h-3 mr-2" />
+                      Falar com Suporte
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
 
           </div>
