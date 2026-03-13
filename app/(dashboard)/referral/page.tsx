@@ -383,52 +383,52 @@ export default function ReferralPage() {
                 )}
               </div>
               
-              <div className="bg-white border border-black/5 rounded-3xl overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+              <div className="bg-[#16181d] border border-white/5 rounded-3xl overflow-hidden">
                 {referrals.length === 0 ? (
                   <div className="flex flex-col items-center gap-4 py-12 text-center px-6">
                     <div className="w-14 h-14 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#666666]" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" strokeWidth="1.5">
                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                         <circle cx="9" cy="7" r="4"/>
                         <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
                       </svg>
                     </div>
                     <div>
-                      <p className="font-bold text-[#1A1A1A]">Nenhum indicado ainda</p>
-                      <p className="text-xs text-[#666666] mt-1">Compartilhe seu link e veja seus indicados aqui</p>
+                      <p className="font-bold text-white">Nenhum indicado ainda</p>
+                      <p className="text-xs text-gray-400 mt-1">Compartilhe seu link e veja seus indicados aqui</p>
                     </div>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs min-w-[300px]">
                       <thead>
-                        <tr className="border-b border-black/5 bg-black/[0.02]">
-                          <th className="px-4 py-3 font-semibold text-[#666666]">Usuario</th>
-                          <th className="px-4 py-3 font-semibold text-[#666666]">Status</th>
-                          <th className="px-4 py-3 font-semibold text-[#666666] text-right">Comissao</th>
+                        <tr className="border-b border-white/5 bg-white/[0.02]">
+                          <th className="px-4 py-3 font-semibold text-gray-400">Usuario</th>
+                          <th className="px-4 py-3 font-semibold text-gray-400">Status</th>
+                          <th className="px-4 py-3 font-semibold text-gray-400 text-right">Comissao</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-black/5">
+                      <tbody className="divide-y divide-white/5">
                         {referrals.slice(0, 5).map((ref) => (
-                          <tr key={ref.id} onClick={() => setSelectedUser(ref)} className="cursor-pointer hover:bg-black/[0.02] transition-colors">
+                          <tr key={ref.id} onClick={() => setSelectedUser(ref)} className="cursor-pointer hover:bg-white/[0.02] transition-colors">
                             <td className="px-4 py-4">
                               <div className="flex flex-col">
-                                <span className="font-bold text-[#1A1A1A]">{ref.name}</span>
-                                <span className="text-[10px] text-[#666666]">{formatDate(ref.referral_date)}</span>
+                                <span className="font-bold text-white">{ref.name}</span>
+                                <span className="text-[10px] text-gray-400">{formatDate(ref.referral_date)}</span>
                               </div>
                             </td>
                             <td className="px-4 py-4">
                               <span className={cn(
                                 "px-2 py-1 rounded-full text-[10px] font-bold",
                                 ref.banned 
-                                  ? "bg-red-500/10 text-red-600" 
-                                  : "bg-[#ccff00]/20 text-[#1A1A1A]"
+                                  ? "bg-red-500/10 text-red-400" 
+                                  : "bg-[#ccff00]/20 text-[#ccff00]"
                               )}>
                                 {ref.banned ? "Inativo" : "Ativo"}
                               </span>
                             </td>
                             <td className="px-4 py-4 text-right">
-                              <span className="font-bold text-[#1A1A1A]">R$ 0,10</span>
+                              <span className="font-bold text-white">R$ 0,10</span>
                             </td>
                           </tr>
                         ))}
