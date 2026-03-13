@@ -471,8 +471,8 @@ export default function DashboardPage() {
                 </button>
 
                 <button className="flex-1 bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 px-3 py-2 rounded-lg border border-background/5 dark:border-border flex items-center gap-2 transition-all group">
-                  <div className="w-6 h-6 rounded-full bg-background/20 dark:bg-muted flex items-center justify-center group-hover:bg-background/30 dark:group-hover:bg-muted/80 flex-shrink-0">
-                    <FileText size={10} className="text-muted-foreground" />
+                  <div className="w-6 h-6 rounded-full bg-background/30 dark:bg-muted/80 flex items-center justify-center group-hover:bg-background/40 dark:group-hover:bg-muted flex-shrink-0">
+                    <FileText size={10} className="text-background dark:text-foreground" />
                   </div>
                   <span className="text-[9px] font-medium text-background/80 dark:text-foreground/80">Reportar</span>
                 </button>
