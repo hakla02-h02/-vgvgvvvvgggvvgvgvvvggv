@@ -462,19 +462,19 @@ export default function DashboardPage() {
               </div>
 
               {/* Botões de Ação (Pro Analysis & Report) */}
-              <div className="grid grid-cols-2 gap-2 mb-3 relative z-10">
-                <button className="bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 py-3 rounded-xl border border-background/5 dark:border-border flex flex-col items-center gap-1.5 transition-all group">
-                  <div className="w-8 h-8 rounded-full border-2 border-accent flex items-center justify-center group-hover:shadow-[0_0_10px_rgba(163,230,53,0.4)] transition-all">
-                    <Clock size={14} className="text-accent" />
+              <div className="flex gap-2 mb-3 relative z-10">
+                <button className="flex-1 bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 px-3 py-2 rounded-lg border border-background/5 dark:border-border flex items-center gap-2 transition-all group">
+                  <div className="w-6 h-6 rounded-full border border-accent flex items-center justify-center group-hover:shadow-[0_0_8px_rgba(163,230,53,0.3)] transition-all flex-shrink-0">
+                    <Clock size={10} className="text-accent" />
                   </div>
-                  <span className="text-[8px] font-bold text-background/80 dark:text-foreground/80 uppercase tracking-wider">Análise Profunda</span>
+                  <span className="text-[9px] font-medium text-background/80 dark:text-foreground/80">Análise</span>
                 </button>
 
-                <button className="bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 py-3 rounded-xl border border-background/5 dark:border-border flex flex-col items-center gap-1.5 transition-all group">
-                  <div className="w-8 h-8 rounded-full bg-background/20 dark:bg-muted flex items-center justify-center group-hover:bg-background/30 dark:group-hover:bg-muted/80">
-                    <FileText size={14} className="text-muted-foreground" />
+                <button className="flex-1 bg-background/10 dark:bg-secondary hover:bg-background/20 dark:hover:bg-secondary/80 px-3 py-2 rounded-lg border border-background/5 dark:border-border flex items-center gap-2 transition-all group">
+                  <div className="w-6 h-6 rounded-full bg-background/20 dark:bg-muted flex items-center justify-center group-hover:bg-background/30 dark:group-hover:bg-muted/80 flex-shrink-0">
+                    <FileText size={10} className="text-muted-foreground" />
                   </div>
-                  <span className="text-[8px] font-bold text-background/80 dark:text-foreground/80 uppercase tracking-wider">Reportar Problema</span>
+                  <span className="text-[9px] font-medium text-background/80 dark:text-foreground/80">Reportar</span>
                 </button>
               </div>
 
