@@ -190,50 +190,52 @@ export default function ReferralPage() {
                        radial-gradient(circle at bottom left, rgba(204, 255, 0, 0.05), transparent 40%),
                        #F8F9FA`
         }}>
-          <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-2xl space-y-6 pt-6">
+          <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-5xl space-y-6 pt-6">
             
             {/* Hero Section */}
-            <section className="text-center space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1A1A] text-balance">
+            <section className="text-center space-y-2 lg:text-left">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1A1A1A] text-balance">
                 Convide amigos e ganhe <span className="text-[#ccff00]" style={{ textShadow: '0 0 10px rgba(204, 255, 0, 0.5)' }}>comissoes</span>
               </h2>
-              <p className="text-[#666666] text-sm max-w-xs mx-auto">
+              <p className="text-[#666666] text-sm max-w-xs mx-auto lg:mx-0 lg:max-w-md">
                 Ganhe ate 30% de comissao recorrente por cada novo usuario indicado.
               </p>
             </section>
 
-            {/* Earnings Hero Card */}
-            <div className="relative overflow-hidden rounded-[24px] p-6 sm:p-8 bg-foreground dark:bg-card text-background dark:text-foreground">
-              {/* Glow effect */}
-              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
-              <div className="flex flex-col gap-4 sm:gap-6 relative z-10">
-                <div>
-                  <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-3xl sm:text-4xl font-bold tracking-tighter">
-                      R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                    </span>
-                    {totalEarnings > 0 && (
-                      <span className="text-accent text-xs font-bold bg-accent/10 px-2 py-1 rounded-full">+12.5%</span>
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-background/10 dark:border-border">
+            {/* Desktop: Two column layout for Earnings + Link */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
+              {/* Earnings Hero Card */}
+              <div className="relative overflow-hidden rounded-[24px] p-6 sm:p-8 bg-foreground dark:bg-card text-background dark:text-foreground">
+                {/* Glow effect */}
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
+                <div className="flex flex-col gap-4 sm:gap-6 relative z-10 h-full justify-between">
                   <div>
-                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Usuarios Indicados</p>
-                    <p className="text-xl font-bold">{totalReferrals}</p>
+                    <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter">
+                        R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </span>
+                      {totalEarnings > 0 && (
+                        <span className="text-accent text-xs font-bold bg-accent/10 px-2 py-1 rounded-full">+12.5%</span>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Comissao Atual</p>
-                    <p className="text-xl font-bold text-accent">25%</p>
+                  <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-background/10 dark:border-border">
+                    <div>
+                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Usuarios Indicados</p>
+                      <p className="text-xl lg:text-2xl font-bold">{totalReferrals}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Comissao Atual</p>
+                      <p className="text-xl lg:text-2xl font-bold text-accent">25%</p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Referral Link Section */}
-            <div className="space-y-4">
-              <label className="text-xs font-semibold text-[#666666] uppercase tracking-wider">Seu link de indicacao</label>
+              {/* Referral Link Section */}
+              <div className="space-y-4 lg:bg-white lg:rounded-[24px] lg:p-6 lg:shadow-sm lg:border lg:border-[#EEEEEE]">
+                <label className="text-xs font-semibold text-[#666666] uppercase tracking-wider">Seu link de indicacao</label>
               
               {coupon ? (
                 <>
@@ -367,15 +369,18 @@ export default function ReferralPage() {
                     )}
                   </button>
                   {createError && <p className="text-xs text-red-500">{createError}</p>}
-                  <p className="text-xs text-[#666666] text-center">
+                  <p className="text-xs text-[#666666] text-center lg:text-left">
                     Apenas letras minusculas, numeros e hifens. Entre 3 e 20 caracteres.
                   </p>
                 </div>
               )}
+              </div>
             </div>
 
+            {/* Desktop: Two column layout for Table + Steps */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
             {/* Referral Table */}
-            <section className="space-y-4">
+            <section className="space-y-4 lg:flex-1">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Indicacoes Recentes</h3>
                 {referrals.length > 0 && (
@@ -440,10 +445,10 @@ export default function ReferralPage() {
             </section>
 
             {/* Program Steps */}
-            <section className="space-y-4">
+            <section className="space-y-4 lg:flex-1">
               <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Como funciona</h3>
-              <div className="bg-[#16181d] rounded-3xl p-8 border border-white/5">
-                <div className="grid grid-cols-3 gap-8">
+              <div className="bg-[#16181d] rounded-3xl p-8 border border-white/5 lg:h-[calc(100%-2rem)]">
+                <div className="grid grid-cols-3 gap-8 lg:h-full lg:items-center">
                   {/* Step 1 */}
                   <div className="flex flex-col items-center text-center">
                     <div className="relative mb-4">
@@ -493,6 +498,7 @@ export default function ReferralPage() {
                 </div>
               </div>
             </section>
+            </div>
 
           </div>
         </div>
