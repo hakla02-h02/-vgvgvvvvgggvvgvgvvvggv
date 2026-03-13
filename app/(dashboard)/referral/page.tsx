@@ -186,8 +186,8 @@ export default function ReferralPage() {
       <DashboardHeader title="Indique e Ganhe" />
       <ScrollArea className="flex-1">
         <div className="min-h-full bg-[#F8F9FA] text-[#1A1A1A] pb-8" style={{
-          background: `radial-gradient(circle at top right, rgba(204, 255, 0, 0.05), transparent 40%),
-                       radial-gradient(circle at bottom left, rgba(236, 91, 19, 0.03), transparent 40%),
+          background: `radial-gradient(circle at top right, rgba(204, 255, 0, 0.08), transparent 40%),
+                       radial-gradient(circle at bottom left, rgba(204, 255, 0, 0.05), transparent 40%),
                        #F8F9FA`
         }}>
           <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-2xl space-y-6 pt-6">
@@ -195,7 +195,7 @@ export default function ReferralPage() {
             {/* Hero Section */}
             <section className="text-center space-y-2">
               <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1A1A1A] text-balance">
-                Convide amigos e ganhe <span className="text-[#ec5b13]">comissoes</span>
+                Convide amigos e ganhe <span className="text-[#ccff00]" style={{ textShadow: '0 0 10px rgba(204, 255, 0, 0.5)' }}>comissoes</span>
               </h2>
               <p className="text-[#666666] text-sm max-w-xs mx-auto">
                 Ganhe ate 30% de comissao recorrente por cada novo usuario indicado.
@@ -203,28 +203,28 @@ export default function ReferralPage() {
             </section>
 
             {/* Earnings Hero Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-white border border-black/5 shadow-[0_10px_40px_rgba(204,255,0,0.15)]">
+            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-[#111111] border border-white/10 shadow-[0_10px_40px_rgba(204,255,0,0.15)]">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#ccff00]/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
               <div className="flex flex-col gap-4 sm:gap-6 relative z-10">
                 <div>
-                  <p className="text-[#666666] text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
+                  <p className="text-gray-400 text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
                   <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-3xl sm:text-4xl font-bold text-[#1A1A1A] tracking-tighter">
+                    <span className="text-3xl sm:text-4xl font-bold text-white tracking-tighter">
                       R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </span>
                     {totalEarnings > 0 && (
-                      <span className="text-[#ec5b13] text-xs font-bold bg-[#ec5b13]/10 px-2 py-1 rounded-full">+12.5%</span>
+                      <span className="text-[#ccff00] text-xs font-bold bg-[#ccff00]/10 px-2 py-1 rounded-full">+12.5%</span>
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-black/5">
+                <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-white/10">
                   <div>
-                    <p className="text-[#666666] text-[10px] uppercase tracking-wider mb-1">Usuarios Indicados</p>
-                    <p className="text-xl font-bold text-[#1A1A1A]">{totalReferrals}</p>
+                    <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-1">Usuarios Indicados</p>
+                    <p className="text-xl font-bold text-white">{totalReferrals}</p>
                   </div>
                   <div>
-                    <p className="text-[#666666] text-[10px] uppercase tracking-wider mb-1">Comissao Atual</p>
-                    <p className="text-xl font-bold text-[#ec5b13]">25%</p>
+                    <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-1">Comissao Atual</p>
+                    <p className="text-xl font-bold text-[#ccff00]">25%</p>
                   </div>
                 </div>
               </div>
@@ -387,8 +387,8 @@ export default function ReferralPage() {
                   <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Compartilhe seu link exclusivo</p>
                 </div>
                 <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <div className="w-10 h-10 rounded-full bg-[#ec5b13]/10 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#ec5b13]" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                       <circle cx="9" cy="7" r="4"/>
                       <line x1="19" y1="8" x2="19" y2="14"/>
@@ -414,7 +414,7 @@ export default function ReferralPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Indicacoes Recentes</h3>
                 {referrals.length > 0 && (
-                  <button className="text-xs text-[#ec5b13] font-medium hover:text-[#ec5b13]/80 transition-colors">Ver todas</button>
+                  <button className="text-xs text-[#ccff00] font-medium hover:text-[#ccff00]/80 transition-colors" style={{ textShadow: '0 0 8px rgba(204, 255, 0, 0.4)' }}>Ver todas</button>
                 )}
               </div>
               
@@ -475,11 +475,11 @@ export default function ReferralPage() {
             </section>
 
             {/* CTA AI Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-[#ec5b13]/10 to-[#ec5b13]/5 border border-[#ec5b13]/10 flex items-center gap-5">
+            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-[#ccff00]/10 to-[#ccff00]/5 border border-[#ccff00]/20 flex items-center gap-5">
               <div className="relative w-16 h-16 flex-shrink-0">
-                <div className="absolute inset-0 bg-[#ec5b13]/20 rounded-full blur-xl animate-pulse"></div>
-                <div className="relative w-full h-full rounded-full bg-gradient-to-tr from-[#ec5b13] to-orange-400 flex items-center justify-center shadow-lg shadow-[#ec5b13]/30">
-                  <svg viewBox="0 0 24 24" className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                <div className="absolute inset-0 bg-[#ccff00]/30 rounded-full blur-xl animate-pulse"></div>
+                <div className="relative w-full h-full rounded-full bg-gradient-to-tr from-[#ccff00] to-[#b8e600] flex items-center justify-center shadow-lg shadow-[#ccff00]/30">
+                  <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
                     <path d="M8.5 8.5v.01"/>
                     <path d="M16 15.5v.01"/>
