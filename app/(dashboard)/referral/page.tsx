@@ -442,34 +442,27 @@ export default function ReferralPage() {
             {/* Program Steps */}
             <section className="space-y-4">
               <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Como funciona</h3>
-              <div className="bg-[#16181d] rounded-3xl p-6 border border-white/5">
-                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+              <div className="bg-[#16181d] rounded-3xl p-8 border border-white/5">
+                <div className="grid grid-cols-3 gap-8">
                   {/* Step 1 */}
-                  <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3 flex-1">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-2xl bg-[#ccff00] flex items-center justify-center shadow-[0_0_20px_rgba(204,255,0,0.3)]">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative mb-4">
+                      <div className="w-14 h-14 rounded-2xl bg-[#ccff00] flex items-center justify-center shadow-[0_0_20px_rgba(204,255,0,0.3)]">
                         <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
                           <line x1="22" y1="2" x2="11" y2="13"/>
                           <polygon points="22 2 15 22 11 13 2 9 22 2"/>
                         </svg>
                       </div>
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center">1</span>
+                      <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[#ccff00] text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center shadow-sm">1</span>
                     </div>
-                    <div className="sm:mt-1">
-                      <p className="text-sm font-bold text-white">Compartilhe</p>
-                      <p className="text-xs text-gray-400">Envie seu link exclusivo</p>
-                    </div>
-                  </div>
-
-                  {/* Connector */}
-                  <div className="hidden sm:flex items-center justify-center">
-                    <div className="w-8 h-[2px] bg-gradient-to-r from-[#ccff00]/50 to-transparent"></div>
+                    <p className="text-sm font-bold text-white mb-1">Compartilhe</p>
+                    <p className="text-xs text-gray-400 leading-relaxed">Envie seu link exclusivo</p>
                   </div>
 
                   {/* Step 2 */}
-                  <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3 flex-1">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-2xl bg-[#ccff00]/20 border border-[#ccff00]/30 flex items-center justify-center">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative mb-4">
+                      <div className="w-14 h-14 rounded-2xl bg-[#1f2128] border border-[#ccff00]/30 flex items-center justify-center">
                         <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#ccff00]" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                           <circle cx="9" cy="7" r="4"/>
@@ -477,34 +470,25 @@ export default function ReferralPage() {
                           <line x1="22" y1="11" x2="16" y2="11"/>
                         </svg>
                       </div>
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center">2</span>
+                      <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[#ccff00] text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center shadow-sm">2</span>
                     </div>
-                    <div className="sm:mt-1">
-                      <p className="text-sm font-bold text-white">Cadastro</p>
-                      <p className="text-xs text-gray-400">Amigo se cadastra e assina</p>
-                    </div>
-                  </div>
-
-                  {/* Connector */}
-                  <div className="hidden sm:flex items-center justify-center">
-                    <div className="w-8 h-[2px] bg-gradient-to-r from-[#ccff00]/50 to-transparent"></div>
+                    <p className="text-sm font-bold text-white mb-1">Cadastro</p>
+                    <p className="text-xs text-gray-400 leading-relaxed">Amigo se cadastra e assina</p>
                   </div>
 
                   {/* Step 3 */}
-                  <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3 flex-1">
-                    <div className="relative">
-                      <div className="w-12 h-12 rounded-2xl bg-[#ccff00] flex items-center justify-center shadow-[0_0_20px_rgba(204,255,0,0.3)]">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative mb-4">
+                      <div className="w-14 h-14 rounded-2xl bg-[#ccff00] flex items-center justify-center shadow-[0_0_20px_rgba(204,255,0,0.3)]">
                         <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
                           <line x1="12" y1="1" x2="12" y2="23"/>
                           <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
                         </svg>
                       </div>
-                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center">3</span>
+                      <span className="absolute -top-1.5 -right-1.5 w-6 h-6 bg-[#ccff00] text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center shadow-sm">3</span>
                     </div>
-                    <div className="sm:mt-1">
-                      <p className="text-sm font-bold text-white">Receba</p>
-                      <p className="text-xs text-gray-400">Ganhe sua comissao</p>
-                    </div>
+                    <p className="text-sm font-bold text-white mb-1">Receba</p>
+                    <p className="text-xs text-gray-400 leading-relaxed">Ganhe sua comissao</p>
                   </div>
                 </div>
               </div>
