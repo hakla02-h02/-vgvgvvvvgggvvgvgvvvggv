@@ -442,35 +442,70 @@ export default function ReferralPage() {
             {/* Program Steps */}
             <section className="space-y-4">
               <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Como funciona</h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 sm:grid sm:grid-cols-3 sm:overflow-visible" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="22" y1="2" x2="11" y2="13"/>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
+              <div className="bg-[#16181d] rounded-3xl p-6 border border-white/5">
+                <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                  {/* Step 1 */}
+                  <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3 flex-1">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-2xl bg-[#ccff00] flex items-center justify-center shadow-[0_0_20px_rgba(204,255,0,0.3)]">
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="22" y1="2" x2="11" y2="13"/>
+                          <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center">1</span>
+                    </div>
+                    <div className="sm:mt-1">
+                      <p className="text-sm font-bold text-white">Compartilhe</p>
+                      <p className="text-xs text-gray-400">Envie seu link exclusivo</p>
+                    </div>
                   </div>
-                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Compartilhe seu link exclusivo</p>
-                </div>
-                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <line x1="19" y1="8" x2="19" y2="14"/>
-                      <line x1="22" y1="11" x2="16" y2="11"/>
-                    </svg>
+
+                  {/* Connector */}
+                  <div className="hidden sm:flex items-center justify-center">
+                    <div className="w-8 h-[2px] bg-gradient-to-r from-[#ccff00]/50 to-transparent"></div>
                   </div>
-                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Seu amigo se cadastra e assina</p>
-                </div>
-                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="1" x2="12" y2="23"/>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
+
+                  {/* Step 2 */}
+                  <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3 flex-1">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-2xl bg-[#ccff00]/20 border border-[#ccff00]/30 flex items-center justify-center">
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#ccff00]" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                          <circle cx="9" cy="7" r="4"/>
+                          <line x1="19" y1="8" x2="19" y2="14"/>
+                          <line x1="22" y1="11" x2="16" y2="11"/>
+                        </svg>
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center">2</span>
+                    </div>
+                    <div className="sm:mt-1">
+                      <p className="text-sm font-bold text-white">Cadastro</p>
+                      <p className="text-xs text-gray-400">Amigo se cadastra e assina</p>
+                    </div>
                   </div>
-                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Voce recebe sua comissao</p>
+
+                  {/* Connector */}
+                  <div className="hidden sm:flex items-center justify-center">
+                    <div className="w-8 h-[2px] bg-gradient-to-r from-[#ccff00]/50 to-transparent"></div>
+                  </div>
+
+                  {/* Step 3 */}
+                  <div className="flex sm:flex-col items-center sm:items-start gap-4 sm:gap-3 flex-1">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-2xl bg-[#ccff00] flex items-center justify-center shadow-[0_0_20px_rgba(204,255,0,0.3)]">
+                        <svg viewBox="0 0 24 24" className="w-6 h-6 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="12" y1="1" x2="12" y2="23"/>
+                          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                        </svg>
+                      </div>
+                      <span className="absolute -top-1 -right-1 w-5 h-5 bg-white text-[#1A1A1A] rounded-full text-xs font-bold flex items-center justify-center">3</span>
+                    </div>
+                    <div className="sm:mt-1">
+                      <p className="text-sm font-bold text-white">Receba</p>
+                      <p className="text-xs text-gray-400">Ganhe sua comissao</p>
+                    </div>
+                  </div>
                 </div>
               </div>
             </section>
