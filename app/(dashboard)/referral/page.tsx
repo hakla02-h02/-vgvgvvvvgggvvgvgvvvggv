@@ -195,7 +195,7 @@ export default function ReferralPage() {
             {/* Hero Section */}
             <section className="text-center space-y-2 lg:text-left">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1A1A1A] text-balance">
-                Convide amigos e ganhe <span className="text-[#4CAF50] font-extrabold">comissoes</span>
+                Convide amigos e ganhe <span className="text-[#ccff00] font-extrabold" style={{ textShadow: '0 0 20px rgba(204, 255, 0, 0.5)' }}>comissoes</span>
               </h2>
               <p className="text-[#666666] text-sm max-w-xs mx-auto lg:mx-0 lg:max-w-md">
                 Ganhe ate 30% de comissao recorrente por cada novo usuario indicado.
