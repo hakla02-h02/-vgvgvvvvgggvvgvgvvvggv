@@ -482,27 +482,6 @@ export default function ReferralPage() {
               </div>
             </section>
 
-            {/* CTA AI Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 bg-gradient-to-r from-[#ccff00]/10 to-[#ccff00]/5 border border-[#ccff00]/20 flex items-center gap-5">
-              <div className="relative w-16 h-16 flex-shrink-0">
-                <div className="absolute inset-0 bg-[#ccff00]/30 rounded-full blur-xl animate-pulse"></div>
-                <div className="relative w-full h-full rounded-full bg-gradient-to-tr from-[#ccff00] to-[#b8e600] flex items-center justify-center shadow-lg shadow-[#ccff00]/30">
-                  <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M12 2a10 10 0 1 0 10 10 4 4 0 0 1-5-5 4 4 0 0 1-5-5"/>
-                    <path d="M8.5 8.5v.01"/>
-                    <path d="M16 15.5v.01"/>
-                    <path d="M12 12v.01"/>
-                    <path d="M11 17v.01"/>
-                    <path d="M7 14v.01"/>
-                  </svg>
-                </div>
-              </div>
-              <div className="space-y-1 min-w-0">
-                <h4 className="text-[#1A1A1A] font-bold leading-tight">Escale seus ganhos</h4>
-                <p className="text-xs text-[#666666]">Torne-se um embaixador e tenha beneficios exclusivos de IA.</p>
-              </div>
-            </div>
-
           </div>
         </div>
       </ScrollArea>
