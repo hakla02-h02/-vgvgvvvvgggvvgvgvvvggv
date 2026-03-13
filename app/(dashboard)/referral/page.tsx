@@ -203,34 +203,36 @@ export default function ReferralPage() {
             </section>
 
             {/* Earnings Hero Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-[#1e293b] border border-white/5 shadow-lg">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ccff00]/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
+            <div className="relative overflow-hidden rounded-[24px] p-6 sm:p-8 bg-foreground dark:bg-card text-background dark:text-foreground shadow-lg">
+              {/* Glow effect */}
+              <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
+              
               <div className="flex flex-col gap-4 sm:gap-6 relative z-10">
                 <div>
-                  <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
+                  <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
                   <div className="flex items-baseline gap-2 flex-wrap">
-                    <span className="text-3xl sm:text-4xl font-bold text-white tracking-tighter">
+                    <span className="text-3xl sm:text-4xl font-bold tracking-tighter">
                       R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                     </span>
                     {totalEarnings > 0 && (
-                      <span className="text-[#ccff00] text-xs font-bold bg-[#ccff00]/10 px-2 py-1 rounded-full">+12.5%</span>
+                      <span className="text-accent text-xs font-bold bg-accent/10 px-2 py-1 rounded-full">+12.5%</span>
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6">
-                  <div className="bg-white/5 rounded-2xl p-4">
-                    <p className="text-slate-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-white/60"></span>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                      <div className="w-2 h-2 rounded-full bg-background dark:bg-foreground"></div>
                       Usuarios Indicados
-                    </p>
-                    <p className="text-xl font-bold text-white">{totalReferrals}</p>
+                    </div>
+                    <div className="text-3xl font-bold">{totalReferrals}</div>
                   </div>
-                  <div className="bg-white/5 rounded-2xl p-4">
-                    <p className="text-slate-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00]"></span>
+                  <div className="bg-background/10 dark:bg-secondary rounded-2xl p-5 border border-background/5 dark:border-border">
+                    <div className="flex items-center gap-2 text-muted-foreground text-sm mb-2">
+                      <div className="w-2 h-2 rounded-full bg-accent"></div>
                       Comissao Atual
-                    </p>
-                    <p className="text-xl font-bold text-[#ccff00]">25%</p>
+                    </div>
+                    <div className="text-3xl font-bold text-accent">25%</div>
                   </div>
                 </div>
               </div>
