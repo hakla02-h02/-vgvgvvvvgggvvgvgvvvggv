@@ -374,42 +374,6 @@ export default function ReferralPage() {
               )}
             </div>
 
-            {/* Program Steps */}
-            <section className="space-y-4">
-              <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Como funciona</h3>
-              <div className="flex gap-4 overflow-x-auto pb-4 sm:grid sm:grid-cols-3 sm:overflow-visible" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="22" y1="2" x2="11" y2="13"/>
-                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-                    </svg>
-                  </div>
-                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Compartilhe seu link exclusivo</p>
-                </div>
-                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
-                      <circle cx="9" cy="7" r="4"/>
-                      <line x1="19" y1="8" x2="19" y2="14"/>
-                      <line x1="22" y1="11" x2="16" y2="11"/>
-                    </svg>
-                  </div>
-                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Seu amigo se cadastra e assina</p>
-                </div>
-                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="1" x2="12" y2="23"/>
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
-                    </svg>
-                  </div>
-                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Voce recebe sua comissao</p>
-                </div>
-              </div>
-            </section>
-
             {/* Referral Table */}
             <section className="space-y-4">
               <div className="flex items-center justify-between">
@@ -472,6 +436,42 @@ export default function ReferralPage() {
                     </table>
                   </div>
                 )}
+              </div>
+            </section>
+
+            {/* Program Steps */}
+            <section className="space-y-4">
+              <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Como funciona</h3>
+              <div className="flex gap-4 overflow-x-auto pb-4 sm:grid sm:grid-cols-3 sm:overflow-visible" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="22" y1="2" x2="11" y2="13"/>
+                      <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                    </svg>
+                  </div>
+                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Compartilhe seu link exclusivo</p>
+                </div>
+                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                      <circle cx="9" cy="7" r="4"/>
+                      <line x1="19" y1="8" x2="19" y2="14"/>
+                      <line x1="22" y1="11" x2="16" y2="11"/>
+                    </svg>
+                  </div>
+                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Seu amigo se cadastra e assina</p>
+                </div>
+                <div className="min-w-[160px] sm:min-w-0 bg-white border border-black/5 p-5 rounded-2xl space-y-3 shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
+                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="1" x2="12" y2="23"/>
+                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                    </svg>
+                  </div>
+                  <p className="text-xs font-bold leading-tight text-[#1A1A1A]">Voce recebe sua comissao</p>
+                </div>
               </div>
             </section>
 
