@@ -203,11 +203,11 @@ export default function ReferralPage() {
             </section>
 
             {/* Earnings Hero Card */}
-            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-[#111111] border border-white/10 shadow-[0_10px_40px_rgba(204,255,0,0.15)]">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ccff00]/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+            <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8 bg-[#1e293b] border border-white/5 shadow-lg">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-[#ccff00]/5 rounded-full blur-3xl -mr-16 -mt-16"></div>
               <div className="flex flex-col gap-4 sm:gap-6 relative z-10">
                 <div>
-                  <p className="text-gray-400 text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
+                  <p className="text-slate-400 text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
                   <div className="flex items-baseline gap-2 flex-wrap">
                     <span className="text-3xl sm:text-4xl font-bold text-white tracking-tighter">
                       R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
@@ -217,13 +217,19 @@ export default function ReferralPage() {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-white/10">
-                  <div>
-                    <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-1">Usuarios Indicados</p>
+                <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6">
+                  <div className="bg-white/5 rounded-2xl p-4">
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-white/60"></span>
+                      Usuarios Indicados
+                    </p>
                     <p className="text-xl font-bold text-white">{totalReferrals}</p>
                   </div>
-                  <div>
-                    <p className="text-gray-400 text-[10px] uppercase tracking-wider mb-1">Comissao Atual</p>
+                  <div className="bg-white/5 rounded-2xl p-4">
+                    <p className="text-slate-400 text-[10px] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#ccff00]"></span>
+                      Comissao Atual
+                    </p>
                     <p className="text-xl font-bold text-[#ccff00]">25%</p>
                   </div>
                 </div>
