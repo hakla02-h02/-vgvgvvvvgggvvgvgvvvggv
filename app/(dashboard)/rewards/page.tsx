@@ -2,248 +2,302 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Gift, Zap, HeadphonesIcon, Award, Star, Trophy, Target, Clock } from "lucide-react"
+import { ChevronLeft, ChevronRight, Star, Trophy, Target } from "lucide-react"
+import { useState } from "react"
 
 const premiacoes = [
   { 
     id: 1,
-    titulo: "Gift Card Amazon R$ 100", 
-    descricao: "Vale-presente para utilizar em qualquer compra na Amazon Brasil.",
-    pontos: 1500,
-    icon: Gift,
-    status: "disponivel"
+    titulo: "Pulseira Exclusiva",
+    subtitulo: "Acesso VIP",
+    pontos: "1K",
+    pontosNum: 1000,
+    descricao: "Desbloqueie seu acesso ao circulo interno com a pulseira oficial da comunidade.",
+    imagem: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lDEFNYBMfrWKqyTtK2QhpseWQkqDNb.png",
+    cor: "#ccff00"
   },
   { 
     id: 2,
-    titulo: "Beta Features Access", 
-    descricao: "Acesso antecipado as novas ferramentas de IA antes do lancamento.",
-    pontos: 500,
-    icon: Zap,
-    status: "disponivel"
+    titulo: "Caneca + Pulseira",
+    subtitulo: "Grupo de Networking",
+    pontos: "10K",
+    pontosNum: 10000,
+    descricao: "Celebre sua primeira grande conquista e abra portas para conexoes que impulsionam o proximo passo.",
+    imagem: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lDEFNYBMfrWKqyTtK2QhpseWQkqDNb.png",
+    cor: "#ccff00"
   },
   { 
     id: 3,
-    titulo: "Suporte Prioritario", 
-    descricao: "Fila exclusiva para atendimento com resposta em menos de 2 horas.",
-    pontos: 0,
-    icon: HeadphonesIcon,
-    status: "resgatado"
+    titulo: "Kit Premium",
+    subtitulo: "Mentoria Exclusiva",
+    pontos: "50K",
+    pontosNum: 50000,
+    descricao: "Acesso a mentoria individual com especialistas e kit completo de brindes exclusivos.",
+    imagem: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lDEFNYBMfrWKqyTtK2QhpseWQkqDNb.png",
+    cor: "#ccff00"
   },
   { 
     id: 4,
-    titulo: "Badges Exclusivos", 
-    descricao: "Icones e badges premium para destacar seu perfil na comunidade.",
-    pontos: 200,
-    icon: Award,
-    status: "disponivel"
+    titulo: "Experiencia VIP",
+    subtitulo: "Evento Presencial",
+    pontos: "100K",
+    pontosNum: 100000,
+    descricao: "Convite para evento presencial exclusivo com networking e palestras de alto nivel.",
+    imagem: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lDEFNYBMfrWKqyTtK2QhpseWQkqDNb.png",
+    cor: "#ccff00"
+  },
+  { 
+    id: 5,
+    titulo: "Parceria Oficial",
+    subtitulo: "1 MILHAO FATURADO",
+    pontos: "1M",
+    pontosNum: 1000000,
+    descricao: "O apice do premio. Reconhecimento maximo e acesso ao circulo mais exclusivo.",
+    imagem: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lDEFNYBMfrWKqyTtK2QhpseWQkqDNb.png",
+    cor: "#00ffcc"
   },
 ]
 
-const atividadeRecente = [
-  { id: 1, titulo: "Conclusao de Projeto", pontos: "+1,200", tempo: "Ontem" },
-  { id: 2, titulo: "Resgate Realizado", pontos: "-500", tempo: "2 dias atras" },
-  { id: 3, titulo: "Streak Semanal", pontos: "+150", tempo: "3 dias atras" },
-]
-
 export default function RewardsPage() {
-  const pontosTotal = 12450
-  const pontosDisponiveis = 3200
-  const statusAtual = "Elite Gold"
-  const proximoNivel = 850
+  const [activeIndex, setActiveIndex] = useState(1)
+  const pontosAtuais = 8500
+  const proximaMeta = premiacoes[activeIndex]?.pontosNum || 10000
+  const progresso = Math.min((pontosAtuais / proximaMeta) * 100, 100)
+
+  const handlePrev = () => {
+    setActiveIndex((prev) => (prev === 0 ? premiacoes.length - 1 : prev - 1))
+  }
+
+  const handleNext = () => {
+    setActiveIndex((prev) => (prev === premiacoes.length - 1 ? 0 : prev + 1))
+  }
+
+  const getCardStyle = (index: number) => {
+    const diff = index - activeIndex
+    
+    if (diff === 0) {
+      return {
+        transform: 'translateX(0) scale(1)',
+        opacity: 1,
+        zIndex: 30,
+        filter: 'blur(0px)',
+      }
+    } else if (diff === 1 || diff === -(premiacoes.length - 1)) {
+      return {
+        transform: 'translateX(110%) scale(0.85)',
+        opacity: 0.6,
+        zIndex: 20,
+        filter: 'blur(4px)',
+      }
+    } else if (diff === -1 || diff === (premiacoes.length - 1)) {
+      return {
+        transform: 'translateX(-110%) scale(0.85)',
+        opacity: 0.6,
+        zIndex: 20,
+        filter: 'blur(4px)',
+      }
+    } else if (diff === 2 || diff === -(premiacoes.length - 2)) {
+      return {
+        transform: 'translateX(200%) scale(0.7)',
+        opacity: 0.3,
+        zIndex: 10,
+        filter: 'blur(8px)',
+      }
+    } else if (diff === -2 || diff === (premiacoes.length - 2)) {
+      return {
+        transform: 'translateX(-200%) scale(0.7)',
+        opacity: 0.3,
+        zIndex: 10,
+        filter: 'blur(8px)',
+      }
+    }
+    return {
+      transform: 'translateX(0) scale(0.5)',
+      opacity: 0,
+      zIndex: 0,
+      filter: 'blur(12px)',
+    }
+  }
 
   return (
     <>
       <DashboardHeader title="Premiacoes" />
       <ScrollArea className="flex-1">
-        <div className="min-h-full bg-[#f3f4f6] text-[#1A1A1A] pb-8">
-          <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-5xl space-y-6 pt-6">
+        <div className="min-h-full bg-[#0a0a0a] text-white pb-8">
+          
+          {/* Hero Section with Gradient */}
+          <div className="relative overflow-hidden">
+            {/* Background gradients */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#0d1a0d] via-[#0a0a0a] to-[#0a0a0a]"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-[#ccff00]/10 blur-[120px] rounded-full"></div>
             
-            {/* Hero Section */}
-            <section className="text-center space-y-2 lg:text-left">
-              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1A1A1A] text-balance">
-                Minhas Premiacoes
-              </h2>
-              <p className="text-[#666666] text-sm max-w-xs mx-auto lg:mx-0 lg:max-w-md">
-                Voce esta a {proximoNivel} pontos de atingir o nivel Platinum.
-              </p>
-            </section>
-
-            {/* Desktop: Two column layout */}
-            <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
-              
-              {/* Points Hero Card */}
-              <div className="relative overflow-hidden rounded-[24px] p-6 sm:p-8 bg-foreground dark:bg-card text-background dark:text-foreground">
-                {/* Glow effect */}
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
-                <div className="flex flex-col gap-4 sm:gap-6 relative z-10 h-full justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold mb-1">Pontos Disponiveis</p>
-                    <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter">
-                        {pontosDisponiveis.toLocaleString('pt-BR')}
-                      </span>
-                      <Star className="w-6 h-6 text-accent" fill="currentColor" />
-                    </div>
+            <div className="relative z-10 pt-8 pb-4 px-4">
+              {/* Progress Section */}
+              <div className="max-w-md mx-auto mb-8">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <Star className="w-5 h-5 text-[#ccff00]" fill="currentColor" />
+                    <span className="text-sm font-medium text-white/80">Seu Progresso</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-background/10 dark:border-border">
-                    <div>
-                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Pontos Totais</p>
-                      <p className="text-xl lg:text-2xl font-bold">{pontosTotal.toLocaleString('pt-BR')}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Status Atual</p>
-                      <p className="text-xl lg:text-2xl font-bold text-accent">{statusAtual}</p>
-                    </div>
-                  </div>
+                  <span className="text-sm font-bold text-[#ccff00]">{pontosAtuais.toLocaleString('pt-BR')} pts</span>
+                </div>
+                <div className="w-full bg-white/10 rounded-full h-2 mb-2">
+                  <div 
+                    className="bg-gradient-to-r from-[#ccff00] to-[#a8e600] h-full rounded-full transition-all duration-500"
+                    style={{ width: `${progresso}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-white/50">
+                  <span>0</span>
+                  <span>Proxima meta: {premiacoes[activeIndex]?.pontos}</span>
                 </div>
               </div>
 
-              {/* Progress Card */}
-              <div className="bg-white rounded-[24px] p-6 shadow-sm border border-[#EEEEEE]">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <Target className="w-5 h-5 text-[#1A1A1A]" />
-                  </div>
-                  <div>
-                    <p className="font-bold text-[#1A1A1A]">Proximo Nivel: Platinum</p>
-                    <p className="text-xs text-[#666666]">Faltam {proximoNivel} pontos</p>
-                  </div>
-                </div>
+              {/* Carousel Section */}
+              <div className="relative h-[480px] flex items-center justify-center">
                 
-                {/* Progress bar */}
-                <div className="w-full bg-[#EEEEEE] rounded-full h-3 mb-4">
-                  <div className="bg-[#ccff00] h-full rounded-full" style={{ width: '78%' }}></div>
-                </div>
+                {/* Navigation Buttons */}
+                <button 
+                  onClick={handlePrev}
+                  className="absolute left-4 md:left-8 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-110 shadow-lg shadow-[#ccff00]/20"
+                >
+                  <ChevronLeft className="w-6 h-6 text-black" />
+                </button>
                 
-                <div className="flex justify-between text-xs text-[#666666]">
-                  <span>Elite Gold</span>
-                  <span>78% completo</span>
-                  <span>Platinum</span>
-                </div>
+                <button 
+                  onClick={handleNext}
+                  className="absolute right-4 md:right-8 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-110 shadow-lg shadow-[#ccff00]/20"
+                >
+                  <ChevronRight className="w-6 h-6 text-black" />
+                </button>
 
-                {/* Achievements */}
-                <div className="mt-6 pt-6 border-t border-[#EEEEEE]">
-                  <p className="text-xs font-semibold text-[#666666] uppercase tracking-wider mb-4">Conquistas Recentes</p>
-                  <div className="flex gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
-                      <Trophy className="w-4 h-4 text-[#1A1A1A]" />
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
-                      <Zap className="w-4 h-4 text-[#1A1A1A]" />
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
-                      <Star className="w-4 h-4 text-[#1A1A1A]" />
-                    </div>
-                    <div className="w-10 h-10 rounded-full bg-[#EEEEEE] flex items-center justify-center text-[#666666]">
-                      <span className="text-xs font-bold">+9</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Desktop: Two column layout for Rewards + Activity */}
-            <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
-              
-              {/* Rewards List */}
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Recompensas Disponiveis</h3>
-                </div>
-                
-                <div className="bg-[#16181d] border border-white/5 rounded-3xl overflow-hidden">
-                  <div className="divide-y divide-white/5">
-                    {premiacoes.map((premio) => {
-                      const Icon = premio.icon
-                      const resgatado = premio.status === "resgatado"
-                      
-                      return (
-                        <div key={premio.id} className="p-4 hover:bg-white/[0.02] transition-colors">
-                          <div className="flex items-start gap-4">
-                            <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center flex-shrink-0">
-                              <Icon className="w-5 h-5 text-[#ccff00]" />
+                {/* Cards Container */}
+                <div className="relative w-full max-w-[320px] h-full flex items-center justify-center">
+                  {premiacoes.map((premio, index) => (
+                    <div
+                      key={premio.id}
+                      className="absolute w-full transition-all duration-500 ease-out cursor-pointer"
+                      style={getCardStyle(index)}
+                      onClick={() => setActiveIndex(index)}
+                    >
+                      {/* Card */}
+                      <div className="relative bg-gradient-to-br from-[#1a2a1a] via-[#0d1a0d] to-[#0a1510] rounded-3xl overflow-hidden border border-[#ccff00]/20 shadow-2xl">
+                        {/* Glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#ccff00]/5 to-transparent pointer-events-none"></div>
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-[#ccff00]/10 blur-[60px] rounded-full"></div>
+                        
+                        {/* Image Area */}
+                        <div className="relative h-48 flex items-center justify-center p-6 overflow-hidden">
+                          <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#0d1a0d]/80"></div>
+                          <div className="relative z-10 text-center">
+                            <div className="w-24 h-24 mx-auto mb-2 rounded-2xl bg-gradient-to-br from-[#ccff00]/20 to-[#ccff00]/5 border border-[#ccff00]/30 flex items-center justify-center">
+                              <Trophy className="w-12 h-12 text-[#ccff00]" />
                             </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-start justify-between gap-2">
-                                <div>
-                                  <p className="font-bold text-white text-sm">{premio.titulo}</p>
-                                  <p className="text-xs text-gray-400 mt-1">{premio.descricao}</p>
-                                </div>
-                              </div>
-                              <div className="flex items-center justify-between mt-3">
-                                <span className="text-xs font-bold text-white">
-                                  {resgatado ? 'Ativo' : `${premio.pontos.toLocaleString('pt-BR')} pts`}
-                                </span>
-                                <button 
-                                  className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
-                                    resgatado 
-                                      ? 'bg-white/10 text-gray-400 cursor-not-allowed' 
-                                      : 'bg-[#ccff00] text-black hover:bg-[#b8e600]'
-                                  }`}
-                                  disabled={resgatado}
-                                >
-                                  {resgatado ? 'Resgatado' : 'Resgatar'}
-                                </button>
-                              </div>
+                            <div className="inline-block px-3 py-1 rounded-full bg-[#ccff00]/10 border border-[#ccff00]/30">
+                              <span className="text-xs font-bold text-[#ccff00]">{premio.pontos} FATURADO</span>
                             </div>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                </div>
-              </section>
-
-              {/* Activity Section */}
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Atividade Recente</h3>
-                  <button className="text-xs text-[#666666] font-medium hover:text-[#1A1A1A] transition-colors">Ver todas</button>
-                </div>
-                
-                <div className="bg-white rounded-[24px] p-6 shadow-sm border border-[#EEEEEE]">
-                  <div className="space-y-4">
-                    {atividadeRecente.map((atividade) => (
-                      <div key={atividade.id} className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center flex-shrink-0">
-                          <Clock className="w-4 h-4 text-[#666666]" />
+                        
+                        {/* Content */}
+                        <div className="relative z-10 p-6 pt-2">
+                          <div className="flex items-start gap-3 mb-4">
+                            <span className="text-4xl font-black text-white tracking-tighter">{premio.pontos}</span>
+                            <div>
+                              <p className="text-[#ccff00] font-bold text-sm leading-tight">{premio.titulo} +</p>
+                              <p className="text-[#ccff00] font-bold text-sm leading-tight">{premio.subtitulo}</p>
+                            </div>
+                          </div>
+                          <p className="text-white/70 text-sm leading-relaxed">{premio.descricao}</p>
+                          
+                          {/* CTA Button */}
+                          <button className="w-full mt-6 py-3 rounded-xl bg-[#ccff00] text-black font-bold text-sm hover:bg-[#b8e600] transition-all">
+                            Desbloquear Premio
+                          </button>
                         </div>
-                        <div className="flex-1">
-                          <p className="font-bold text-[#1A1A1A] text-sm">{atividade.titulo}</p>
-                          <p className="text-xs text-[#666666]">{atividade.tempo}</p>
-                        </div>
-                        <span className={`text-sm font-bold ${atividade.pontos.startsWith('+') ? 'text-green-600' : 'text-[#666666]'}`}>
-                          {atividade.pontos}
-                        </span>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                 </div>
+              </div>
 
-                {/* Challenge Card */}
-                <div className="bg-[#ccff00] rounded-[24px] p-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center">
-                      <Zap className="w-5 h-5 text-black" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-black">Desafio da Semana</p>
-                      <p className="text-xs text-black/70">Complete e ganhe 500 pontos</p>
-                    </div>
-                  </div>
-                  <p className="text-sm text-black/80 mb-4">Complete 3 revisoes de codigo e ganhe um bonus de pontos extras!</p>
-                  <div className="w-full bg-black/10 rounded-full h-2 mb-2">
-                    <div className="bg-black h-full rounded-full" style={{ width: '66%' }}></div>
-                  </div>
-                  <div className="flex justify-between text-xs font-bold text-black">
-                    <span>2 de 3 concluidos</span>
-                    <span>66%</span>
-                  </div>
-                </div>
-              </section>
+              {/* Dots Navigation */}
+              <div className="flex justify-center gap-2 mt-4">
+                {premiacoes.map((_, index) => (
+                  <button
+                    key={index}
+                    onClick={() => setActiveIndex(index)}
+                    className={`w-2 h-2 rounded-full transition-all ${
+                      index === activeIndex 
+                        ? 'bg-[#ccff00] w-6' 
+                        : 'bg-white/30 hover:bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
-
           </div>
+
+          {/* Stats Section */}
+          <div className="px-4 mt-8">
+            <div className="max-w-2xl mx-auto">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl p-4 border border-white/5 text-center">
+                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                    <Star className="w-5 h-5 text-[#ccff00]" />
+                  </div>
+                  <p className="text-2xl font-bold text-white">8.5K</p>
+                  <p className="text-xs text-white/50">Pontos Totais</p>
+                </div>
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl p-4 border border-white/5 text-center">
+                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                    <Trophy className="w-5 h-5 text-[#ccff00]" />
+                  </div>
+                  <p className="text-2xl font-bold text-white">2</p>
+                  <p className="text-xs text-white/50">Premios Resgatados</p>
+                </div>
+                <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl p-4 border border-white/5 text-center">
+                  <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                    <Target className="w-5 h-5 text-[#ccff00]" />
+                  </div>
+                  <p className="text-2xl font-bold text-[#ccff00]">85%</p>
+                  <p className="text-xs text-white/50">Proxima Meta</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Recent Activity */}
+          <div className="px-4 mt-8">
+            <div className="max-w-2xl mx-auto">
+              <h3 className="text-sm font-semibold text-white/50 uppercase tracking-wider mb-4">Historico de Resgates</h3>
+              <div className="bg-gradient-to-br from-[#1a1a1a] to-[#0d0d0d] rounded-2xl border border-white/5 overflow-hidden">
+                <div className="divide-y divide-white/5">
+                  <div className="p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                      <Trophy className="w-5 h-5 text-[#ccff00]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-white text-sm">Pulseira Exclusiva</p>
+                      <p className="text-xs text-white/50">Resgatado em 15 Mar 2024</p>
+                    </div>
+                    <span className="text-xs font-bold text-[#ccff00]">1K pts</span>
+                  </div>
+                  <div className="p-4 flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                      <Star className="w-5 h-5 text-[#ccff00]" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-white text-sm">Badge Early Adopter</p>
+                      <p className="text-xs text-white/50">Resgatado em 10 Mar 2024</p>
+                    </div>
+                    <span className="text-xs font-bold text-[#ccff00]">500 pts</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </ScrollArea>
     </>
