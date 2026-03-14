@@ -2,7 +2,7 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, Gift, Star, Trophy, Check } from "lucide-react"
+import { ChevronLeft, ChevronRight, Gift, Check } from "lucide-react"
 import { useState } from "react"
 
 const premiacoes = [
@@ -104,35 +104,24 @@ export default function RewardsPage() {
         <div className="min-h-full bg-[#f3f4f6] pb-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
             
-            {/* Stats Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-white rounded-[16px] p-5 border border-[#EEEEEE]">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <Star className="w-5 h-5 text-[#ccff00]" />
-                  </div>
-                  <span className="text-sm text-[#666666]">Pontos Totais</span>
+            {/* Progress Bar */}
+            <div className="bg-white rounded-[20px] p-5 border border-[#EEEEEE] mb-8">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-[#666666]">Seu progresso</span>
                 </div>
-                <p className="text-2xl font-bold text-[#1A1A1A]">8.500</p>
-              </div>
-              <div className="bg-white rounded-[16px] p-5 border border-[#EEEEEE]">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <Trophy className="w-5 h-5 text-[#ccff00]" />
-                  </div>
-                  <span className="text-sm text-[#666666]">Resgatados</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-bold text-[#1A1A1A]">R$ 8.500</span>
+                  <span className="text-sm text-[#666666]">/ R$ 10.000</span>
                 </div>
-                <p className="text-2xl font-bold text-[#1A1A1A]">1</p>
               </div>
-              <div className="bg-white rounded-[16px] p-5 border border-[#EEEEEE]">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <Gift className="w-5 h-5 text-[#ccff00]" />
-                  </div>
-                  <span className="text-sm text-[#666666]">Disponiveis</span>
-                </div>
-                <p className="text-2xl font-bold text-[#1A1A1A]">4</p>
+              <div className="relative h-3 bg-[#EEEEEE] rounded-full overflow-hidden">
+                <div 
+                  className="absolute left-0 top-0 h-full bg-[#ccff00] rounded-full transition-all duration-500"
+                  style={{ width: '85%' }}
+                />
               </div>
+              <p className="text-xs text-[#666666] mt-2">Faltam R$ 1.500 para desbloquear <span className="font-medium text-[#1A1A1A]">Caneca + Pulseira</span></p>
             </div>
 
             {/* Carousel de Premios - direto no fundo claro */}
