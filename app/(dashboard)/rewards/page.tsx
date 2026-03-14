@@ -124,28 +124,32 @@ export default function RewardsPage() {
               <p className="text-xs text-[#666666] mt-2">Faltam R$ 1.500 para desbloquear <span className="font-medium text-[#1A1A1A]">Caneca + Pulseira</span></p>
             </div>
 
-            {/* Carousel de Premios - direto no fundo claro */}
+            {/* Carousel de Premios */}
             <div className="relative mb-8">
-              {/* Fade gradients nas laterais */}
-              <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#f3f4f6] via-[#f3f4f6]/80 to-transparent z-30 pointer-events-none"></div>
-              <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#f3f4f6] via-[#f3f4f6]/80 to-transparent z-30 pointer-events-none"></div>
+              {/* Navigation Buttons - fora do mask */}
+              <button 
+                onClick={handlePrev}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
+              >
+                <ChevronLeft className="w-6 h-6 text-[#1A1A1A]" />
+              </button>
               
-              <div className="relative h-[460px] flex items-center justify-center overflow-hidden">
+              <button 
+                onClick={handleNext}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
+              >
+                <ChevronRight className="w-6 h-6 text-[#1A1A1A]" />
+              </button>
+
+              <div 
+                className="relative h-[460px] flex items-center justify-center overflow-hidden mx-16"
+                style={{
+                  maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+                  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
+                }}
+              >
                 
-                {/* Navigation Buttons */}
-                <button 
-                  onClick={handlePrev}
-                  className="absolute left-8 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
-                >
-                  <ChevronLeft className="w-6 h-6 text-[#1A1A1A]" />
-                </button>
                 
-                <button 
-                  onClick={handleNext}
-                  className="absolute right-8 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
-                >
-                  <ChevronRight className="w-6 h-6 text-[#1A1A1A]" />
-                </button>
 
                 {/* Cards Container */}
                 <div className="relative w-full max-w-[320px] h-full flex items-center justify-center">
