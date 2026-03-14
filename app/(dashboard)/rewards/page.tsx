@@ -2,7 +2,7 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, Gift, Check } from "lucide-react"
+import { ChevronLeft, ChevronRight, Gift, Check, Trophy, Target, Zap } from "lucide-react"
 import { useState } from "react"
 
 const premiacoes = [
@@ -55,6 +55,10 @@ const premiacoes = [
 
 export default function RewardsPage() {
   const [activeIndex, setActiveIndex] = useState(1)
+  const currentPremio = premiacoes[activeIndex]
+  const progressPercent = 85
+  const pontosAtuais = 8500
+  const proximaMeta = 10000
 
   const handlePrev = () => {
     setActiveIndex((prev) => (prev === 0 ? premiacoes.length - 1 : prev - 1))
@@ -64,8 +68,6 @@ export default function RewardsPage() {
     setActiveIndex((prev) => (prev === premiacoes.length - 1 ? 0 : prev + 1))
   }
 
-  const currentPremio = premiacoes[activeIndex]
-
   return (
     <>
       <DashboardHeader title="Premiacoes" />
@@ -73,143 +75,221 @@ export default function RewardsPage() {
         <div className="min-h-full bg-[#f3f4f6] pb-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
             
-            {/* Progress Bar */}
-            <div className="bg-white rounded-[20px] p-5 border border-[#EEEEEE] mb-8">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-[#666666]">Seu progresso</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-[#1A1A1A]">R$ 8.500</span>
-                  <span className="text-sm text-[#666666]">/ R$ 10.000</span>
-                </div>
-              </div>
-              <div className="relative h-3 bg-[#EEEEEE] rounded-full overflow-hidden">
-                <div 
-                  className="absolute left-0 top-0 h-full bg-[#ccff00] rounded-full transition-all duration-500"
-                  style={{ width: '85%' }}
-                />
-              </div>
-              <p className="text-xs text-[#666666] mt-2">Faltam R$ 1.500 para desbloquear <span className="font-medium text-[#1A1A1A]">Caneca + Pulseira</span></p>
-            </div>
-
-            {/* Carousel de Premios */}
-            <div className="relative mb-8">
-              {/* Navigation Buttons - fora do mask */}
-              <button 
-                onClick={handlePrev}
-                className="absolute left-0 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
-              >
-                <ChevronLeft className="w-6 h-6 text-[#1A1A1A]" />
-              </button>
-              
-              <button 
-                onClick={handleNext}
-                className="absolute right-0 top-1/2 -translate-y-1/2 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
-              >
-                <ChevronRight className="w-6 h-6 text-[#1A1A1A]" />
-              </button>
-
-              <div className="flex items-center justify-center px-16">
-                {/* Single Card - Clean Display */}
-                <div className="w-full max-w-[320px] transition-all duration-300">
-                  <div className="relative bg-[#1A1A1A] rounded-[20px] overflow-hidden shadow-xl">
-                    
-                    {/* Card Header */}
-                    <div className="relative h-48 bg-gradient-to-br from-[#1a2a1a] to-[#0f1a0f] flex items-center justify-center overflow-hidden">
-                      <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[#ccff00]/20 border border-[#ccff00]/30">
-                        <span className="text-xs font-bold text-[#ccff00]">{currentPremio.pontos} FATURADO</span>
-                      </div>
-                      {currentPremio.desbloqueado ? (
-                        <div className="w-24 h-24 rounded-2xl bg-[#ccff00]/20 border-2 border-[#ccff00]/50 flex items-center justify-center">
-                          <Check className="w-12 h-12 text-[#ccff00]" />
-                        </div>
-                      ) : (
-                        <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                          <Gift className="w-12 h-12 text-white/20" />
-                        </div>
-                      )}
+            {/* Hero Module - Progress + Stats */}
+            <div className="grid grid-cols-12 gap-4 mb-8">
+              {/* Main Progress Panel */}
+              <div className="col-span-8 bg-white rounded-[16px] p-6 border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-wider text-[#9CA3AF] font-medium mb-1">Progresso atual</p>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-[#111827]">R$ 8.500</span>
+                      <span className="text-sm text-[#6B7280]">de R$ 10.000</span>
                     </div>
-                    
-                    {/* Card Content */}
-                    <div className="p-5">
-                      <div className="flex items-start gap-3 mb-3">
-                        <span className="text-3xl font-black text-white">{currentPremio.pontos}</span>
-                        <div>
-                          <p className="text-[#ccff00] font-bold text-sm">{currentPremio.titulo} +</p>
-                          <p className="text-[#ccff00] font-bold text-sm">{currentPremio.subtitulo}</p>
-                        </div>
-                      </div>
-                      <p className="text-white/60 text-sm leading-relaxed mb-5">{currentPremio.descricao}</p>
-                      
-                      {currentPremio.desbloqueado ? (
-                        <button className="w-full py-3 rounded-xl bg-[#ccff00] text-[#1A1A1A] font-bold text-sm hover:bg-[#b8e600] transition-all">
-                          Resgatar Premio
-                        </button>
-                      ) : (
-                        <button className="w-full py-3 rounded-xl bg-white/10 text-white/50 font-bold text-sm cursor-not-allowed">
-                          Bloqueado
-                        </button>
-                      )}
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-[#9CA3AF] mb-1">Proxima recompensa</p>
+                    <p className="text-sm font-semibold text-[#111827]">Caneca + Pulseira</p>
+                  </div>
+                </div>
+                
+                <div className="relative h-2 bg-[#E5E7EB] rounded-full overflow-hidden mb-3">
+                  <div 
+                    className="absolute left-0 top-0 h-full bg-[#ccff00] rounded-full"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-[#6B7280]">Faltam <span className="font-medium text-[#111827]">R$ 1.500</span> para desbloquear</p>
+                  <p className="text-xs font-medium text-[#ccff00] bg-[#ccff00]/10 px-2 py-1 rounded-md">{progressPercent}%</p>
+                </div>
+              </div>
+
+              {/* Stats Side Panel */}
+              <div className="col-span-4 flex flex-col gap-4">
+                <div className="flex-1 bg-white rounded-[16px] p-4 border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#ccff00]/15 flex items-center justify-center">
+                      <Trophy className="w-5 h-5 text-[#97c700]" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#9CA3AF]">Conquistados</p>
+                      <p className="text-xl font-bold text-[#111827]">1</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 bg-white rounded-[16px] p-4 border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#F3F4F6] flex items-center justify-center">
+                      <Target className="w-5 h-5 text-[#6B7280]" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-[#9CA3AF]">Disponiveis</p>
+                      <p className="text-xl font-bold text-[#111827]">4</p>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Dots Navigation */}
-              <div className="flex justify-center gap-2 mt-2">
-                {premiacoes.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setActiveIndex(index)}
-                    className={`h-2 rounded-full transition-all ${
-                      index === activeIndex 
-                        ? 'bg-[#1A1A1A] w-6' 
-                        : 'bg-[#1A1A1A]/20 w-2 hover:bg-[#1A1A1A]/40'
-                    }`}
-                  />
-                ))}
+            {/* Rewards Showcase Module */}
+            <div className="grid grid-cols-12 gap-4 mb-8">
+              {/* Featured Reward Card */}
+              <div className="col-span-5">
+                <div className="bg-[#111827] rounded-[16px] overflow-hidden h-full" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
+                  {/* Card Visual */}
+                  <div className="relative h-44 bg-gradient-to-br from-[#1a2a1a] via-[#111827] to-[#0d1117] flex items-center justify-center">
+                    <div className="absolute top-4 left-4 px-2.5 py-1 rounded-md bg-[#ccff00]/15 border border-[#ccff00]/20">
+                      <span className="text-[10px] font-bold text-[#ccff00] uppercase tracking-wide">{currentPremio.pontos} Faturado</span>
+                    </div>
+                    {currentPremio.desbloqueado ? (
+                      <div className="w-20 h-20 rounded-2xl bg-[#ccff00]/20 border border-[#ccff00]/40 flex items-center justify-center">
+                        <Check className="w-10 h-10 text-[#ccff00]" />
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                        <Gift className="w-10 h-10 text-white/30" />
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Card Content */}
+                  <div className="p-5">
+                    <div className="mb-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-2xl font-black text-white">{currentPremio.pontos}</span>
+                        <span className="text-[#ccff00] text-xs font-semibold uppercase tracking-wide">Meta</span>
+                      </div>
+                      <p className="text-white font-semibold">{currentPremio.titulo}</p>
+                      <p className="text-white/50 text-sm">{currentPremio.subtitulo}</p>
+                    </div>
+                    
+                    <p className="text-white/40 text-sm leading-relaxed mb-5">{currentPremio.descricao}</p>
+                    
+                    {currentPremio.desbloqueado ? (
+                      <button className="w-full py-2.5 rounded-lg bg-[#ccff00] text-[#111827] font-semibold text-sm hover:bg-[#d4ff1a] transition-colors">
+                        Resgatar
+                      </button>
+                    ) : (
+                      <button className="w-full py-2.5 rounded-lg bg-white/5 text-white/30 font-semibold text-sm cursor-not-allowed border border-white/5">
+                        Bloqueado
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Rewards Navigation Panel */}
+              <div className="col-span-7 bg-white rounded-[16px] p-6 border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+                <div className="flex items-center justify-between mb-5">
+                  <div>
+                    <h3 className="text-sm font-semibold text-[#111827]">Todas as recompensas</h3>
+                    <p className="text-xs text-[#9CA3AF]">Navegue entre os premios disponiveis</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button 
+                      onClick={handlePrev}
+                      className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center hover:bg-[#E5E7EB] transition-colors"
+                    >
+                      <ChevronLeft className="w-4 h-4 text-[#374151]" />
+                    </button>
+                    <button 
+                      onClick={handleNext}
+                      className="w-8 h-8 rounded-lg bg-[#F3F4F6] flex items-center justify-center hover:bg-[#E5E7EB] transition-colors"
+                    >
+                      <ChevronRight className="w-4 h-4 text-[#374151]" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Rewards List */}
+                <div className="space-y-2">
+                  {premiacoes.map((premio, index) => (
+                    <button
+                      key={premio.id}
+                      onClick={() => setActiveIndex(index)}
+                      className={`w-full flex items-center gap-4 p-3 rounded-xl transition-all ${
+                        index === activeIndex 
+                          ? 'bg-[#111827]' 
+                          : 'bg-[#F9FAFB] hover:bg-[#F3F4F6]'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                        premio.desbloqueado 
+                          ? 'bg-[#ccff00]' 
+                          : index === activeIndex 
+                            ? 'bg-white/10' 
+                            : 'bg-[#E5E7EB]'
+                      }`}>
+                        {premio.desbloqueado ? (
+                          <Check className="w-5 h-5 text-[#111827]" />
+                        ) : (
+                          <span className={`text-sm font-bold ${index === activeIndex ? 'text-white/50' : 'text-[#9CA3AF]'}`}>{index + 1}</span>
+                        )}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <p className={`text-sm font-medium ${index === activeIndex ? 'text-white' : 'text-[#111827]'}`}>{premio.titulo}</p>
+                        <p className={`text-xs ${index === activeIndex ? 'text-white/50' : 'text-[#9CA3AF]'}`}>{premio.subtitulo}</p>
+                      </div>
+                      <div className="text-right">
+                        <span className={`text-xs font-semibold px-2 py-1 rounded-md ${
+                          premio.desbloqueado 
+                            ? 'bg-[#ccff00]/15 text-[#97c700]'
+                            : index === activeIndex 
+                              ? 'bg-white/10 text-white/50' 
+                              : 'bg-[#F3F4F6] text-[#6B7280]'
+                        }`}>
+                          {premio.pontos}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
-            {/* Jornada de Conquistas */}
-            <div className="bg-white rounded-[20px] p-6 border border-[#EEEEEE]">
-              <h3 className="text-lg font-bold text-[#1A1A1A] mb-6">Jornada de Conquistas</h3>
+            {/* Journey Timeline Module */}
+            <div className="bg-white rounded-[16px] p-6 border border-[#E5E7EB]" style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#111827]">Jornada de Conquistas</h3>
+                  <p className="text-xs text-[#9CA3AF]">Acompanhe seu progresso em cada nivel</p>
+                </div>
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#ccff00]/10">
+                  <Zap className="w-4 h-4 text-[#97c700]" />
+                  <span className="text-xs font-medium text-[#97c700]">1 de 5 conquistados</span>
+                </div>
+              </div>
               
+              {/* Horizontal Timeline */}
               <div className="relative">
-                {/* Progress Line */}
-                <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-[#EEEEEE]"></div>
-                <div 
-                  className="absolute left-5 top-0 w-0.5 bg-[#ccff00] transition-all duration-500"
-                  style={{ height: `${(premiacoes.filter(p => p.desbloqueado).length / premiacoes.length) * 100}%` }}
-                ></div>
-
-                <div className="space-y-6">
+                <div className="flex items-center justify-between">
                   {premiacoes.map((premio, index) => (
-                    <div key={premio.id} className="flex items-start gap-4 relative">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 z-10 ${
+                    <div key={premio.id} className="flex flex-col items-center relative z-10">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-all ${
                         premio.desbloqueado 
                           ? 'bg-[#ccff00]' 
-                          : 'bg-white border-2 border-[#EEEEEE]'
+                          : 'bg-[#F3F4F6] border-2 border-[#E5E7EB]'
                       }`}>
                         {premio.desbloqueado ? (
-                          <Check className="w-5 h-5 text-[#1A1A1A]" />
+                          <Check className="w-6 h-6 text-[#111827]" />
                         ) : (
-                          <span className="text-sm font-bold text-[#666666]">{index + 1}</span>
+                          <span className="text-sm font-bold text-[#9CA3AF]">{index + 1}</span>
                         )}
                       </div>
-                      <div className="flex-1 pt-2">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-bold text-[#1A1A1A]">{premio.titulo}</span>
-                          <span className="text-xs px-2 py-0.5 rounded-full bg-[#f3f4f6] text-[#666666]">{premio.pontos}</span>
-                          {premio.desbloqueado && (
-                            <span className="text-xs px-2 py-0.5 rounded-full bg-[#ccff00]/20 text-[#7a9900] font-medium">Conquistado</span>
-                          )}
-                        </div>
-                        <p className="text-sm text-[#666666]">{premio.subtitulo}</p>
-                      </div>
+                      <p className="text-xs font-semibold text-[#111827] text-center">{premio.pontos}</p>
+                      <p className="text-[10px] text-[#9CA3AF] text-center max-w-[80px] truncate">{premio.titulo}</p>
                     </div>
                   ))}
+                </div>
+                
+                {/* Connection Line */}
+                <div className="absolute top-6 left-6 right-6 h-0.5 bg-[#E5E7EB] -z-0">
+                  <div 
+                    className="h-full bg-[#ccff00] transition-all duration-500"
+                    style={{ width: `${(premiacoes.filter(p => p.desbloqueado).length / (premiacoes.length - 1)) * 100}%` }}
+                  />
                 </div>
               </div>
             </div>
