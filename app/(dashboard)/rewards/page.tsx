@@ -125,20 +125,24 @@ export default function RewardsPage() {
             </div>
 
             {/* Carousel de Premios - direto no fundo claro */}
-            <div className="relative mb-8 overflow-hidden">
-              <div className="relative h-[460px] flex items-center justify-center">
+            <div className="relative mb-8">
+              {/* Fade gradients nas laterais */}
+              <div className="absolute left-0 top-0 bottom-0 w-32 bg-gradient-to-r from-[#f3f4f6] via-[#f3f4f6]/80 to-transparent z-30 pointer-events-none"></div>
+              <div className="absolute right-0 top-0 bottom-0 w-32 bg-gradient-to-l from-[#f3f4f6] via-[#f3f4f6]/80 to-transparent z-30 pointer-events-none"></div>
+              
+              <div className="relative h-[460px] flex items-center justify-center overflow-hidden">
                 
                 {/* Navigation Buttons */}
                 <button 
                   onClick={handlePrev}
-                  className="absolute left-4 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
+                  className="absolute left-8 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
                 >
                   <ChevronLeft className="w-6 h-6 text-[#1A1A1A]" />
                 </button>
                 
                 <button 
                   onClick={handleNext}
-                  className="absolute right-4 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
+                  className="absolute right-8 z-50 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
                 >
                   <ChevronRight className="w-6 h-6 text-[#1A1A1A]" />
                 </button>
