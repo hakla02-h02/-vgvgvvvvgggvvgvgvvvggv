@@ -2,7 +2,7 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, Gift, Star, Trophy, Target, Lock, Check } from "lucide-react"
+import { ChevronLeft, ChevronRight, Gift, Star, Trophy, Check } from "lucide-react"
 import { useState } from "react"
 
 const premiacoes = [
@@ -55,9 +55,6 @@ const premiacoes = [
 
 export default function RewardsPage() {
   const [activeIndex, setActiveIndex] = useState(1)
-  const pontosAtuais = 8500
-  const proximaMeta = premiacoes.find(p => !p.desbloqueado)?.pontosNum || 10000
-  const progresso = Math.min((pontosAtuais / proximaMeta) * 100, 100)
 
   const handlePrev = () => {
     setActiveIndex((prev) => (prev === 0 ? premiacoes.length - 1 : prev - 1))
@@ -79,17 +76,17 @@ export default function RewardsPage() {
       }
     } else if (diff === 1 || diff === -(premiacoes.length - 1)) {
       return {
-        transform: 'translateX(115%) scale(0.88)',
+        transform: 'translateX(110%) scale(0.85)',
         opacity: 0.5,
         zIndex: 20,
-        filter: 'blur(3px)',
+        filter: 'blur(4px)',
       }
     } else if (diff === -1 || diff === (premiacoes.length - 1)) {
       return {
-        transform: 'translateX(-115%) scale(0.88)',
+        transform: 'translateX(-110%) scale(0.85)',
         opacity: 0.5,
         zIndex: 20,
-        filter: 'blur(3px)',
+        filter: 'blur(4px)',
       }
     }
     return {
@@ -107,48 +104,11 @@ export default function RewardsPage() {
         <div className="min-h-full bg-[#f3f4f6] pb-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-6">
             
-            {/* Header Section */}
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-[#1A1A1A] mb-1">Suas Conquistas</h1>
-              <p className="text-sm text-[#666666]">Acompanhe seu progresso e resgate premios exclusivos</p>
-            </div>
-
-            {/* Progress Card */}
-            <div className="bg-[#1A1A1A] rounded-[20px] p-6 mb-8">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
-                    <Target className="w-5 h-5 text-[#ccff00]" />
-                  </div>
-                  <div>
-                    <p className="text-white font-semibold">Progresso Atual</p>
-                    <p className="text-white/60 text-sm">Proxima meta: {premiacoes.find(p => !p.desbloqueado)?.pontos || "Completo"}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-2xl font-bold text-[#ccff00]">{pontosAtuais.toLocaleString('pt-BR')}</p>
-                  <p className="text-white/60 text-sm">pontos</p>
-                </div>
-              </div>
-              <div className="w-full bg-white/10 rounded-full h-3">
-                <div 
-                  className="bg-[#ccff00] h-full rounded-full transition-all duration-500 relative"
-                  style={{ width: `${progresso}%` }}
-                >
-                  <div className="absolute right-0 top-1/2 -translate-y-1/2 w-5 h-5 bg-[#ccff00] rounded-full border-2 border-[#1A1A1A]"></div>
-                </div>
-              </div>
-              <div className="flex justify-between mt-2 text-xs text-white/40">
-                <span>0</span>
-                <span>{(proximaMeta / 1000).toFixed(0)}K</span>
-              </div>
-            </div>
-
             {/* Stats Cards */}
             <div className="grid grid-cols-3 gap-4 mb-8">
               <div className="bg-white rounded-[16px] p-5 border border-[#EEEEEE]">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
                     <Star className="w-5 h-5 text-[#ccff00]" />
                   </div>
                   <span className="text-sm text-[#666666]">Pontos Totais</span>
@@ -157,7 +117,7 @@ export default function RewardsPage() {
               </div>
               <div className="bg-white rounded-[16px] p-5 border border-[#EEEEEE]">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
                     <Trophy className="w-5 h-5 text-[#ccff00]" />
                   </div>
                   <span className="text-sm text-[#666666]">Resgatados</span>
@@ -166,7 +126,7 @@ export default function RewardsPage() {
               </div>
               <div className="bg-white rounded-[16px] p-5 border border-[#EEEEEE]">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/10 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
                     <Gift className="w-5 h-5 text-[#ccff00]" />
                   </div>
                   <span className="text-sm text-[#666666]">Disponiveis</span>
@@ -175,33 +135,27 @@ export default function RewardsPage() {
               </div>
             </div>
 
-            {/* Premios Section */}
-            <div className="mb-6">
-              <h2 className="text-lg font-bold text-[#1A1A1A] mb-1">Premios Disponiveis</h2>
-              <p className="text-sm text-[#666666]">Navegue pelos premios e veja o que voce pode conquistar</p>
-            </div>
-
-            {/* Carousel Container */}
-            <div className="bg-[#1A1A1A] rounded-[24px] p-8 mb-8 overflow-hidden">
-              <div className="relative h-[420px] flex items-center justify-center">
+            {/* Carousel de Premios - direto no fundo claro */}
+            <div className="relative mb-8 overflow-hidden">
+              <div className="relative h-[460px] flex items-center justify-center">
                 
                 {/* Navigation Buttons */}
                 <button 
                   onClick={handlePrev}
-                  className="absolute left-2 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105"
+                  className="absolute left-4 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
                 >
                   <ChevronLeft className="w-6 h-6 text-[#1A1A1A]" />
                 </button>
                 
                 <button 
                   onClick={handleNext}
-                  className="absolute right-2 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105"
+                  className="absolute right-4 z-40 w-12 h-12 rounded-full bg-[#ccff00] flex items-center justify-center hover:bg-[#b8e600] transition-all hover:scale-105 shadow-lg"
                 >
                   <ChevronRight className="w-6 h-6 text-[#1A1A1A]" />
                 </button>
 
                 {/* Cards Container */}
-                <div className="relative w-full max-w-[300px] h-full flex items-center justify-center">
+                <div className="relative w-full max-w-[320px] h-full flex items-center justify-center">
                   {premiacoes.map((premio, index) => (
                     <div
                       key={premio.id}
@@ -210,21 +164,20 @@ export default function RewardsPage() {
                       onClick={() => setActiveIndex(index)}
                     >
                       {/* Card */}
-                      <div className="relative bg-gradient-to-b from-[#2a2a2a] to-[#1a1a1a] rounded-[20px] overflow-hidden border border-white/10">
+                      <div className="relative bg-[#1A1A1A] rounded-[20px] overflow-hidden shadow-xl">
                         
-                        {/* Card Header with Image Area */}
-                        <div className="relative h-44 bg-gradient-to-br from-[#2a3a2a] to-[#1a2a1a] flex items-center justify-center overflow-hidden">
-                          <div className="absolute inset-0 bg-[#ccff00]/5"></div>
+                        {/* Card Header */}
+                        <div className="relative h-48 bg-gradient-to-br from-[#1a2a1a] to-[#0f1a0f] flex items-center justify-center overflow-hidden">
                           <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[#ccff00]/20 border border-[#ccff00]/30">
                             <span className="text-xs font-bold text-[#ccff00]">{premio.pontos} FATURADO</span>
                           </div>
                           {premio.desbloqueado ? (
-                            <div className="w-20 h-20 rounded-2xl bg-[#ccff00]/20 border border-[#ccff00]/40 flex items-center justify-center">
-                              <Check className="w-10 h-10 text-[#ccff00]" />
+                            <div className="w-24 h-24 rounded-2xl bg-[#ccff00]/20 border-2 border-[#ccff00]/50 flex items-center justify-center">
+                              <Check className="w-12 h-12 text-[#ccff00]" />
                             </div>
                           ) : (
-                            <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                              <Lock className="w-10 h-10 text-white/30" />
+                            <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                              <Gift className="w-12 h-12 text-white/20" />
                             </div>
                           )}
                         </div>
@@ -257,22 +210,22 @@ export default function RewardsPage() {
               </div>
 
               {/* Dots Navigation */}
-              <div className="flex justify-center gap-2 mt-4">
+              <div className="flex justify-center gap-2 mt-2">
                 {premiacoes.map((_, index) => (
                   <button
                     key={index}
                     onClick={() => setActiveIndex(index)}
                     className={`h-2 rounded-full transition-all ${
                       index === activeIndex 
-                        ? 'bg-[#ccff00] w-6' 
-                        : 'bg-white/20 w-2 hover:bg-white/40'
+                        ? 'bg-[#1A1A1A] w-6' 
+                        : 'bg-[#1A1A1A]/20 w-2 hover:bg-[#1A1A1A]/40'
                     }`}
                   />
                 ))}
               </div>
             </div>
 
-            {/* Timeline / Milestones */}
+            {/* Jornada de Conquistas */}
             <div className="bg-white rounded-[20px] p-6 border border-[#EEEEEE]">
               <h3 className="text-lg font-bold text-[#1A1A1A] mb-6">Jornada de Conquistas</h3>
               
