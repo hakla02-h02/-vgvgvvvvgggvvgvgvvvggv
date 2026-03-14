@@ -2,279 +2,247 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Gift, Zap, HeadphonesIcon, Award, Check, Lock, Star, TrendingUp, ChevronRight, Globe, History, Bolt, Shield, Diamond } from "lucide-react"
+import { Gift, Zap, HeadphonesIcon, Award, Star, Trophy, Target, Clock } from "lucide-react"
 
 const premiacoes = [
   { 
     id: 1,
     titulo: "Gift Card Amazon R$ 100", 
-    descricao: "Resgate um vale-presente para utilizar em qualquer compra na Amazon Brasil.",
+    descricao: "Vale-presente para utilizar em qualquer compra na Amazon Brasil.",
     pontos: 1500,
     icon: Gift,
-    iconBg: "bg-blue-50",
-    iconColor: "text-blue-600",
     status: "disponivel"
   },
   { 
     id: 2,
     titulo: "Beta Features Access", 
-    descricao: "Tenha acesso antecipado as novas ferramentas de IA antes do lancamento oficial.",
+    descricao: "Acesso antecipado as novas ferramentas de IA antes do lancamento.",
     pontos: 500,
     icon: Zap,
-    iconBg: "bg-purple-50",
-    iconColor: "text-purple-600",
     status: "disponivel"
   },
   { 
     id: 3,
     titulo: "Suporte Prioritario", 
-    descricao: "Fila exclusiva para atendimento tecnico com resposta em menos de 2 horas.",
+    descricao: "Fila exclusiva para atendimento com resposta em menos de 2 horas.",
     pontos: 0,
     icon: HeadphonesIcon,
-    iconBg: "bg-amber-50",
-    iconColor: "text-amber-600",
     status: "resgatado"
   },
   { 
     id: 4,
     titulo: "Badges Exclusivos", 
-    descricao: "Conjunto de icones e badges premium para destacar seu perfil na comunidade.",
+    descricao: "Icones e badges premium para destacar seu perfil na comunidade.",
     pontos: 200,
     icon: Award,
-    iconBg: "bg-green-50",
-    iconColor: "text-green-600",
     status: "disponivel"
   },
 ]
 
-const jornada = [
-  { id: 1, nome: "Starter", conquistado: true, atual: false },
-  { id: 2, nome: "Silver Tier", conquistado: true, atual: false },
-  { id: 3, nome: "Elite Gold", conquistado: true, atual: true },
-  { id: 4, nome: "Platinum", conquistado: false, atual: false },
-  { id: 5, nome: "Legendary", conquistado: false, atual: false },
-]
-
 const atividadeRecente = [
-  { id: 1, titulo: "Conclusao de Projeto", pontos: "+1,200", tempo: "Ontem", tipo: "ganho" },
-  { id: 2, titulo: "Resgate Realizado", pontos: "-500", tempo: "2 dias atras", tipo: "gasto" },
-  { id: 3, titulo: "Streak Semanal", pontos: "+150", tempo: "3 dias atras", tipo: "ganho" },
+  { id: 1, titulo: "Conclusao de Projeto", pontos: "+1,200", tempo: "Ontem" },
+  { id: 2, titulo: "Resgate Realizado", pontos: "-500", tempo: "2 dias atras" },
+  { id: 3, titulo: "Streak Semanal", pontos: "+150", tempo: "3 dias atras" },
 ]
 
 export default function RewardsPage() {
   const pontosTotal = 12450
   const pontosDisponiveis = 3200
   const statusAtual = "Elite Gold"
-  const rankGlobal = 412
-  const badgesColetados = 12
-  const badgesTotal = 24
-  const desafioProgresso = 66
+  const proximoNivel = 850
 
   return (
     <>
       <DashboardHeader title="Premiacoes" />
       <ScrollArea className="flex-1">
         <div className="min-h-full bg-[#f3f4f6] text-[#1A1A1A] pb-8">
-          <div className="max-w-7xl mx-auto w-full p-4 md:p-8">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-5xl space-y-6 pt-6">
+            
+            {/* Hero Section */}
+            <section className="text-center space-y-2 lg:text-left">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1A1A1A] text-balance">
+                Minhas Premiacoes
+              </h2>
+              <p className="text-[#666666] text-sm max-w-xs mx-auto lg:mx-0 lg:max-w-md">
+                Voce esta a {proximoNivel} pontos de atingir o nivel Platinum.
+              </p>
+            </section>
+
+            {/* Desktop: Two column layout */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
               
-              {/* Left Content */}
-              <div className="lg:col-span-8 space-y-8">
+              {/* Points Hero Card */}
+              <div className="relative overflow-hidden rounded-[24px] p-6 sm:p-8 bg-foreground dark:bg-card text-background dark:text-foreground">
+                {/* Glow effect */}
+                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
+                <div className="flex flex-col gap-4 sm:gap-6 relative z-10 h-full justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold mb-1">Pontos Disponiveis</p>
+                    <div className="flex items-baseline gap-2 flex-wrap">
+                      <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter">
+                        {pontosDisponiveis.toLocaleString('pt-BR')}
+                      </span>
+                      <Star className="w-6 h-6 text-accent" fill="currentColor" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-background/10 dark:border-border">
+                    <div>
+                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Pontos Totais</p>
+                      <p className="text-xl lg:text-2xl font-bold">{pontosTotal.toLocaleString('pt-BR')}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Status Atual</p>
+                      <p className="text-xl lg:text-2xl font-bold text-accent">{statusAtual}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Progress Card */}
+              <div className="bg-white rounded-[24px] p-6 shadow-sm border border-[#EEEEEE]">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center">
+                    <Target className="w-5 h-5 text-[#1A1A1A]" />
+                  </div>
+                  <div>
+                    <p className="font-bold text-[#1A1A1A]">Proximo Nivel: Platinum</p>
+                    <p className="text-xs text-[#666666]">Faltam {proximoNivel} pontos</p>
+                  </div>
+                </div>
                 
-                {/* Welcome Section */}
-                <div>
-                  <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">Minhas Premiacoes</h1>
-                  <p className="text-[#64748B] mt-2 text-base md:text-lg">Voce esta a 850 pontos de atingir o nivel Platinum.</p>
+                {/* Progress bar */}
+                <div className="w-full bg-[#EEEEEE] rounded-full h-3 mb-4">
+                  <div className="bg-[#ccff00] h-full rounded-full" style={{ width: '78%' }}></div>
+                </div>
+                
+                <div className="flex justify-between text-xs text-[#666666]">
+                  <span>Elite Gold</span>
+                  <span>78% completo</span>
+                  <span>Platinum</span>
                 </div>
 
-                {/* Points Summary Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-white p-5 md:p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-[#E5E7EB]">
-                    <p className="text-[10px] md:text-xs font-bold text-[#64748B] uppercase tracking-widest mb-1">Pontos Totais</p>
-                    <div className="flex items-end gap-2">
-                      <span className="text-2xl md:text-3xl font-black text-slate-900">{pontosTotal.toLocaleString('pt-BR')}</span>
-                      <span className="text-green-500 text-sm font-bold mb-1">+12%</span>
+                {/* Achievements */}
+                <div className="mt-6 pt-6 border-t border-[#EEEEEE]">
+                  <p className="text-xs font-semibold text-[#666666] uppercase tracking-wider mb-4">Conquistas Recentes</p>
+                  <div className="flex gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
+                      <Trophy className="w-4 h-4 text-[#1A1A1A]" />
                     </div>
-                  </div>
-                  <div className="bg-white p-5 md:p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-[#E5E7EB]">
-                    <p className="text-[10px] md:text-xs font-bold text-[#64748B] uppercase tracking-widest mb-1">Disponiveis</p>
-                    <div className="flex items-end gap-2">
-                      <span className="text-2xl md:text-3xl font-black text-slate-900">{pontosDisponiveis.toLocaleString('pt-BR')}</span>
-                      <Star className="w-5 h-5 text-[#ccff00] mb-1" fill="#ccff00" />
+                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
+                      <Zap className="w-4 h-4 text-[#1A1A1A]" />
                     </div>
-                  </div>
-                  <div className="bg-[#ccff00] p-5 md:p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                    <p className="text-[10px] md:text-xs font-bold text-black uppercase tracking-widest mb-1">Status Atual</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl md:text-2xl font-black text-black">{statusAtual}</span>
-                      <Award className="w-5 h-5 text-black" />
+                    <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
+                      <Star className="w-4 h-4 text-[#1A1A1A]" />
+                    </div>
+                    <div className="w-10 h-10 rounded-full bg-[#EEEEEE] flex items-center justify-center text-[#666666]">
+                      <span className="text-xs font-bold">+9</span>
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
 
-                {/* Journey Section */}
-                <section>
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl md:text-2xl font-bold text-slate-900">Jornada de Conquistas</h2>
-                    <button className="text-sm font-semibold text-[#64748B] hover:text-[#1A1A1A] flex items-center gap-1 transition-colors">
-                      Ver detalhes <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <div className="bg-white p-6 md:p-10 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-[#E5E7EB] overflow-x-auto">
-                    <div className="relative flex items-center justify-between min-w-[500px]">
-                      {/* Progress Line */}
-                      <div 
-                        className="absolute top-1/2 left-0 w-full h-1 -translate-y-1/2 rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #ccff00 0%, #ccff00 40%, #E5E7EB 40%, #E5E7EB 100%)' }}
-                      ></div>
-                      
-                      {/* Milestones */}
-                      {jornada.map((item) => (
-                        <div key={item.id} className="relative flex flex-col items-center">
-                          <div className={`
-                            ${item.atual ? 'w-12 h-12 scale-110 ring-4 ring-[#ccff00]/20' : 'w-10 h-10'} 
-                            rounded-full border-4 border-white shadow-lg flex items-center justify-center z-10
-                            ${item.conquistado ? 'bg-[#ccff00]' : 'bg-slate-100 border-[#E5E7EB]'}
-                          `}>
-                            {item.conquistado ? (
-                              item.atual ? (
-                                <TrendingUp className={`${item.atual ? 'w-6 h-6' : 'w-5 h-5'} text-black`} />
-                              ) : (
-                                <Check className="w-5 h-5 text-black" />
-                              )
-                            ) : (
-                              <Lock className="w-5 h-5 text-slate-300" />
-                            )}
-                          </div>
-                          <span className={`mt-4 whitespace-nowrap ${
-                            item.atual ? 'text-sm font-black text-slate-900' : 
-                            item.conquistado ? 'text-xs font-bold text-slate-900' : 
-                            'text-xs font-medium text-[#64748B]'
-                          }`}>
-                            {item.nome}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </section>
-
-                {/* Rewards Grid */}
-                <section className="space-y-6">
-                  <h2 className="text-xl md:text-2xl font-bold text-slate-900">Recompensas Disponiveis</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+            {/* Desktop: Two column layout for Rewards + Activity */}
+            <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-6 lg:space-y-0">
+              
+              {/* Rewards List */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Recompensas Disponiveis</h3>
+                </div>
+                
+                <div className="bg-[#16181d] border border-white/5 rounded-3xl overflow-hidden">
+                  <div className="divide-y divide-white/5">
                     {premiacoes.map((premio) => {
                       const Icon = premio.icon
                       const resgatado = premio.status === "resgatado"
                       
                       return (
-                        <div 
-                          key={premio.id}
-                          className="bg-white p-5 md:p-6 rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-[#E5E7EB] hover:border-[#ccff00]/50 transition-all flex flex-col h-full"
-                        >
-                          <div className={`w-12 h-12 ${premio.iconBg} ${premio.iconColor} rounded-xl flex items-center justify-center mb-5`}>
-                            <Icon className="w-5 h-5" />
-                          </div>
-                          <h3 className="text-lg font-bold mb-2 text-slate-900">{premio.titulo}</h3>
-                          <p className="text-[#64748B] text-sm flex-1">{premio.descricao}</p>
-                          <div className="mt-5 flex items-center justify-between border-t border-slate-50 pt-4">
-                            <span className="font-bold text-slate-900">
-                              {resgatado ? 'Ativo' : `${premio.pontos.toLocaleString('pt-BR')} pts`}
-                            </span>
-                            <button 
-                              className={`px-5 py-2 font-bold text-sm rounded-xl transition-all ${
-                                resgatado 
-                                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
-                                  : 'bg-[#ccff00] text-black hover:shadow-lg hover:shadow-[#ccff00]/20'
-                              }`}
-                              disabled={resgatado}
-                            >
-                              {resgatado ? 'Ja Resgatado' : 'Resgatar'}
-                            </button>
+                        <div key={premio.id} className="p-4 hover:bg-white/[0.02] transition-colors">
+                          <div className="flex items-start gap-4">
+                            <div className="w-10 h-10 rounded-full bg-[#ccff00]/20 flex items-center justify-center flex-shrink-0">
+                              <Icon className="w-5 h-5 text-[#ccff00]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start justify-between gap-2">
+                                <div>
+                                  <p className="font-bold text-white text-sm">{premio.titulo}</p>
+                                  <p className="text-xs text-gray-400 mt-1">{premio.descricao}</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center justify-between mt-3">
+                                <span className="text-xs font-bold text-white">
+                                  {resgatado ? 'Ativo' : `${premio.pontos.toLocaleString('pt-BR')} pts`}
+                                </span>
+                                <button 
+                                  className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
+                                    resgatado 
+                                      ? 'bg-white/10 text-gray-400 cursor-not-allowed' 
+                                      : 'bg-[#ccff00] text-black hover:bg-[#b8e600]'
+                                  }`}
+                                  disabled={resgatado}
+                                >
+                                  {resgatado ? 'Resgatado' : 'Resgatar'}
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         </div>
                       )
                     })}
                   </div>
-                </section>
-              </div>
+                </div>
+              </section>
 
-              {/* Right Side Panel */}
-              <aside className="lg:col-span-4 space-y-6">
+              {/* Activity Section */}
+              <section className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Atividade Recente</h3>
+                  <button className="text-xs text-[#666666] font-medium hover:text-[#1A1A1A] transition-colors">Ver todas</button>
+                </div>
                 
-                {/* Achievements Summary Card */}
-                <div className="bg-white rounded-2xl shadow-[0_10px_30px_rgba(0,0,0,0.05)] border border-[#E5E7EB] p-6 md:p-8">
-                  <h3 className="text-xl font-bold mb-6 text-slate-900">Resumo de Conquistas</h3>
-                  <div className="space-y-6">
-                    
-                    {/* Global Rank */}
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-sm">
-                          <Globe className="w-5 h-5 text-[#ccff00]" />
+                <div className="bg-white rounded-[24px] p-6 shadow-sm border border-[#EEEEEE]">
+                  <div className="space-y-4">
+                    {atividadeRecente.map((atividade) => (
+                      <div key={atividade.id} className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-[#f3f4f6] flex items-center justify-center flex-shrink-0">
+                          <Clock className="w-4 h-4 text-[#666666]" />
                         </div>
-                        <span className="text-sm font-semibold">Rank Global</span>
+                        <div className="flex-1">
+                          <p className="font-bold text-[#1A1A1A] text-sm">{atividade.titulo}</p>
+                          <p className="text-xs text-[#666666]">{atividade.tempo}</p>
+                        </div>
+                        <span className={`text-sm font-bold ${atividade.pontos.startsWith('+') ? 'text-green-600' : 'text-[#666666]'}`}>
+                          {atividade.pontos}
+                        </span>
                       </div>
-                      <span className="text-lg font-black text-slate-900">#{rankGlobal}</span>
-                    </div>
-
-                    {/* Badges Collection */}
-                    <div>
-                      <p className="text-[10px] md:text-xs font-bold text-[#64748B] uppercase tracking-widest mb-4">
-                        Badges Coletados ({badgesColetados}/{badgesTotal})
-                      </p>
-                      <div className="grid grid-cols-4 gap-3">
-                        <div className="aspect-square rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
-                          <Bolt className="w-4 h-4 text-black" />
-                        </div>
-                        <div className="aspect-square rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
-                          <Shield className="w-4 h-4 text-black" />
-                        </div>
-                        <div className="aspect-square rounded-full bg-[#ccff00]/20 flex items-center justify-center border border-[#ccff00]/40">
-                          <Diamond className="w-4 h-4 text-black" />
-                        </div>
-                        <div className="aspect-square rounded-full bg-slate-100 flex items-center justify-center border border-slate-200 opacity-40">
-                          <Lock className="w-4 h-4 text-slate-400" />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Recent Activity */}
-                    <div>
-                      <p className="text-[10px] md:text-xs font-bold text-[#64748B] uppercase tracking-widest mb-4">Atividade Recente</p>
-                      <div className="space-y-4">
-                        {atividadeRecente.map((atividade) => (
-                          <div key={atividade.id} className="flex gap-4">
-                            <div className={`w-1 rounded-full ${atividade.tipo === 'ganho' ? 'bg-[#ccff00]' : 'bg-blue-500'}`}></div>
-                            <div>
-                              <p className="text-sm font-bold text-slate-900">{atividade.titulo}</p>
-                              <p className="text-xs text-[#64748B]">{atividade.pontos} pontos - {atividade.tempo}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    ))}
                   </div>
-
-                  <button className="w-full mt-8 py-3 bg-black text-white font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-slate-800 transition-colors">
-                    Ver historico completo <History className="w-4 h-4" />
-                  </button>
                 </div>
 
                 {/* Challenge Card */}
-                <div className="bg-gradient-to-br from-[#ccff00] to-[#b8e600] rounded-2xl p-6 md:p-8 text-black shadow-[0_10px_30px_rgba(0,0,0,0.05)]">
-                  <h4 className="text-lg font-black mb-2">Desafio da Semana</h4>
-                  <p className="text-sm font-medium mb-6 opacity-80">Complete 3 revisoes de codigo e ganhe um bonus de 500 pontos extras!</p>
-                  <div className="w-full bg-black/10 rounded-full h-2 mb-2">
-                    <div className="bg-black h-full rounded-full" style={{ width: `${desafioProgresso}%` }}></div>
+                <div className="bg-[#ccff00] rounded-[24px] p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-10 h-10 rounded-full bg-black/10 flex items-center justify-center">
+                      <Zap className="w-5 h-5 text-black" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-black">Desafio da Semana</p>
+                      <p className="text-xs text-black/70">Complete e ganhe 500 pontos</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-xs font-bold">
+                  <p className="text-sm text-black/80 mb-4">Complete 3 revisoes de codigo e ganhe um bonus de pontos extras!</p>
+                  <div className="w-full bg-black/10 rounded-full h-2 mb-2">
+                    <div className="bg-black h-full rounded-full" style={{ width: '66%' }}></div>
+                  </div>
+                  <div className="flex justify-between text-xs font-bold text-black">
                     <span>2 de 3 concluidos</span>
-                    <span>{desafioProgresso}%</span>
+                    <span>66%</span>
                   </div>
                 </div>
-              </aside>
+              </section>
             </div>
+
           </div>
         </div>
       </ScrollArea>
