@@ -185,11 +185,7 @@ export default function ReferralPage() {
     <>
       <DashboardHeader title="Indique e Ganhe" />
       <ScrollArea className="flex-1">
-        <div className="min-h-full bg-[#F8F9FA] text-[#1A1A1A] pb-8" style={{
-          background: `radial-gradient(circle at top right, rgba(204, 255, 0, 0.08), transparent 40%),
-                       radial-gradient(circle at bottom left, rgba(204, 255, 0, 0.05), transparent 40%),
-                       #F8F9FA`
-        }}>
+        <div className="min-h-full bg-[#f3f4f6] text-[#1A1A1A] pb-8">
           <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-5xl space-y-6 pt-6">
             
             {/* Hero Section */}
