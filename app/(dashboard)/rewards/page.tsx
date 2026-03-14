@@ -64,38 +64,7 @@ export default function RewardsPage() {
     setActiveIndex((prev) => (prev === premiacoes.length - 1 ? 0 : prev + 1))
   }
 
-  const getCardStyle = (index: number) => {
-    const diff = index - activeIndex
-    
-    if (diff === 0) {
-      return {
-        transform: 'translateX(0) scale(1)',
-        opacity: 1,
-        zIndex: 30,
-        filter: 'blur(0px)',
-      }
-    } else if (diff === 1 || diff === -(premiacoes.length - 1)) {
-      return {
-        transform: 'translateX(110%) scale(0.85)',
-        opacity: 0.5,
-        zIndex: 20,
-        filter: 'blur(4px)',
-      }
-    } else if (diff === -1 || diff === (premiacoes.length - 1)) {
-      return {
-        transform: 'translateX(-110%) scale(0.85)',
-        opacity: 0.5,
-        zIndex: 20,
-        filter: 'blur(4px)',
-      }
-    }
-    return {
-      transform: 'translateX(0) scale(0.7)',
-      opacity: 0,
-      zIndex: 0,
-      filter: 'blur(8px)',
-    }
-  }
+  const currentPremio = premiacoes[activeIndex]
 
   return (
     <>
@@ -141,68 +110,49 @@ export default function RewardsPage() {
                 <ChevronRight className="w-6 h-6 text-[#1A1A1A]" />
               </button>
 
-              <div 
-                className="relative h-[460px] flex items-center justify-center overflow-hidden mx-16"
-                style={{
-                  maskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-                  WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%)',
-                }}
-              >
-                
-                
-
-                {/* Cards Container */}
-                <div className="relative w-full max-w-[320px] h-full flex items-center justify-center">
-                  {premiacoes.map((premio, index) => (
-                    <div
-                      key={premio.id}
-                      className="absolute w-full transition-all duration-500 ease-out cursor-pointer"
-                      style={getCardStyle(index)}
-                      onClick={() => setActiveIndex(index)}
-                    >
-                      {/* Card */}
-                      <div className="relative bg-[#1A1A1A] rounded-[20px] overflow-hidden shadow-xl">
-                        
-                        {/* Card Header */}
-                        <div className="relative h-48 bg-gradient-to-br from-[#1a2a1a] to-[#0f1a0f] flex items-center justify-center overflow-hidden">
-                          <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[#ccff00]/20 border border-[#ccff00]/30">
-                            <span className="text-xs font-bold text-[#ccff00]">{premio.pontos} FATURADO</span>
-                          </div>
-                          {premio.desbloqueado ? (
-                            <div className="w-24 h-24 rounded-2xl bg-[#ccff00]/20 border-2 border-[#ccff00]/50 flex items-center justify-center">
-                              <Check className="w-12 h-12 text-[#ccff00]" />
-                            </div>
-                          ) : (
-                            <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                              <Gift className="w-12 h-12 text-white/20" />
-                            </div>
-                          )}
+              <div className="flex items-center justify-center px-16">
+                {/* Single Card - Clean Display */}
+                <div className="w-full max-w-[320px] transition-all duration-300">
+                  <div className="relative bg-[#1A1A1A] rounded-[20px] overflow-hidden shadow-xl">
+                    
+                    {/* Card Header */}
+                    <div className="relative h-48 bg-gradient-to-br from-[#1a2a1a] to-[#0f1a0f] flex items-center justify-center overflow-hidden">
+                      <div className="absolute top-4 left-4 px-3 py-1 rounded-full bg-[#ccff00]/20 border border-[#ccff00]/30">
+                        <span className="text-xs font-bold text-[#ccff00]">{currentPremio.pontos} FATURADO</span>
+                      </div>
+                      {currentPremio.desbloqueado ? (
+                        <div className="w-24 h-24 rounded-2xl bg-[#ccff00]/20 border-2 border-[#ccff00]/50 flex items-center justify-center">
+                          <Check className="w-12 h-12 text-[#ccff00]" />
                         </div>
-                        
-                        {/* Card Content */}
-                        <div className="p-5">
-                          <div className="flex items-start gap-3 mb-3">
-                            <span className="text-3xl font-black text-white">{premio.pontos}</span>
-                            <div>
-                              <p className="text-[#ccff00] font-bold text-sm">{premio.titulo} +</p>
-                              <p className="text-[#ccff00] font-bold text-sm">{premio.subtitulo}</p>
-                            </div>
-                          </div>
-                          <p className="text-white/60 text-sm leading-relaxed mb-5">{premio.descricao}</p>
-                          
-                          {premio.desbloqueado ? (
-                            <button className="w-full py-3 rounded-xl bg-[#ccff00] text-[#1A1A1A] font-bold text-sm hover:bg-[#b8e600] transition-all">
-                              Resgatar Premio
-                            </button>
-                          ) : (
-                            <button className="w-full py-3 rounded-xl bg-white/10 text-white/50 font-bold text-sm cursor-not-allowed">
-                              Bloqueado
-                            </button>
-                          )}
+                      ) : (
+                        <div className="w-24 h-24 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+                          <Gift className="w-12 h-12 text-white/20" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Card Content */}
+                    <div className="p-5">
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="text-3xl font-black text-white">{currentPremio.pontos}</span>
+                        <div>
+                          <p className="text-[#ccff00] font-bold text-sm">{currentPremio.titulo} +</p>
+                          <p className="text-[#ccff00] font-bold text-sm">{currentPremio.subtitulo}</p>
                         </div>
                       </div>
+                      <p className="text-white/60 text-sm leading-relaxed mb-5">{currentPremio.descricao}</p>
+                      
+                      {currentPremio.desbloqueado ? (
+                        <button className="w-full py-3 rounded-xl bg-[#ccff00] text-[#1A1A1A] font-bold text-sm hover:bg-[#b8e600] transition-all">
+                          Resgatar Premio
+                        </button>
+                      ) : (
+                        <button className="w-full py-3 rounded-xl bg-white/10 text-white/50 font-bold text-sm cursor-not-allowed">
+                          Bloqueado
+                        </button>
+                      )}
                     </div>
-                  ))}
+                  </div>
                 </div>
               </div>
 
