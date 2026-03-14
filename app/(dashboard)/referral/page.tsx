@@ -195,7 +195,7 @@ export default function ReferralPage() {
             {/* Hero Section */}
             <section className="text-center space-y-2 lg:text-left">
               <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight text-[#1A1A1A] text-balance">
-                Convide amigos e ganhe <span className="text-[#ccff00] font-extrabold" style={{ textShadow: '0 1px 0 rgba(0, 0, 0, 0.1)' }}>comissoes</span>
+                Convide amigos e ganhe comissoes
               </h2>
               <p className="text-[#666666] text-sm max-w-xs mx-auto lg:mx-0 lg:max-w-md">
                 Ganhe ate 30% de comissao recorrente por cada novo usuario indicado.
@@ -384,7 +384,7 @@ export default function ReferralPage() {
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-[#666666] uppercase tracking-wider">Indicacoes Recentes</h3>
                 {referrals.length > 0 && (
-                  <button className="text-xs text-[#ccff00] font-medium hover:text-[#ccff00]/80 transition-colors" style={{ textShadow: '0 0 8px rgba(204, 255, 0, 0.4)' }}>Ver todas</button>
+                  <button className="text-xs text-[#666666] font-medium hover:text-[#1A1A1A] transition-colors">Ver todas</button>
                 )}
               </div>
               
