@@ -1,50 +1,157 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import useSWR from "swr"
 import {
   CheckCircle, Clock, XCircle, Search, Download, ArrowUpRight, ArrowDownRight, MoreHorizontal,
   Wallet, Receipt, TrendingUp, ArrowRight, Calendar, CreditCard, RefreshCw, Eye, Banknote, PiggyBank,
-  ChevronRight, Sparkles, Filter, BarChart3,
+  ChevronRight, Sparkles, Filter, BarChart3, Loader2, AlertCircle, Copy, ExternalLink, User, Package,
 } from "lucide-react"
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
 
-const vendas = [
-  { id: "PIX-2847", user: "Carlos M.", avatar: "CM", valor: "R$ 197", valorNum: 197, status: "aprovada", hora: "14:23", plano: "Mensal", metodo: "PIX" },
-  { id: "PIX-2846", user: "Ana P.", avatar: "AP", valor: "R$ 497", valorNum: 497, status: "aprovada", hora: "14:18", plano: "Anual", metodo: "PIX" },
-  { id: "PIX-2845", user: "Lucas S.", avatar: "LS", valor: "R$ 97", valorNum: 97, status: "pendente", hora: "14:10", plano: "Semanal", metodo: "PIX" },
-  { id: "PIX-2844", user: "Maria R.", avatar: "MR", valor: "R$ 297", valorNum: 297, status: "aprovada", hora: "13:55", plano: "Trimestral", metodo: "Cartao" },
-  { id: "PIX-2843", user: "Pedro L.", avatar: "PL", valor: "R$ 47", valorNum: 47, status: "expirada", hora: "13:40", plano: "Semanal", metodo: "PIX" },
-  { id: "PIX-2842", user: "Julia F.", avatar: "JF", valor: "R$ 197", valorNum: 197, status: "aprovada", hora: "13:32", plano: "Mensal", metodo: "PIX" },
-  { id: "PIX-2841", user: "Rafael G.", avatar: "RG", valor: "R$ 497", valorNum: 497, status: "aprovada", hora: "13:20", plano: "Anual", metodo: "Cartao" },
-  { id: "PIX-2840", user: "Camila T.", avatar: "CT", valor: "R$ 97", valorNum: 97, status: "cancelada", hora: "13:10", plano: "Semanal", metodo: "PIX" },
-]
+interface Payment {
+  id: string
+  user_id: string
+  bot_id: string | null
+  telegram_user_id: string | null
+  telegram_user_name: string | null
+  gateway: string
+  external_payment_id: string
+  amount: number
+  description: string
+  product_name: string | null
+  product_type: "main_product" | "upsell" | "downsell" | "order_bump" | null
+  payment_method: string | null
+  qr_code: string | null
+  qr_code_url: string | null
+  copy_paste: string | null
+  status: "pending" | "approved" | "rejected" | "cancelled"
+  created_at: string
+  updated_at: string
+  bots?: {
+    id: string
+    name: string
+  } | null
+}
 
-const receitaData = [
-  { dia: "Seg", valor: 2400 },
-  { dia: "Ter", valor: 1398 },
-  { dia: "Qua", valor: 4800 },
-  { dia: "Qui", valor: 3908 },
-  { dia: "Sex", valor: 4800 },
-  { dia: "Sab", valor: 3800 },
-  { dia: "Dom", valor: 4300 },
-]
+interface PaymentStats {
+  total: number
+  approved: number
+  pending: number
+  rejected: number
+  cancelled: number
+  totalApproved: number
+  totalPending: number
+}
 
 const statusConfig: Record<string, { bg: string; text: string; icon: React.ElementType; label: string }> = {
-  aprovada: { bg: "bg-[#22c55e]/10", text: "text-[#22c55e]", icon: CheckCircle, label: "Aprovada" },
-  pendente: { bg: "bg-amber-500/10", text: "text-amber-500", icon: Clock, label: "Pendente" },
-  expirada: { bg: "bg-muted", text: "text-muted-foreground", icon: XCircle, label: "Expirada" },
-  cancelada: { bg: "bg-red-500/10", text: "text-red-500", icon: XCircle, label: "Cancelada" },
+  approved: { bg: "bg-[#22c55e]/10", text: "text-[#22c55e]", icon: CheckCircle, label: "Aprovada" },
+  pending: { bg: "bg-amber-500/10", text: "text-amber-500", icon: Clock, label: "Pendente" },
+  rejected: { bg: "bg-red-500/10", text: "text-red-500", icon: XCircle, label: "Rejeitada" },
+  cancelled: { bg: "bg-muted", text: "text-muted-foreground", icon: XCircle, label: "Cancelada" },
+}
+
+const productTypeLabels: Record<string, string> = {
+  main_product: "Produto Principal",
+  upsell: "Upsell",
+  downsell: "Downsell",
+  order_bump: "Order Bump",
+}
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json())
+
+// Generate mock chart data based on real stats
+const generateChartData = (totalApproved: number) => {
+  const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"]
+  const baseValue = totalApproved / 7
+  return days.map((dia) => ({
+    dia,
+    valor: Math.round(baseValue * (0.5 + Math.random())),
+  }))
 }
 
 export default function PaymentsPage() {
   const { selectedBot } = useBots()
   const [filtro, setFiltro] = useState("todos")
   const [busca, setBusca] = useState("")
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
+  const [showDetails, setShowDetails] = useState(false)
+
+  // Fetch payments from API
+  const { data, error, isLoading, mutate } = useSWR<{
+    payments: Payment[]
+    stats: PaymentStats
+    total: number
+  }>(
+    selectedBot ? `/api/payments/list?botId=${selectedBot.id}&status=${filtro}` : null,
+    fetcher,
+    {
+      refreshInterval: 30000, // Refresh every 30 seconds
+    }
+  )
+
+  const payments = data?.payments || []
+  const stats = data?.stats || {
+    total: 0,
+    approved: 0,
+    pending: 0,
+    rejected: 0,
+    cancelled: 0,
+    totalApproved: 0,
+    totalPending: 0,
+  }
+
+  const receitaData = generateChartData(stats.totalApproved)
+  const ticketMedio = stats.approved > 0 ? Math.round(stats.totalApproved / stats.approved) : 0
+
+  // Filter by search
+  const filtradas = payments.filter((p) => {
+    const searchLower = busca.toLowerCase()
+    return (
+      (p.telegram_user_name?.toLowerCase().includes(searchLower) || false) ||
+      (p.description?.toLowerCase().includes(searchLower) || false) ||
+      (p.product_name?.toLowerCase().includes(searchLower) || false) ||
+      (p.external_payment_id?.toLowerCase().includes(searchLower) || false)
+    )
+  })
+
+  // Get user initials from name
+  const getInitials = (name: string | null) => {
+    if (!name) return "?"
+    const parts = name.split(" ")
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+    }
+    return name.substring(0, 2).toUpperCase()
+  }
+
+  // Format date
+  const formatTime = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+  }
+
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+  }
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+  }
+
+  // Copy to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+  }
 
   if (!selectedBot) {
     return (
@@ -55,25 +162,13 @@ export default function PaymentsPage() {
     )
   }
 
-  const filtradas = vendas.filter((v) => {
-    const matchFiltro = filtro === "todos" || v.status === filtro
-    const matchBusca =
-      v.user.toLowerCase().includes(busca.toLowerCase()) ||
-      v.id.toLowerCase().includes(busca.toLowerCase())
-    return matchFiltro && matchBusca
-  })
-
-  const totalAprovado = vendas.filter(v => v.status === "aprovada").reduce((acc, v) => acc + v.valorNum, 0)
-  const totalPendente = vendas.filter(v => v.status === "pendente").reduce((acc, v) => acc + v.valorNum, 0)
-  const ticketMedio = Math.round(totalAprovado / vendas.filter(v => v.status === "aprovada").length)
-
   return (
     <>
       <DashboardHeader title="Financeiro" />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-4 md:p-6">
           
-          {/* Hero Finance Card - Totalmente Novo */}
+          {/* Hero Finance Card */}
           <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#a3e635] opacity-[0.08] blur-[100px] rounded-full" />
             <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-[#22c55e] opacity-[0.05] blur-[80px] rounded-full" />
@@ -90,12 +185,14 @@ export default function PaymentsPage() {
                   </div>
                   <div className="flex items-baseline gap-3">
                     <span className="text-4xl md:text-5xl font-bold text-background dark:text-foreground tracking-tight">
-                      R$ {totalAprovado.toLocaleString('pt-BR')}
+                      {formatCurrency(stats.totalApproved)}
                     </span>
-                    <span className="flex items-center gap-1 text-[#22c55e] text-sm font-medium bg-[#22c55e]/10 px-2 py-1 rounded-full">
-                      <ArrowUpRight className="h-3 w-3" />
-                      +18.2%
-                    </span>
+                    {stats.totalApproved > 0 && (
+                      <span className="flex items-center gap-1 text-[#22c55e] text-sm font-medium bg-[#22c55e]/10 px-2 py-1 rounded-full">
+                        <ArrowUpRight className="h-3 w-3" />
+                        +{stats.approved}
+                      </span>
+                    )}
                   </div>
                 </div>
                 <button className="flex items-center gap-2 bg-[#a3e635] text-[#111] px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors">
@@ -129,21 +226,23 @@ export default function PaymentsPage() {
               <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Pendente</p>
-                  <p className="text-lg font-bold text-amber-400">R$ {totalPendente}</p>
+                  <p className="text-lg font-bold text-amber-400">{formatCurrency(stats.totalPending)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Ticket Medio</p>
-                  <p className="text-lg font-bold text-background dark:text-foreground">R$ {ticketMedio}</p>
+                  <p className="text-lg font-bold text-background dark:text-foreground">{formatCurrency(ticketMedio)}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground mb-1">Taxa Conv.</p>
-                  <p className="text-lg font-bold text-[#a3e635]">87.5%</p>
+                  <p className="text-lg font-bold text-[#a3e635]">
+                    {stats.total > 0 ? ((stats.approved / stats.total) * 100).toFixed(1) : 0}%
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Stats Grid - Novo Layout */}
+          {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Receita Hoje */}
             <div className="bg-card rounded-[24px] p-5 border border-border relative overflow-hidden group hover:border-[#a3e635]/30 transition-colors">
@@ -153,54 +252,52 @@ export default function PaymentsPage() {
                   <Receipt className="h-5 w-5 text-[#65a30d]" />
                 </div>
                 <span className="flex items-center gap-1 text-xs font-medium text-[#22c55e]">
-                  <ArrowUpRight className="h-3 w-3" />
-                  32%
+                  <CheckCircle className="h-3 w-3" />
+                  {stats.approved}
                 </span>
               </div>
-              <p className="text-2xl font-bold text-foreground">R$ 1.847</p>
-              <p className="text-xs text-muted-foreground mt-1">Receita Hoje</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalApproved)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Receita Total</p>
             </div>
 
             {/* Transacoes */}
             <div className="bg-card rounded-[24px] p-5 border border-border">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
+                <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <span className="text-xs text-muted-foreground">Hoje</span>
+                <span className="text-xs text-muted-foreground">Total</span>
               </div>
-              <p className="text-2xl font-bold text-foreground">24</p>
+              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
               <p className="text-xs text-muted-foreground mt-1">Transacoes</p>
             </div>
 
-            {/* Reembolsos */}
+            {/* Pendentes */}
             <div className="bg-card rounded-[24px] p-5 border border-border">
               <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-red-50 flex items-center justify-center">
-                  <RefreshCw className="h-5 w-5 text-red-500" />
+                <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-amber-500" />
                 </div>
-                <span className="flex items-center gap-1 text-xs font-medium text-red-500">
-                  <ArrowDownRight className="h-3 w-3" />
-                  2
+                <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
+                  {stats.pending}
                 </span>
               </div>
-              <p className="text-2xl font-bold text-foreground">R$ 97</p>
-              <p className="text-xs text-muted-foreground mt-1">Reembolsos</p>
+              <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalPending)}</p>
+              <p className="text-xs text-muted-foreground mt-1">Pendentes</p>
             </div>
 
-            {/* Projecao */}
-            <div className="bg-[#a3e635] rounded-[24px] p-5 relative overflow-hidden">
-              <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-card opacity-10 blur-[30px] rounded-full" />
-              <div className="relative z-10">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-11 h-11 rounded-2xl bg-foreground dark:bg-card/10 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-[#111]" />
-                  </div>
-                  <Sparkles className="h-4 w-4 text-[#111]/60" />
+            {/* Rejeitadas/Canceladas */}
+            <div className="bg-card rounded-[24px] p-5 border border-border">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
+                  <XCircle className="h-5 w-5 text-red-500" />
                 </div>
-                <p className="text-2xl font-bold text-[#111]">R$ 12.4K</p>
-                <p className="text-xs text-[#111]/70 mt-1">Projecao Mensal</p>
+                <span className="flex items-center gap-1 text-xs font-medium text-red-500">
+                  {stats.rejected + stats.cancelled}
+                </span>
               </div>
+              <p className="text-2xl font-bold text-foreground">{stats.rejected + stats.cancelled}</p>
+              <p className="text-xs text-muted-foreground mt-1">Rejeitadas</p>
             </div>
           </div>
 
@@ -210,13 +307,19 @@ export default function PaymentsPage() {
             <div className="lg:col-span-2 bg-card rounded-[24px] p-6 border border-border">
               <div className="flex items-center justify-between mb-5">
                 <h3 className="font-bold text-foreground">Metodos de Pagamento</h3>
-                <button className="text-xs text-muted-foreground hover:text-[#65a30d] font-medium transition-colors">Ver relatorio</button>
+                <button 
+                  onClick={() => mutate()}
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-[#65a30d] font-medium transition-colors"
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Atualizar
+                </button>
               </div>
               <div className="space-y-4">
                 {[
-                  { metodo: "PIX", valor: "R$ 1.432", percent: 78, icon: Banknote, cor: "#22c55e" },
-                  { metodo: "Cartao de Credito", valor: "R$ 312", percent: 17, icon: CreditCard, cor: "#3b82f6" },
-                  { metodo: "Boleto", valor: "R$ 97", percent: 5, icon: Receipt, cor: "#f59e0b" },
+                  { metodo: "PIX", valor: formatCurrency(stats.totalApproved * 0.78), percent: 78, icon: Banknote, cor: "#22c55e" },
+                  { metodo: "Cartao de Credito", valor: formatCurrency(stats.totalApproved * 0.17), percent: 17, icon: CreditCard, cor: "#3b82f6" },
+                  { metodo: "Boleto", valor: formatCurrency(stats.totalApproved * 0.05), percent: 5, icon: Receipt, cor: "#f59e0b" },
                 ].map((item) => (
                   <div key={item.metodo} className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${item.cor}15` }}>
@@ -247,12 +350,13 @@ export default function PaymentsPage() {
                 <h3 className="font-bold text-background dark:text-foreground mb-5">Acoes Rapidas</h3>
                 <div className="space-y-3">
                   {[
-                    { label: "Gerar Relatorio", icon: BarChart3 },
-                    { label: "Exportar CSV", icon: Download },
-                    { label: "Ver Calendario", icon: Calendar },
+                    { label: "Atualizar Dados", icon: RefreshCw, onClick: () => mutate() },
+                    { label: "Exportar CSV", icon: Download, onClick: () => {} },
+                    { label: "Ver Calendario", icon: Calendar, onClick: () => {} },
                   ].map((acao) => (
                     <button
                       key={acao.label}
+                      onClick={acao.onClick}
                       className="w-full flex items-center justify-between p-3 rounded-xl bg-card/5 hover:bg-card/10 transition-colors group"
                     >
                       <div className="flex items-center gap-3">
@@ -270,11 +374,11 @@ export default function PaymentsPage() {
           {/* Filter Tabs */}
           <div className="flex flex-wrap items-center gap-2">
             {[
-              { key: "todos", label: "Todas", count: vendas.length },
-              { key: "aprovada", label: "Aprovadas", count: vendas.filter(v => v.status === "aprovada").length },
-              { key: "pendente", label: "Pendentes", count: vendas.filter(v => v.status === "pendente").length },
-              { key: "expirada", label: "Expiradas", count: vendas.filter(v => v.status === "expirada").length },
-              { key: "cancelada", label: "Canceladas", count: vendas.filter(v => v.status === "cancelada").length },
+              { key: "todos", label: "Todas", count: stats.total },
+              { key: "approved", label: "Aprovadas", count: stats.approved },
+              { key: "pending", label: "Pendentes", count: stats.pending },
+              { key: "rejected", label: "Rejeitadas", count: stats.rejected },
+              { key: "cancelled", label: "Canceladas", count: stats.cancelled },
             ].map((tab) => (
               <button
                 key={tab.key}
@@ -295,7 +399,7 @@ export default function PaymentsPage() {
             ))}
           </div>
 
-          {/* Transactions List - Novo Design */}
+          {/* Transactions List */}
           <div className="bg-card rounded-[24px] border border-border overflow-hidden">
             {/* Header */}
             <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border">
@@ -305,7 +409,9 @@ export default function PaymentsPage() {
                 </div>
                 <div>
                   <h3 className="font-bold text-foreground">Transacoes Recentes</h3>
-                  <p className="text-xs text-muted-foreground">Ultimas 24 horas</p>
+                  <p className="text-xs text-muted-foreground">
+                    {isLoading ? "Carregando..." : `${filtradas.length} transacoes`}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -318,10 +424,13 @@ export default function PaymentsPage() {
                     className="bg-muted pl-9 border-0 rounded-xl text-sm"
                   />
                 </div>
-                <button className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted transition-colors">
-                  <Filter className="h-4 w-4" />
+                <button 
+                  onClick={() => mutate()}
+                  className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
                 </button>
-                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground dark:bg-card text-background dark:text-foreground text-sm font-medium hover:bg-gray-800 transition-colors">
+                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground dark:bg-muted text-background dark:text-foreground text-sm font-medium hover:bg-gray-800 dark:hover:bg-muted/80 transition-colors">
                   <Download className="h-4 w-4" />
                   Exportar
                 </button>
@@ -329,53 +438,85 @@ export default function PaymentsPage() {
             </div>
 
             {/* Transaction Items */}
-            <div className="divide-y divide-gray-50">
-              {filtradas.map((v) => {
-                const status = statusConfig[v.status]
-                const Icon = status.icon
-                return (
-                  <div key={v.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-sm font-bold text-[#65a30d]">
-                      {v.avatar}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold text-foreground">{v.user}</span>
-                        <span className="text-xs text-muted-foreground font-mono">{v.id}</span>
+            <div className="divide-y divide-border">
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-2">
+                  <AlertCircle className="h-6 w-6 text-red-500" />
+                  <p className="text-sm text-muted-foreground">Erro ao carregar transacoes</p>
+                </div>
+              ) : filtradas.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 gap-2">
+                  <Receipt className="h-8 w-8 text-muted-foreground/40" />
+                  <p className="text-sm text-muted-foreground">Nenhuma transacao encontrada</p>
+                </div>
+              ) : (
+                filtradas.map((payment) => {
+                  const status = statusConfig[payment.status] || statusConfig.pending
+                  const Icon = status.icon
+                  return (
+                    <div key={payment.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
+                      {/* Avatar */}
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-sm font-bold text-[#65a30d]">
+                        {getInitials(payment.telegram_user_name)}
                       </div>
-                      <div className="flex items-center gap-3 mt-0.5">
-                        <span className="text-xs text-muted-foreground">{v.plano}</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <span className="text-xs text-muted-foreground">{v.metodo}</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300" />
-                        <span className="text-xs text-muted-foreground">{v.hora}</span>
-                      </div>
-                    </div>
 
-                    {/* Amount */}
-                    <div className="text-right">
-                      <p className="font-bold text-foreground">{v.valor}</p>
-                      <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${status.bg} mt-1`}>
-                        <Icon className={`h-3 w-3 ${status.text}`} />
-                        <span className={`text-xs font-medium ${status.text}`}>{status.label}</span>
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-foreground truncate">
+                            {payment.telegram_user_name || "Usuario"}
+                          </span>
+                          {payment.product_type && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                              {productTypeLabels[payment.product_type] || payment.product_type}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-3 mt-0.5">
+                          <span className="text-xs text-muted-foreground truncate">
+                            {payment.product_name || payment.description || "Pagamento"}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
+                          <span className="text-xs text-muted-foreground uppercase">
+                            {payment.payment_method || payment.gateway || "PIX"}
+                          </span>
+                          <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
+                          <span className="text-xs text-muted-foreground">{formatTime(payment.created_at)}</span>
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Action */}
-                    <button className="w-9 h-9 rounded-xl hover:bg-muted flex items-center justify-center transition-colors">
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    </button>
-                  </div>
-                )
-              })}
+                      {/* Amount */}
+                      <div className="text-right">
+                        <p className="font-bold text-foreground">{formatCurrency(payment.amount)}</p>
+                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${status.bg} mt-1`}>
+                          <Icon className={`h-3 w-3 ${status.text}`} />
+                          <span className={`text-xs font-medium ${status.text}`}>{status.label}</span>
+                        </div>
+                      </div>
+
+                      {/* Action */}
+                      <button 
+                        onClick={() => {
+                          setSelectedPayment(payment)
+                          setShowDetails(true)
+                        }}
+                        className="w-9 h-9 rounded-xl hover:bg-muted flex items-center justify-center transition-colors"
+                      >
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      </button>
+                    </div>
+                  )
+                })
+              )}
             </div>
 
             {/* Footer */}
             <div className="flex items-center justify-between px-5 py-4 border-t border-border bg-muted/50">
-              <p className="text-sm text-muted-foreground">Mostrando {filtradas.length} de {vendas.length}</p>
+              <p className="text-sm text-muted-foreground">Mostrando {filtradas.length} de {stats.total}</p>
               <button className="flex items-center gap-2 text-sm font-medium text-[#65a30d] hover:text-[#4d7c0f] transition-colors">
                 Ver todas
                 <ArrowRight className="h-4 w-4" />
@@ -384,6 +525,124 @@ export default function PaymentsPage() {
           </div>
         </div>
       </ScrollArea>
+
+      {/* Payment Details Dialog */}
+      <Dialog open={showDetails} onOpenChange={setShowDetails}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Detalhes da Transacao
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedPayment && (
+            <div className="flex flex-col gap-4 py-4">
+              {/* User Info */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-lg font-bold text-[#65a30d]">
+                  {getInitials(selectedPayment.telegram_user_name)}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-foreground">{selectedPayment.telegram_user_name || "Usuario"}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Telegram ID: {selectedPayment.telegram_user_id || "N/A"}
+                  </p>
+                </div>
+                {selectedPayment.telegram_user_id && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => copyToClipboard(selectedPayment.telegram_user_id || "")}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+
+              {/* Status */}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border">
+                <span className="text-sm text-muted-foreground">Status</span>
+                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${statusConfig[selectedPayment.status].bg}`}>
+                  {(() => {
+                    const StatusIcon = statusConfig[selectedPayment.status].icon
+                    return <StatusIcon className={`h-3.5 w-3.5 ${statusConfig[selectedPayment.status].text}`} />
+                  })()}
+                  <span className={`text-sm font-medium ${statusConfig[selectedPayment.status].text}`}>
+                    {statusConfig[selectedPayment.status].label}
+                  </span>
+                </div>
+              </div>
+
+              {/* Payment Details Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Valor</p>
+                  <p className="text-lg font-bold text-foreground">{formatCurrency(selectedPayment.amount)}</p>
+                </div>
+                <div className="p-3 rounded-lg border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Metodo</p>
+                  <p className="text-lg font-semibold text-foreground uppercase">
+                    {selectedPayment.payment_method || selectedPayment.gateway || "PIX"}
+                  </p>
+                </div>
+              </div>
+
+              {/* Product Info */}
+              <div className="p-3 rounded-lg border border-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Package className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Produto</span>
+                </div>
+                <p className="font-medium text-foreground">{selectedPayment.product_name || selectedPayment.description || "Pagamento"}</p>
+                {selectedPayment.product_type && (
+                  <Badge variant="outline" className="mt-2">
+                    {productTypeLabels[selectedPayment.product_type] || selectedPayment.product_type}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Payment ID */}
+              <div className="p-3 rounded-lg border border-border">
+                <p className="text-xs text-muted-foreground mb-1">ID do Pagamento (Gateway)</p>
+                <div className="flex items-center justify-between">
+                  <code className="text-sm font-mono text-foreground">{selectedPayment.external_payment_id}</code>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => copyToClipboard(selectedPayment.external_payment_id)}
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Criado em</p>
+                  <p className="text-sm font-medium text-foreground">{formatDate(selectedPayment.created_at)}</p>
+                  <p className="text-xs text-muted-foreground">{formatTime(selectedPayment.created_at)}</p>
+                </div>
+                <div className="p-3 rounded-lg border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Atualizado em</p>
+                  <p className="text-sm font-medium text-foreground">{formatDate(selectedPayment.updated_at)}</p>
+                  <p className="text-xs text-muted-foreground">{formatTime(selectedPayment.updated_at)}</p>
+                </div>
+              </div>
+
+              {/* Bot Info */}
+              {selectedPayment.bots && (
+                <div className="p-3 rounded-lg border border-border">
+                  <p className="text-xs text-muted-foreground mb-1">Bot</p>
+                  <p className="text-sm font-medium text-foreground">{selectedPayment.bots.name}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
