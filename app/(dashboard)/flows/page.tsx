@@ -78,6 +78,26 @@ interface PaymentButton {
   amount: string
 }
 
+interface UpsellOffer {
+  id: string
+  enabled: boolean
+  media_url: string
+  media_type: "photo" | "video" | "none"
+  description: string
+  delay_seconds: string
+  buttons: PaymentButton[]
+}
+
+interface DownsellOffer {
+  id: string
+  enabled: boolean
+  media_url: string
+  media_type: "photo" | "video" | "none"
+  description: string
+  delay_seconds: string
+  buttons: PaymentButton[]
+}
+
 interface FlowNode {
   id: string
   flow_id: string
@@ -519,6 +539,308 @@ function SortablePaymentButton({
   )
 }
 
+// ---- Offer Form Component (for Upsell/Downsell) ----
+
+function OfferForm({
+  offer,
+  index,
+  type,
+  onUpdate,
+  onRemove,
+  onMediaUpload,
+  isUploading,
+  canRemove,
+  linkedDownsellEnabled,
+  sensors,
+  activeButtonId,
+  setActiveButtonId,
+}: {
+  offer: UpsellOffer | DownsellOffer
+  index: number
+  type: "upsell" | "downsell"
+  onUpdate: (updated: UpsellOffer | DownsellOffer) => void
+  onRemove: () => void
+  onMediaUpload: (file: File) => void
+  isUploading: boolean
+  canRemove: boolean
+  linkedDownsellEnabled?: boolean
+  sensors: ReturnType<typeof useSensors>
+  activeButtonId: string | null
+  setActiveButtonId: (id: string | null) => void
+}) {
+  const isUpsell = type === "upsell"
+  const colorClass = isUpsell ? "blue" : "rose"
+  const Icon = isUpsell ? TrendingUp : TrendingDown
+  const label = isUpsell ? `Upsell ${index + 1}` : `Downsell ${index + 1}`
+  const description = isUpsell ? "Oferta de upgrade apos pagamento" : "Oferta menor se recusar upsell"
+
+  // For downsell, check if linked upsell is enabled
+  const isDisabled = type === "downsell" && !linkedDownsellEnabled
+
+  return (
+    <div className={`flex flex-col rounded-xl border ${offer.enabled ? `border-${colorClass}-500/30` : "border-border/60"} overflow-hidden`}>
+      {/* Header */}
+      <div className={`flex items-center justify-between px-3.5 py-2.5 ${offer.enabled ? `bg-${colorClass}-500/5` : "bg-secondary/20"}`}>
+        <div className="flex items-center gap-2.5">
+          <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${isUpsell ? "bg-blue-500/10" : "bg-rose-500/10"}`}>
+            <Icon className={`h-3.5 w-3.5 ${isUpsell ? "text-blue-400" : "text-rose-400"}`} />
+          </div>
+          <div>
+            <span className="text-sm font-medium text-foreground">{label}</span>
+            <p className="text-[10px] text-muted-foreground/70 leading-tight">{description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          {canRemove && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-muted-foreground/50 hover:text-destructive"
+              onClick={onRemove}
+              disabled={isDisabled}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Switch
+            checked={offer.enabled}
+            onCheckedChange={(checked) => onUpdate({ ...offer, enabled: checked })}
+            disabled={isDisabled}
+          />
+        </div>
+      </div>
+
+      {isDisabled && (
+        <div className="px-3.5 py-2 bg-muted/30">
+          <p className="text-[10px] text-muted-foreground">Ative o Upsell {index + 1} para configurar este Downsell</p>
+        </div>
+      )}
+
+      {/* Content */}
+      {offer.enabled && !isDisabled && (
+        <div className="flex flex-col gap-3 px-3.5 py-3">
+          {/* Delay */}
+          <div className="flex items-center gap-2">
+            <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Enviar apos</span>
+            <Input
+              type="number"
+              value={offer.delay_seconds}
+              onChange={(e) => onUpdate({ ...offer, delay_seconds: e.target.value })}
+              className="bg-secondary/50 border-border/50 rounded-lg text-xs h-7 w-[70px] text-center"
+              min="1"
+            />
+            <span className="text-xs text-muted-foreground">segundos</span>
+          </div>
+
+          {/* Media Upload */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Midia</Label>
+            <label className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-secondary/20 p-3 cursor-pointer hover:border-border transition-colors">
+              <input
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) onMediaUpload(file)
+                }}
+              />
+              {isUploading ? (
+                <div className="flex flex-col items-center gap-1.5">
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                  <span className="text-[10px] text-muted-foreground">Enviando...</span>
+                </div>
+              ) : offer.media_url ? (
+                <div className="relative w-full">
+                  {offer.media_type === "video" ? (
+                    <video src={offer.media_url} className="w-full h-20 object-cover rounded-lg" />
+                  ) : (
+                    <img src={offer.media_url} alt="Preview" className="w-full h-20 object-cover rounded-lg" />
+                  )}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-5 w-5"
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      onUpdate({ ...offer, media_url: "", media_type: "none" })
+                    }}
+                  >
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center gap-1.5">
+                  <Upload className="h-5 w-5 text-muted-foreground/50" />
+                  <span className="text-[10px] text-muted-foreground">Clique para enviar foto ou video</span>
+                </div>
+              )}
+            </label>
+          </div>
+
+          {/* Description */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Descricao</Label>
+            <Textarea
+              value={offer.description}
+              onChange={(e) => onUpdate({ ...offer, description: e.target.value })}
+              placeholder="Descricao da oferta que aparecera no Telegram"
+              className="bg-secondary/50 border-border/50 rounded-lg text-xs min-h-[60px]"
+            />
+          </div>
+
+          {/* Payment Buttons with Drag and Drop */}
+          <div className="flex flex-col gap-1.5">
+            <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Botoes de Pagamento</Label>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={(event) => setActiveButtonId(event.active.id as string)}
+              onDragEnd={(event) => {
+                setActiveButtonId(null)
+                const { active, over } = event
+                if (!over || active.id === over.id) return
+                const oldIndex = offer.buttons.findIndex((b) => b.id === active.id)
+                const newIndex = offer.buttons.findIndex((b) => b.id === over.id)
+                if (oldIndex !== -1 && newIndex !== -1) {
+                  onUpdate({ ...offer, buttons: arrayMove(offer.buttons, oldIndex, newIndex) })
+                }
+              }}
+            >
+              <SortableContext items={offer.buttons.map(b => b.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col gap-1.5">
+                  {offer.buttons.map((btn, btnIndex) => (
+                    <SortableOfferButton
+                      key={btn.id}
+                      button={btn}
+                      index={btnIndex}
+                      onUpdate={(field, value) => {
+                        const updated = offer.buttons.map(b => b.id === btn.id ? { ...b, [field]: value } : b)
+                        onUpdate({ ...offer, buttons: updated })
+                      }}
+                      onDelete={() => {
+                        if (offer.buttons.length > 1) {
+                          onUpdate({ ...offer, buttons: offer.buttons.filter(b => b.id !== btn.id) })
+                        }
+                      }}
+                      canDelete={offer.buttons.length > 1}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+              <DragOverlay>
+                {activeButtonId && offer.buttons.find(b => b.id === activeButtonId) ? (
+                  <div className="rounded-lg border border-primary/50 bg-card p-2 shadow-lg">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="h-3 w-3 text-muted-foreground" />
+                      <span className="text-xs text-foreground">
+                        {offer.buttons.find(b => b.id === activeButtonId)?.text || "Botao"}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+            
+            {offer.buttons.length < 5 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-[10px] h-7 rounded-lg border-dashed border border-border/50"
+                onClick={() => onUpdate({ ...offer, buttons: [...offer.buttons, { id: crypto.randomUUID(), text: "", amount: "" }] })}
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Adicionar botao
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ---- Sortable Offer Button (compact version for offers) ----
+
+function SortableOfferButton({
+  button,
+  index,
+  onUpdate,
+  onDelete,
+  canDelete,
+}: {
+  button: PaymentButton
+  index: number
+  onUpdate: (field: "text" | "amount", value: string) => void
+  onDelete: () => void
+  canDelete: boolean
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: button.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-2 rounded-lg border border-border/50 bg-secondary/30 p-2"
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing p-0.5 rounded hover:bg-secondary/50"
+      >
+        <GripVertical className="h-3 w-3 text-muted-foreground/50" />
+      </div>
+      <Input
+        type="text"
+        value={button.text}
+        onChange={(e) => onUpdate("text", e.target.value)}
+        placeholder="Texto do botao"
+        className="bg-transparent border-0 p-0 h-6 text-xs focus-visible:ring-0 flex-1"
+      />
+      <div className="flex items-center gap-1 shrink-0">
+        <span className="text-[10px] text-muted-foreground">R$</span>
+        <Input
+          type="text"
+          value={button.amount}
+          onChange={(e) => onUpdate("amount", e.target.value)}
+          placeholder="0,00"
+          className="bg-transparent border-0 p-0 h-6 w-[50px] text-xs text-right focus-visible:ring-0"
+        />
+      </div>
+      {canDelete && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          className="h-5 w-5 text-muted-foreground/50 hover:text-destructive shrink-0"
+          onClick={onDelete}
+        >
+          <Trash2 className="h-3 w-3" />
+        </Button>
+      )}
+    </div>
+  )
+}
+
 // ---- Sortable Node Card ----
 
 function SortableNodeCard({
@@ -787,6 +1109,84 @@ export default function FlowsPage() {
   const [editPaymentButtons, setEditPaymentButtons] = useState<PaymentButton[]>([])
   const [activePaymentButtonId, setActivePaymentButtonId] = useState<string | null>(null)
 
+  // Upsells and Downsells (max 3 each)
+  const createEmptyUpsell = (): UpsellOffer => ({
+    id: crypto.randomUUID(),
+    enabled: false,
+    media_url: "",
+    media_type: "none",
+    description: "",
+    delay_seconds: "20",
+    buttons: [{ id: crypto.randomUUID(), text: "", amount: "" }]
+  })
+  const createEmptyDownsell = (): DownsellOffer => ({
+    id: crypto.randomUUID(),
+    enabled: false,
+    media_url: "",
+    media_type: "none",
+    description: "",
+    delay_seconds: "40",
+    buttons: [{ id: crypto.randomUUID(), text: "", amount: "" }]
+  })
+  const [upsells, setUpsells] = useState<UpsellOffer[]>([createEmptyUpsell()])
+  const [downsells, setDownsells] = useState<DownsellOffer[]>([createEmptyDownsell()])
+  const [editUpsells, setEditUpsells] = useState<UpsellOffer[]>([])
+  const [editDownsells, setEditDownsells] = useState<DownsellOffer[]>([])
+  const [upsellUploadingIndex, setUpsellUploadingIndex] = useState<number | null>(null)
+  const [downsellUploadingIndex, setDownsellUploadingIndex] = useState<number | null>(null)
+
+  // Upload function for upsell/downsell media
+  const handleOfferMediaUpload = async (
+    file: File,
+    type: "upsell" | "downsell",
+    index: number,
+    isEdit: boolean = false
+  ) => {
+    const setLoading = type === "upsell" ? setUpsellUploadingIndex : setDownsellUploadingIndex
+    setLoading(index)
+    
+    const isVideo = file.type.startsWith("video")
+    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+    if (file.size > maxSize) {
+      setLoading(null)
+      return
+    }
+    
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("mediaType", isVideo ? "video" : "photo")
+      const res = await fetch("/api/upload-media", { method: "POST", body: formData })
+      
+      if (!res.ok) {
+        setLoading(null)
+        return
+      }
+      
+      const data = await res.json()
+      if (data.url) {
+        const mediaType = isVideo ? "video" : "photo"
+        if (type === "upsell") {
+          if (isEdit) {
+            setEditUpsells(prev => prev.map((u, i) => i === index ? { ...u, media_url: data.url, media_type: mediaType } : u))
+          } else {
+            setUpsells(prev => prev.map((u, i) => i === index ? { ...u, media_url: data.url, media_type: mediaType } : u))
+          }
+        } else {
+          if (isEdit) {
+            setEditDownsells(prev => prev.map((d, i) => i === index ? { ...d, media_url: data.url, media_type: mediaType } : d))
+          } else {
+            setDownsells(prev => prev.map((d, i) => i === index ? { ...d, media_url: data.url, media_type: mediaType } : d))
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Upload error:", err)
+    } finally {
+      setLoading(null)
+    }
+  }
+
   const resetMessageConfig = () => {
     setMsgText("")
     setMsgMediaUrl("")
@@ -795,6 +1195,10 @@ export default function FlowsPage() {
     setMsgButtons([])
     setPaymentButtons([{ id: crypto.randomUUID(), text: "", amount: "" }])
     setEditPaymentButtons([])
+    setUpsells([createEmptyUpsell()])
+    setDownsells([createEmptyDownsell()])
+    setEditUpsells([])
+    setEditDownsells([])
   }
 
   const addMsgButton = () => {
@@ -1283,15 +1687,22 @@ export default function FlowsPage() {
       }
   } else if (selectedTemplate.type === "payment") {
     if (selectedTemplate.subVariant === "charge") {
-      if (nodeConfigValues.payment_mode === "custom" && nodeConfigValues.amount) {
-        label = nodeConfigValues.description ? `R$${nodeConfigValues.amount} - ${nodeConfigValues.description}` : `Cobrar R$${nodeConfigValues.amount}`
+      // Filter valid payment buttons
+      const validButtons = paymentButtons.filter(b => b.text.trim() && b.amount.trim())
+      const firstBtn = validButtons[0]
+      
+      if (firstBtn) {
+        label = `${firstBtn.text} - R$${firstBtn.amount}`
       } else {
-        const selectedPlanIds = nodeConfigValues.selected_plans ? JSON.parse(nodeConfigValues.selected_plans || "[]") : []
-        label = `Cobranca (${selectedPlanIds.length} plano${selectedPlanIds.length !== 1 ? "s" : ""})`
+        label = "Cobranca"
       }
+      
       config = {
         ...nodeConfigValues,
         subVariant: "charge",
+        payment_buttons: JSON.stringify(validButtons.length > 0 ? validButtons : paymentButtons),
+        upsells: JSON.stringify(upsells),
+        downsells: JSON.stringify(downsells),
       }
     }
   } else if (selectedTemplate.type === "action" && nodeConfigValues.action_name) {
@@ -1367,6 +1778,45 @@ export default function FlowsPage() {
         setMsgButtons([])
         setMsgHasButtons(false)
       }
+    } else if (node.type === "payment") {
+      // Load payment buttons
+      const paymentBtnStr = (cfg.payment_buttons as string) || ""
+      if (paymentBtnStr) {
+        try {
+          const parsed = JSON.parse(paymentBtnStr) as PaymentButton[]
+          setEditPaymentButtons(parsed.length > 0 ? parsed : [{ id: crypto.randomUUID(), text: "", amount: "" }])
+        } catch {
+          setEditPaymentButtons([{ id: crypto.randomUUID(), text: "", amount: "" }])
+        }
+      } else {
+        setEditPaymentButtons([{ id: crypto.randomUUID(), text: "", amount: "" }])
+      }
+      
+      // Load upsells
+      const upsellsStr = (cfg.upsells as string) || ""
+      if (upsellsStr) {
+        try {
+          const parsed = JSON.parse(upsellsStr) as UpsellOffer[]
+          setEditUpsells(parsed.length > 0 ? parsed : [createEmptyUpsell()])
+        } catch {
+          setEditUpsells([createEmptyUpsell()])
+        }
+      } else {
+        setEditUpsells([createEmptyUpsell()])
+      }
+      
+      // Load downsells
+      const downsellsStr = (cfg.downsells as string) || ""
+      if (downsellsStr) {
+        try {
+          const parsed = JSON.parse(downsellsStr) as DownsellOffer[]
+          setEditDownsells(parsed.length > 0 ? parsed : [createEmptyDownsell()])
+        } catch {
+          setEditDownsells([createEmptyDownsell()])
+        }
+      } else {
+        setEditDownsells([createEmptyDownsell()])
+      }
     } else {
       resetMessageConfig()
     }
@@ -1415,10 +1865,20 @@ export default function FlowsPage() {
       }
     } else if (editingNode.type === "payment") {
       const sv = editingNode.config?.subVariant || ""
-      finalConfig = { ...editNodeConfig, subVariant: sv }
-      if (sv === "charge" && editNodeConfig.amount) {
+      finalConfig = { 
+        ...editNodeConfig, 
+        subVariant: sv,
+        payment_buttons: JSON.stringify(editPaymentButtons),
+        upsells: JSON.stringify(editUpsells),
+        downsells: JSON.stringify(editDownsells),
+      }
+      // Generate label based on first payment button
+      const firstBtn = editPaymentButtons.find(b => b.text && b.amount)
+      if (firstBtn) {
+        finalLabel = `${firstBtn.text} - R$${firstBtn.amount}`
+      } else if (sv === "charge" && editNodeConfig.amount) {
         finalLabel = editNodeConfig.description ? `R$${editNodeConfig.amount} - ${editNodeConfig.description}` : `Cobrar R$${editNodeConfig.amount}`
-    }
+      }
     } else if (editingNode.type === "action") {
       const sv = editingNode.config?.subVariant || ""
 if (sv === "end") {
@@ -3385,101 +3845,85 @@ if (sv === "end") {
                           )}
                         </div>
 
-                        <div className="h-px bg-border/40" />
-
-                        {/* Upsell */}
-                        <div className="flex flex-col">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
-                                <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-foreground">Upsell</span>
-                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta de upgrade apos pagamento</p>
-                              </div>
-                            </div>
-                            <Switch
-                              checked={nodeConfigValues.has_upsell === "true"}
-                              onCheckedChange={(checked) =>
-                                setNodeConfigValues((prev) => ({ ...prev, has_upsell: checked ? "true" : "false" }))
-                              }
-                            />
-                          </div>
-                          {nodeConfigValues.has_upsell === "true" && (
-                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
-                              <Input
-                                type="text"
-                                value={nodeConfigValues.upsell_desc || ""}
-                                onChange={(e) =>
-                                  setNodeConfigValues((prev) => ({ ...prev, upsell_desc: e.target.value }))
-                                }
-                                placeholder="Nome do upsell"
-                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
-                              />
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">R$</span>
-                                <Input
-                                  type="text"
-                                  value={nodeConfigValues.upsell_amount || ""}
-                                  onChange={(e) =>
-                                    setNodeConfigValues((prev) => ({ ...prev, upsell_amount: e.target.value }))
-                                  }
-                                  placeholder="0,00"
-                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
-                                />
-                              </div>
-                            </div>
-                          )}
                         </div>
 
-                        <div className="h-px bg-border/40" />
-
-                        {/* Downsell */}
-                        <div className="flex flex-col">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10">
-                                <TrendingDown className="h-3.5 w-3.5 text-rose-400" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-foreground">Downsell</span>
-                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta menor se recusar upsell</p>
-                              </div>
-                            </div>
-                            <Switch
-                              checked={nodeConfigValues.has_downsell === "true"}
-                              onCheckedChange={(checked) =>
-                                setNodeConfigValues((prev) => ({ ...prev, has_downsell: checked ? "true" : "false" }))
-                              }
+                      {/* Upsells e Downsells */}
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Funil de Ofertas</Label>
+                          <span className="text-[10px] text-muted-foreground/60">{upsells.length}/3 upsells</span>
+                        </div>
+                        
+                        {upsells.map((upsell, index) => (
+                          <div key={upsell.id} className="flex flex-col gap-2">
+                            <OfferForm
+                              offer={upsell}
+                              index={index}
+                              type="upsell"
+                              onUpdate={(updated) => {
+                                setUpsells(prev => prev.map((u, i) => i === index ? updated as UpsellOffer : u))
+                                // If upsell is disabled, also disable corresponding downsell
+                                if (!(updated as UpsellOffer).enabled && downsells[index]) {
+                                  setDownsells(prev => prev.map((d, i) => i === index ? { ...d, enabled: false } : d))
+                                }
+                              }}
+                              onRemove={() => {
+                                if (upsells.length > 1) {
+                                  setUpsells(prev => prev.filter((_, i) => i !== index))
+                                  setDownsells(prev => prev.filter((_, i) => i !== index))
+                                }
+                              }}
+                              onMediaUpload={(file) => handleOfferMediaUpload(file, "upsell", index)}
+                              isUploading={upsellUploadingIndex === index}
+                              canRemove={upsells.length > 1}
+                              sensors={sensors}
+                              activeButtonId={activePaymentButtonId}
+                              setActiveButtonId={setActivePaymentButtonId}
+                            />
+                            
+                            {/* Corresponding Downsell */}
+                            <OfferForm
+                              offer={downsells[index] || createEmptyDownsell()}
+                              index={index}
+                              type="downsell"
+                              onUpdate={(updated) => {
+                                setDownsells(prev => {
+                                  const newDownsells = [...prev]
+                                  newDownsells[index] = updated as DownsellOffer
+                                  return newDownsells
+                                })
+                              }}
+                              onRemove={() => {}}
+                              onMediaUpload={(file) => handleOfferMediaUpload(file, "downsell", index)}
+                              isUploading={downsellUploadingIndex === index}
+                              canRemove={false}
+                              linkedDownsellEnabled={upsell.enabled}
+                              sensors={sensors}
+                              activeButtonId={activePaymentButtonId}
+                              setActiveButtonId={setActivePaymentButtonId}
                             />
                           </div>
-                          {nodeConfigValues.has_downsell === "true" && (
-                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
-                              <Input
-                                type="text"
-                                value={nodeConfigValues.downsell_desc || ""}
-                                onChange={(e) =>
-                                  setNodeConfigValues((prev) => ({ ...prev, downsell_desc: e.target.value }))
-                                }
-                                placeholder="Nome do downsell"
-                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
-                              />
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">R$</span>
-                                <Input
-                                  type="text"
-                                  value={nodeConfigValues.downsell_amount || ""}
-                                  onChange={(e) =>
-                                    setNodeConfigValues((prev) => ({ ...prev, downsell_amount: e.target.value }))
-                                  }
-                                  placeholder="0,00"
-                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        ))}
+                        
+                        {upsells.length < 3 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-xs rounded-lg border-dashed"
+                            onClick={() => {
+                              setUpsells(prev => [...prev, createEmptyUpsell()])
+                              setDownsells(prev => [...prev, createEmptyDownsell()])
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                            Adicionar Upsell {upsells.length + 1}
+                          </Button>
+                        )}
+                        
+                        <p className="text-[10px] text-muted-foreground/60">
+                          Configure ate 3 upsells. Cada upsell tem um downsell correspondente que sera enviado se o cliente recusar.
+                        </p>
                       </div>
                 </div>
               ) : selectedTemplate.configFields.length === 0 ? (
@@ -3540,8 +3984,7 @@ if (sv === "end") {
                     (selectedTemplate.type === "delay" && (!nodeConfigValues.seconds || parseInt(nodeConfigValues.seconds) <= 0)) ||
                     (selectedTemplate.type === "condition" && !nodeConfigValues.condition_message?.trim()) ||
                     (selectedTemplate.type === "action" && selectedTemplate.subVariant === "add_group" && !nodeConfigValues.action_name?.trim()) ||
-                    (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && nodeConfigValues.payment_mode === "custom" && !nodeConfigValues.amount?.trim()) ||
-                    (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && nodeConfigValues.payment_mode !== "custom" && (!nodeConfigValues.selected_plans || JSON.parse(nodeConfigValues.selected_plans || "[]").length === 0))
+                    (selectedTemplate.type === "payment" && selectedTemplate.subVariant === "charge" && !paymentButtons.some(b => b.text.trim() && b.amount.trim()))
                   }
                   onClick={handleAddNode}
                 >
@@ -3916,101 +4359,104 @@ if (sv === "end") {
                           )}
                         </div>
 
-                        <div className="h-px bg-border/40" />
-
-                        {/* Upsell */}
-                        <div className="flex flex-col">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/10">
-                                <TrendingUp className="h-3.5 w-3.5 text-blue-400" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-foreground">Upsell</span>
-                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta de upgrade apos pagamento</p>
-                              </div>
-                            </div>
-                            <Switch
-                              checked={editNodeConfig.has_upsell === "true"}
-                              onCheckedChange={(checked) =>
-                                setEditNodeConfig((prev) => ({ ...prev, has_upsell: checked ? "true" : "false" }))
-                              }
-                            />
-                          </div>
-                          {editNodeConfig.has_upsell === "true" && (
-                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
-                              <Input
-                                type="text"
-                                value={editNodeConfig.upsell_desc || ""}
-                                onChange={(e) =>
-                                  setEditNodeConfig((prev) => ({ ...prev, upsell_desc: e.target.value }))
-                                }
-                                placeholder="Nome do upsell"
-                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
-                              />
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">R$</span>
-                                <Input
-                                  type="text"
-                                  value={editNodeConfig.upsell_amount || ""}
-                                  onChange={(e) =>
-                                    setEditNodeConfig((prev) => ({ ...prev, upsell_amount: e.target.value }))
-                                  }
-                                  placeholder="0,00"
-                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
-                                />
-                              </div>
-                            </div>
-                          )}
                         </div>
 
-                        <div className="h-px bg-border/40" />
-
-                        {/* Downsell */}
-                        <div className="flex flex-col">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-rose-500/10">
-                                <TrendingDown className="h-3.5 w-3.5 text-rose-400" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-foreground">Downsell</span>
-                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta menor se recusar upsell</p>
-                              </div>
-                            </div>
-                            <Switch
-                              checked={editNodeConfig.has_downsell === "true"}
-                              onCheckedChange={(checked) =>
-                                setEditNodeConfig((prev) => ({ ...prev, has_downsell: checked ? "true" : "false" }))
-                              }
+                      {/* Upsells e Downsells */}
+                      <div className="flex flex-col gap-3">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Funil de Ofertas</Label>
+                          <span className="text-[10px] text-muted-foreground/60">{editUpsells.length}/3 upsells</span>
+                        </div>
+                        
+                        {editUpsells.map((upsell, index) => (
+                          <div key={upsell.id} className="flex flex-col gap-2">
+                            <OfferForm
+                              offer={upsell}
+                              index={index}
+                              type="upsell"
+                              onUpdate={(updated) => {
+                                const newUpsells = editUpsells.map((u, i) => i === index ? updated as UpsellOffer : u)
+                                setEditUpsells(newUpsells)
+                                setEditNodeConfig((prev) => ({ ...prev, upsells: JSON.stringify(newUpsells) }))
+                                // If upsell is disabled, also disable corresponding downsell
+                                if (!(updated as UpsellOffer).enabled && editDownsells[index]) {
+                                  const newDownsells = editDownsells.map((d, i) => i === index ? { ...d, enabled: false } : d)
+                                  setEditDownsells(newDownsells)
+                                  setEditNodeConfig((prev) => ({ ...prev, downsells: JSON.stringify(newDownsells) }))
+                                }
+                              }}
+                              onRemove={() => {
+                                if (editUpsells.length > 1) {
+                                  const newUpsells = editUpsells.filter((_, i) => i !== index)
+                                  const newDownsells = editDownsells.filter((_, i) => i !== index)
+                                  setEditUpsells(newUpsells)
+                                  setEditDownsells(newDownsells)
+                                  setEditNodeConfig((prev) => ({ 
+                                    ...prev, 
+                                    upsells: JSON.stringify(newUpsells),
+                                    downsells: JSON.stringify(newDownsells)
+                                  }))
+                                }
+                              }}
+                              onMediaUpload={(file) => handleOfferMediaUpload(file, "upsell", index, true)}
+                              isUploading={upsellUploadingIndex === index}
+                              canRemove={editUpsells.length > 1}
+                              sensors={sensors}
+                              activeButtonId={activePaymentButtonId}
+                              setActiveButtonId={setActivePaymentButtonId}
+                            />
+                            
+                            {/* Corresponding Downsell */}
+                            <OfferForm
+                              offer={editDownsells[index] || createEmptyDownsell()}
+                              index={index}
+                              type="downsell"
+                              onUpdate={(updated) => {
+                                const newDownsells = [...editDownsells]
+                                newDownsells[index] = updated as DownsellOffer
+                                setEditDownsells(newDownsells)
+                                setEditNodeConfig((prev) => ({ ...prev, downsells: JSON.stringify(newDownsells) }))
+                              }}
+                              onRemove={() => {}}
+                              onMediaUpload={(file) => handleOfferMediaUpload(file, "downsell", index, true)}
+                              isUploading={downsellUploadingIndex === index}
+                              canRemove={false}
+                              linkedDownsellEnabled={upsell.enabled}
+                              sensors={sensors}
+                              activeButtonId={activePaymentButtonId}
+                              setActiveButtonId={setActivePaymentButtonId}
                             />
                           </div>
-                          {editNodeConfig.has_downsell === "true" && (
-                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
-                              <Input
-                                type="text"
-                                value={editNodeConfig.downsell_desc || ""}
-                                onChange={(e) =>
-                                  setEditNodeConfig((prev) => ({ ...prev, downsell_desc: e.target.value }))
-                                }
-                                placeholder="Nome do downsell"
-                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
-                              />
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">R$</span>
-                                <Input
-                                  type="text"
-                                  value={editNodeConfig.downsell_amount || ""}
-                                  onChange={(e) =>
-                                    setEditNodeConfig((prev) => ({ ...prev, downsell_amount: e.target.value }))
-                                  }
-                                  placeholder="0,00"
-                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
-                                />
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        ))}
+                        
+                        {editUpsells.length < 3 && (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="text-xs rounded-lg border-dashed"
+                            onClick={() => {
+                              const newUpsell = createEmptyUpsell()
+                              const newDownsell = createEmptyDownsell()
+                              const newUpsells = [...editUpsells, newUpsell]
+                              const newDownsells = [...editDownsells, newDownsell]
+                              setEditUpsells(newUpsells)
+                              setEditDownsells(newDownsells)
+                              setEditNodeConfig((prev) => ({ 
+                                ...prev, 
+                                upsells: JSON.stringify(newUpsells),
+                                downsells: JSON.stringify(newDownsells)
+                              }))
+                            }}
+                          >
+                            <Plus className="h-3.5 w-3.5 mr-1.5" />
+                            Adicionar Upsell {editUpsells.length + 1}
+                          </Button>
+                        )}
+                        
+                        <p className="text-[10px] text-muted-foreground/60">
+                          Configure ate 3 upsells. Cada upsell tem um downsell correspondente.
+                        </p>
                       </div>
                 </div>
               ) : editingNode.type === "action" ? (
@@ -4064,7 +4510,7 @@ if (sv === "end") {
                     editingNode.type === "action" && editingNode.config?.subVariant === "end" ? false :
                     editingNode.type === "action" && editingNode.config?.subVariant === "goto_flow" ? !editNodeConfig.target_flow_id :
                     editingNode.type === "action" && editingNode.config?.subVariant === "add_group" ? !editNodeConfig.action_name?.trim() :
-                    editingNode.type === "payment" && (editingNode.config?.subVariant as string) === "charge" ? !editNodeConfig.amount?.trim() :
+                    editingNode.type === "payment" && (editingNode.config?.subVariant as string) === "charge" ? !editPaymentButtons.some(b => b.text.trim() && b.amount.trim()) :
                     false
                   )}
                   onClick={handleSaveNode}
