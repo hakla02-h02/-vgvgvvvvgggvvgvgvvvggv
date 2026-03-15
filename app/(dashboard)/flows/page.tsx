@@ -3797,38 +3797,107 @@ if (sv === "end") {
                         <p className="text-[10px] text-muted-foreground/60">Arraste para reorganizar a ordem dos botoes. Cada botao sera exibido no Telegram.</p>
                       </div>
 
-                      {/* Switches compactos para upsell/downsell/order bump */}
-                      <div className="flex flex-col gap-0 rounded-xl border border-border/60 overflow-hidden">
-                        {/* Order Bump */}
-                        <div className="flex flex-col">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
-                                <Plus className="h-3.5 w-3.5 text-amber-400" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-foreground">Order Bump</span>
-                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta adicional no checkout</p>
-                              </div>
+                      {/* Order Bump */}
+                      <div className="flex flex-col rounded-xl border border-border/60 overflow-hidden">
+                        <div className={`flex items-center justify-between px-3.5 py-2.5 ${nodeConfigValues.has_order_bump === "true" ? "bg-amber-500/5" : "bg-secondary/20"}`}>
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                              <Plus className="h-3.5 w-3.5 text-amber-400" />
                             </div>
-                            <Switch
-                              checked={nodeConfigValues.has_order_bump === "true"}
-                              onCheckedChange={(checked) =>
-                                setNodeConfigValues((prev) => ({ ...prev, has_order_bump: checked ? "true" : "false" }))
-                              }
-                            />
+                            <div>
+                              <span className="text-sm font-medium text-foreground">Order Bump</span>
+                              <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta adicional antes do pagamento</p>
+                            </div>
                           </div>
-                          {nodeConfigValues.has_order_bump === "true" && (
-                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
-                              <Input
-                                type="text"
+                          <Switch
+                            checked={nodeConfigValues.has_order_bump === "true"}
+                            onCheckedChange={(checked) =>
+                              setNodeConfigValues((prev) => ({ ...prev, has_order_bump: checked ? "true" : "false" }))
+                            }
+                          />
+                        </div>
+                        {nodeConfigValues.has_order_bump === "true" && (
+                          <div className="flex flex-col gap-3 px-3.5 py-3">
+                            {/* Midia opcional */}
+                            <div className="flex flex-col gap-1.5">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Midia (opcional)</Label>
+                              <label className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-secondary/20 p-3 cursor-pointer hover:border-border transition-colors">
+                                <input
+                                  type="file"
+                                  accept="image/*,video/*"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+                                    const isVideo = file.type.startsWith("video")
+                                    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+                                    if (file.size > maxSize) return
+                                    try {
+                                      const formData = new FormData()
+                                      formData.append("file", file)
+                                      formData.append("mediaType", isVideo ? "video" : "photo")
+                                      const res = await fetch("/api/upload-media", { method: "POST", body: formData })
+                                      if (res.ok) {
+                                        const data = await res.json()
+                                        if (data.url) {
+                                          setNodeConfigValues((prev) => ({ 
+                                            ...prev, 
+                                            order_bump_media_url: data.url,
+                                            order_bump_media_type: isVideo ? "video" : "photo"
+                                          }))
+                                        }
+                                      }
+                                    } catch (err) {
+                                      console.error("Upload error:", err)
+                                    }
+                                  }}
+                                />
+                                {nodeConfigValues.order_bump_media_url ? (
+                                  <div className="relative w-full">
+                                    {nodeConfigValues.order_bump_media_type === "video" ? (
+                                      <video src={nodeConfigValues.order_bump_media_url} className="w-full h-20 object-cover rounded-lg" />
+                                    ) : (
+                                      <img src={nodeConfigValues.order_bump_media_url} alt="Preview" className="w-full h-20 object-cover rounded-lg" />
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="icon"
+                                      className="absolute top-1 right-1 h-5 w-5"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setNodeConfigValues((prev) => ({ ...prev, order_bump_media_url: "", order_bump_media_type: "" }))
+                                      }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-1.5">
+                                    <Upload className="h-5 w-5 text-muted-foreground/50" />
+                                    <span className="text-[10px] text-muted-foreground">Clique para enviar foto ou video</span>
+                                  </div>
+                                )}
+                              </label>
+                            </div>
+                            
+                            {/* Descricao da oferta */}
+                            <div className="flex flex-col gap-1.5">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Descricao da oferta</Label>
+                              <Textarea
                                 value={nodeConfigValues.order_bump_desc || ""}
                                 onChange={(e) =>
                                   setNodeConfigValues((prev) => ({ ...prev, order_bump_desc: e.target.value }))
                                 }
-                                placeholder="Nome do produto extra"
-                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                                placeholder="Descreva a oferta adicional que sera apresentada ao usuario"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs min-h-[60px]"
                               />
+                            </div>
+                            
+                            {/* Valor do Order Bump */}
+                            <div className="flex flex-col gap-1.5">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Valor do Order Bump</Label>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-muted-foreground">R$</span>
                                 <Input
@@ -3838,14 +3907,58 @@ if (sv === "end") {
                                     setNodeConfigValues((prev) => ({ ...prev, order_bump_amount: e.target.value }))
                                   }
                                   placeholder="0,00"
-                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[100px]"
                                 />
                               </div>
                             </div>
-                          )}
-                        </div>
-
-                        </div>
+                            
+                            {/* Botoes de aceitar/recusar */}
+                            <div className="flex flex-col gap-2">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Botoes de decisao</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                                    <span className="text-[10px] text-muted-foreground">Aceitar</span>
+                                  </div>
+                                  <Input
+                                    type="text"
+                                    value={nodeConfigValues.order_bump_accept_text || ""}
+                                    onChange={(e) =>
+                                      setNodeConfigValues((prev) => ({ ...prev, order_bump_accept_text: e.target.value }))
+                                    }
+                                    placeholder="Sim, quero!"
+                                    className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                                    <span className="text-[10px] text-muted-foreground">Recusar</span>
+                                  </div>
+                                  <Input
+                                    type="text"
+                                    value={nodeConfigValues.order_bump_decline_text || ""}
+                                    onChange={(e) =>
+                                      setNodeConfigValues((prev) => ({ ...prev, order_bump_decline_text: e.target.value }))
+                                    }
+                                    placeholder="Nao, obrigado"
+                                    className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Informacao sobre comportamento */}
+                            <div className="rounded-lg bg-muted/30 border border-border/30 p-2.5">
+                              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                <strong>Importante:</strong> Se o usuario recusar, o pagamento sera gerado apenas com o valor do produto original, sem o Order Bump. 
+                                O fluxo de Upsells e Downsells continuara normalmente independentemente da decisao.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Upsells e Downsells */}
                       <div className="flex flex-col gap-3">
@@ -4311,38 +4424,107 @@ if (sv === "end") {
                         <p className="text-[10px] text-muted-foreground/60">Arraste para reorganizar a ordem dos botoes.</p>
                       </div>
 
-                      {/* Switches */}
-                      <div className="flex flex-col gap-0 rounded-xl border border-border/60 overflow-hidden">
-                        {/* Order Bump */}
-                        <div className="flex flex-col">
-                          <div className="flex items-center justify-between px-3.5 py-2.5 bg-secondary/20">
-                            <div className="flex items-center gap-2.5">
-                              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
-                                <Plus className="h-3.5 w-3.5 text-amber-400" />
-                              </div>
-                              <div>
-                                <span className="text-sm font-medium text-foreground">Order Bump</span>
-                                <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta adicional no checkout</p>
-                              </div>
+                      {/* Order Bump */}
+                      <div className="flex flex-col rounded-xl border border-border/60 overflow-hidden">
+                        <div className={`flex items-center justify-between px-3.5 py-2.5 ${editNodeConfig.has_order_bump === "true" ? "bg-amber-500/5" : "bg-secondary/20"}`}>
+                          <div className="flex items-center gap-2.5">
+                            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10">
+                              <Plus className="h-3.5 w-3.5 text-amber-400" />
                             </div>
-                            <Switch
-                              checked={editNodeConfig.has_order_bump === "true"}
-                              onCheckedChange={(checked) =>
-                                setEditNodeConfig((prev) => ({ ...prev, has_order_bump: checked ? "true" : "false" }))
-                              }
-                            />
+                            <div>
+                              <span className="text-sm font-medium text-foreground">Order Bump</span>
+                              <p className="text-[10px] text-muted-foreground/70 leading-tight">Oferta adicional antes do pagamento</p>
+                            </div>
                           </div>
-                          {editNodeConfig.has_order_bump === "true" && (
-                            <div className="flex flex-col gap-2 px-3.5 pb-3 pt-1">
-                              <Input
-                                type="text"
+                          <Switch
+                            checked={editNodeConfig.has_order_bump === "true"}
+                            onCheckedChange={(checked) =>
+                              setEditNodeConfig((prev) => ({ ...prev, has_order_bump: checked ? "true" : "false" }))
+                            }
+                          />
+                        </div>
+                        {editNodeConfig.has_order_bump === "true" && (
+                          <div className="flex flex-col gap-3 px-3.5 py-3">
+                            {/* Midia opcional */}
+                            <div className="flex flex-col gap-1.5">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Midia (opcional)</Label>
+                              <label className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/50 bg-secondary/20 p-3 cursor-pointer hover:border-border transition-colors">
+                                <input
+                                  type="file"
+                                  accept="image/*,video/*"
+                                  className="hidden"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0]
+                                    if (!file) return
+                                    const isVideo = file.type.startsWith("video")
+                                    const maxSize = isVideo ? 50 * 1024 * 1024 : 10 * 1024 * 1024
+                                    if (file.size > maxSize) return
+                                    try {
+                                      const formData = new FormData()
+                                      formData.append("file", file)
+                                      formData.append("mediaType", isVideo ? "video" : "photo")
+                                      const res = await fetch("/api/upload-media", { method: "POST", body: formData })
+                                      if (res.ok) {
+                                        const data = await res.json()
+                                        if (data.url) {
+                                          setEditNodeConfig((prev) => ({ 
+                                            ...prev, 
+                                            order_bump_media_url: data.url,
+                                            order_bump_media_type: isVideo ? "video" : "photo"
+                                          }))
+                                        }
+                                      }
+                                    } catch (err) {
+                                      console.error("Upload error:", err)
+                                    }
+                                  }}
+                                />
+                                {editNodeConfig.order_bump_media_url ? (
+                                  <div className="relative w-full">
+                                    {editNodeConfig.order_bump_media_type === "video" ? (
+                                      <video src={editNodeConfig.order_bump_media_url} className="w-full h-20 object-cover rounded-lg" />
+                                    ) : (
+                                      <img src={editNodeConfig.order_bump_media_url} alt="Preview" className="w-full h-20 object-cover rounded-lg" />
+                                    )}
+                                    <Button
+                                      type="button"
+                                      variant="destructive"
+                                      size="icon"
+                                      className="absolute top-1 right-1 h-5 w-5"
+                                      onClick={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                        setEditNodeConfig((prev) => ({ ...prev, order_bump_media_url: "", order_bump_media_type: "" }))
+                                      }}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex flex-col items-center gap-1.5">
+                                    <Upload className="h-5 w-5 text-muted-foreground/50" />
+                                    <span className="text-[10px] text-muted-foreground">Clique para enviar foto ou video</span>
+                                  </div>
+                                )}
+                              </label>
+                            </div>
+                            
+                            {/* Descricao da oferta */}
+                            <div className="flex flex-col gap-1.5">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Descricao da oferta</Label>
+                              <Textarea
                                 value={editNodeConfig.order_bump_desc || ""}
                                 onChange={(e) =>
                                   setEditNodeConfig((prev) => ({ ...prev, order_bump_desc: e.target.value }))
                                 }
-                                placeholder="Nome do produto extra"
-                                className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                                placeholder="Descreva a oferta adicional que sera apresentada ao usuario"
+                                className="bg-secondary/50 border-border/50 rounded-lg text-xs min-h-[60px]"
                               />
+                            </div>
+                            
+                            {/* Valor do Order Bump */}
+                            <div className="flex flex-col gap-1.5">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Valor do Order Bump</Label>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-muted-foreground">R$</span>
                                 <Input
@@ -4352,14 +4534,58 @@ if (sv === "end") {
                                     setEditNodeConfig((prev) => ({ ...prev, order_bump_amount: e.target.value }))
                                   }
                                   placeholder="0,00"
-                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[90px]"
+                                  className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8 w-[100px]"
                                 />
                               </div>
                             </div>
-                          )}
-                        </div>
-
-                        </div>
+                            
+                            {/* Botoes de aceitar/recusar */}
+                            <div className="flex flex-col gap-2">
+                              <Label className="text-[10px] font-medium tracking-wide uppercase text-muted-foreground/70">Botoes de decisao</Label>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-green-500" />
+                                    <span className="text-[10px] text-muted-foreground">Aceitar</span>
+                                  </div>
+                                  <Input
+                                    type="text"
+                                    value={editNodeConfig.order_bump_accept_text || ""}
+                                    onChange={(e) =>
+                                      setEditNodeConfig((prev) => ({ ...prev, order_bump_accept_text: e.target.value }))
+                                    }
+                                    placeholder="Sim, quero!"
+                                    className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                                  />
+                                </div>
+                                <div className="flex flex-col gap-1">
+                                  <div className="flex items-center gap-1.5">
+                                    <div className="h-2 w-2 rounded-full bg-red-500" />
+                                    <span className="text-[10px] text-muted-foreground">Recusar</span>
+                                  </div>
+                                  <Input
+                                    type="text"
+                                    value={editNodeConfig.order_bump_decline_text || ""}
+                                    onChange={(e) =>
+                                      setEditNodeConfig((prev) => ({ ...prev, order_bump_decline_text: e.target.value }))
+                                    }
+                                    placeholder="Nao, obrigado"
+                                    className="bg-secondary/50 border-border/50 rounded-lg text-xs h-8"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {/* Informacao sobre comportamento */}
+                            <div className="rounded-lg bg-muted/30 border border-border/30 p-2.5">
+                              <p className="text-[10px] text-muted-foreground leading-relaxed">
+                                <strong>Importante:</strong> Se o usuario recusar, o pagamento sera gerado apenas com o valor do produto original, sem o Order Bump. 
+                                O fluxo de Upsells e Downsells continuara normalmente independentemente da decisao.
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
 
                       {/* Upsells e Downsells */}
                       <div className="flex flex-col gap-3">
