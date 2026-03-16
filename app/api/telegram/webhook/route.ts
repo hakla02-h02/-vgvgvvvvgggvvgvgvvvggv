@@ -638,58 +638,8 @@ async function executeNodes(
         // Filtrar botoes validos (com texto e valor)
         const validButtons = paymentButtons.filter(btn => btn.text?.trim() && btn.amount?.trim())
 
-        // ========== ORDER BUMP - Verificar se existe configurado ==========
-        const hasOrderBump = node.config?.has_order_bump === "true"
-        const orderBumpDesc = (node.config?.order_bump_desc as string) || ""
-        const orderBumpAmount = (node.config?.order_bump_amount as string) || ""
-        const orderBumpAcceptText = (node.config?.order_bump_accept_text as string) || "Sim, quero!"
-        const orderBumpDeclineText = (node.config?.order_bump_decline_text as string) || "Nao, obrigado"
-        const orderBumpMediaUrl = (node.config?.order_bump_media_url as string) || ""
-        const orderBumpMediaType = (node.config?.order_bump_media_type as string) || ""
-
-        if (hasOrderBump && orderBumpAmount && validButtons.length > 0) {
-          // Enviar midia do Order Bump se configurada
-          if (orderBumpMediaUrl) {
-            if (orderBumpMediaType === "video") {
-              await sendTelegramVideo(botToken, chatId, orderBumpMediaUrl, "", undefined)
-            } else if (orderBumpMediaType === "photo") {
-              await sendTelegramPhoto(botToken, chatId, orderBumpMediaUrl, "", undefined)
-            }
-          }
-
-          // Enviar mensagem do Order Bump com botoes de aceitar/recusar
-          const orderBumpMessage = orderBumpDesc || `Deseja adicionar este bonus por R$ ${orderBumpAmount}?`
-          
-          // Formato: ob_accept_{mainAmount}_{bumpAmount}_{nodePos} ou ob_decline_{mainAmount}_{nodePos}
-          const mainAmount = validButtons[0].amount.replace(",", ".")
-          const bumpAmount = orderBumpAmount.replace(",", ".")
-          
-          const orderBumpKeyboard = {
-            inline_keyboard: [
-              [{ text: orderBumpAcceptText, callback_data: `ob_accept_${mainAmount}_${bumpAmount}_${node.position}` }],
-              [{ text: orderBumpDeclineText, callback_data: `ob_decline_${mainAmount}_${node.position}` }]
-            ]
-          }
-
-          await sendTelegramMessage(botToken, chatId, orderBumpMessage, orderBumpKeyboard)
-
-          // Pausar e aguardar decisao do Order Bump
-          await supabase
-            .from("user_flow_state")
-            .update({
-              current_node_position: node.position,
-              status: "waiting_order_bump",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("bot_id", botId)
-            .eq("flow_id", flowId)
-            .eq("telegram_user_id", telegramUserId)
-
-          await updateFunnelStep(botId, telegramUserId, 3)
-          return // STOP - aguardar decisao do Order Bump
-        }
-
-        // Se nao tem Order Bump, mostrar botoes de pagamento normalmente
+        // Mostrar botoes de pagamento normalmente
+        // O Order Bump sera verificado quando o usuario clicar no botao (no callback)
         if (validButtons.length > 0) {
           // Criar keyboard com os botoes de pagamento configurados
           // IMPORTANTE: callback_data do Telegram tem limite de 64 bytes
@@ -720,7 +670,8 @@ async function executeNodes(
           }
         }
 
-        // Pausar e aguardar o usuario clicar no botao
+        // Pausar e aguardar o usuario clicar no botao de pagamento
+        // Quando clicar, o callback verifica se ha Order Bump antes de gerar o PIX
         await supabase
           .from("user_flow_state")
           .update({
@@ -1035,6 +986,77 @@ async function processCallbackQuery({
       return
     }
 
+    // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
+    // Buscar o estado atual do usuario para encontrar o fluxo e nó de pagamento
+    const { data: state } = await supabase
+      .from("user_flow_state")
+      .select("flow_id, current_node_position")
+      .eq("bot_id", bot.id)
+      .eq("telegram_user_id", telegramUserId)
+      .in("status", ["waiting_payment", "in_progress"])
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single()
+
+    if (state) {
+      // Buscar o nó de pagamento para verificar Order Bump
+      const nodes = await fetchNodes(state.flow_id)
+      const paymentNode = nodes.find(n => n.type === "payment")
+
+      if (paymentNode?.config) {
+        const hasOrderBump = paymentNode.config?.has_order_bump === "true"
+        const orderBumpDesc = (paymentNode.config?.order_bump_desc as string) || ""
+        const orderBumpAmount = (paymentNode.config?.order_bump_amount as string) || ""
+        const orderBumpAcceptText = (paymentNode.config?.order_bump_accept_text as string) || "Sim, quero adicionar!"
+        const orderBumpDeclineText = (paymentNode.config?.order_bump_decline_text as string) || "Nao, obrigado"
+        const orderBumpMediaUrl = (paymentNode.config?.order_bump_media_url as string) || ""
+        const orderBumpMediaType = (paymentNode.config?.order_bump_media_type as string) || ""
+
+        console.log("[v0] Order Bump config:", { hasOrderBump, orderBumpAmount, orderBumpDesc })
+
+        if (hasOrderBump && orderBumpAmount) {
+          // Enviar midia do Order Bump se configurada
+          if (orderBumpMediaUrl) {
+            if (orderBumpMediaType === "video") {
+              await sendTelegramVideo(botToken, chatId, orderBumpMediaUrl, "", undefined)
+            } else if (orderBumpMediaType === "photo") {
+              await sendTelegramPhoto(botToken, chatId, orderBumpMediaUrl, "", undefined)
+            }
+          }
+
+          // Enviar mensagem do Order Bump com botoes de aceitar/recusar
+          const orderBumpMessage = orderBumpDesc || `Deseja adicionar este bonus por apenas R$ ${orderBumpAmount}?`
+          
+          // Formato: ob_accept_{mainAmount}_{bumpAmount} ou ob_decline_{mainAmount}
+          const mainAmount = String(amount)
+          const bumpAmount = orderBumpAmount.replace(",", ".")
+          
+          const orderBumpKeyboard = {
+            inline_keyboard: [
+              [{ text: orderBumpAcceptText, callback_data: `ob_accept_${mainAmount}_${bumpAmount}` }],
+              [{ text: orderBumpDeclineText, callback_data: `ob_decline_${mainAmount}` }]
+            ]
+          }
+
+          await sendTelegramMessage(botToken, chatId, orderBumpMessage, orderBumpKeyboard)
+
+          // Atualizar estado para aguardar decisao do Order Bump
+          await supabase
+            .from("user_flow_state")
+            .update({
+              status: "waiting_order_bump",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("bot_id", bot.id)
+            .eq("telegram_user_id", telegramUserId)
+
+          console.log("[v0] Order Bump enviado, aguardando decisao do usuario")
+          return // STOP - aguardar decisao do Order Bump
+        }
+      }
+    }
+
+    // Sem Order Bump - gerar pagamento diretamente
     await generatePayment(
       supabase, botToken, chatId, telegramUserId, bot,
       amount, description, "main_product"
