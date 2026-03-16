@@ -875,6 +875,35 @@ function SortableNodeCard({
   const Icon = nodeIcons[node.type]
   const group = actionGroups.find((g) => g.types.includes(node.type))
 
+  // Helper para verificar ofertas ativas no no de pagamento
+  const getPaymentOffers = () => {
+    if (node.type !== "payment") return { hasOrderBump: false, hasUpsell: false, hasDownsell: false }
+    
+    const hasOrderBump = node.config?.has_order_bump === "true"
+    let hasUpsell = false
+    let hasDownsell = false
+    
+    try {
+      const upsellsStr = node.config?.upsells as string
+      if (upsellsStr) {
+        const upsells = JSON.parse(upsellsStr)
+        hasUpsell = upsells.some((u: { enabled: boolean }) => u.enabled)
+      }
+    } catch { /* ignore */ }
+    
+    try {
+      const downsellsStr = node.config?.downsells as string
+      if (downsellsStr) {
+        const downsells = JSON.parse(downsellsStr)
+        hasDownsell = downsells.some((d: { enabled: boolean }) => d.enabled)
+      }
+    } catch { /* ignore */ }
+    
+    return { hasOrderBump, hasUpsell, hasDownsell }
+  }
+
+  const paymentOffers = getPaymentOffers()
+
   // Helper to get subtitle
   const getSubtitle = () => {
     if (node.type === "message") {
@@ -925,7 +954,29 @@ if (sv === "end") return "Encerrar"
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-foreground truncate leading-tight">{node.label}</p>
-          <p className="text-xs text-muted-foreground/60 mt-0.5 truncate">{getSubtitle()}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <p className="text-xs text-muted-foreground/60 truncate">{getSubtitle()}</p>
+            {/* Indicadores de ofertas ativas */}
+            {node.type === "payment" && (paymentOffers.hasOrderBump || paymentOffers.hasUpsell || paymentOffers.hasDownsell) && (
+              <div className="flex items-center gap-1 shrink-0">
+                {paymentOffers.hasOrderBump && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-500/15 text-amber-500 border border-amber-500/20">
+                    Bump
+                  </span>
+                )}
+                {paymentOffers.hasUpsell && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-blue-500/15 text-blue-500 border border-blue-500/20">
+                    Upsell
+                  </span>
+                )}
+                {paymentOffers.hasDownsell && (
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-medium bg-rose-500/15 text-rose-500 border border-rose-500/20">
+                    Downsell
+                  </span>
+                )}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -4347,6 +4398,18 @@ if (sv === "end") {
                 </div>
               ) : editingNode.type === "payment" ? (
                 <div className="flex flex-col gap-4">
+                      {/* Mensagem acima dos botoes */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem</Label>
+                        <Textarea
+                          value={editNodeConfig.payment_message || ""}
+                          onChange={(e) => setEditNodeConfig((prev) => ({ ...prev, payment_message: e.target.value }))}
+                          placeholder="Escolha seu plano para liberar o acesso:"
+                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground min-h-[70px] text-sm"
+                        />
+                        <p className="text-[10px] text-muted-foreground/60">Texto que aparece acima dos botoes de plano</p>
+                      </div>
+
                       {/* Botoes de pagamento com drag and drop */}
                       <div className="flex flex-col gap-2">
                         <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Botoes de Pagamento</Label>
