@@ -628,51 +628,44 @@ async function executeNodes(
       // ---------------------------------------------------------------
       case "payment": {
         const paymentMessage = (node.config?.payment_message as string) || "Escolha seu plano:"
-        const paymentMode = (node.config?.payment_mode as string) || "bot_plans"
-        const selectedPlansStr = (node.config?.selected_plans as string) || "[]"
+        const paymentButtonsStr = (node.config?.payment_buttons as string) || "[]"
         
-        let inlineKeyboard: { inline_keyboard: { text: string; callback_data: string }[][] } | undefined
+        let paymentButtons: { id: string; text: string; amount: string }[] = []
+        try {
+          paymentButtons = JSON.parse(paymentButtonsStr)
+        } catch { /* ignore */ }
 
-        if (paymentMode === "custom") {
-          // Modo personalizado - botao unico
-          const amount = (node.config?.amount as string) || "0"
-          const description = (node.config?.description as string) || "Pagamento"
-          const buttonText = (node.config?.button_text as string) || `Pagar R$ ${amount}`
-          
-          inlineKeyboard = {
-            inline_keyboard: [[{
-              text: buttonText,
-              callback_data: `pay_custom_${amount.replace(",", ".")}_${node.id}`
-            }]]
+        // Filtrar botoes validos (com texto e valor)
+        const validButtons = paymentButtons.filter(btn => btn.text?.trim() && btn.amount?.trim())
+
+        if (validButtons.length > 0) {
+          // Criar keyboard com os botoes de pagamento configurados
+          const inlineKeyboard = {
+            inline_keyboard: validButtons.map((btn) => [{
+              text: btn.text,
+              callback_data: `pay_btn_${btn.amount.replace(",", ".")}_${btn.id}_${node.id}`
+            }])
           }
           
+          console.log("[v0] Enviando botoes de pagamento:", JSON.stringify(validButtons))
           await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
         } else {
-          // Modo planos do bot - buscar planos selecionados
-          let selectedPlanIds: string[] = []
-          try {
-            selectedPlanIds = JSON.parse(selectedPlansStr)
-          } catch { /* ignore */ }
-
-          if (selectedPlanIds.length > 0) {
-            // Buscar planos do banco
-            const { data: plans } = await supabase
-              .from("payment_plans")
-              .select("id, name, price")
-              .in("id", selectedPlanIds)
-              .eq("is_active", true)
-
-            if (plans && plans.length > 0) {
-              inlineKeyboard = {
-                inline_keyboard: plans.map((plan) => [{
-                  text: `${plan.name} - R$ ${plan.price.toFixed(2).replace(".", ",")}`,
-                  callback_data: `pay_plan_${plan.id}`
-                }])
-              }
+          // Fallback: modo antigo para compatibilidade
+          const amount = (node.config?.amount as string) || "0"
+          const buttonText = (node.config?.button_text as string) || `Pagar R$ ${amount}`
+          
+          if (amount && amount !== "0") {
+            const inlineKeyboard = {
+              inline_keyboard: [[{
+                text: buttonText,
+                callback_data: `pay_custom_${amount.replace(",", ".")}_${node.id}`
+              }]]
             }
+            await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
+          } else {
+            // Sem botoes configurados - apenas envia a mensagem
+            await sendTelegramMessage(botToken, chatId, paymentMessage)
           }
-
-          await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
         }
 
         // Pausar e aguardar o usuario clicar no botao
@@ -805,7 +798,7 @@ async function processCallbackQuery({
   const bot = bots[0]
 
   // Check if this is a payment callback
-  if (callbackData.startsWith("pay_plan_") || callbackData.startsWith("pay_custom_")) {
+  if (callbackData.startsWith("pay_plan_") || callbackData.startsWith("pay_custom_") || callbackData.startsWith("pay_btn_")) {
     let amount = 0
     let description = "Pagamento"
     let planId: string | null = null
@@ -823,8 +816,16 @@ async function processCallbackQuery({
         amount = plan.price
         description = plan.name
       }
+    } else if (callbackData.startsWith("pay_btn_")) {
+      // Novo formato: pay_btn_{amount}_{buttonId}_{nodeId}
+      // Exemplo: pay_btn_15.90_abc123_node456
+      const parts = callbackData.replace("pay_btn_", "").split("_")
+      amount = parseFloat(parts[0]) || 0
+      // O buttonId está em parts[1], nodeId em parts[2]
+      // Podemos usar o buttonId para buscar mais informacoes se necessario
+      console.log("[v0] Payment button callback:", { amount, buttonId: parts[1], nodeId: parts[2] })
     } else if (callbackData.startsWith("pay_custom_")) {
-      // Parse custom amount: pay_custom_29.90_nodeId
+      // Parse custom amount: pay_custom_29.90_nodeId (formato antigo)
       const parts = callbackData.replace("pay_custom_", "").split("_")
       amount = parseFloat(parts[0]) || 0
     }
