@@ -23,6 +23,7 @@ interface Payment {
   bot_id: string | null
   telegram_user_id: string | null
   telegram_user_name: string | null
+  telegram_username: string | null
   gateway: string
   external_payment_id: string
   amount: number
@@ -316,30 +317,27 @@ export default function PaymentsPage() {
                 </button>
               </div>
               <div className="space-y-4">
-                {[
-                  { metodo: "PIX", valor: formatCurrency(stats.totalApproved * 0.78), percent: 78, icon: Banknote, cor: "#22c55e" },
-                  { metodo: "Cartao de Credito", valor: formatCurrency(stats.totalApproved * 0.17), percent: 17, icon: CreditCard, cor: "#3b82f6" },
-                  { metodo: "Boleto", valor: formatCurrency(stats.totalApproved * 0.05), percent: 5, icon: Receipt, cor: "#f59e0b" },
-                ].map((item) => (
-                  <div key={item.metodo} className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${item.cor}15` }}>
-                      <item.icon className="h-5 w-5" style={{ color: item.cor }} />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-sm font-medium text-foreground">{item.metodo}</span>
-                        <span className="text-sm font-semibold text-foreground">{item.valor}</span>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div 
-                          className="h-full rounded-full transition-all duration-500"
-                          style={{ width: `${item.percent}%`, backgroundColor: item.cor }}
-                        />
-                      </div>
-                    </div>
-                    <span className="text-xs text-muted-foreground w-10 text-right">{item.percent}%</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-[#22c55e]/10">
+                    <Banknote className="h-5 w-5 text-[#22c55e]" />
                   </div>
-                ))}
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-sm font-medium text-foreground">PIX</span>
+                      <span className="text-sm font-semibold text-foreground">{formatCurrency(stats.totalApproved)}</span>
+                    </div>
+                    <div className="h-2 bg-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500 bg-[#22c55e]"
+                        style={{ width: "100%" }}
+                      />
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground w-10 text-right">100%</span>
+                </div>
+                <p className="text-xs text-muted-foreground text-center pt-2">
+                  Atualmente apenas PIX esta disponivel
+                </p>
               </div>
             </div>
 
@@ -545,8 +543,13 @@ export default function PaymentsPage() {
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-foreground">{selectedPayment.telegram_user_name || "Usuario"}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Telegram ID: {selectedPayment.telegram_user_id || "N/A"}
+                  {selectedPayment.telegram_username && (
+                    <p className="text-sm text-[#22c55e]">
+                      @{selectedPayment.telegram_username}
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    ID: {selectedPayment.telegram_user_id || "N/A"}
                   </p>
                 </div>
                 {selectedPayment.telegram_user_id && (

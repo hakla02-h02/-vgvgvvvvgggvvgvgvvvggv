@@ -1078,6 +1078,19 @@ async function generatePayment(
   description: string,
   productType: "main_product" | "order_bump" | "upsell" | "downsell"
 ) {
+  // Get Telegram user data from bot_users table
+  const { data: botUser } = await supabase
+    .from("bot_users")
+    .select("first_name, last_name, username")
+    .eq("bot_id", bot.id)
+    .eq("telegram_user_id", telegramUserId)
+    .single()
+
+  const telegramUserName = botUser 
+    ? [botUser.first_name, botUser.last_name].filter(Boolean).join(" ") || "Usuario"
+    : "Usuario"
+  const telegramUsername = botUser?.username || null
+
   // Get user's gateway (Mercado Pago)
   let gateway = null
   
@@ -1137,16 +1150,20 @@ async function generatePayment(
       const qrCodeBase64 = pixData.qr_code_base64
       const pixCopyPaste = pixData.qr_code
 
-      // Save payment to database with product_type
+      // Save payment to database with all user data
       await supabase.from("payments").insert({
         user_id: bot.user_id,
         bot_id: bot.id,
         telegram_user_id: String(telegramUserId),
+        telegram_user_name: telegramUserName,
+        telegram_username: telegramUsername,
         gateway: "mercadopago",
         external_payment_id: String(mpData.id),
         amount: amount,
         description: description,
+        product_name: description,
         product_type: productType,
+        payment_method: "pix",
         qr_code: qrCodeBase64 || null,
         copy_paste: pixCopyPaste || null,
         status: "pending",
