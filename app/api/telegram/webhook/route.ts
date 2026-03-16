@@ -640,15 +640,18 @@ async function executeNodes(
 
         if (validButtons.length > 0) {
           // Criar keyboard com os botoes de pagamento configurados
+          // IMPORTANTE: callback_data do Telegram tem limite de 64 bytes
+          // Formato curto: pay_{amount}_{index} (ex: pay_15.90_0)
           const inlineKeyboard = {
-            inline_keyboard: validButtons.map((btn) => [{
+            inline_keyboard: validButtons.map((btn, idx) => [{
               text: btn.text,
-              callback_data: `pay_btn_${btn.amount.replace(",", ".")}_${btn.id}_${node.id}`
+              callback_data: `pay_${btn.amount.replace(",", ".")}_${idx}`
             }])
           }
           
           console.log("[v0] Enviando botoes de pagamento:", JSON.stringify(validButtons))
-          await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
+          const result = await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
+          console.log("[v0] Resultado envio mensagem pagamento:", JSON.stringify(result))
         } else {
           // Fallback: modo antigo para compatibilidade
           const amount = (node.config?.amount as string) || "0"
@@ -658,12 +661,13 @@ async function executeNodes(
             const inlineKeyboard = {
               inline_keyboard: [[{
                 text: buttonText,
-                callback_data: `pay_custom_${amount.replace(",", ".")}_${node.id}`
+                callback_data: `pay_${amount.replace(",", ".")}_0`
               }]]
             }
             await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
           } else {
             // Sem botoes configurados - apenas envia a mensagem
+            console.log("[v0] Nenhum botao de pagamento configurado")
             await sendTelegramMessage(botToken, chatId, paymentMessage)
           }
         }
@@ -798,13 +802,20 @@ async function processCallbackQuery({
   const bot = bots[0]
 
   // Check if this is a payment callback
-  if (callbackData.startsWith("pay_plan_") || callbackData.startsWith("pay_custom_") || callbackData.startsWith("pay_btn_")) {
+  // Formatos suportados:
+  // - pay_{amount}_{index} (novo formato curto)
+  // - pay_plan_{planId} (planos do bot - legado)
+  // - pay_custom_{amount}_{nodeId} (personalizado - legado)
+  // - pay_btn_{amount}_{buttonId}_{nodeId} (formato anterior - legado)
+  const isPaymentCallback = callbackData.startsWith("pay_")
+  
+  if (isPaymentCallback) {
     let amount = 0
     let description = "Pagamento"
     let planId: string | null = null
 
     if (callbackData.startsWith("pay_plan_")) {
-      // Get plan info
+      // Get plan info (formato legado)
       planId = callbackData.replace("pay_plan_", "")
       const { data: plan } = await supabase
         .from("payment_plans")
@@ -817,17 +828,21 @@ async function processCallbackQuery({
         description = plan.name
       }
     } else if (callbackData.startsWith("pay_btn_")) {
-      // Novo formato: pay_btn_{amount}_{buttonId}_{nodeId}
-      // Exemplo: pay_btn_15.90_abc123_node456
+      // Formato legado: pay_btn_{amount}_{buttonId}_{nodeId}
       const parts = callbackData.replace("pay_btn_", "").split("_")
       amount = parseFloat(parts[0]) || 0
-      // O buttonId está em parts[1], nodeId em parts[2]
-      // Podemos usar o buttonId para buscar mais informacoes se necessario
-      console.log("[v0] Payment button callback:", { amount, buttonId: parts[1], nodeId: parts[2] })
+      console.log("[v0] Payment button callback (legado):", { amount, buttonId: parts[1], nodeId: parts[2] })
     } else if (callbackData.startsWith("pay_custom_")) {
-      // Parse custom amount: pay_custom_29.90_nodeId (formato antigo)
+      // Formato legado: pay_custom_29.90_nodeId
       const parts = callbackData.replace("pay_custom_", "").split("_")
       amount = parseFloat(parts[0]) || 0
+    } else {
+      // Novo formato curto: pay_{amount}_{index}
+      // Exemplo: pay_15.90_0
+      const parts = callbackData.replace("pay_", "").split("_")
+      amount = parseFloat(parts[0]) || 0
+      const buttonIndex = parseInt(parts[1]) || 0
+      console.log("[v0] Payment callback (novo formato):", { amount, buttonIndex })
     }
 
     if (amount <= 0) {
