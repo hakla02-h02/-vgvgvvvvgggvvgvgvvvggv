@@ -638,6 +638,58 @@ async function executeNodes(
         // Filtrar botoes validos (com texto e valor)
         const validButtons = paymentButtons.filter(btn => btn.text?.trim() && btn.amount?.trim())
 
+        // ========== ORDER BUMP - Verificar se existe configurado ==========
+        const hasOrderBump = node.config?.has_order_bump === "true"
+        const orderBumpDesc = (node.config?.order_bump_desc as string) || ""
+        const orderBumpAmount = (node.config?.order_bump_amount as string) || ""
+        const orderBumpAcceptText = (node.config?.order_bump_accept_text as string) || "Sim, quero!"
+        const orderBumpDeclineText = (node.config?.order_bump_decline_text as string) || "Nao, obrigado"
+        const orderBumpMediaUrl = (node.config?.order_bump_media_url as string) || ""
+        const orderBumpMediaType = (node.config?.order_bump_media_type as string) || ""
+
+        if (hasOrderBump && orderBumpAmount && validButtons.length > 0) {
+          // Enviar midia do Order Bump se configurada
+          if (orderBumpMediaUrl) {
+            if (orderBumpMediaType === "video") {
+              await sendTelegramVideo(botToken, chatId, orderBumpMediaUrl, "", undefined)
+            } else if (orderBumpMediaType === "photo") {
+              await sendTelegramPhoto(botToken, chatId, orderBumpMediaUrl, "", undefined)
+            }
+          }
+
+          // Enviar mensagem do Order Bump com botoes de aceitar/recusar
+          const orderBumpMessage = orderBumpDesc || `Deseja adicionar este bonus por R$ ${orderBumpAmount}?`
+          
+          // Formato: ob_accept_{mainAmount}_{bumpAmount}_{nodePos} ou ob_decline_{mainAmount}_{nodePos}
+          const mainAmount = validButtons[0].amount.replace(",", ".")
+          const bumpAmount = orderBumpAmount.replace(",", ".")
+          
+          const orderBumpKeyboard = {
+            inline_keyboard: [
+              [{ text: orderBumpAcceptText, callback_data: `ob_accept_${mainAmount}_${bumpAmount}_${node.position}` }],
+              [{ text: orderBumpDeclineText, callback_data: `ob_decline_${mainAmount}_${node.position}` }]
+            ]
+          }
+
+          await sendTelegramMessage(botToken, chatId, orderBumpMessage, orderBumpKeyboard)
+
+          // Pausar e aguardar decisao do Order Bump
+          await supabase
+            .from("user_flow_state")
+            .update({
+              current_node_position: node.position,
+              status: "waiting_order_bump",
+              updated_at: new Date().toISOString(),
+            })
+            .eq("bot_id", botId)
+            .eq("flow_id", flowId)
+            .eq("telegram_user_id", telegramUserId)
+
+          await updateFunnelStep(botId, telegramUserId, 3)
+          return // STOP - aguardar decisao do Order Bump
+        }
+
+        // Se nao tem Order Bump, mostrar botoes de pagamento normalmente
         if (validButtons.length > 0) {
           // Criar keyboard com os botoes de pagamento configurados
           // IMPORTANTE: callback_data do Telegram tem limite de 64 bytes
@@ -649,9 +701,7 @@ async function executeNodes(
             }])
           }
           
-          console.log("[v0] Enviando botoes de pagamento:", JSON.stringify(validButtons))
-          const result = await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
-          console.log("[v0] Resultado envio mensagem pagamento:", JSON.stringify(result))
+          await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
         } else {
           // Fallback: modo antigo para compatibilidade
           const amount = (node.config?.amount as string) || "0"
@@ -666,8 +716,6 @@ async function executeNodes(
             }
             await sendTelegramMessage(botToken, chatId, paymentMessage, inlineKeyboard)
           } else {
-            // Sem botoes configurados - apenas envia a mensagem
-            console.log("[v0] Nenhum botao de pagamento configurado")
             await sendTelegramMessage(botToken, chatId, paymentMessage)
           }
         }
@@ -801,7 +849,152 @@ async function processCallbackQuery({
   if (!bots?.length) return
   const bot = bots[0]
 
-  // Check if this is a payment callback
+  // ========== ORDER BUMP CALLBACKS ==========
+  // Formato: ob_accept_{mainAmount}_{bumpAmount}_{nodePos} ou ob_decline_{mainAmount}_{nodePos}
+  if (callbackData.startsWith("ob_accept_") || callbackData.startsWith("ob_decline_")) {
+    const isAccept = callbackData.startsWith("ob_accept_")
+    const parts = callbackData.replace("ob_accept_", "").replace("ob_decline_", "").split("_")
+    
+    let totalAmount = 0
+    let productType: "main_product" | "order_bump" = "main_product"
+    
+    if (isAccept) {
+      // Aceito: cobrar produto principal + order bump
+      const mainAmount = parseFloat(parts[0]) || 0
+      const bumpAmount = parseFloat(parts[1]) || 0
+      totalAmount = mainAmount + bumpAmount
+      productType = "order_bump"
+    } else {
+      // Recusado: cobrar apenas produto principal
+      totalAmount = parseFloat(parts[0]) || 0
+    }
+
+    if (totalAmount <= 0) {
+      await sendTelegramMessage(botToken, chatId, "Erro ao processar. Tente novamente.")
+      return
+    }
+
+    // Gerar o pagamento com o valor correto
+    await generatePayment(
+      supabase, botToken, chatId, telegramUserId, bot,
+      totalAmount, productType === "order_bump" ? "Produto + Order Bump" : "Produto Principal",
+      productType
+    )
+    return
+  }
+
+  // ========== UPSELL CALLBACKS ==========
+  // Formato: up_accept_{amount}_{upsellIndex} ou up_decline_{upsellIndex}
+  if (callbackData.startsWith("up_accept_") || callbackData.startsWith("up_decline_")) {
+    const isAccept = callbackData.startsWith("up_accept_")
+    
+    if (isAccept) {
+      const parts = callbackData.replace("up_accept_", "").split("_")
+      const amount = parseFloat(parts[0]) || 0
+      const upsellIndex = parseInt(parts[1]) || 0
+
+      if (amount <= 0) {
+        await sendTelegramMessage(botToken, chatId, "Erro ao processar. Tente novamente.")
+        return
+      }
+
+      // Gerar pagamento do upsell
+      await generatePayment(
+        supabase, botToken, chatId, telegramUserId, bot,
+        amount, `Upsell ${upsellIndex + 1}`,
+        "upsell"
+      )
+    } else {
+      // Upsell recusado - verificar se tem downsell
+      const upsellIndex = parseInt(callbackData.replace("up_decline_", "")) || 0
+      
+      // Buscar o estado atual e o nó de pagamento para pegar as configurações de downsell
+      const { data: state } = await supabase
+        .from("user_flow_state")
+        .select("flow_id, current_node_position")
+        .eq("bot_id", bot.id)
+        .eq("telegram_user_id", telegramUserId)
+        .in("status", ["waiting_upsell", "in_progress"])
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (state) {
+        const nodes = await fetchNodes(state.flow_id)
+        const paymentNode = nodes.find(n => n.type === "payment")
+        
+        if (paymentNode) {
+          let downsells: { enabled: boolean; description: string; buttons: { text: string; amount: string }[]; media_url?: string; media_type?: string }[] = []
+          try {
+            const downsellsStr = paymentNode.config?.downsells as string
+            if (downsellsStr) downsells = JSON.parse(downsellsStr)
+          } catch { /* ignore */ }
+
+          const downsell = downsells[upsellIndex]
+          if (downsell?.enabled && downsell.buttons?.length > 0) {
+            // Enviar downsell
+            await sendDownsellOffer(botToken, chatId, downsell, upsellIndex)
+            
+            // Atualizar estado para aguardar decisão do downsell
+            await supabase
+              .from("user_flow_state")
+              .update({
+                status: "waiting_downsell",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("bot_id", bot.id)
+              .eq("telegram_user_id", telegramUserId)
+            return
+          }
+        }
+
+        // Sem downsell - continuar para próximo upsell ou encerrar ofertas
+        await checkNextUpsell(supabase, botToken, chatId, telegramUserId, bot, state.flow_id, upsellIndex + 1)
+      }
+    }
+    return
+  }
+
+  // ========== DOWNSELL CALLBACKS ==========
+  // Formato: down_accept_{amount}_{downsellIndex} ou down_decline_{downsellIndex}
+  if (callbackData.startsWith("down_accept_") || callbackData.startsWith("down_decline_")) {
+    const isAccept = callbackData.startsWith("down_accept_")
+    const parts = callbackData.replace("down_accept_", "").replace("down_decline_", "").split("_")
+    const downsellIndex = isAccept ? parseInt(parts[1]) || 0 : parseInt(parts[0]) || 0
+
+    if (isAccept) {
+      const amount = parseFloat(parts[0]) || 0
+      
+      if (amount <= 0) {
+        await sendTelegramMessage(botToken, chatId, "Erro ao processar. Tente novamente.")
+        return
+      }
+
+      // Gerar pagamento do downsell
+      await generatePayment(
+        supabase, botToken, chatId, telegramUserId, bot,
+        amount, `Downsell ${downsellIndex + 1}`,
+        "downsell"
+      )
+    } else {
+      // Downsell recusado - verificar próximo upsell
+      const { data: state } = await supabase
+        .from("user_flow_state")
+        .select("flow_id")
+        .eq("bot_id", bot.id)
+        .eq("telegram_user_id", telegramUserId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (state) {
+        await checkNextUpsell(supabase, botToken, chatId, telegramUserId, bot, state.flow_id, downsellIndex + 1)
+      }
+    }
+    return
+  }
+
+  // ========== PAYMENT CALLBACKS (ORIGINAL) ==========
   // Formatos suportados:
   // - pay_{amount}_{index} (novo formato curto)
   // - pay_plan_{planId} (planos do bot - legado)
@@ -815,7 +1008,6 @@ async function processCallbackQuery({
     let planId: string | null = null
 
     if (callbackData.startsWith("pay_plan_")) {
-      // Get plan info (formato legado)
       planId = callbackData.replace("pay_plan_", "")
       const { data: plan } = await supabase
         .from("payment_plans")
@@ -828,21 +1020,14 @@ async function processCallbackQuery({
         description = plan.name
       }
     } else if (callbackData.startsWith("pay_btn_")) {
-      // Formato legado: pay_btn_{amount}_{buttonId}_{nodeId}
       const parts = callbackData.replace("pay_btn_", "").split("_")
       amount = parseFloat(parts[0]) || 0
-      console.log("[v0] Payment button callback (legado):", { amount, buttonId: parts[1], nodeId: parts[2] })
     } else if (callbackData.startsWith("pay_custom_")) {
-      // Formato legado: pay_custom_29.90_nodeId
       const parts = callbackData.replace("pay_custom_", "").split("_")
       amount = parseFloat(parts[0]) || 0
     } else {
-      // Novo formato curto: pay_{amount}_{index}
-      // Exemplo: pay_15.90_0
       const parts = callbackData.replace("pay_", "").split("_")
       amount = parseFloat(parts[0]) || 0
-      const buttonIndex = parseInt(parts[1]) || 0
-      console.log("[v0] Payment callback (novo formato):", { amount, buttonIndex })
     }
 
     if (amount <= 0) {
@@ -850,119 +1035,300 @@ async function processCallbackQuery({
       return
     }
 
-    // Get user's gateway (Mercado Pago)
-    // Primeiro tenta buscar gateway vinculado ao bot específico, depois fallback para qualquer gateway ativo
-    let gateway = null
-    
-    // Tenta gateway específico do bot
-    const { data: botGateway } = await supabase
+    await generatePayment(
+      supabase, botToken, chatId, telegramUserId, bot,
+      amount, description, "main_product"
+    )
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper: Generate PIX payment
+// ---------------------------------------------------------------------------
+
+async function generatePayment(
+  supabase: ReturnType<typeof getSupabase>,
+  botToken: string,
+  chatId: number,
+  telegramUserId: number,
+  bot: { id: string; user_id: string },
+  amount: number,
+  description: string,
+  productType: "main_product" | "order_bump" | "upsell" | "downsell"
+) {
+  // Get user's gateway (Mercado Pago)
+  let gateway = null
+  
+  const { data: botGateway } = await supabase
+    .from("user_gateways")
+    .select("id, access_token, is_active, bot_id, gateway_name")
+    .eq("user_id", bot.user_id)
+    .eq("bot_id", bot.id)
+    .eq("gateway_name", "mercadopago")
+    .eq("is_active", true)
+    .single()
+  
+  if (botGateway?.access_token) {
+    gateway = botGateway
+  } else {
+    const { data: anyGateway } = await supabase
       .from("user_gateways")
       .select("id, access_token, is_active, bot_id, gateway_name")
       .eq("user_id", bot.user_id)
-      .eq("bot_id", bot.id)
       .eq("gateway_name", "mercadopago")
       .eq("is_active", true)
+      .limit(1)
       .single()
     
-    if (botGateway?.access_token) {
-      gateway = botGateway
-    } else {
-      // Fallback: busca qualquer gateway ativo do usuario
-      const { data: anyGateway } = await supabase
-        .from("user_gateways")
-        .select("id, access_token, is_active, bot_id, gateway_name")
-        .eq("user_id", bot.user_id)
-        .eq("gateway_name", "mercadopago")
-        .eq("is_active", true)
-        .limit(1)
-        .single()
-      
-      gateway = anyGateway
-    }
+    gateway = anyGateway
+  }
 
-    if (!gateway?.access_token) {
-      await sendTelegramMessage(botToken, chatId, "Gateway de pagamento nao configurado. Entre em contato com o suporte.")
-      return
-    }
+  if (!gateway?.access_token) {
+    await sendTelegramMessage(botToken, chatId, "Gateway de pagamento nao configurado. Entre em contato com o suporte.")
+    return
+  }
 
-    // Generate PIX via Mercado Pago
-    try {
-      await sendTelegramMessage(botToken, chatId, "Gerando seu pagamento PIX... Aguarde.")
+  try {
+    await sendTelegramMessage(botToken, chatId, "Gerando seu pagamento PIX... Aguarde.")
 
-      const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${gateway.access_token}`,
-          "X-Idempotency-Key": `${telegramUserId}-${Date.now()}`,
+    const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${gateway.access_token}`,
+        "X-Idempotency-Key": `${telegramUserId}-${Date.now()}`,
+      },
+      body: JSON.stringify({
+        transaction_amount: amount,
+        description: description,
+        payment_method_id: "pix",
+        payer: {
+          email: `telegram_${telegramUserId}@temp.com`,
         },
-        body: JSON.stringify({
-          transaction_amount: amount,
-          description: description,
-          payment_method_id: "pix",
-          payer: {
-            email: `telegram_${telegramUserId}@temp.com`,
-          },
-        }),
+      }),
+    })
+
+    const mpData = await mpResponse.json()
+
+    if (mpData.id && mpData.point_of_interaction?.transaction_data) {
+      const pixData = mpData.point_of_interaction.transaction_data
+      const qrCodeBase64 = pixData.qr_code_base64
+      const pixCopyPaste = pixData.qr_code
+
+      // Save payment to database with product_type
+      await supabase.from("payments").insert({
+        user_id: bot.user_id,
+        bot_id: bot.id,
+        telegram_user_id: String(telegramUserId),
+        gateway: "mercadopago",
+        external_payment_id: String(mpData.id),
+        amount: amount,
+        description: description,
+        product_type: productType,
+        qr_code: qrCodeBase64 || null,
+        copy_paste: pixCopyPaste || null,
+        status: "pending",
       })
 
-      const mpData = await mpResponse.json()
+      // Send QR Code image
+      if (qrCodeBase64) {
+        const photoUrl = `data:image/png;base64,${qrCodeBase64}`
+        await sendTelegramPhoto(botToken, chatId, photoUrl, "", undefined)
+      }
 
-      if (mpData.id && mpData.point_of_interaction?.transaction_data) {
-        const pixData = mpData.point_of_interaction.transaction_data
-        const qrCodeBase64 = pixData.qr_code_base64
-        const pixCopyPaste = pixData.qr_code
+      // Send PIX copy-paste
+      const pixMessage = `<b>PIX Copia e Cola:</b>\n\n<code>${pixCopyPaste}</code>\n\n<b>Valor:</b> R$ ${amount.toFixed(2).replace(".", ",")}\n<b>Descricao:</b> ${description}\n\nCopie o codigo acima e pague no seu banco.`
+      await sendTelegramMessage(botToken, chatId, pixMessage)
 
-        // Save payment to database
-        await supabase.from("payments").insert({
-          user_id: bot.user_id,
-          bot_id: bot.id,
-          telegram_user_id: String(telegramUserId),
-          gateway: "mercadopago",
-          external_payment_id: String(mpData.id),
-          amount: amount,
-          description: description,
-          qr_code: qrCodeBase64 || null,
-          copy_paste: pixCopyPaste || null,
-          status: "pending",
-        })
+      // Update funnel step
+      await updateFunnelStep(bot.id, telegramUserId, 4)
 
-        // Send QR Code image
-        if (qrCodeBase64) {
-          const photoUrl = `data:image/png;base64,${qrCodeBase64}`
-          await sendTelegramPhoto(botToken, chatId, photoUrl, "", undefined)
-        }
+      // Update state based on product type
+      const newStatus = productType === "main_product" || productType === "order_bump" 
+        ? "waiting_payment_approval" 
+        : "in_progress"
 
-        // Send PIX copy-paste
-        const pixMessage = `<b>PIX Copia e Cola:</b>\n\n<code>${pixCopyPaste}</code>\n\n<b>Valor:</b> R$ ${amount.toFixed(2).replace(".", ",")}\n<b>Descricao:</b> ${description}\n\nCopie o codigo acima e pague no seu banco.`
-        await sendTelegramMessage(botToken, chatId, pixMessage)
+      const { data: state } = await supabase
+        .from("user_flow_state")
+        .select("id, flow_id, current_node_position")
+        .eq("bot_id", bot.id)
+        .eq("telegram_user_id", telegramUserId)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .single()
 
-        // Update funnel step
-        await updateFunnelStep(bot.id, telegramUserId, 4)
-
-        // Continue flow after payment generated
-        const { data: state } = await supabase
+      if (state) {
+        await supabase
           .from("user_flow_state")
-          .select("flow_id, current_node_position")
-          .eq("bot_id", bot.id)
-          .eq("telegram_user_id", telegramUserId)
-          .eq("status", "waiting_payment")
-          .single()
+          .update({
+            status: newStatus,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", state.id)
 
-        if (state) {
+        // For main product/order bump, continue flow after payment generation
+        if (productType === "main_product" || productType === "order_bump") {
           const nodes = await fetchNodes(state.flow_id)
           const nextPos = state.current_node_position + 1
           await setFlowState(bot.id, state.flow_id, telegramUserId, chatId, nextPos, "in_progress")
           await executeNodes(botToken, chatId, nodes, nextPos, bot.id, state.flow_id, telegramUserId)
         }
-      } else {
-        console.error("[v0] Mercado Pago error:", mpData)
-        await sendTelegramMessage(botToken, chatId, "Erro ao gerar PIX. Tente novamente mais tarde.")
       }
-    } catch (error) {
-      console.error("[v0] Payment generation error:", error)
-      await sendTelegramMessage(botToken, chatId, "Erro ao processar pagamento. Tente novamente.")
+    } else {
+      console.error("[v0] Mercado Pago error:", mpData)
+      await sendTelegramMessage(botToken, chatId, "Erro ao gerar PIX. Tente novamente mais tarde.")
     }
+  } catch (error) {
+    console.error("[v0] Payment generation error:", error)
+    await sendTelegramMessage(botToken, chatId, "Erro ao processar pagamento. Tente novamente.")
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper: Send Upsell Offer
+// ---------------------------------------------------------------------------
+
+async function sendUpsellOffer(
+  botToken: string,
+  chatId: number,
+  upsell: { description: string; buttons: { text: string; amount: string }[]; media_url?: string; media_type?: string; delay_seconds?: string },
+  upsellIndex: number
+) {
+  // Delay opcional antes de enviar
+  const delaySeconds = parseInt(upsell.delay_seconds || "0")
+  if (delaySeconds > 0 && delaySeconds <= 30) {
+    await sleep(delaySeconds * 1000)
+  }
+
+  // Enviar mídia se configurada
+  if (upsell.media_url) {
+    if (upsell.media_type === "video") {
+      await sendTelegramVideo(botToken, chatId, upsell.media_url, "", undefined)
+    } else if (upsell.media_type === "photo") {
+      await sendTelegramPhoto(botToken, chatId, upsell.media_url, "", undefined)
+    }
+  }
+
+  // Montar botões do upsell
+  const validButtons = upsell.buttons?.filter(b => b.text?.trim() && b.amount?.trim()) || []
+  
+  if (validButtons.length > 0) {
+    const amount = validButtons[0].amount.replace(",", ".")
+    const inlineKeyboard = {
+      inline_keyboard: [
+        [{ text: validButtons[0].text, callback_data: `up_accept_${amount}_${upsellIndex}` }],
+        [{ text: "Nao, obrigado", callback_data: `up_decline_${upsellIndex}` }]
+      ]
+    }
+
+    const message = upsell.description || "Aproveite esta oferta especial!"
+    await sendTelegramMessage(botToken, chatId, message, inlineKeyboard)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper: Send Downsell Offer
+// ---------------------------------------------------------------------------
+
+async function sendDownsellOffer(
+  botToken: string,
+  chatId: number,
+  downsell: { description: string; buttons: { text: string; amount: string }[]; media_url?: string; media_type?: string; delay_seconds?: string },
+  downsellIndex: number
+) {
+  // Delay opcional antes de enviar
+  const delaySeconds = parseInt(downsell.delay_seconds || "0")
+  if (delaySeconds > 0 && delaySeconds <= 30) {
+    await sleep(delaySeconds * 1000)
+  }
+
+  // Enviar mídia se configurada
+  if (downsell.media_url) {
+    if (downsell.media_type === "video") {
+      await sendTelegramVideo(botToken, chatId, downsell.media_url, "", undefined)
+    } else if (downsell.media_type === "photo") {
+      await sendTelegramPhoto(botToken, chatId, downsell.media_url, "", undefined)
+    }
+  }
+
+  // Montar botões do downsell
+  const validButtons = downsell.buttons?.filter(b => b.text?.trim() && b.amount?.trim()) || []
+  
+  if (validButtons.length > 0) {
+    const amount = validButtons[0].amount.replace(",", ".")
+    const inlineKeyboard = {
+      inline_keyboard: [
+        [{ text: validButtons[0].text, callback_data: `down_accept_${amount}_${downsellIndex}` }],
+        [{ text: "Nao, obrigado", callback_data: `down_decline_${downsellIndex}` }]
+      ]
+    }
+
+    const message = downsell.description || "Ultima chance! Oferta especial para voce:"
+    await sendTelegramMessage(botToken, chatId, message, inlineKeyboard)
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helper: Check for next upsell or finish offers
+// ---------------------------------------------------------------------------
+
+async function checkNextUpsell(
+  supabase: ReturnType<typeof getSupabase>,
+  botToken: string,
+  chatId: number,
+  telegramUserId: number,
+  bot: { id: string; user_id: string },
+  flowId: string,
+  nextUpsellIndex: number
+) {
+  const nodes = await fetchNodes(flowId)
+  const paymentNode = nodes.find(n => n.type === "payment")
+  
+  if (!paymentNode) {
+    await sendTelegramMessage(botToken, chatId, "Obrigado! Seu fluxo de ofertas foi concluido.")
+    return
+  }
+
+  let upsells: { enabled: boolean; description: string; buttons: { text: string; amount: string }[]; media_url?: string; media_type?: string; delay_seconds?: string }[] = []
+  try {
+    const upsellsStr = paymentNode.config?.upsells as string
+    if (upsellsStr) upsells = JSON.parse(upsellsStr)
+  } catch { /* ignore */ }
+
+  // Procurar próximo upsell habilitado
+  for (let i = nextUpsellIndex; i < upsells.length; i++) {
+    if (upsells[i]?.enabled && upsells[i].buttons?.length > 0) {
+      await sendUpsellOffer(botToken, chatId, upsells[i], i)
+      
+      // Atualizar estado para aguardar decisão do upsell
+      await supabase
+        .from("user_flow_state")
+        .update({
+          status: "waiting_upsell",
+          updated_at: new Date().toISOString(),
+        })
+        .eq("bot_id", bot.id)
+        .eq("telegram_user_id", telegramUserId)
+      return
+    }
+  }
+
+  // Nenhum upsell restante - encerrar fluxo de ofertas
+  await sendTelegramMessage(botToken, chatId, "Obrigado pelo seu interesse!")
+  
+  // Continuar fluxo normal após ofertas
+  const { data: state } = await supabase
+    .from("user_flow_state")
+    .select("current_node_position")
+    .eq("bot_id", bot.id)
+    .eq("flow_id", flowId)
+    .eq("telegram_user_id", telegramUserId)
+    .single()
+
+  if (state) {
+    const nextPos = state.current_node_position + 1
+    await setFlowState(bot.id, flowId, telegramUserId, chatId, nextPos, "in_progress")
+    await executeNodes(botToken, chatId, nodes, nextPos, bot.id, flowId, telegramUserId)
   }
 }
 
