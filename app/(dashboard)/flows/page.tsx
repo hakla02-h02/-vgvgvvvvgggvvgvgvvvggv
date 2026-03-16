@@ -1923,12 +1923,17 @@ export default function FlowsPage() {
         upsells: JSON.stringify(editUpsells),
         downsells: JSON.stringify(editDownsells),
       }
-      // Generate label based on first payment button
-      const firstBtn = editPaymentButtons.find(b => b.text && b.amount)
-      if (firstBtn) {
-        finalLabel = `${firstBtn.text} - R$${firstBtn.amount}`
-      } else if (sv === "charge" && editNodeConfig.amount) {
-        finalLabel = editNodeConfig.description ? `R$${editNodeConfig.amount} - ${editNodeConfig.description}` : `Cobrar R$${editNodeConfig.amount}`
+      // Usar o nome personalizado se definido, senao gerar automaticamente
+      if (editNodeLabel && editNodeLabel.trim()) {
+        finalLabel = editNodeLabel.trim()
+      } else {
+        // Fallback: gerar label baseado no primeiro botao
+        const firstBtn = editPaymentButtons.find(b => b.text && b.amount)
+        if (firstBtn) {
+          finalLabel = `${firstBtn.text} - R$${firstBtn.amount}`
+        } else if (sv === "charge" && editNodeConfig.amount) {
+          finalLabel = editNodeConfig.description ? `R$${editNodeConfig.amount} - ${editNodeConfig.description}` : `Cobrar R$${editNodeConfig.amount}`
+        }
       }
     } else if (editingNode.type === "action") {
       const sv = editingNode.config?.subVariant || ""
@@ -4398,6 +4403,19 @@ if (sv === "end") {
                 </div>
               ) : editingNode.type === "payment" ? (
                 <div className="flex flex-col gap-4">
+                      {/* Nome da etapa */}
+                      <div className="flex flex-col gap-2">
+                        <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Nome da Etapa</Label>
+                        <Input
+                          type="text"
+                          value={editNodeLabel}
+                          onChange={(e) => setEditNodeLabel(e.target.value)}
+                          placeholder="Ex: Pagamento Premium"
+                          className="bg-secondary/50 border-border/60 rounded-xl text-foreground h-10 text-sm"
+                        />
+                        <p className="text-[10px] text-muted-foreground/60">Nome que aparece no card da etapa no fluxo</p>
+                      </div>
+
                       {/* Mensagem acima dos botoes */}
                       <div className="flex flex-col gap-2">
                         <Label className="text-xs font-medium tracking-wide uppercase text-muted-foreground">Mensagem</Label>
