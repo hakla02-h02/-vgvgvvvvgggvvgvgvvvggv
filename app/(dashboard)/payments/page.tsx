@@ -301,8 +301,6 @@ export default function PaymentsPage() {
               { key: "todos", label: "Todas", count: stats.total },
               { key: "approved", label: "Aprovadas", count: stats.approved },
               { key: "pending", label: "Pendentes", count: stats.pending },
-              { key: "rejected", label: "Rejeitadas", count: stats.rejected },
-              { key: "cancelled", label: "Canceladas", count: stats.cancelled },
             ].map((tab) => (
               <button
                 key={tab.key}
