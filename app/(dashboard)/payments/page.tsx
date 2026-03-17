@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 
 import { useBots } from "@/lib/bot-context"
+import { useAuth } from "@/lib/auth-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -81,6 +82,7 @@ const generateChartData = (totalApproved: number) => {
 
 export default function PaymentsPage() {
   const { selectedBot } = useBots()
+  const { session } = useAuth()
   const [filtro, setFiltro] = useState("todos")
   const [busca, setBusca] = useState("")
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
@@ -92,14 +94,14 @@ export default function PaymentsPage() {
     stats: PaymentStats
     total: number
   }>(
-    `/api/payments/list?status=${filtro}${selectedBot ? `&botId=${selectedBot.id}` : ""}`,
+    session?.userId ? `/api/payments/list?status=${filtro}&userId=${session.userId}${selectedBot ? `&botId=${selectedBot.id}` : ""}` : null,
     fetcher,
     {
       refreshInterval: 30000, // Refresh every 30 seconds
     }
   )
 
-  console.log("[v0] API Response:", { data, error, isLoading, url: `/api/payments/list?status=${filtro}${selectedBot ? `&botId=${selectedBot.id}` : ""}` })
+  console.log("[v0] API Response:", { data, error, isLoading, userId: session?.userId })
   
   const payments = data?.payments || []
   const stats = data?.stats || {

@@ -1,59 +1,23 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
-import { cookies } from "next/headers"
-import { createServerClient } from "@supabase/ssr"
 
 const SUPABASE_URL = "https://izvulojnfvgsbmhyvqtn.supabase.co"
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6dnVsb2puZnZnc2JtaHl2cXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNTk0NTMsImV4cCI6MjA4ODgzNTQ1M30.Djnn3tsrxSGLBR-Bm1dWOpQe0NHCSOWJFZkbbTOk2oM"
 
 export async function GET(request: NextRequest) {
-  console.log("[v0] ========== PAYMENTS LIST API CALLED ==========")
   try {
     const searchParams = request.nextUrl.searchParams
     const botId = searchParams.get("botId")
+    const userId = searchParams.get("userId")
     const status = searchParams.get("status")
     const limit = parseInt(searchParams.get("limit") || "50")
     const offset = parseInt(searchParams.get("offset") || "0")
 
-    // Get authenticated user
-    const cookieStore = await cookies()
-    const supabaseAuth = createServerClient(
-      SUPABASE_URL,
-      SUPABASE_ANON_KEY,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      }
-    )
-    
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
-    
-    console.log("[v0] Auth result:", { user: user?.id, authError })
-    
-    if (authError || !user) {
-      console.log("[v0] AUTH FAILED - returning 401")
-      return NextResponse.json({ error: "Nao autenticado", details: authError }, { status: 401 })
-    }
-    
-    console.log("[v0] Fetching payments for user_id:", user.id, "botId:", botId, "status:", status)
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
     
-    // Debug: buscar todos os pagamentos para ver os user_ids existentes
-    const { data: debugPayments } = await supabase
-      .from("payments")
-      .select("id, user_id, status, amount")
-      .order("created_at", { ascending: false })
-      .limit(5)
-    
-    console.log("[v0] DEBUG - Recent payments in DB:", JSON.stringify(debugPayments, null, 2))
-    console.log("[v0] DEBUG - Comparing: logged user_id =", user.id, "vs payment user_ids =", debugPayments?.map(p => p.user_id))
+    console.log("[v0] Fetching payments - botId:", botId, "userId:", userId, "status:", status)
 
-    // Build query
+    // Build query - buscar todos os pagamentos (filtrados por botId se passado)
     let query = supabase
       .from("payments")
       .select(`
@@ -63,9 +27,13 @@ export async function GET(request: NextRequest) {
           name
         )
       `, { count: "exact" })
-      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .range(offset, offset + limit - 1)
+
+    // Filtrar por user_id se passado
+    if (userId) {
+      query = query.eq("user_id", userId)
+    }
 
     if (botId) {
       query = query.eq("bot_id", botId)
@@ -87,14 +55,17 @@ export async function GET(request: NextRequest) {
     
     console.log("[v0] Found", payments?.length || 0, "payments")
 
-    // Calculate stats
-    const statsQuery = supabase
+    // Calculate stats - mesmo filtro
+    let statsQuery = supabase
       .from("payments")
       .select("status, amount")
-      .eq("user_id", user.id)
+
+    if (userId) {
+      statsQuery = statsQuery.eq("user_id", userId)
+    }
 
     if (botId) {
-      statsQuery.eq("bot_id", botId)
+      statsQuery = statsQuery.eq("bot_id", botId)
     }
 
     const { data: allPayments } = await statsQuery
