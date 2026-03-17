@@ -67,7 +67,7 @@ const productTypeLabels: Record<string, string> = {
   order_bump: "Order Bump",
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((res) => res.json())
 
 // Generate mock chart data based on real stats
 const generateChartData = (totalApproved: number) => {
