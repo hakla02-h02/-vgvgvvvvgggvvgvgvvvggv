@@ -8,6 +8,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Iml6dnVsb2puZnZnc2JtaHl2cXRuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyNTk0NTMsImV4cCI6MjA4ODgzNTQ1M30.Djnn3tsrxSGLBR-Bm1dWOpQe0NHCSOWJFZkbbTOk2oM"
 
 export async function GET(request: NextRequest) {
+  console.log("[v0] ========== PAYMENTS LIST API CALLED ==========")
   try {
     const searchParams = request.nextUrl.searchParams
     const botId = searchParams.get("botId")
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
       .limit(5)
     
     console.log("[v0] DEBUG - Recent payments in DB:", JSON.stringify(debugPayments, null, 2))
+    console.log("[v0] DEBUG - Comparing: logged user_id =", user.id, "vs payment user_ids =", debugPayments?.map(p => p.user_id))
 
     // Build query
     let query = supabase
