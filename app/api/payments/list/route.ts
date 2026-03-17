@@ -32,8 +32,11 @@ export async function GET(request: NextRequest) {
     
     const { data: { user }, error: authError } = await supabaseAuth.auth.getUser()
     
+    console.log("[v0] Auth result:", { user: user?.id, authError })
+    
     if (authError || !user) {
-      return NextResponse.json({ error: "Nao autenticado" }, { status: 401 })
+      console.log("[v0] AUTH FAILED - returning 401")
+      return NextResponse.json({ error: "Nao autenticado", details: authError }, { status: 401 })
     }
     
     console.log("[v0] Fetching payments for user_id:", user.id, "botId:", botId, "status:", status)
@@ -118,9 +121,10 @@ export async function GET(request: NextRequest) {
       offset,
     })
   } catch (error) {
-    console.error("Error in payments list:", error)
+    console.error("[v0] ERROR in payments list:", error)
+    console.error("[v0] Error details:", JSON.stringify(error, null, 2))
     return NextResponse.json(
-      { error: "Erro interno do servidor" },
+      { error: "Erro interno do servidor", details: String(error) },
       { status: 500 }
     )
   }
