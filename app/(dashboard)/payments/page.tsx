@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
-import { NoBotSelected } from "@/components/no-bot-selected"
+
 import { useBots } from "@/lib/bot-context"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
@@ -86,13 +86,13 @@ export default function PaymentsPage() {
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [showDetails, setShowDetails] = useState(false)
 
-  // Fetch payments from API
+  // Fetch payments from API - fetch all if no bot selected, or filter by bot
   const { data, error, isLoading, mutate } = useSWR<{
     payments: Payment[]
     stats: PaymentStats
     total: number
   }>(
-    selectedBot ? `/api/payments/list?botId=${selectedBot.id}&status=${filtro}` : null,
+    `/api/payments/list?status=${filtro}${selectedBot ? `&botId=${selectedBot.id}` : ""}`,
     fetcher,
     {
       refreshInterval: 30000, // Refresh every 30 seconds
@@ -154,18 +154,9 @@ export default function PaymentsPage() {
     navigator.clipboard.writeText(text)
   }
 
-  if (!selectedBot) {
-    return (
-      <>
-        <DashboardHeader title="Financeiro" />
-        <NoBotSelected />
-      </>
-    )
-  }
-
   return (
     <>
-      <DashboardHeader title="Financeiro" />
+      <DashboardHeader title={selectedBot ? `Financeiro - ${selectedBot.name}` : "Financeiro - Todos os Bots"} />
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-4 md:p-6">
           
