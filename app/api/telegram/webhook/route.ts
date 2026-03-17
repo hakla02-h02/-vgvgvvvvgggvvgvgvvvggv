@@ -1003,8 +1003,13 @@ async function processCallbackQuery({
       const nodes = await fetchNodes(state.flow_id)
       const paymentNode = nodes.find(n => n.type === "payment")
 
+      console.log("[v0] Payment node found:", paymentNode ? "yes" : "no")
+      console.log("[v0] Payment node config raw:", JSON.stringify(paymentNode?.config, null, 2))
+
       if (paymentNode?.config) {
-        const hasOrderBump = paymentNode.config?.has_order_bump === "true"
+        // Verificar tanto string "true" quanto boolean true
+        const hasOrderBumpRaw = paymentNode.config?.has_order_bump
+        const hasOrderBump = hasOrderBumpRaw === "true" || hasOrderBumpRaw === true
         const orderBumpDesc = (paymentNode.config?.order_bump_desc as string) || ""
         const orderBumpAmount = (paymentNode.config?.order_bump_amount as string) || ""
         const orderBumpAcceptText = (paymentNode.config?.order_bump_accept_text as string) || "Sim, quero adicionar!"
@@ -1012,8 +1017,10 @@ async function processCallbackQuery({
         const orderBumpMediaUrl = (paymentNode.config?.order_bump_media_url as string) || ""
         const orderBumpMediaType = (paymentNode.config?.order_bump_media_type as string) || ""
 
-        console.log("[v0] Order Bump config:", { hasOrderBump, orderBumpAmount, orderBumpDesc })
+        console.log("[v0] Order Bump config:", { hasOrderBumpRaw, hasOrderBump, orderBumpAmount, orderBumpDesc })
 
+        console.log("[v0] Will show order bump?", hasOrderBump && orderBumpAmount)
+        
         if (hasOrderBump && orderBumpAmount) {
           // Enviar midia do Order Bump se configurada
           if (orderBumpMediaUrl) {
