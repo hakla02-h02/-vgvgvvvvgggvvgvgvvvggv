@@ -1151,7 +1151,8 @@ async function generatePayment(
       const pixCopyPaste = pixData.qr_code
 
       // Save payment to database with all user data
-      await supabase.from("payments").insert({
+      console.log("[v0] Inserting payment with user_id:", bot.user_id, "bot_id:", bot.id, "amount:", amount)
+      const { data: insertedPayment, error: insertError } = await supabase.from("payments").insert({
         user_id: bot.user_id,
         bot_id: bot.id,
         telegram_user_id: String(telegramUserId),
@@ -1167,7 +1168,13 @@ async function generatePayment(
         qr_code: qrCodeBase64 || null,
         copy_paste: pixCopyPaste || null,
         status: "pending",
-      })
+      }).select().single()
+      
+      if (insertError) {
+        console.error("[v0] Error inserting payment:", insertError)
+      } else {
+        console.log("[v0] Payment inserted successfully:", insertedPayment?.id)
+      }
 
       // Send QR Code image
       if (qrCodeBase64) {

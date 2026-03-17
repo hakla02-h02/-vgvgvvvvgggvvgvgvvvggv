@@ -34,6 +34,8 @@ export async function GET(request: NextRequest) {
     if (authError || !user) {
       return NextResponse.json({ error: "Nao autenticado" }, { status: 401 })
     }
+    
+    console.log("[v0] Fetching payments for user_id:", user.id, "botId:", botId, "status:", status)
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
@@ -62,12 +64,14 @@ export async function GET(request: NextRequest) {
     const { data: payments, error, count } = await query
 
     if (error) {
-      console.error("Error fetching payments:", error)
+      console.error("[v0] Error fetching payments:", error)
       return NextResponse.json(
         { error: "Erro ao buscar pagamentos" },
         { status: 500 }
       )
     }
+    
+    console.log("[v0] Found", payments?.length || 0, "payments")
 
     // Calculate stats
     const statsQuery = supabase
