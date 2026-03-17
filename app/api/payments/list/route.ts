@@ -38,6 +38,15 @@ export async function GET(request: NextRequest) {
     console.log("[v0] Fetching payments for user_id:", user.id, "botId:", botId, "status:", status)
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+    
+    // Debug: buscar todos os pagamentos para ver os user_ids existentes
+    const { data: debugPayments } = await supabase
+      .from("payments")
+      .select("id, user_id, status, amount")
+      .order("created_at", { ascending: false })
+      .limit(5)
+    
+    console.log("[v0] DEBUG - Recent payments in DB:", JSON.stringify(debugPayments, null, 2))
 
     // Build query
     let query = supabase
