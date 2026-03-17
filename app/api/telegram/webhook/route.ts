@@ -1003,9 +1003,6 @@ async function processCallbackQuery({
       const nodes = await fetchNodes(state.flow_id)
       const paymentNode = nodes.find(n => n.type === "payment")
 
-      console.log("[v0] Payment node found:", paymentNode ? "yes" : "no")
-      console.log("[v0] Payment node config raw:", JSON.stringify(paymentNode?.config, null, 2))
-
       if (paymentNode?.config) {
         // Verificar tanto string "true" quanto boolean true
         const hasOrderBumpRaw = paymentNode.config?.has_order_bump
@@ -1017,10 +1014,6 @@ async function processCallbackQuery({
         const orderBumpMediaUrl = (paymentNode.config?.order_bump_media_url as string) || ""
         const orderBumpMediaType = (paymentNode.config?.order_bump_media_type as string) || ""
 
-        console.log("[v0] Order Bump config:", { hasOrderBumpRaw, hasOrderBump, orderBumpAmount, orderBumpDesc })
-
-        console.log("[v0] Will show order bump?", hasOrderBump && orderBumpAmount)
-        
         if (hasOrderBump && orderBumpAmount) {
           // Enviar midia do Order Bump se configurada
           if (orderBumpMediaUrl) {
@@ -1057,7 +1050,6 @@ async function processCallbackQuery({
             .eq("bot_id", bot.id)
             .eq("telegram_user_id", telegramUserId)
 
-          console.log("[v0] Order Bump enviado, aguardando decisao do usuario")
           return // STOP - aguardar decisao do Order Bump
         }
       }
@@ -1158,7 +1150,6 @@ async function generatePayment(
       const pixCopyPaste = pixData.qr_code
 
       // Save payment to database with all user data
-      console.log("[v0] Inserting payment with user_id:", bot.user_id, "bot_id:", bot.id, "amount:", amount)
       const { data: insertedPayment, error: insertError } = await supabase.from("payments").insert({
         user_id: bot.user_id,
         bot_id: bot.id,
@@ -1176,12 +1167,6 @@ async function generatePayment(
         copy_paste: pixCopyPaste || null,
         status: "pending",
       }).select().single()
-      
-      if (insertError) {
-        console.error("[v0] Error inserting payment:", insertError)
-      } else {
-        console.log("[v0] Payment inserted successfully:", insertedPayment?.id)
-      }
 
       // Send QR Code image
       if (qrCodeBase64) {
