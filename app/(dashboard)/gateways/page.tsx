@@ -47,13 +47,18 @@ export default function GatewaysPage() {
     )
   }
 
-  const mercadoPago = AVAILABLE_GATEWAYS[0]
-  const gatewayData = gateways.find((g) => g.gateway_name === "mercadopago")
-  const isConnected = !!gatewayData
+  const [selectedGateway, setSelectedGateway] = useState<typeof AVAILABLE_GATEWAYS[number] | null>(null)
+  
+  const getGatewayData = (gatewayId: string) => gateways.find((g) => g.gateway_name === gatewayId)
+  const isGatewayConnected = (gatewayId: string) => !!getGatewayData(gatewayId)
 
-  const handleOpenConnect = () => {
-    if (gatewayData) {
-      setAccessToken(gatewayData.access_token)
+  const handleOpenConnect = (gateway: typeof AVAILABLE_GATEWAYS[number]) => {
+    if ('comingSoon' in gateway && gateway.comingSoon) return
+    
+    setSelectedGateway(gateway)
+    const existingData = getGatewayData(gateway.id)
+    if (existingData) {
+      setAccessToken(existingData.access_token)
     } else {
       setAccessToken("")
     }
@@ -63,6 +68,7 @@ export default function GatewaysPage() {
   }
 
   const handleConnect = async () => {
+    if (!selectedGateway) return
     if (!accessToken.trim()) {
       setError("Digite o Access Token")
       return
@@ -73,12 +79,13 @@ export default function GatewaysPage() {
     setSuccess("")
 
     try {
-      await connectGateway("mercadopago", accessToken.trim())
+      await connectGateway(selectedGateway.id, accessToken.trim())
       setSuccess("Gateway conectado com sucesso!")
       setTimeout(() => {
         setConnectDialogOpen(false)
         setAccessToken("")
         setSuccess("")
+        setSelectedGateway(null)
       }, 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao conectar gateway")
@@ -87,21 +94,23 @@ export default function GatewaysPage() {
     }
   }
 
-  const handleDisconnect = async () => {
-    if (!gatewayData) return
+  const handleDisconnect = async (gatewayId: string) => {
+    const data = getGatewayData(gatewayId)
+    if (!data) return
 
     try {
-      await disconnectGateway(gatewayData.id)
+      await disconnectGateway(data.id)
     } catch (err) {
       console.error("Error disconnecting gateway:", err)
     }
   }
 
-  const handleToggleActive = async (isActive: boolean) => {
-    if (!gatewayData) return
+  const handleToggleActive = async (gatewayId: string, isActive: boolean) => {
+    const data = getGatewayData(gatewayId)
+    if (!data) return
 
     try {
-      await updateGateway(gatewayData.id, { is_active: isActive })
+      await updateGateway(data.id, { is_active: isActive })
     } catch (err) {
       console.error("Error toggling gateway:", err)
     }
@@ -132,123 +141,141 @@ export default function GatewaysPage() {
               </div>
             </div>
 
-            {/* Gateway Card */}
-            <div className={`rounded-[24px] transition-all ${
-                isConnected 
-                  ? "bg-foreground dark:bg-card text-background dark:text-foreground" 
-                  : "bg-card border border-gray-200 hover:border-[#00bcff] hover:shadow-lg cursor-pointer group"
-              }`} onClick={!isConnected ? handleOpenConnect : undefined}>
-                
-                {isConnected ? (
-                  // Connected State - Dark theme
-                  <div className="p-6 relative overflow-hidden">
-                    {/* Glow */}
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-[#00bcff] opacity-10 blur-[50px] rounded-full pointer-events-none"></div>
-                    
-                    <div className="relative z-10">
-                      {/* Top row */}
-                      <div className="flex items-start justify-between mb-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-12 h-12 rounded-xl bg-[#00bcff]/20 flex items-center justify-center">
-                            <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
-                              <rect x="3" y="6" width="18" height="12" rx="2" stroke="#00bcff" strokeWidth="1.5"/>
-                              <path d="M3 10h18" stroke="#00bcff" strokeWidth="1.5"/>
-                            </svg>
+            {/* Gateway Cards */}
+            <div className="space-y-4">
+              {AVAILABLE_GATEWAYS.map((gateway) => {
+                const isConnected = isGatewayConnected(gateway.id)
+                const gatewayData = getGatewayData(gateway.id)
+                const isComingSoon = 'comingSoon' in gateway && gateway.comingSoon
+
+                return (
+                  <div 
+                    key={gateway.id}
+                    className={`rounded-[24px] transition-all ${
+                      isComingSoon
+                        ? "bg-card border border-gray-200 opacity-60"
+                        : isConnected 
+                          ? "bg-foreground dark:bg-card text-background dark:text-foreground" 
+                          : "bg-card border border-gray-200 hover:border-[" + gateway.color + "] hover:shadow-lg cursor-pointer group"
+                    }`} 
+                    onClick={!isConnected && !isComingSoon ? () => handleOpenConnect(gateway) : undefined}
+                  >
+                    {isConnected ? (
+                      // Connected State
+                      <div className="p-6 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 opacity-10 blur-[50px] rounded-full pointer-events-none" style={{ backgroundColor: gateway.color }}></div>
+                        
+                        <div className="relative z-10">
+                          <div className="flex items-start justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: gateway.color + "20" }}>
+                                <svg viewBox="0 0 24 24" className="w-6 h-6" fill="none">
+                                  <rect x="3" y="6" width="18" height="12" rx="2" stroke={gateway.color} strokeWidth="1.5"/>
+                                  <path d="M3 10h18" stroke={gateway.color} strokeWidth="1.5"/>
+                                </svg>
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-lg">{gateway.name}</h3>
+                                <p className="text-sm text-muted-foreground">{gateway.description}</p>
+                              </div>
+                            </div>
+                            <span className="inline-flex items-center gap-1.5 bg-[#22c55e]/20 text-[#4ade80] text-xs font-semibold px-2.5 py-1 rounded-full">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
+                              Ativo
+                            </span>
                           </div>
-                          <div>
-                            <h3 className="font-bold text-lg">{mercadoPago.name}</h3>
-                            <p className="text-sm text-muted-foreground">{mercadoPago.description}</p>
+
+                          <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                            <div className="flex items-center gap-3">
+                              <Switch
+                                checked={gatewayData?.is_active ?? false}
+                                onCheckedChange={(checked) => handleToggleActive(gateway.id, checked)}
+                              />
+                              <span className="text-sm text-muted-foreground">
+                                {gatewayData?.is_active ? "Gateway ativo" : "Gateway pausado"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleOpenConnect(gateway); }}
+                                className="w-9 h-9 rounded-xl bg-card/10 hover:bg-card/20 flex items-center justify-center text-gray-300 transition-colors"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={(e) => { e.stopPropagation(); handleDisconnect(gateway.id); }}
+                                className="w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-400 transition-colors"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
-                        </div>
-                        <span className="inline-flex items-center gap-1.5 bg-[#22c55e]/20 text-[#4ade80] text-xs font-semibold px-2.5 py-1 rounded-full">
-                          <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
-                          Ativo
-                        </span>
-                      </div>
 
-                      {/* Controls */}
-                      <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                        <div className="flex items-center gap-3">
-                          <Switch
-                            checked={gatewayData?.is_active ?? false}
-                            onCheckedChange={handleToggleActive}
-                          />
-                          <span className="text-sm text-muted-foreground">
-                            {gatewayData?.is_active ? "Gateway ativo" : "Gateway pausado"}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleOpenConnect(); }}
-                            className="w-9 h-9 rounded-xl bg-card/10 hover:bg-card/20 flex items-center justify-center text-gray-300 transition-colors"
-                          >
-                            <Settings className="h-4 w-4" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleDisconnect(); }}
-                            className="w-9 h-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center text-red-400 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <p className="text-xs text-muted-foreground mt-4">
+                            Conectado em {new Date(gatewayData!.created_at).toLocaleDateString('pt-BR')}
+                          </p>
                         </div>
                       </div>
+                    ) : (
+                      // Not Connected State
+                      <div className="p-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div 
+                              className="w-14 h-14 rounded-2xl flex items-center justify-center transition-all"
+                              style={{ 
+                                background: `linear-gradient(to bottom right, ${gateway.color}15, ${gateway.color}08)` 
+                              }}
+                            >
+                              <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
+                                <rect x="3" y="6" width="18" height="12" rx="2" stroke={gateway.color} strokeWidth="1.5"/>
+                                <path d="M3 10h18" stroke={gateway.color} strokeWidth="1.5"/>
+                              </svg>
+                            </div>
+                            <div>
+                              <h3 className="text-lg font-bold text-foreground">{gateway.name}</h3>
+                              <p className="text-sm text-muted-foreground">{gateway.description}</p>
+                            </div>
+                          </div>
+                          {isComingSoon ? (
+                            <span className="px-3 py-1 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+                              Em breve
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-2 font-medium text-sm group-hover:gap-3 transition-all" style={{ color: gateway.color }}>
+                              Conectar
+                              <ArrowRight className="h-4 w-4" />
+                            </div>
+                          )}
+                        </div>
 
-                      {/* Connected date */}
-                      <p className="text-xs text-muted-foreground mt-4">
-                        Conectado em {new Date(gatewayData!.created_at).toLocaleDateString('pt-BR')}
-                      </p>
-                    </div>
+                        <div className="flex items-center gap-2 mt-5 pt-5 border-t border-border">
+                          {gateway.methods.includes("pix") && (
+                            <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">PIX</span>
+                          )}
+                          {gateway.methods.includes("credit_card") && (
+                            <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">Credito</span>
+                          )}
+                          {gateway.methods.includes("debit_card") && (
+                            <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">Debito</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  // Not Connected State - Light theme
-                  <div className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#00bcff]/10 to-[#00bcff]/5 flex items-center justify-center group-hover:from-[#00bcff]/20 group-hover:to-[#00bcff]/10 transition-all">
-                          <svg viewBox="0 0 24 24" className="w-7 h-7" fill="none">
-                            <rect x="3" y="6" width="18" height="12" rx="2" stroke="#00bcff" strokeWidth="1.5"/>
-                            <path d="M3 10h18" stroke="#00bcff" strokeWidth="1.5"/>
-                          </svg>
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-foreground">{mercadoPago.name}</h3>
-                          <p className="text-sm text-muted-foreground">{mercadoPago.description}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 text-[#00bcff] font-medium text-sm group-hover:gap-3 transition-all">
-                        Conectar
-                        <ArrowRight className="h-4 w-4" />
-                      </div>
-                    </div>
-
-                    {/* Features */}
-                    <div className="flex items-center gap-2 mt-5 pt-5 border-t border-border">
-                      <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">PIX</span>
-                      <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">Credito</span>
-                      <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-xs font-medium rounded-lg">Debito</span>
-                    </div>
-                  </div>
-                )}
+                )
+              })}
             </div>
 
-            {/* Help Section - Footer da pagina */}
+            {/* Help Section */}
             <div className="mt-auto pt-12 flex items-center gap-3 text-muted-foreground pb-4">
               <svg viewBox="0 0 24 24" className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10"/>
                 <path d="M12 16v-4M12 8h.01"/>
               </svg>
               <p className="text-sm">
-                <span className="text-gray-600 font-medium">Como obter o Access Token?</span>
-                {" "}Acesse o{" "}
-                <a
-                  href={mercadoPago.helpUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#00bcff] hover:underline"
-                >
-                  Mercado Pago Developers
-                </a>
-                , va em "Suas integracoes" e copie o token de producao.
+                <span className="text-gray-600 font-medium">Precisa de ajuda?</span>
+                {" "}Acesse a documentacao do gateway escolhido para obter suas credenciais.
               </p>
             </div>
 
@@ -257,23 +284,26 @@ export default function GatewaysPage() {
       </ScrollArea>
 
       {/* Connect Dialog */}
-      <Dialog open={connectDialogOpen} onOpenChange={setConnectDialogOpen}>
+      <Dialog open={connectDialogOpen} onOpenChange={(open) => { setConnectDialogOpen(open); if (!open) setSelectedGateway(null); }}>
         <DialogContent className="sm:max-w-md bg-card border-0 rounded-[24px] p-0 overflow-hidden">
           {/* Header */}
           <div className="p-5 pb-4 border-b border-border">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-[#00bcff]/10 flex items-center justify-center">
+              <div 
+                className="w-11 h-11 rounded-xl flex items-center justify-center"
+                style={{ backgroundColor: (selectedGateway?.color || "#00bcff") + "15" }}
+              >
                 <svg viewBox="0 0 24 24" className="w-5 h-5" fill="none">
-                  <rect x="3" y="6" width="18" height="12" rx="2" stroke="#00bcff" strokeWidth="2"/>
-                  <path d="M3 10h18" stroke="#00bcff" strokeWidth="2"/>
+                  <rect x="3" y="6" width="18" height="12" rx="2" stroke={selectedGateway?.color || "#00bcff"} strokeWidth="2"/>
+                  <path d="M3 10h18" stroke={selectedGateway?.color || "#00bcff"} strokeWidth="2"/>
                 </svg>
               </div>
               <div>
                 <DialogTitle className="text-lg font-bold text-foreground">
-                  {isConnected ? "Configurar" : "Conectar"} Mercado Pago
+                  {selectedGateway && isGatewayConnected(selectedGateway.id) ? "Configurar" : "Conectar"} {selectedGateway?.name || "Gateway"}
                 </DialogTitle>
                 <DialogDescription className="text-sm text-muted-foreground">
-                  {isConnected ? "Atualize seu Access Token" : "Insira seu Access Token para conectar"}
+                  {selectedGateway && isGatewayConnected(selectedGateway.id) ? "Atualize seu Access Token" : "Insira seu Access Token para conectar"}
                 </DialogDescription>
               </div>
             </div>
@@ -328,7 +358,7 @@ export default function GatewaysPage() {
                     Conectando...
                   </>
                 ) : (
-                  isConnected ? "Salvar alteracoes" : "Conectar Gateway"
+                  selectedGateway && isGatewayConnected(selectedGateway.id) ? "Salvar alteracoes" : "Conectar Gateway"
                 )}
               </button>
             </div>

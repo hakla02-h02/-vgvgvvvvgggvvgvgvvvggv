@@ -56,6 +56,26 @@ export const AVAILABLE_GATEWAYS = [
     methods: ["pix", "credit_card", "debit_card"],
     helpUrl: "https://www.mercadopago.com.br/developers/pt/docs/your-integrations/credentials",
   },
+  {
+    id: "pushinpay",
+    name: "Pushin Pay",
+    description: "PIX instantaneo",
+    icon: "pushinpay",
+    color: "#8b5cf6",
+    methods: ["pix"],
+    helpUrl: "https://pushinpay.com.br",
+    comingSoon: true,
+  },
+  {
+    id: "winpay",
+    name: "Win Pay",
+    description: "PIX instantaneo",
+    icon: "winpay",
+    color: "#f97316",
+    methods: ["pix"],
+    helpUrl: "https://winpay.com.br",
+    comingSoon: true,
+  },
 ] as const
 
 interface GatewayContextType {
