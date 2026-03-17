@@ -99,6 +99,8 @@ export default function PaymentsPage() {
     }
   )
 
+  console.log("[v0] API Response:", { data, error, isLoading, url: `/api/payments/list?status=${filtro}${selectedBot ? `&botId=${selectedBot.id}` : ""}` })
+  
   const payments = data?.payments || []
   const stats = data?.stats || {
     total: 0,
