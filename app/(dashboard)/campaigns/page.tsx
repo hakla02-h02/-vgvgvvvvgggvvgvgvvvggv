@@ -41,10 +41,10 @@ interface Campaign {
 }
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; dot: string; label: string }> = {
-  rascunho: { bg: "bg-[#1a1a1a]", text: "text-zinc-400", dot: "bg-zinc-500", label: "Rascunho" },
-  ativa: { bg: "bg-[#1a2a1a]", text: "text-[#a3e635]", dot: "bg-[#a3e635]", label: "Ativa" },
-  pausada: { bg: "bg-[#2a2a1a]", text: "text-amber-400", dot: "bg-amber-400", label: "Pausada" },
-  concluida: { bg: "bg-[#1a1a2a]", text: "text-blue-400", dot: "bg-blue-400", label: "Concluida" },
+  rascunho: { bg: "bg-muted", text: "text-muted-foreground", dot: "bg-muted-foreground", label: "Rascunho" },
+  ativa: { bg: "bg-accent/10", text: "text-accent", dot: "bg-accent", label: "Ativa" },
+  pausada: { bg: "bg-warning/10", text: "text-warning", dot: "bg-warning", label: "Pausada" },
+  concluida: { bg: "bg-blue-500/10", text: "text-blue-500", dot: "bg-blue-500", label: "Concluida" },
 }
 
 const DELAY_OPTIONS = [
@@ -138,26 +138,26 @@ export default function CampaignsPage() {
           
           {/* Header com busca e filtros */}
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 md:w-72">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="relative w-full sm:w-72">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar campanhas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9 bg-card border-zinc-200 dark:border-zinc-800 rounded-xl h-10 text-sm"
+                  className="pl-9 bg-card border-border rounded-xl h-10 text-sm text-foreground placeholder:text-muted-foreground"
                 />
               </div>
               
               {/* Filtros de status */}
-              <div className="flex items-center gap-1 p-1 bg-card rounded-xl border border-zinc-200 dark:border-zinc-800">
+              <div className="flex items-center gap-1 p-1 bg-card rounded-xl border border-border">
                 {["all", "ativa", "pausada", "rascunho"].map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilterStatus(status)}
                     className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       filterStatus === status
-                        ? "bg-[#a3e635] text-black"
+                        ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
                     }`}
                   >
@@ -169,7 +169,7 @@ export default function CampaignsPage() {
 
             <Button
               onClick={() => setShowWizard(true)}
-              className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-10"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2 font-semibold h-10"
             >
               <Plus className="h-4 w-4" />
               Nova Campanha
@@ -181,19 +181,19 @@ export default function CampaignsPage() {
             <div className="flex items-center justify-center py-32">
               <div className="flex flex-col items-center gap-3">
                 <div className="relative">
-                  <div className="h-12 w-12 rounded-full border-2 border-zinc-800" />
-                  <div className="absolute inset-0 h-12 w-12 rounded-full border-2 border-[#a3e635] border-t-transparent animate-spin" />
+                  <div className="h-12 w-12 rounded-full border-2 border-border" />
+                  <div className="absolute inset-0 h-12 w-12 rounded-full border-2 border-accent border-t-transparent animate-spin" />
                 </div>
-                <p className="text-sm text-zinc-500">Carregando campanhas...</p>
+                <p className="text-sm text-muted-foreground">Carregando campanhas...</p>
               </div>
             </div>
           ) : campaigns.length === 0 ? (
             <EmptyState onCreateClick={() => setShowWizard(true)} />
           ) : filteredCampaigns.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20">
-              <Search className="h-10 w-10 text-zinc-700 mb-3" />
-              <p className="text-zinc-400 text-sm">Nenhuma campanha encontrada</p>
-              <p className="text-zinc-600 text-xs mt-1">Tente ajustar sua busca ou filtros</p>
+              <Search className="h-10 w-10 text-muted-foreground mb-3" />
+              <p className="text-foreground text-sm">Nenhuma campanha encontrada</p>
+              <p className="text-muted-foreground text-xs mt-1">Tente ajustar sua busca ou filtros</p>
             </div>
           ) : (
             <div className="grid gap-6 lg:grid-cols-5">
@@ -218,9 +218,9 @@ export default function CampaignsPage() {
                 {selectedCampaign ? (
                   <CampaignDetail campaign={selectedCampaign} />
                 ) : (
-                  <div className="h-full min-h-[400px] rounded-[28px] border border-zinc-200 dark:border-zinc-800 bg-card flex flex-col items-center justify-center p-6">
-                    <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                      <Megaphone className="h-7 w-7 text-muted-foreground" />
+                  <div className="h-full min-h-[400px] rounded-[28px] border border-border bg-card flex flex-col items-center justify-center p-6">
+                    <div className="h-16 w-16 rounded-2xl bg-accent/10 flex items-center justify-center mb-4">
+                      <Megaphone className="h-7 w-7 text-accent" />
                     </div>
                     <p className="text-foreground text-sm font-medium">Selecione uma campanha</p>
                     <p className="text-muted-foreground text-xs mt-1">Clique em uma campanha para ver detalhes</p>
@@ -255,11 +255,11 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
     <div className="flex flex-col items-center justify-center py-16 px-4">
       {/* Icone */}
       <div className="relative mb-6">
-        <div className="h-20 w-20 rounded-3xl bg-foreground dark:bg-card border border-zinc-200 dark:border-zinc-800 flex items-center justify-center shadow-sm">
-          <Target className="h-9 w-9 text-[#a3e635]" />
+        <div className="h-20 w-20 rounded-3xl bg-card border border-border flex items-center justify-center shadow-sm">
+          <Target className="h-9 w-9 text-accent" />
         </div>
-        <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-[#a3e635] flex items-center justify-center shadow-lg">
-          <Sparkles className="h-3 w-3 text-black" />
+        <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-accent flex items-center justify-center shadow-lg">
+          <Sparkles className="h-3 w-3 text-accent-foreground" />
         </div>
       </div>
 
@@ -271,7 +271,7 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
 
       <Button
         onClick={onCreateClick}
-        className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-11 px-6"
+        className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2 font-semibold h-11 px-6"
       >
         <Plus className="h-4 w-4" />
         Criar Campanha
@@ -284,8 +284,8 @@ function EmptyState({ onCreateClick }: { onCreateClick: () => void }) {
           { icon: Clock, label: "Delays" },
           { icon: Users, label: "Segmentacao" },
         ].map(({ icon: Icon, label }) => (
-          <div key={label} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-zinc-200 dark:border-zinc-800 bg-card">
-            <Icon className="h-5 w-5 text-muted-foreground" />
+          <div key={label} className="flex flex-col items-center gap-2 p-4 rounded-xl border border-border bg-card">
+            <Icon className="h-5 w-5 text-accent" />
             <span className="text-xs text-muted-foreground font-medium">{label}</span>
           </div>
         ))}
@@ -315,13 +315,13 @@ function CampaignCard({
       onClick={onSelect}
       className={`group relative rounded-[20px] border transition-all cursor-pointer overflow-hidden ${
         isSelected 
-          ? "border-[#a3e635]/40 bg-card shadow-lg" 
-          : "border-zinc-200 dark:border-zinc-800 bg-card hover:border-[#a3e635]/30 hover:shadow-md"
+          ? "border-accent/40 bg-card shadow-lg" 
+          : "border-border bg-card hover:border-accent/30 hover:shadow-md"
       }`}
     >
       {/* Accent bar quando selecionado */}
       {isSelected && (
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#a3e635]" />
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-accent" />
       )}
 
       <div className="p-4 md:p-5">
@@ -335,13 +335,13 @@ function CampaignCard({
 
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 flex-wrap mb-1">
-                <h3 className="text-sm font-semibold text-background dark:text-foreground truncate">{campaign.name}</h3>
+                <h3 className="text-sm font-semibold text-foreground truncate">{campaign.name}</h3>
                 <Badge className={`${st.bg} ${st.text} border-0 text-[10px] px-2 py-0 h-5 rounded-md font-medium`}>
                   {st.label}
                 </Badge>
               </div>
 
-              <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <span className="flex items-center gap-1">
                   <MessageSquare className="h-3 w-3" />
                   {msgCount} {msgCount === 1 ? "msg" : "msgs"}
@@ -368,29 +368,29 @@ function CampaignCard({
                 disabled={isActivating}
                 className={`flex h-9 w-9 items-center justify-center rounded-xl transition-colors ${
                   campaign.status === "ativa"
-                    ? "bg-amber-500/10 hover:bg-amber-500/20"
-                    : "bg-[#a3e635]/10 hover:bg-[#a3e635]/20"
+                    ? "bg-warning/10 hover:bg-warning/20"
+                    : "bg-accent/10 hover:bg-accent/20"
                 }`}
                 title={campaign.status === "ativa" ? "Pausar" : "Ativar"}
               >
                 {isActivating ? (
-                  <Loader2 className="h-4 w-4 text-[#a3e635] animate-spin" />
+                  <Loader2 className="h-4 w-4 text-accent animate-spin" />
                 ) : campaign.status === "ativa" ? (
-                  <Pause className="h-4 w-4 text-amber-400" />
+                  <Pause className="h-4 w-4 text-warning" />
                 ) : (
-                  <Play className="h-4 w-4 text-[#a3e635]" />
+                  <Play className="h-4 w-4 text-accent" />
                 )}
               </button>
             )}
             <button
               onClick={onDelete}
               disabled={isDeleting}
-              className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-colors"
+              className="flex h-9 w-9 items-center justify-center rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors"
             >
               {isDeleting ? (
-                <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : (
-                <Trash2 className="h-4 w-4 text-red-400" />
+                <Trash2 className="h-4 w-4 text-destructive" />
               )}
             </button>
           </div>
@@ -405,13 +405,13 @@ function CampaignDetail({ campaign }: { campaign: Campaign }) {
   const st = STATUS_CONFIG[campaign.status] || STATUS_CONFIG.rascunho
 
   return (
-    <div className="rounded-[28px] border border-zinc-800 bg-[#0a0a0a] overflow-hidden">
+    <div className="rounded-[28px] border border-border bg-card overflow-hidden">
       {/* Header com gradiente */}
-      <div className="p-5 bg-gradient-to-b from-zinc-900/50 to-transparent border-b border-zinc-800/50">
+      <div className="p-5 bg-gradient-to-b from-muted/50 to-transparent border-b border-border/50">
         <div className="flex items-start justify-between mb-4">
           <div>
-            <h2 className="text-base font-bold text-background dark:text-foreground">{campaign.name}</h2>
-            <p className="text-xs text-zinc-500 mt-0.5">
+            <h2 className="text-base font-bold text-foreground">{campaign.name}</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
               Criada em {new Date(campaign.created_at).toLocaleDateString("pt-BR")}
             </p>
           </div>
@@ -422,30 +422,30 @@ function CampaignDetail({ campaign }: { campaign: Campaign }) {
 
         {/* Quick stats */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-foreground dark:bg-card border border-zinc-800/50 p-3">
+          <div className="rounded-2xl bg-muted border border-border/50 p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Send className="h-3.5 w-3.5 text-zinc-500" />
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Enviadas</span>
+              <Send className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Enviadas</span>
             </div>
-            <p className="text-lg font-bold text-background dark:text-foreground">0</p>
+            <p className="text-lg font-bold text-foreground">0</p>
           </div>
-          <div className="rounded-2xl bg-foreground dark:bg-card border border-zinc-800/50 p-3">
+          <div className="rounded-2xl bg-muted border border-border/50 p-3">
             <div className="flex items-center gap-2 mb-1">
-              <Users className="h-3.5 w-3.5 text-zinc-500" />
-              <span className="text-[10px] text-zinc-500 uppercase tracking-wider">Alcance</span>
+              <Users className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Alcance</span>
             </div>
-            <p className="text-lg font-bold text-background dark:text-foreground">0%</p>
+            <p className="text-lg font-bold text-foreground">0%</p>
           </div>
         </div>
       </div>
 
       {/* Timeline dos nodes */}
       <div className="p-5">
-        <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wider mb-4">Sequencia</p>
+        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-4">Sequencia</p>
         
         {campaign.nodes.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-xs text-zinc-600">Nenhuma etapa configurada</p>
+            <p className="text-xs text-muted-foreground">Nenhuma etapa configurada</p>
           </div>
         ) : (
           <div className="flex flex-col">
@@ -460,29 +460,29 @@ function CampaignDetail({ campaign }: { campaign: Campaign }) {
                   {/* Timeline */}
                   <div className="flex flex-col items-center shrink-0">
                     <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                      isMsg ? "bg-[#a3e635]/10" : "bg-blue-500/10"
+                      isMsg ? "bg-accent/10" : "bg-blue-500/10"
                     }`}>
                       {isMsg ? (
-                        <MessageSquare className="h-4 w-4 text-[#a3e635]" />
+                        <MessageSquare className="h-4 w-4 text-accent" />
                       ) : (
-                        <Clock className="h-4 w-4 text-blue-400" />
+                        <Clock className="h-4 w-4 text-blue-500" />
                       )}
                     </div>
                     {i < campaign.nodes.length - 1 && (
-                      <div className="w-px flex-1 bg-zinc-800 my-1.5" />
+                      <div className="w-px flex-1 bg-border my-1.5" />
                     )}
                   </div>
 
                   {/* Content */}
                   <div className="pb-4 min-w-0 flex-1">
-                    <p className="text-xs font-medium text-background dark:text-foreground">
+                    <p className="text-xs font-medium text-foreground">
                       {isMsg ? (node.label || "Mensagem") : `Aguardar ${delayLabel}`}
                     </p>
                     {isMsg && text && (
-                      <p className="text-[11px] text-zinc-500 mt-0.5 line-clamp-2">{text}</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 line-clamp-2">{text}</p>
                     )}
                     {isMsg && hasMedia && (
-                      <span className="text-[10px] text-zinc-600 flex items-center gap-1 mt-0.5">
+                      <span className="text-[10px] text-muted-foreground flex items-center gap-1 mt-0.5">
                         <ImageIcon className="h-3 w-3" /> Midia anexada
                       </span>
                     )}
@@ -595,29 +595,29 @@ function CampaignWizard({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={onClose} />
       
-      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] bg-[#0a0a0a] border border-zinc-800 rounded-[28px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-3xl max-h-[90vh] bg-card border border-border rounded-[28px] shadow-2xl flex flex-col overflow-hidden animate-in fade-in-0 zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-zinc-800/50">
+        <div className="flex items-center justify-between p-5 border-b border-border/50">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
               {Array.from({ length: totalSteps }).map((_, i) => (
                 <div
                   key={i}
                   className={`h-2 rounded-full transition-all ${
-                    i < stepNumber ? "w-6 bg-[#a3e635]" : "w-2 bg-zinc-800"
+                    i < stepNumber ? "w-6 bg-accent" : "w-2 bg-muted"
                   }`}
                 />
               ))}
             </div>
-            <span className="text-xs text-zinc-500 ml-2">Passo {stepNumber} de {totalSteps}</span>
+            <span className="text-xs text-muted-foreground ml-2">Passo {stepNumber} de {totalSteps}</span>
           </div>
           <button 
             onClick={onClose} 
-            className="flex h-9 w-9 items-center justify-center rounded-xl bg-zinc-900 hover:bg-zinc-800 transition-colors"
+            className="flex h-9 w-9 items-center justify-center rounded-xl bg-muted hover:bg-muted/80 transition-colors"
           >
-            <X className="h-4 w-4 text-zinc-400" />
+            <X className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
 
@@ -679,10 +679,10 @@ function CampaignWizard({
 
         {/* Footer */}
         {(step === "basic" || step === "complete") && (
-          <div className="flex items-center justify-between p-5 border-t border-zinc-800/50">
+          <div className="flex items-center justify-between p-5 border-t border-border/50">
             <button
               onClick={() => setStep("type")}
-              className="text-sm text-zinc-500 hover:text-background dark:text-foreground transition-colors flex items-center gap-1"
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
             >
               <ArrowLeft className="h-4 w-4" />
               Voltar
@@ -690,7 +690,7 @@ function CampaignWizard({
             <Button
               onClick={handleSave}
               disabled={isSaving || !campaignName.trim() || (step === "basic" && !basicText.trim())}
-              className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold h-10 px-5"
+              className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2 font-semibold h-10 px-5"
             >
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Zap className="h-4 w-4" />}
               Criar Campanha
@@ -708,14 +708,14 @@ function StepName({ value, onChange, onNext }: { value: string; onChange: (v: st
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div>
-        <h2 className="text-xl font-bold text-background dark:text-foreground">Nome da Campanha</h2>
-        <p className="text-sm text-zinc-500 mt-1">Escolha um nome para identificar sua campanha</p>
+        <h2 className="text-xl font-bold text-foreground">Nome da Campanha</h2>
+        <p className="text-sm text-muted-foreground mt-1">Escolha um nome para identificar sua campanha</p>
       </div>
       <Input
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Ex: Remarketing Black Friday"
-        className="bg-foreground dark:bg-card border-zinc-800 rounded-xl h-12 text-background dark:text-foreground placeholder:text-zinc-600"
+        className="bg-muted border-border rounded-xl h-12 text-foreground placeholder:text-muted-foreground"
         autoFocus
         onKeyDown={(e) => { if (e.key === "Enter" && value.trim()) onNext() }}
       />
@@ -723,7 +723,7 @@ function StepName({ value, onChange, onNext }: { value: string; onChange: (v: st
         <Button
           onClick={onNext}
           disabled={!value.trim()}
-          className="bg-[#a3e635] text-black hover:bg-[#bef264] rounded-xl gap-2 font-semibold"
+          className="bg-accent text-accent-foreground hover:bg-accent/90 rounded-xl gap-2 font-semibold"
         >
           Proximo
           <ChevronRight className="h-4 w-4" />
@@ -741,22 +741,22 @@ function StepType({ selected, onSelect, onBack }: {
   return (
     <div className="flex flex-col gap-6 pt-4">
       <div>
-        <h2 className="text-xl font-bold text-background dark:text-foreground">Tipo de Campanha</h2>
-        <p className="text-sm text-zinc-500 mt-1">Escolha como quer construir sua campanha</p>
+        <h2 className="text-xl font-bold text-foreground">Tipo de Campanha</h2>
+        <p className="text-sm text-muted-foreground mt-1">Escolha como quer construir sua campanha</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         {/* Basic */}
         <button
           onClick={() => onSelect("basic")}
-          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-foreground dark:bg-card hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.03] transition-all text-left"
+          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-border bg-card hover:border-accent/40 hover:bg-accent/5 transition-all text-left"
         >
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#a3e635]/10 group-hover:bg-[#a3e635]/20 transition-colors">
-            <Zap className="h-6 w-6 text-[#a3e635]" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/10 group-hover:bg-accent/20 transition-colors">
+            <Zap className="h-6 w-6 text-accent" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-background dark:text-foreground">Mensagem Rapida</h3>
-            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+            <h3 className="text-sm font-bold text-foreground">Mensagem Rapida</h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               Uma unica mensagem com imagem, texto e botoes. Pronta em segundos.
             </p>
           </div>
@@ -765,14 +765,14 @@ function StepType({ selected, onSelect, onBack }: {
         {/* Complete */}
         <button
           onClick={() => onSelect("complete")}
-          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-zinc-800 bg-foreground dark:bg-card hover:border-blue-500/40 hover:bg-blue-500/[0.03] transition-all text-left"
+          className="group flex flex-col items-start gap-4 p-5 rounded-2xl border border-border bg-card hover:border-blue-500/40 hover:bg-blue-500/5 transition-all text-left"
         >
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500/10 group-hover:bg-blue-500/20 transition-colors">
-            <MessageSquare className="h-6 w-6 text-blue-400" />
+            <MessageSquare className="h-6 w-6 text-blue-500" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-background dark:text-foreground">Sequencia Completa</h3>
-            <p className="text-xs text-zinc-500 mt-1 leading-relaxed">
+            <h3 className="text-sm font-bold text-foreground">Sequencia Completa</h3>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               Varias mensagens com delays entre elas. Remarketing ate converter.
             </p>
           </div>
@@ -782,7 +782,7 @@ function StepType({ selected, onSelect, onBack }: {
       <div className="flex justify-start">
         <button
           onClick={onBack}
-          className="text-sm text-zinc-500 hover:text-background dark:text-foreground transition-colors flex items-center gap-1"
+          className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar
@@ -811,15 +811,15 @@ function StepBasic({
       {/* Left - form */}
       <div className="flex-1 flex flex-col gap-5">
         <div>
-          <h2 className="text-xl font-bold text-background dark:text-foreground">Mensagem da Campanha</h2>
-          <p className="text-sm text-zinc-500 mt-1">Configure o conteudo que sera enviado</p>
+          <h2 className="text-xl font-bold text-foreground">Mensagem da Campanha</h2>
+          <p className="text-sm text-muted-foreground mt-1">Configure o conteudo que sera enviado</p>
         </div>
 
         {/* Media upload */}
         <div>
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Midia (opcional)</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Midia (opcional)</p>
           {mediaUrl ? (
-            <div className="relative rounded-2xl overflow-hidden bg-foreground dark:bg-card border border-zinc-800 h-32 flex items-center justify-center">
+            <div className="relative rounded-2xl overflow-hidden bg-muted border border-border h-32 flex items-center justify-center">
               {mediaType === "video" ? (
                 <video src={mediaUrl} className="max-h-full max-w-full object-contain" />
               ) : (
@@ -828,23 +828,23 @@ function StepBasic({
               )}
               <button
                 onClick={onRemoveMedia}
-                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-black/60 hover:bg-black/80 transition-colors"
+                className="absolute top-2 right-2 flex h-8 w-8 items-center justify-center rounded-lg bg-background/60 hover:bg-background/80 transition-colors"
               >
-                <X className="h-4 w-4 text-background dark:text-foreground" />
+                <X className="h-4 w-4 text-foreground" />
               </button>
             </div>
           ) : (
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={isUploading}
-              className="w-full h-28 rounded-2xl border-2 border-dashed border-zinc-800 bg-foreground dark:bg-card hover:border-[#a3e635]/40 hover:bg-[#a3e635]/[0.02] transition-all flex flex-col items-center justify-center gap-2"
+              className="w-full h-28 rounded-2xl border-2 border-dashed border-border bg-muted hover:border-accent/40 hover:bg-accent/5 transition-all flex flex-col items-center justify-center gap-2"
             >
               {isUploading ? (
-                <Loader2 className="h-5 w-5 animate-spin text-zinc-500" />
+                <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               ) : (
                 <>
-                  <ImageIcon className="h-6 w-6 text-zinc-600" />
-                  <span className="text-xs text-zinc-500">Clique para enviar foto ou video</span>
+                  <ImageIcon className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">Clique para enviar foto ou video</span>
                 </>
               )}
             </button>
@@ -864,24 +864,24 @@ function StepBasic({
 
         {/* Text */}
         <div>
-          <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Mensagem</p>
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mensagem</p>
           <Textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Escreva sua mensagem de remarketing..."
-            className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground min-h-[120px] placeholder:text-zinc-600"
+            className="bg-muted border-border rounded-xl text-foreground min-h-[120px] placeholder:text-muted-foreground"
           />
         </div>
 
         {/* Buttons toggle */}
-        <div className="flex items-center justify-between p-4 rounded-2xl bg-foreground dark:bg-card border border-zinc-800">
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-muted border border-border">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#a3e635]/10">
-              <Link2 className="h-4 w-4 text-[#a3e635]" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10">
+              <Link2 className="h-4 w-4 text-accent" />
             </div>
             <div>
-              <p className="text-sm font-medium text-background dark:text-foreground">Adicionar botoes</p>
-              <p className="text-[11px] text-zinc-500">Links clicaveis na mensagem</p>
+              <p className="text-sm font-medium text-foreground">Adicionar botoes</p>
+              <p className="text-[11px] text-muted-foreground">Links clicaveis na mensagem</p>
             </div>
           </div>
           <Switch checked={hasButtons} onCheckedChange={setHasButtons} />
@@ -900,7 +900,7 @@ function StepBasic({
                     setButtons(next)
                   }}
                   placeholder="Texto do botao"
-                  className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground flex-1"
+                  className="bg-muted border-border rounded-xl text-foreground flex-1"
                 />
                 <Input
                   value={btn.url}
@@ -910,19 +910,19 @@ function StepBasic({
                     setButtons(next)
                   }}
                   placeholder="https://..."
-                  className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground flex-1"
+                  className="bg-muted border-border rounded-xl text-foreground flex-1"
                 />
                 <button
                   onClick={() => setButtons(buttons.filter((_, j) => j !== i))}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-destructive/10 hover:bg-destructive/20 transition-colors"
                 >
-                  <X className="h-4 w-4 text-red-400" />
+                  <X className="h-4 w-4 text-destructive" />
                 </button>
               </div>
             ))}
             <button
               onClick={() => setButtons([...buttons, { text: "", url: "" }])}
-              className="flex items-center gap-2 text-xs font-medium text-[#a3e635] hover:text-[#bef264] transition-colors"
+              className="flex items-center gap-2 text-xs font-medium text-accent hover:text-accent/80 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Adicionar botao
@@ -933,7 +933,7 @@ function StepBasic({
 
       {/* Right - preview */}
       <div className="w-full lg:w-72 shrink-0">
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 text-center">Preview</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 text-center">Preview</p>
         <TelegramPreview text={text} mediaUrl={mediaUrl} mediaType={mediaType} buttons={hasButtons ? buttons : []} />
       </div>
     </div>
@@ -987,8 +987,8 @@ function StepComplete({
       {/* Left - builder */}
       <div className="flex-1 flex flex-col gap-4">
         <div>
-          <h2 className="text-xl font-bold text-background dark:text-foreground">Sequencia de Remarketing</h2>
-          <p className="text-sm text-zinc-500 mt-1">Monte sua sequencia de mensagens e delays</p>
+          <h2 className="text-xl font-bold text-foreground">Sequencia de Remarketing</h2>
+          <p className="text-sm text-muted-foreground mt-1">Monte sua sequencia de mensagens e delays</p>
         </div>
 
         <div className="flex flex-col">
@@ -998,27 +998,27 @@ function StepComplete({
               <div
                 className={`flex items-start gap-3 p-4 rounded-2xl border transition-all cursor-pointer ${
                   editingIndex === i
-                    ? "border-[#a3e635]/40 bg-[#a3e635]/[0.03]"
-                    : "border-zinc-800 bg-foreground dark:bg-card hover:bg-[#151515]"
+                    ? "border-accent/40 bg-accent/5"
+                    : "border-border bg-card hover:bg-muted"
                 }`}
                 onClick={() => setEditingIndex(editingIndex === i ? null : i)}
               >
                 <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                  node.type === "message" ? "bg-[#a3e635]/10" : "bg-blue-500/10"
+                  node.type === "message" ? "bg-accent/10" : "bg-blue-500/10"
                 }`}>
                   {node.type === "message" ? (
-                    <MessageSquare className="h-4 w-4 text-[#a3e635]" />
+                    <MessageSquare className="h-4 w-4 text-accent" />
                   ) : (
-                    <Clock className="h-4 w-4 text-blue-400" />
+                    <Clock className="h-4 w-4 text-blue-500" />
                   )}
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-background dark:text-foreground">
+                  <p className="text-sm font-medium text-foreground">
                     {node.type === "message" ? (node.label || "Mensagem") : `Aguardar ${(node.config?.delay_label as string) || "1 dia"}`}
                   </p>
                   {node.type === "message" && (node.config?.text as string) && (
-                    <p className="text-[11px] text-zinc-500 truncate mt-0.5">{node.config.text as string}</p>
+                    <p className="text-[11px] text-muted-foreground truncate mt-0.5">{node.config.text as string}</p>
                   )}
                 </div>
 
@@ -1026,9 +1026,9 @@ function StepComplete({
                   {nodes.length > 1 && (
                     <button
                       onClick={() => removeNode(i)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg bg-destructive/10 hover:bg-destructive/20 transition-colors"
                     >
-                      <Trash2 className="h-3.5 w-3.5 text-red-400" />
+                      <Trash2 className="h-3.5 w-3.5 text-destructive" />
                     </button>
                   )}
                 </div>
@@ -1048,18 +1048,18 @@ function StepComplete({
 
               {/* Add button between nodes */}
               <div className="flex items-center justify-center py-2">
-                <div className="w-px h-4 bg-zinc-800" />
+                <div className="w-px h-4 bg-border" />
               </div>
               <div className="flex items-center justify-center gap-2 pb-2">
                 <button
                   onClick={() => addNode("message", i)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-background dark:text-foreground transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground bg-muted hover:bg-muted/80 hover:text-foreground transition-all"
                 >
                   <MessageSquare className="h-3 w-3" /> Mensagem
                 </button>
                 <button
                   onClick={() => addNode("delay", i)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-zinc-500 bg-zinc-900 hover:bg-zinc-800 hover:text-background dark:text-foreground transition-all"
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-muted-foreground bg-muted hover:bg-muted/80 hover:text-foreground transition-all"
                 >
                   <Clock className="h-3 w-3" /> Delay
                 </button>
@@ -1071,8 +1071,8 @@ function StepComplete({
 
       {/* Right - preview timeline */}
       <div className="w-full lg:w-72 shrink-0">
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3 text-center">Preview da Sequencia</p>
-        <div className="rounded-2xl bg-foreground dark:bg-card border border-zinc-800 p-4">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3 text-center">Preview da Sequencia</p>
+        <div className="rounded-2xl bg-card border border-border p-4">
           <div className="flex flex-col">
             {nodes.map((node, i) => {
               const isMsg = node.type === "message"
@@ -1080,22 +1080,22 @@ function StepComplete({
                 <div key={i} className="flex gap-2.5">
                   <div className="flex flex-col items-center shrink-0">
                     <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                      isMsg ? "bg-[#a3e635]/15" : "bg-blue-500/15"
+                      isMsg ? "bg-accent/15" : "bg-blue-500/15"
                     }`}>
                       {isMsg ? (
-                        <MessageSquare className="h-3.5 w-3.5 text-[#a3e635]" />
+                        <MessageSquare className="h-3.5 w-3.5 text-accent" />
                       ) : (
-                        <Clock className="h-3.5 w-3.5 text-blue-400" />
+                        <Clock className="h-3.5 w-3.5 text-blue-500" />
                       )}
                     </div>
-                    {i < nodes.length - 1 && <div className="w-px flex-1 bg-zinc-800 my-1" />}
+                    {i < nodes.length - 1 && <div className="w-px flex-1 bg-border my-1" />}
                   </div>
                   <div className="pb-3 min-w-0 flex-1">
-                    <p className="text-[11px] font-medium text-background dark:text-foreground">
+                    <p className="text-[11px] font-medium text-foreground">
                       {isMsg ? (node.label || "Mensagem") : `Aguardar ${(node.config?.delay_label as string) || ""}`}
                     </p>
                     {isMsg && (node.config?.text as string) && (
-                      <p className="text-[10px] text-zinc-500 line-clamp-1 mt-0.5">{node.config.text as string}</p>
+                      <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{node.config.text as string}</p>
                     )}
                   </div>
                 </div>
@@ -1141,8 +1141,8 @@ function NodeEditor({
   if (node.type === "delay") {
     const currentValue = (node.config?.delay_value as string) || "1d"
     return (
-      <div className="mt-3 mb-2 p-4 rounded-2xl bg-[#0f0f0f] border border-zinc-800">
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-3">Tempo de espera</p>
+      <div className="mt-3 mb-2 p-4 rounded-2xl bg-muted border border-border">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Tempo de espera</p>
         <div className="flex flex-wrap gap-2">
           {DELAY_OPTIONS.map((opt) => (
             <button
@@ -1150,8 +1150,8 @@ function NodeEditor({
               onClick={() => onUpdateConfig({ delay_value: opt.value, delay_label: opt.label })}
               className={`px-3 py-2 rounded-xl text-xs font-medium transition-all ${
                 currentValue === opt.value
-                  ? "bg-blue-500/15 text-blue-400 border border-blue-500/30"
-                  : "bg-zinc-900 text-zinc-400 border border-zinc-800 hover:border-blue-500/30"
+                  ? "bg-blue-500/15 text-blue-500 border border-blue-500/30"
+                  : "bg-card text-muted-foreground border border-border hover:border-blue-500/30"
               }`}
             >
               {opt.label}
@@ -1167,23 +1167,23 @@ function NodeEditor({
   const mediaType = (node.config?.media_type as string) || "photo"
 
   return (
-    <div className="mt-3 mb-2 p-4 rounded-2xl bg-[#0f0f0f] border border-zinc-800 flex flex-col gap-4">
+    <div className="mt-3 mb-2 p-4 rounded-2xl bg-muted border border-border flex flex-col gap-4">
       {/* Label */}
       <div>
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Nome da etapa</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Nome da etapa</p>
         <Input
           value={node.label}
           onChange={(e) => onUpdateLabel(e.target.value)}
           placeholder="Nome da mensagem"
-          className="bg-foreground dark:bg-card border-zinc-800 rounded-xl h-10 text-background dark:text-foreground text-sm"
+          className="bg-card border-border rounded-xl h-10 text-foreground text-sm"
         />
       </div>
 
       {/* Media */}
       <div>
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Midia (opcional)</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Midia (opcional)</p>
         {mediaUrl ? (
-          <div className="relative rounded-xl overflow-hidden bg-zinc-900 h-24 flex items-center justify-center">
+          <div className="relative rounded-xl overflow-hidden bg-card h-24 flex items-center justify-center">
             {mediaType === "video" ? (
               <video src={mediaUrl} className="max-h-full max-w-full object-contain" />
             ) : (
@@ -1192,23 +1192,23 @@ function NodeEditor({
             )}
             <button
               onClick={() => onUpdateConfig({ media_url: "", media_type: "" })}
-              className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg bg-black/60 hover:bg-black/80"
+              className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-lg bg-background/60 hover:bg-background/80"
             >
-              <X className="h-3.5 w-3.5 text-background dark:text-foreground" />
+              <X className="h-3.5 w-3.5 text-foreground" />
             </button>
           </div>
         ) : (
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="w-full h-20 rounded-xl border border-dashed border-zinc-800 bg-zinc-900/50 hover:border-[#a3e635]/40 transition-all flex items-center justify-center gap-2"
+            className="w-full h-20 rounded-xl border border-dashed border-border bg-card/50 hover:border-accent/40 transition-all flex items-center justify-center gap-2"
           >
             {isUploading ? (
-              <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             ) : (
               <>
-                <ImageIcon className="h-4 w-4 text-zinc-600" />
-                <span className="text-[11px] text-zinc-500">Enviar midia</span>
+                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                <span className="text-[11px] text-muted-foreground">Enviar midia</span>
               </>
             )}
           </button>
@@ -1235,20 +1235,20 @@ function NodeEditor({
 
       {/* Text */}
       <div>
-        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Mensagem</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Mensagem</p>
         <Textarea
           value={(node.config?.text as string) || ""}
           onChange={(e) => onUpdateConfig({ text: e.target.value })}
           placeholder="Escreva a mensagem..."
-          className="bg-foreground dark:bg-card border-zinc-800 rounded-xl text-background dark:text-foreground text-sm min-h-[80px]"
+          className="bg-card border-border rounded-xl text-foreground text-sm min-h-[80px]"
         />
       </div>
 
       {/* Buttons */}
-      <div className="flex items-center justify-between p-3 rounded-xl bg-zinc-900/50">
+      <div className="flex items-center justify-between p-3 rounded-xl bg-card/50">
         <div className="flex items-center gap-2">
-          <Link2 className="h-4 w-4 text-[#a3e635]" />
-          <span className="text-xs text-background dark:text-foreground">Botoes</span>
+          <Link2 className="h-4 w-4 text-accent" />
+          <span className="text-xs text-foreground">Botoes</span>
         </div>
         <Switch checked={hasButtons} onCheckedChange={setHasButtons} />
       </div>
@@ -1265,7 +1265,7 @@ function NodeEditor({
                   setLocalButtons(next)
                 }}
                 placeholder="Texto"
-                className="bg-foreground dark:bg-card border-zinc-800 rounded-lg h-9 text-background dark:text-foreground text-xs flex-1"
+                className="bg-card border-border rounded-lg h-9 text-foreground text-xs flex-1"
               />
               <Input
                 value={btn.url}
@@ -1275,19 +1275,19 @@ function NodeEditor({
                   setLocalButtons(next)
                 }}
                 placeholder="https://..."
-                className="bg-foreground dark:bg-card border-zinc-800 rounded-lg h-9 text-background dark:text-foreground text-xs flex-1"
+                className="bg-card border-border rounded-lg h-9 text-foreground text-xs flex-1"
               />
               <button
                 onClick={() => setLocalButtons(localButtons.filter((_, j) => j !== i))}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-destructive/10 hover:bg-destructive/20"
               >
-                <X className="h-3.5 w-3.5 text-red-400" />
+                <X className="h-3.5 w-3.5 text-destructive" />
               </button>
             </div>
           ))}
           <button
             onClick={() => setLocalButtons([...localButtons, { text: "", url: "" }])}
-            className="flex items-center gap-1 text-[11px] font-medium text-[#a3e635] hover:text-[#bef264] transition-colors"
+            className="flex items-center gap-1 text-[11px] font-medium text-accent hover:text-accent/80 transition-colors"
           >
             <Plus className="h-3.5 w-3.5" /> Adicionar botao
           </button>
@@ -1305,21 +1305,21 @@ function TelegramPreview({
   buttons: { text: string; url: string }[]
 }) {
   return (
-    <div className="rounded-2xl bg-[#0f1419] p-4 border border-zinc-800">
+    <div className="rounded-2xl bg-secondary p-4 border border-border">
       <div className="flex items-center gap-2 mb-4">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#a3e635]/20">
-          <Zap className="h-4 w-4 text-[#a3e635]" />
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/20">
+          <Zap className="h-4 w-4 text-accent" />
         </div>
         <div>
-          <p className="text-xs font-semibold text-background dark:text-foreground">Seu Bot</p>
-          <p className="text-[10px] text-zinc-500">online</p>
+          <p className="text-xs font-semibold text-foreground">Seu Bot</p>
+          <p className="text-[10px] text-muted-foreground">online</p>
         </div>
       </div>
 
       <div className="flex flex-col gap-2">
         {/* Media */}
         {mediaUrl && (
-          <div className="rounded-xl overflow-hidden bg-[#1a2332] flex items-center justify-center h-28">
+          <div className="rounded-xl overflow-hidden bg-muted flex items-center justify-center h-28">
             {mediaType === "video" ? (
               <video src={mediaUrl} className="max-h-full max-w-full object-contain" />
             ) : (
@@ -1331,15 +1331,15 @@ function TelegramPreview({
 
         {/* Text bubble */}
         {text && (
-          <div className="rounded-xl bg-[#1a2332] px-3 py-2.5">
-            <p className="text-xs text-background dark:text-foreground whitespace-pre-wrap break-words leading-relaxed">{text}</p>
+          <div className="rounded-xl bg-muted px-3 py-2.5">
+            <p className="text-xs text-foreground whitespace-pre-wrap break-words leading-relaxed">{text}</p>
           </div>
         )}
 
         {/* Buttons */}
         {buttons.filter((b) => b.text.trim()).map((btn, i) => (
-          <div key={i} className="rounded-xl bg-[#2a4054] px-3 py-2.5 text-center">
-            <p className="text-xs font-medium text-blue-400">{btn.text}</p>
+          <div key={i} className="rounded-xl bg-blue-500/20 px-3 py-2.5 text-center">
+            <p className="text-xs font-medium text-blue-500">{btn.text}</p>
           </div>
         ))}
       </div>
