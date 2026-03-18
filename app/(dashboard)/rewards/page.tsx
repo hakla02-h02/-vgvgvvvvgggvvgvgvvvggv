@@ -134,11 +134,11 @@ export default function RewardsPage() {
               <div className="col-span-5">
                 <div className="bg-[#111827] rounded-[16px] overflow-hidden h-full" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
                   {/* Card Visual */}
-                  <div className="relative h-64 bg-gradient-to-br from-[#1a2a1a] via-[#111827] to-[#0d1117] flex items-center justify-center p-4">
+                  <div className="relative h-72 bg-gradient-to-br from-[#1a2a1a] via-[#111827] to-[#0d1117] flex items-center justify-center p-6">
                     <img 
                       src={currentPremio.plaquinha} 
                       alt={`Plaquinha ${currentPremio.pontos}`}
-                      className="h-full w-auto object-contain"
+                      className="h-56 w-auto object-contain"
                     />
                   </div>
                   
