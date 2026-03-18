@@ -72,7 +72,7 @@ export default function LoginPage() {
             alt="Dragon"
             width={180}
             height={180}
-            className="object-contain w-auto h-auto"
+            className="object-contain"
             priority
           />
           <p className="text-sm text-muted-foreground">

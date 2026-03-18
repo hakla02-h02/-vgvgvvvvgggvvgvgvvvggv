@@ -12,7 +12,6 @@ export function DragonIcon({ className }: DragonIconProps) {
       width={24}
       height={24}
       className={className}
-      loading="eager"
     />
   )
 }
