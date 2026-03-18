@@ -140,7 +140,7 @@ function CadastroContent() {
             alt="Dragon"
             width={180}
             height={180}
-            className="object-contain"
+            className="object-contain w-auto h-auto"
             priority
           />
           <p className="text-sm text-muted-foreground">
