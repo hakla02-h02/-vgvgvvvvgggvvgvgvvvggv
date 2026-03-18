@@ -2,59 +2,54 @@
 
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { ChevronLeft, ChevronRight, Gift, Check, Trophy, Target, Zap } from "lucide-react"
+import { ChevronLeft, ChevronRight, Check, Trophy, Target, Zap } from "lucide-react"
 import { useState } from "react"
 
 const premiacoes = [
   { 
     id: 1,
-    titulo: "Pulseira Exclusiva",
-    subtitulo: "Acesso VIP",
-    pontos: "1K",
-    pontosNum: 1000,
-    descricao: "Desbloqueie seu acesso ao circulo interno com a pulseira oficial da comunidade.",
-    desbloqueado: true,
-  },
-  { 
-    id: 2,
     titulo: "Caneca + Pulseira",
     subtitulo: "Grupo de Networking",
     pontos: "10K",
     pontosNum: 10000,
     descricao: "Celebre sua primeira grande conquista e abra portas para conexoes que impulsionam o proximo passo.",
     desbloqueado: false,
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-TMhkBoA48JSpENaJVFkZRyrrQ2Y5JZ.png",
+  },
+  { 
+    id: 2,
+    titulo: "Kit Premium",
+    subtitulo: "Mentoria Exclusiva",
+    pontos: "100K",
+    pontosNum: 100000,
+    descricao: "Acesso a mentoria individual com especialistas e kit completo de brindes exclusivos.",
+    desbloqueado: false,
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Zjc1SF7AR4QiHPCSItIilGEKhwR6Uz.png",
   },
   { 
     id: 3,
-    titulo: "Kit Premium",
-    subtitulo: "Mentoria Exclusiva",
-    pontos: "50K",
-    pontosNum: 50000,
-    descricao: "Acesso a mentoria individual com especialistas e kit completo de brindes exclusivos.",
+    titulo: "Experiencia VIP",
+    subtitulo: "Evento Presencial",
+    pontos: "500K",
+    pontosNum: 500000,
+    descricao: "Convite para evento presencial exclusivo com networking e palestras de alto nivel.",
     desbloqueado: false,
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lh6iqRrOeYyMAq0IC6x8spZMt6dENP.png",
   },
   { 
     id: 4,
-    titulo: "Experiencia VIP",
-    subtitulo: "Evento Presencial",
-    pontos: "100K",
-    pontosNum: 100000,
-    descricao: "Convite para evento presencial exclusivo com networking e palestras de alto nivel.",
-    desbloqueado: false,
-  },
-  { 
-    id: 5,
     titulo: "Parceria Oficial",
     subtitulo: "1 Milhao Faturado",
     pontos: "1M",
     pontosNum: 1000000,
     descricao: "O apice do premio. Reconhecimento maximo e acesso ao circulo mais exclusivo.",
     desbloqueado: false,
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-E1Izb9ktpBbqZlZTcVf6kpy6MAbafF.png",
   },
 ]
 
 export default function RewardsPage() {
-  const [activeIndex, setActiveIndex] = useState(1)
+  const [activeIndex, setActiveIndex] = useState(0)
   const currentPremio = premiacoes[activeIndex]
   const progressPercent = 85
   const pontosAtuais = 8500
@@ -115,7 +110,7 @@ export default function RewardsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-[#9CA3AF]">Conquistados</p>
-                      <p className="text-xl font-bold text-[#111827]">1</p>
+                      <p className="text-xl font-bold text-[#111827]">0</p>
                     </div>
                   </div>
                 </div>
@@ -126,7 +121,7 @@ export default function RewardsPage() {
                     </div>
                     <div>
                       <p className="text-xs text-[#9CA3AF]">Disponiveis</p>
-                      <p className="text-xl font-bold text-[#111827]">4</p>
+                      <p className="text-xl font-bold text-[#111827]">{premiacoes.length}</p>
                     </div>
                   </div>
                 </div>
@@ -139,19 +134,12 @@ export default function RewardsPage() {
               <div className="col-span-5">
                 <div className="bg-[#111827] rounded-[16px] overflow-hidden h-full" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.12)' }}>
                   {/* Card Visual */}
-                  <div className="relative h-44 bg-gradient-to-br from-[#1a2a1a] via-[#111827] to-[#0d1117] flex items-center justify-center">
-                    <div className="absolute top-4 left-4 px-2.5 py-1 rounded-md bg-[#ccff00]/15 border border-[#ccff00]/20">
-                      <span className="text-[10px] font-bold text-[#ccff00] uppercase tracking-wide">{currentPremio.pontos} Faturado</span>
-                    </div>
-                    {currentPremio.desbloqueado ? (
-                      <div className="w-20 h-20 rounded-2xl bg-[#ccff00]/20 border border-[#ccff00]/40 flex items-center justify-center">
-                        <Check className="w-10 h-10 text-[#ccff00]" />
-                      </div>
-                    ) : (
-                      <div className="w-20 h-20 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-                        <Gift className="w-10 h-10 text-white/30" />
-                      </div>
-                    )}
+                  <div className="relative h-64 bg-gradient-to-br from-[#1a2a1a] via-[#111827] to-[#0d1117] flex items-center justify-center p-4">
+                    <img 
+                      src={currentPremio.plaquinha} 
+                      alt={`Plaquinha ${currentPremio.pontos}`}
+                      className="h-full w-auto object-contain"
+                    />
                   </div>
                   
                   {/* Card Content */}
@@ -258,7 +246,7 @@ export default function RewardsPage() {
                 </div>
                 <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#ccff00]/10">
                   <Zap className="w-4 h-4 text-[#97c700]" />
-                  <span className="text-xs font-medium text-[#97c700]">1 de 5 conquistados</span>
+                  <span className="text-xs font-medium text-[#97c700]">0 de {premiacoes.length} conquistados</span>
                 </div>
               </div>
               
