@@ -54,6 +54,14 @@ export async function POST(req: NextRequest) {
 
     const webhookUrl = `${baseUrl}/api/telegram/webhook?token=${encodeURIComponent(botToken)}`
 
+    // Check if this is a preview URL (won't work 24/7)
+    const isPreviewUrl = baseUrl.includes("vusercontent.net") || 
+                         baseUrl.includes("localhost") ||
+                         (baseUrl.includes("vercel.app") && baseUrl.includes("-"))
+
+    // Delete old webhook first to ensure clean state
+    await fetch(`https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`)
+
     const res = await fetch(
       `https://api.telegram.org/bot${botToken}/setWebhook`,
       {
@@ -62,6 +70,7 @@ export async function POST(req: NextRequest) {
         body: JSON.stringify({
           url: webhookUrl,
           allowed_updates: ["message", "callback_query"],
+          drop_pending_updates: true,
         }),
       }
     )
@@ -71,6 +80,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ...data,
       webhook_url: webhookUrl,
+      warning: isPreviewUrl ? "ATENCAO: URL de preview detectada! O bot so funcionara enquanto o preview estiver ativo. Para funcionar 24/7, configure NEXT_PUBLIC_APP_URL com sua URL de producao." : null,
     })
   } catch (err) {
     console.error("[register] Error:", err)
