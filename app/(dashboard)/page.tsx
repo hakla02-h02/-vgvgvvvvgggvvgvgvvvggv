@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import useSWR from "swr"
 import {
   Search,
   Moon,
@@ -26,6 +27,8 @@ import {
   X,
   Check,
   Bot,
+  MessageSquare,
+  User,
 } from "lucide-react"
 import Link from "next/link"
 import { useTheme } from "next-themes"
@@ -49,6 +52,26 @@ const filterOptions = [
   { label: "Inativos", value: "inactive" },
   { label: "Novos", value: "new" },
 ]
+
+// Fetcher para SWR
+const fetcher = (url: string) => fetch(url).then(res => res.json())
+
+// Tipo para conversa
+interface Conversation {
+  id: string
+  nome: string
+  telegram: string
+  canal: string
+  mensagens: number
+  status: string
+  statusLabel: string
+  tempoResposta: string
+  resultado: string
+  resultadoTipo: string
+  fluxo: string | null
+  iniciadoEm: string
+  ultimaAtividade: string
+}
 
 // Função para gerar os intervalos de semanas do mês atual
 function getCurrentMonthWeekRanges() {
@@ -100,6 +123,18 @@ export default function DashboardPage() {
   const [salesDateRange, setSalesDateRange] = useState(firstWeek)
   const [dealDateRange, setDealDateRange] = useState(firstWeek)
   const [tablePeriod, setTablePeriod] = useState("month")
+
+  // Buscar conversas recentes
+  const { data: conversationsData, isLoading: loadingConversations } = useSWR<{
+    conversations: Conversation[]
+    total: number
+  }>(
+    selectedBot ? `/api/conversations?bot_id=${selectedBot.id}&period=${tablePeriod}` : null,
+    fetcher,
+    { refreshInterval: 30000 } // Atualizar a cada 30 segundos
+  )
+
+  const conversations = conversationsData?.conversations || []
 
   if (!selectedBot) {
     return <NoBotSelected />
@@ -561,12 +596,102 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {/* Sem dados ainda */}
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
-                    Nenhuma conversa registrada ainda
-                  </td>
-                </tr>
+                {loadingConversations ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                      <div className="flex items-center justify-center gap-2">
+                        <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+                        Carregando conversas...
+                      </div>
+                    </td>
+                  </tr>
+                ) : conversations.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-sm text-muted-foreground">
+                      Nenhuma conversa registrada ainda
+                    </td>
+                  </tr>
+                ) : (
+                  conversations.map((conv) => (
+                    <tr key={conv.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
+                      {/* Usuário */}
+                      <td className="py-4 px-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
+                            <User size={16} className="text-accent-foreground" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-sm font-medium text-foreground">{conv.nome}</span>
+                            <span className="text-xs text-muted-foreground">{conv.telegram}</span>
+                          </div>
+                        </div>
+                      </td>
+                      {/* Canal */}
+                      <td className="py-4 px-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center">
+                            <Send size={12} className="text-blue-500" />
+                          </div>
+                          <span className="text-sm text-foreground">{conv.canal}</span>
+                        </div>
+                      </td>
+                      {/* Mensagens */}
+                      <td className="py-4 px-2">
+                        <div className="flex items-center gap-2">
+                          <MessageSquare size={14} className="text-muted-foreground" />
+                          <span className="text-sm text-foreground">{conv.mensagens}</span>
+                          {conv.fluxo && (
+                            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full truncate max-w-[100px]">
+                              {conv.fluxo}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      {/* Status */}
+                      <td className="py-4 px-2">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                          conv.status === "ativo" 
+                            ? "bg-green-500/20 text-green-600 dark:text-green-400" 
+                            : conv.status === "aguardando"
+                            ? "bg-yellow-500/20 text-yellow-600 dark:text-yellow-400"
+                            : conv.status === "concluido"
+                            ? "bg-blue-500/20 text-blue-600 dark:text-blue-400"
+                            : "bg-muted text-muted-foreground"
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            conv.status === "ativo" 
+                              ? "bg-green-500" 
+                              : conv.status === "aguardando"
+                              ? "bg-yellow-500"
+                              : conv.status === "concluido"
+                              ? "bg-blue-500"
+                              : "bg-muted-foreground"
+                          }`}></span>
+                          {conv.statusLabel}
+                        </span>
+                      </td>
+                      {/* Tempo de Resposta */}
+                      <td className="py-4 px-2">
+                        <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                          <Clock size={14} />
+                          {conv.tempoResposta}
+                        </div>
+                      </td>
+                      {/* Resultado */}
+                      <td className="py-4 px-2 text-right">
+                        <span className={`text-sm font-medium ${
+                          conv.resultadoTipo === "positivo" 
+                            ? "text-green-600 dark:text-green-400" 
+                            : conv.resultadoTipo === "negativo"
+                            ? "text-red-500 dark:text-red-400"
+                            : "text-muted-foreground"
+                        }`}>
+                          {conv.resultado}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
