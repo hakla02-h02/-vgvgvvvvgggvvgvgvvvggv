@@ -2855,8 +2855,8 @@ if (sv === "end") {
 
           {/* ===== STEP 1: Choose mode ===== */}
           {newFlowMode === null && (
-            <div className="flex flex-col p-8 gap-8">
-              <div className="space-y-2">
+            <div className="flex flex-col p-5 sm:p-8 gap-5 sm:gap-8">
+              <div className="space-y-1.5 sm:space-y-2">
                 <DialogHeader>
                   <DialogTitle className="text-foreground text-xl font-semibold">
                     {flows.length === 0 ? "Criar fluxo inicial" : "Novo fluxo"}
@@ -2865,54 +2865,58 @@ if (sv === "end") {
                 <p className="text-sm text-muted-foreground">Escolha como montar seu fluxo.</p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 {/* Basic Flow Option */}
                 <button
-                  className="group flex flex-col rounded-2xl border border-border bg-card p-6 text-left transition-all hover:bg-secondary/30 hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5"
+                  className="group flex flex-row sm:flex-col items-start rounded-2xl border border-border bg-card p-4 sm:p-6 text-left transition-all hover:bg-secondary/30 hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5"
                   onClick={() => setNewFlowMode("basico")}
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 mb-5">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/10 border border-accent/20 mr-4 sm:mr-0 sm:mb-5">
                     <Zap className="h-6 w-6 text-accent" />
                   </div>
-                  <p className="text-base font-semibold text-foreground">Basico</p>
-                  <p className="text-sm text-muted-foreground mt-1 mb-5">Pronto em segundos</p>
-                  <div className="flex flex-col gap-2.5 mt-auto">
-                    <p className="text-sm text-muted-foreground/70">Boas-vindas + midia</p>
-                    <p className="text-sm text-muted-foreground/70">Cobranca automatica</p>
-                    <p className="text-sm text-muted-foreground/70">Preencha e pronto</p>
-                  </div>
-                  <div className="flex items-center gap-2 mt-5 pt-5 border-t border-border/50">
-                    <div className="h-2.5 w-2.5 rounded-full bg-accent/60" />
-                    <div className="w-5 h-px bg-border/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-blue-400/60" />
-                    <div className="w-5 h-px bg-border/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
+                  <div className="flex-1 sm:flex-none">
+                    <p className="text-base font-semibold text-foreground">Basico</p>
+                    <p className="text-sm text-muted-foreground mt-0.5 sm:mt-1 sm:mb-5">Pronto em segundos</p>
+                    <div className="hidden sm:flex flex-col gap-2.5 mt-auto">
+                      <p className="text-sm text-muted-foreground/70">Boas-vindas + midia</p>
+                      <p className="text-sm text-muted-foreground/70">Cobranca automatica</p>
+                      <p className="text-sm text-muted-foreground/70">Preencha e pronto</p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 mt-5 pt-5 border-t border-border/50">
+                      <div className="h-2.5 w-2.5 rounded-full bg-accent/60" />
+                      <div className="w-5 h-px bg-border/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-blue-400/60" />
+                      <div className="w-5 h-px bg-border/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-emerald-400/60" />
+                    </div>
                   </div>
                 </button>
 
                 {/* Complete Flow Option */}
                 <button
-                  className="group flex flex-col rounded-2xl border border-border bg-card p-6 text-left transition-all hover:bg-secondary/30 hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5"
+                  className="group flex flex-row sm:flex-col items-start rounded-2xl border border-border bg-card p-4 sm:p-6 text-left transition-all hover:bg-secondary/30 hover:border-accent/30 hover:shadow-lg hover:shadow-accent/5"
                   onClick={() => setNewFlowMode("completo")}
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 mb-5">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 mr-4 sm:mr-0 sm:mb-5">
                     <Workflow className="h-6 w-6 text-purple-400" />
                   </div>
-                  <p className="text-base font-semibold text-foreground">Completo</p>
-                  <p className="text-sm text-muted-foreground mt-1 mb-5">Controle total</p>
-                  <div className="flex flex-col gap-2.5 mt-auto">
-                    <p className="text-sm text-muted-foreground/70">Etapa por etapa</p>
-                    <p className="text-sm text-muted-foreground/70">Logica e automacoes</p>
-                    <p className="text-sm text-muted-foreground/70">Jornadas elaboradas</p>
-                  </div>
-                  <div className="flex items-center gap-2 mt-5 pt-5 border-t border-border/50">
-                    <div className="h-2.5 w-2.5 rounded-full bg-accent/60" />
-                    <div className="w-5 h-px bg-border/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-purple-400/60" />
-                    <div className="w-5 h-px bg-border/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-orange-400/60" />
-                    <div className="w-5 h-px bg-border/60" />
-                    <div className="h-2.5 w-2.5 rounded-full bg-cyan-400/60" />
+                  <div className="flex-1 sm:flex-none">
+                    <p className="text-base font-semibold text-foreground">Completo</p>
+                    <p className="text-sm text-muted-foreground mt-0.5 sm:mt-1 sm:mb-5">Controle total</p>
+                    <div className="hidden sm:flex flex-col gap-2.5 mt-auto">
+                      <p className="text-sm text-muted-foreground/70">Etapa por etapa</p>
+                      <p className="text-sm text-muted-foreground/70">Logica e automacoes</p>
+                      <p className="text-sm text-muted-foreground/70">Jornadas elaboradas</p>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-2 mt-5 pt-5 border-t border-border/50">
+                      <div className="h-2.5 w-2.5 rounded-full bg-accent/60" />
+                      <div className="w-5 h-px bg-border/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-purple-400/60" />
+                      <div className="w-5 h-px bg-border/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-orange-400/60" />
+                      <div className="w-5 h-px bg-border/60" />
+                      <div className="h-2.5 w-2.5 rounded-full bg-cyan-400/60" />
+                    </div>
                   </div>
                 </button>
               </div>
