@@ -74,6 +74,58 @@ export type DragonBioSite = {
   created_at: string
   updated_at: string
   dragon_bio_links?: any[]
+  page_type?: "presell" | "conversion" | "dragonbio" | "checkout"
+}
+
+// Funcao para obter configuracao de icone baseado no tipo da pagina
+function getPageTypeConfig(pageType: string | undefined) {
+  switch (pageType) {
+    case "presell":
+      return {
+        gradient: "from-orange-500 to-amber-400",
+        icon: (
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        )
+      }
+    case "conversion":
+      return {
+        gradient: "from-emerald-500 to-green-400",
+        icon: (
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="12" r="10"/>
+            <circle cx="12" cy="12" r="6"/>
+            <circle cx="12" cy="12" r="2"/>
+          </svg>
+        )
+      }
+    case "checkout":
+      return {
+        gradient: "from-blue-500 to-cyan-400",
+        icon: (
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="9" cy="21" r="1"/>
+            <circle cx="20" cy="21" r="1"/>
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+          </svg>
+        )
+      }
+    case "dragonbio":
+    default:
+      return {
+        gradient: "from-violet-500 to-purple-400",
+        icon: (
+          <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+          </svg>
+        )
+      }
+  }
 }
 
 export default function BioLinkPage() {
@@ -166,7 +218,16 @@ export default function BioLinkPage() {
   }
 
   const handleEditPage = (site: DragonBioSite) => {
-    router.push(`/biolink-editor/${site.id}`)
+    const pageType = site.page_type || "dragonbio"
+    if (pageType === "presell") {
+      router.push(`/presell-editor/${site.id}`)
+    } else if (pageType === "conversion") {
+      router.push(`/conversion-editor/${site.id}`)
+    } else if (pageType === "checkout") {
+      router.push(`/checkout-editor/${site.id}`)
+    } else {
+      router.push(`/biolink-editor/${site.id}`)
+    }
   }
 
   const handleCopyLink = (slug: string) => {
@@ -475,15 +536,12 @@ export default function BioLinkPage() {
                   </div>
                   <div className="divide-y divide-gray-50">
                     {dragonBioSites.map((site) => {
-                      const typeInfo = pageTypes[2] // Dragon Bot
+                      const typeConfig = getPageTypeConfig(site.page_type)
                       return (
                         <div key={site.id} className="p-5 flex items-center justify-between hover:bg-muted/50 transition-colors">
                           <div className="flex items-center gap-4">
-                            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${typeInfo.gradient} flex items-center justify-center shadow-sm`}>
-                              <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                              </svg>
+                            <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${typeConfig.gradient} flex items-center justify-center shadow-sm`}>
+                              {typeConfig.icon}
                             </div>
                             <div>
                               <div className="flex items-center gap-2 mb-0.5">

@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { userId, nome, slug, userEmail, userName } = body
+    const { userId, nome, slug, userEmail, userName, pageType } = body
 
     if (!userId || !nome || !slug) {
       return NextResponse.json({ error: "userId, nome e slug são obrigatórios" }, { status: 400 })
@@ -80,7 +80,8 @@ export async function POST(request: Request) {
         template: "minimal",
         profile_name: nome,
         profile_bio: "Sua bio aqui",
-        profile_image: null
+        profile_image: null,
+        page_type: pageType || "dragonbio"
       })
       .select()
       .single()
