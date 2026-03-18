@@ -22,6 +22,7 @@ import {
   Loader2,
   Eye,
   ExternalLink,
+  Settings,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -125,6 +126,8 @@ export default function DragonBioEditorPage({ params }: PageProps) {
   const [selectedModel, setSelectedModel] = useState<ModelType>("buttons")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [siteName, setSiteName] = useState("")
+  const [siteSlug, setSiteSlug] = useState("")
 
   // Carregar dados do site
   useEffect(() => {
@@ -139,6 +142,8 @@ export default function DragonBioEditorPage({ params }: PageProps) {
 
       if (data.site) {
         setSite(data.site)
+        setSiteName(data.site.nome || "")
+        setSiteSlug(data.site.slug || "")
         setPageData({
           profile_name: data.site.profile_name || "",
           profile_bio: data.site.profile_bio || "",
@@ -199,6 +204,8 @@ export default function DragonBioEditorPage({ params }: PageProps) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          nome: siteName,
+          slug: siteSlug,
           profile_name: pageData.profile_name,
           profile_bio: pageData.profile_bio,
           profile_image: pageData.profile_image,
@@ -215,6 +222,8 @@ export default function DragonBioEditorPage({ params }: PageProps) {
         throw new Error("Erro ao salvar")
       }
 
+      // Atualiza o site local com os novos dados
+      setSite((prev: any) => prev ? { ...prev, nome: siteName, slug: siteSlug } : prev)
       setSaved(true)
       toast.success("Alteracoes salvas!")
       setTimeout(() => setSaved(false), 2000)
@@ -350,6 +359,10 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                 <TabsTrigger value="links" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
                   <Link2 className="w-3.5 h-3.5 mr-1.5" />
                   Links
+                </TabsTrigger>
+                <TabsTrigger value="details" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <Settings className="w-3.5 h-3.5 mr-1.5" />
+                  Detalhes
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -789,6 +802,82 @@ export default function DragonBioEditorPage({ params }: PageProps) {
                 </div>
               </TabsContent>
 
+              {/* Details Tab */}
+              <TabsContent value="details" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
+                <div className="flex flex-col gap-5">
+                  {/* Page Name */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Nome da Pagina
+                    </Label>
+                    <Input
+                      value={siteName}
+                      onChange={(e) => {
+                        setSiteName(e.target.value)
+                        setSaved(false)
+                      }}
+                      placeholder="Ex: Minha Bio"
+                      className="h-10 text-sm"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1.5">
+                      Nome para identificar sua pagina no painel
+                    </p>
+                  </div>
+
+                  {/* Slug/URL */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      URL da Pagina (Slug)
+                    </Label>
+                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3">
+                      <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
+                      <Input
+                        value={siteSlug}
+                        onChange={(e) => {
+                          setSiteSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))
+                          setSaved(false)
+                        }}
+                        placeholder="minha-pagina"
+                        className="flex-1 h-10 bg-transparent border-0 px-0 focus-visible:ring-0 text-sm"
+                      />
+                    </div>
+                    <p className="text-[10px] text-gray-400 mt-1.5">
+                      Este e o endereco da sua pagina: {typeof window !== 'undefined' ? window.location.origin : ''}/s/{siteSlug || 'minha-pagina'}
+                    </p>
+                  </div>
+
+                  {/* Quick Actions */}
+                  <div className="border-t border-gray-100 pt-5 mt-2">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                      Acoes Rapidas
+                    </Label>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(`/s/${siteSlug}`, '_blank')}
+                        className="justify-start h-10 text-sm"
+                      >
+                        <ExternalLink className="w-4 h-4 mr-2" />
+                        Abrir Pagina
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const url = `${window.location.origin}/s/${siteSlug}`
+                          navigator.clipboard.writeText(url)
+                          toast.success("Link copiado!")
+                        }}
+                        className="justify-start h-10 text-sm"
+                      >
+                        <Link2 className="w-4 h-4 mr-2" />
+                        Copiar Link
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
 
             </div>
           </Tabs>

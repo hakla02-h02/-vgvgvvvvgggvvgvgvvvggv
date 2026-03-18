@@ -5,15 +5,13 @@ import { useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
-import { ArrowRight, ChevronLeft, Edit3, ExternalLink, Copy, MoreHorizontal, Trash2, Loader2 } from "lucide-react"
+import { ArrowRight, Edit3, ExternalLink, Copy, MoreHorizontal, Trash2, Loader2 } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -83,9 +81,6 @@ export default function BioLinkPage() {
   const { session } = useAuth()
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
-  const [selectedType, setSelectedType] = useState<PageType>(null)
-  const [pageName, setPageName] = useState("")
-  const [pageSlug, setPageSlug] = useState("")
   const [sites, setSites] = useState<DragonBioSite[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -115,70 +110,59 @@ export default function BioLinkPage() {
     }
   }
 
-  const handleSelectType = (type: PageType) => {
-    setSelectedType(type)
-  }
+  const handleSelectType = async (type: PageType) => {
+    if (!session?.userId || !type) return
+    
+    setCreating(true)
+    setDialogOpen(false)
+    
+    // Gerar nome e slug automaticos
+    const timestamp = Date.now()
+    const autoName = `${type === "dragonbio" ? "Dragon Bio" : type === "presell" ? "Presell" : type === "conversion" ? "Conversao" : "Checkout"} ${new Date().toLocaleDateString("pt-BR")}`
+    const autoSlug = `${type}-${timestamp}`
+    
+    try {
+      const res = await fetch("/api/dragon-bio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: session.userId,
+          userEmail: session.email,
+          userName: session.name,
+          nome: autoName,
+          slug: autoSlug,
+          template: "buttons",
+          pageType: type,
+        }),
+      })
 
-  const handleBack = () => {
-    setSelectedType(null)
-    setPageName("")
-    setPageSlug("")
-  }
+      const data = await res.json()
 
-  const handleCreate = async () => {
-    if (!session?.userId || !pageName.trim() || !pageSlug.trim()) return
-
-    if (selectedType === "dragonbio") {
-      try {
-        setCreating(true)
-        const res = await fetch("/api/dragon-bio", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: session.userId,
-            userEmail: session.email,
-            userName: session.name,
-            nome: pageName,
-            slug: pageSlug,
-            template: "buttons",
-          }),
-        })
-
-        const data = await res.json()
-
-        if (!res.ok) {
-          toast.error(data.error || "Erro ao criar site")
-          return
-        }
-
-        toast.success("Site criado com sucesso!")
-        setSites([data.site, ...sites])
-        setDialogOpen(false)
-        setSelectedType(null)
-        setPageName("")
-        setPageSlug("")
-      } catch (error) {
-        console.error("Erro ao criar site:", error)
-        toast.error("Erro ao criar site")
-      } finally {
+      if (!res.ok) {
+        toast.error(data.error || "Erro ao criar site")
         setCreating(false)
+        return
       }
-    } else {
-      toast.info("Esse tipo de pagina ainda nao esta disponivel")
-      setDialogOpen(false)
-      setSelectedType(null)
-      setPageName("")
-      setPageSlug("")
+
+      // Redirecionar diretamente para o editor apropriado
+      if (type === "dragonbio") {
+        router.push(`/biolink-editor/${data.site.id}`)
+      } else if (type === "presell") {
+        router.push(`/presell-editor/${data.site.id}`)
+      } else if (type === "conversion") {
+        router.push(`/conversion-editor/${data.site.id}`)
+      } else if (type === "checkout") {
+        router.push(`/checkout-editor/${data.site.id}`)
+      }
+    } catch (error) {
+      console.error("Erro ao criar site:", error)
+      toast.error("Erro ao criar site")
+      setCreating(false)
     }
   }
 
   const handleDialogChange = (open: boolean) => {
     setDialogOpen(open)
-    if (!open) {
-      setSelectedType(null)
-      setPageName("")
-      setPageSlug("")
-    }
   }
 
   const handleEditPage = (site: DragonBioSite) => {
@@ -298,147 +282,63 @@ export default function BioLinkPage() {
                 {/* Grid de Tipos - Cards Horizontais */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {pageTypes.map((type) => (
-                    <Dialog key={type.id} open={dialogOpen && selectedType === type.id} onOpenChange={(open) => {
-                      if (open) {
-                        setSelectedType(type.id)
-                        setDialogOpen(true)
-                      } else {
-                        handleDialogChange(false)
-                      }
-                    }}>
-                      <DialogTrigger asChild>
-                        <button 
-                          className="group bg-card rounded-[20px] p-5 border border-border hover:border-gray-200 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4"
-                        >
-                          {/* Icon com gradiente */}
-                          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform`}>
-                            {type.id === "presell" && (
-                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                              </svg>
-                            )}
-                            {type.id === "conversion" && (
-                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="12" cy="12" r="10"/>
-                                <circle cx="12" cy="12" r="6"/>
-                                <circle cx="12" cy="12" r="2"/>
-                              </svg>
-                            )}
-                            {type.id === "dragonbio" && (
-                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
-                              </svg>
-                            )}
-                            {type.id === "checkout" && (
-                              <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                <circle cx="9" cy="21" r="1"/>
-                                <circle cx="20" cy="21" r="1"/>
-                                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                              </svg>
-                            )}
-                          </div>
-                          
-                          {/* Content */}
-                          <div className="flex-1 min-w-0">
-                            <h3 className="font-semibold text-foreground mb-1 group-hover:text-[#111] transition-colors">
-                              {type.name}
-                            </h3>
-                            <p className="text-sm text-muted-foreground line-clamp-1">
-                              {type.description}
-                            </p>
-                          </div>
-                          
-                          {/* Arrow */}
-                          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-foreground dark:bg-card transition-colors flex-shrink-0">
-                            <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-background dark:text-foreground transition-colors" />
-                          </div>
-                        </button>
-                      </DialogTrigger>
+                    <button 
+                      key={type.id}
+                      onClick={() => handleSelectType(type.id)}
+                      disabled={creating}
+                      className="group bg-card rounded-[20px] p-5 border border-border hover:border-gray-200 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {/* Icon com gradiente */}
+                      <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform`}>
+                        {type.id === "presell" && (
+                          <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                            <line x1="16" y1="13" x2="8" y2="13"/>
+                            <line x1="16" y1="17" x2="8" y2="17"/>
+                          </svg>
+                        )}
+                        {type.id === "conversion" && (
+                          <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10"/>
+                            <circle cx="12" cy="12" r="6"/>
+                            <circle cx="12" cy="12" r="2"/>
+                          </svg>
+                        )}
+                        {type.id === "dragonbio" && (
+                          <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                          </svg>
+                        )}
+                        {type.id === "checkout" && (
+                          <svg viewBox="0 0 24 24" className="w-6 h-6 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="9" cy="21" r="1"/>
+                            <circle cx="20" cy="21" r="1"/>
+                            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                          </svg>
+                        )}
+                      </div>
                       
-                      <DialogContent className="bg-card border-gray-200 sm:max-w-md rounded-[24px]">
-                        <DialogHeader>
-                          <div className="flex items-center gap-3">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 rounded-lg"
-                              onClick={handleBack}
-                            >
-                              <ChevronLeft className="h-4 w-4" />
-                            </Button>
-                            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${type.gradient} flex items-center justify-center`}>
-                              {type.id === "presell" && (
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                                </svg>
-                              )}
-                              {type.id === "conversion" && (
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="12" cy="12" r="10"/>
-                                </svg>
-                              )}
-                              {type.id === "dragonbio" && (
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                </svg>
-                              )}
-                              {type.id === "checkout" && (
-                                <svg viewBox="0 0 24 24" className="w-4 h-4 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                  <circle cx="9" cy="21" r="1"/>
-                                </svg>
-                              )}
-                            </div>
-                            <DialogTitle className="text-foreground">
-                              {type.name}
-                            </DialogTitle>
-                          </div>
-                        </DialogHeader>
-                        <div className="flex flex-col gap-5 pt-4">
-                          <div className="flex flex-col gap-2">
-                            <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Nome da Pagina</Label>
-                            <Input 
-                              placeholder="Ex: Minha Pagina de Vendas" 
-                              className="bg-muted border-border rounded-xl h-11"
-                              value={pageName}
-                              onChange={(e) => setPageName(e.target.value)}
-                            />
-                          </div>
-                          <div className="flex flex-col gap-2">
-                            <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Slug (URL)</Label>
-                            <div className="flex items-center gap-2 bg-muted border border-border rounded-xl px-3">
-                              <span className="text-sm text-muted-foreground whitespace-nowrap">/s/</span>
-                              <Input 
-                                placeholder="minha-pagina" 
-                                className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
-                                value={pageSlug}
-                                onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
-                              />
-                            </div>
-                          </div>
-                          <Button 
-                            className="bg-foreground dark:bg-accent text-background dark:text-accent-foreground hover:opacity-90 rounded-xl h-11 mt-2"
-                            onClick={handleCreate}
-                            disabled={!pageName.trim() || !pageSlug.trim() || creating}
-                          >
-                            {creating ? (
-                              <>
-                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                Criando...
-                              </>
-                            ) : (
-                              <>
-                                Criar Site
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </DialogContent>
-                    </Dialog>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-foreground mb-1 group-hover:text-[#111] transition-colors">
+                          {type.name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground line-clamp-1">
+                          {type.description}
+                        </p>
+                      </div>
+                      
+                      {/* Arrow or Loading */}
+                      <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center group-hover:bg-foreground dark:bg-card transition-colors flex-shrink-0">
+                        {creating ? (
+                          <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+                        ) : (
+                          <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-background dark:text-foreground transition-colors" />
+                        )}
+                      </div>
+                    </button>
                   ))}
                 </div>
 
@@ -480,169 +380,70 @@ export default function BioLinkPage() {
                       
                       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
                         <DialogTrigger asChild>
-                          <Button className="bg-[#a3e635] text-black hover:bg-[#b4f04a] rounded-xl h-10 px-5 font-semibold">
-                            Criar Site
+                          <Button className="bg-[#a3e635] text-black hover:bg-[#b4f04a] rounded-xl h-10 px-5 font-semibold" disabled={creating}>
+                            {creating ? (
+                              <>
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                Criando...
+                              </>
+                            ) : (
+                              "Criar Site"
+                            )}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="bg-card border-gray-200 sm:max-w-lg rounded-[24px]">
-                          {!selectedType ? (
-                            <>
-                              <DialogHeader>
-                                <DialogTitle className="text-foreground text-center">
-                                  Escolha o tipo de pagina
-                                </DialogTitle>
-                                <p className="text-sm text-muted-foreground text-center">
-                                  Selecione o modelo ideal para seu objetivo
-                                </p>
-                              </DialogHeader>
-                              <div className="grid grid-cols-2 gap-3 pt-4">
-                                {pageTypes.map((type) => (
-                                  <button
-                                    key={type.id}
-                                    onClick={() => handleSelectType(type.id)}
-                                    className="group flex flex-col items-center gap-3 p-5 rounded-2xl border border-border bg-muted/50 hover:bg-card hover:border-gray-200 hover:shadow-md transition-all text-center"
-                                  >
-                                    <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform`}>
-                                      {type.id === "presell" && (
-                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
-                                        </svg>
-                                      )}
-                                      {type.id === "conversion" && (
-                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <circle cx="12" cy="12" r="10"/>
-                                          <circle cx="12" cy="12" r="2"/>
-                                        </svg>
-                                      )}
-                                      {type.id === "dragonbio" && (
-                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
-                                        </svg>
-                                      )}
-                                      {type.id === "checkout" && (
-                                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <circle cx="9" cy="21" r="1"/>
-                                          <circle cx="20" cy="21" r="1"/>
-                                          <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
-                                        </svg>
-                                      )}
-                                    </div>
-                                    <div>
-                                      <h3 className="text-sm font-semibold text-foreground mb-0.5">
-                                        {type.name}
-                                      </h3>
-                                      <p className="text-xs text-muted-foreground line-clamp-2">
-                                        {type.description}
-                                      </p>
-                                    </div>
-                                  </button>
-                                ))}
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <DialogHeader>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-lg"
-                                    onClick={handleBack}
-                                  >
-                                    <ChevronLeft className="h-4 w-4" />
-                                  </Button>
-                                  <DialogTitle className="text-foreground">
-                                    {pageTypes.find(p => p.id === selectedType)?.name}
-                                  </DialogTitle>
-                                </div>
-                              </DialogHeader>
-                              <div className="flex flex-col gap-5 pt-4">
-                                {/* Seleção de Templates - apenas para Dragon Bot */}
-                                {selectedType === "dragonbio" && (
-                                  <div className="flex flex-col gap-3">
-                                    <Label className="text-muted-foreground dark:text-muted-foreground text-xs uppercase tracking-wider">Escolha um modelo</Label>
-                                    <div className="grid grid-cols-3 gap-3">
-                                      {dragonBioTemplates.map((template) => (
-                                        <button
-                                          key={template.id}
-                                          onClick={() => setSelectedTemplate(template.id)}
-                                          className={`relative aspect-[3/4] rounded-2xl p-3 flex flex-col items-center justify-center transition-all ${
-                                            selectedTemplate === template.id
-                                              ? "bg-secondary ring-2 ring-accent"
-                                              : "bg-secondary/60 hover:bg-secondary"
-                                          }`}
-                                        >
-                                          {selectedTemplate === template.id && (
-                                            <div className="absolute top-2 right-2 w-5 h-5 bg-accent rounded-full flex items-center justify-center">
-                                              <svg viewBox="0 0 24 24" className="w-3 h-3 text-accent-foreground" fill="none" stroke="currentColor" strokeWidth="3">
-                                                <polyline points="20 6 9 17 4 12"/>
-                                              </svg>
-                                            </div>
-                                          )}
-                                          {/* Preview do template */}
-                                          <div className="flex flex-col items-center gap-1.5 w-full">
-                                            {/* Avatar */}
-                                            <div className="w-6 h-6 rounded-full bg-muted-foreground/30"></div>
-                                            {/* Items do preview */}
-                                            {template.preview.map((item, idx) => (
-                                              <div
-                                                key={idx}
-                                                className={`w-full rounded-md ${
-                                                  item.type === "photo" ? "h-4 bg-muted-foreground/20" : "h-2.5 bg-muted-foreground/40"
-                                                }`}
-                                              ></div>
-                                            ))}
-                                          </div>
-                                        </button>
-                                      ))}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground text-center">
-                                      {dragonBioTemplates.find(t => t.id === selectedTemplate)?.name} - {dragonBioTemplates.find(t => t.id === selectedTemplate)?.description}
-                                    </p>
-                                  </div>
-                                )}
-
-                                <div className="flex flex-col gap-2">
-                                  <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Nome da Pagina</Label>
-                                  <Input 
-                                    placeholder="Ex: Minha Pagina de Vendas" 
-                                    className="bg-muted border-border rounded-xl h-11"
-                                    value={pageName}
-                                    onChange={(e) => setPageName(e.target.value)}
-                                  />
-                                </div>
-                                <div className="flex flex-col gap-2">
-                                  <Label className="text-muted-foreground dark:text-muted-foreground text-sm">Slug (URL)</Label>
-                                  <div className="flex items-center gap-2 bg-muted border border-border rounded-xl px-3">
-                                    <span className="text-sm text-muted-foreground whitespace-nowrap">/s/</span>
-                                    <Input 
-                                      placeholder="minha-pagina" 
-                                      className="bg-transparent border-0 rounded-none flex-1 h-11 px-0 focus-visible:ring-0"
-                                      value={pageSlug}
-                                      onChange={(e) => setPageSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))}
-                                    />
-                                  </div>
-                                </div>
-                                <Button 
-                                  className="bg-foreground dark:bg-accent text-background dark:text-accent-foreground hover:opacity-90 rounded-xl h-11 mt-2"
-                                  onClick={handleCreate}
-                                  disabled={!pageName.trim() || !pageSlug.trim() || creating}
-                                >
-                                  {creating ? (
-                                    <>
-                                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                                      Criando...
-                                    </>
-                                  ) : (
-                                    <>
-                                      Criar Site
-                                      <ArrowRight className="ml-2 h-4 w-4" />
-                                    </>
+                          <DialogHeader>
+                            <DialogTitle className="text-foreground text-center">
+                              Escolha o tipo de pagina
+                            </DialogTitle>
+                            <p className="text-sm text-muted-foreground text-center">
+                              Selecione o modelo ideal para seu objetivo
+                            </p>
+                          </DialogHeader>
+                          <div className="grid grid-cols-2 gap-3 pt-4">
+                            {pageTypes.map((type) => (
+                              <button
+                                key={type.id}
+                                onClick={() => handleSelectType(type.id)}
+                                disabled={creating}
+                                className="group flex flex-col items-center gap-3 p-5 rounded-2xl border border-border bg-muted/50 hover:bg-card hover:border-gray-200 hover:shadow-md transition-all text-center disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${type.gradient} flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform`}>
+                                  {type.id === "presell" && (
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/>
+                                    </svg>
                                   )}
-                                </Button>
-                              </div>
-                            </>
-                          )}
+                                  {type.id === "conversion" && (
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <circle cx="12" cy="12" r="10"/>
+                                      <circle cx="12" cy="12" r="2"/>
+                                    </svg>
+                                  )}
+                                  {type.id === "dragonbio" && (
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                                    </svg>
+                                  )}
+                                  {type.id === "checkout" && (
+                                    <svg viewBox="0 0 24 24" className="w-5 h-5 text-background dark:text-foreground" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <circle cx="9" cy="21" r="1"/>
+                                      <circle cx="20" cy="21" r="1"/>
+                                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+                                    </svg>
+                                  )}
+                                </div>
+                                <div>
+                                  <h3 className="text-sm font-semibold text-foreground mb-0.5">
+                                    {type.name}
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {type.description}
+                                  </p>
+                                </div>
+                              </button>
+                            ))}
+                          </div>
                         </DialogContent>
                       </Dialog>
                     </div>

@@ -36,12 +36,14 @@ export async function PUT(
   try {
     const { id } = await params
     const body = await request.json()
-    const { template, profile_name, profile_bio, profile_image, links } = body
+    const { nome, slug, template, profile_name, profile_bio, profile_image, links } = body
 
     const supabase = getSupabase()
 
     // Atualizar site
     const updateData: any = { updated_at: new Date().toISOString() }
+    if (nome !== undefined) updateData.nome = nome
+    if (slug !== undefined) updateData.slug = slug
     if (template !== undefined) updateData.template = template
     if (profile_name !== undefined) updateData.profile_name = profile_name
     if (profile_bio !== undefined) updateData.profile_bio = profile_bio
