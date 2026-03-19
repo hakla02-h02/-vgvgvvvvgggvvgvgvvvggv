@@ -46,7 +46,7 @@ const navSections: NavSection[] = [
     category: "MENU",
     items: [
       { label: "Dashboard", description: "Visao geral", href: "/", icon: LayoutDashboard },
-      { label: "Analises", description: "Metricas e relatorios", href: "/analytics", icon: BarChart3 },
+      { label: "Analises", description: "Metricas e relatorios", href: "/analytics", icon: BarChart3, locked: true },
       { label: "Financeiro", description: "Receitas e transacoes", href: "/payments", icon: DollarSign },
       { label: "Clientes", description: "Base de leads", href: "/users", icon: Users },
     ],
@@ -63,7 +63,7 @@ const navSections: NavSection[] = [
     category: "INTEGRACOES",
     items: [
       { label: "Gateways", description: "Pagamentos PIX", href: "/gateways", icon: CreditCard },
-      { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair },
+      { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair, locked: true },
       { label: "Dragon Sites", description: "Crie paginas de conversao", href: "/biolink", icon: LinkIcon },
     ],
   },
