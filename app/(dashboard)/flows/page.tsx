@@ -24,7 +24,7 @@ import {
   Send, CalendarDays, Repeat, Filter, MessageCircle, AlertCircle,
   ExternalLink, Workflow, CheckCircle2, Hash, Unlink, UsersRound, Webhook,
   CircleStop, RefreshCw, MousePointerClick,
-  ArrowDown, TrendingUp, TrendingDown,
+  ArrowDown, TrendingUp, TrendingDown, Package,
 } from "lucide-react"
 import NextImage from "next/image"
 import { Switch } from "@/components/ui/switch"
@@ -1069,7 +1069,7 @@ export default function FlowsPage() {
   const [basicIsUploading, setBasicIsUploading] = useState(false)
   const [basicWelcomeMsg, setBasicWelcomeMsg] = useState("")
   const [basicHasButtons, setBasicHasButtons] = useState(false)
-  const [basicButtons, setBasicButtons] = useState<{ text: string; url: string }[]>([])
+  const [basicButtons, setBasicButtons] = useState<{ id: string; text: string; amount: string; hasOrderBump?: boolean; orderBumpName?: string; orderBumpAmount?: string }[]>([])
 
   const resetBasicFlow = () => {
     setBasicWizardStep(1)
@@ -1541,14 +1541,9 @@ export default function FlowsPage() {
       position: 0,
     })
 
-    // 2) Welcome message with media + buttons
+    // 2) Welcome message with media
     const msgText = basicWelcomeMsg.trim()
     
-    // Build buttons array from basicButtons
-    const buttons: InlineButton[] = basicButtons
-      .filter(b => b.text.trim() && b.url.trim())
-      .map(b => ({ text: b.text.trim(), url: b.url.trim() }))
-
     autoNodes.push({
       type: "message",
       label: msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText,
@@ -1556,11 +1551,54 @@ export default function FlowsPage() {
         text: msgText,
         media_url: basicHasMedia ? basicMediaUrl : "",
         media_type: basicHasMedia ? basicMediaType : "",
-        buttons: buttons.length > 0 ? JSON.stringify(buttons) : "",
+        buttons: "",
         subVariant: basicHasMedia ? "media" : "text",
       },
       position: 1,
     })
+
+    // 3) Payment node if user added payment buttons
+    const validPaymentButtons = basicButtons.filter(b => b.text.trim() && b.amount.trim())
+    if (validPaymentButtons.length > 0) {
+      // Build payment_buttons in the same format as the complete flow
+      const paymentButtonsFormatted = validPaymentButtons.map(b => ({
+        id: b.id,
+        text: b.text.trim(),
+        amount: b.amount.replace(",", "."),
+      }))
+      
+      // Build upsells from order bumps (same format as complete flow)
+      const upsells = validPaymentButtons
+        .filter(b => b.hasOrderBump && b.orderBumpName?.trim() && b.orderBumpAmount?.trim())
+        .map(b => ({
+          id: crypto.randomUUID(),
+          media_url: "",
+          media_type: "none" as const,
+          description: "",
+          delay_seconds: "0",
+          buttons: [{
+            id: crypto.randomUUID(),
+            text: b.orderBumpName!.trim(),
+            amount: b.orderBumpAmount!.replace(",", "."),
+          }],
+        }))
+
+      const firstBtn = paymentButtonsFormatted[0]
+      autoNodes.push({
+        type: "payment",
+        label: `${firstBtn.text} - R$${firstBtn.amount}`,
+        config: {
+          subVariant: "charge",
+          amount: firstBtn.amount,
+          description: firstBtn.text,
+          gateway: "gate_uy",
+          payment_buttons: JSON.stringify(paymentButtonsFormatted),
+          upsells: JSON.stringify(upsells),
+          downsells: JSON.stringify([]),
+        },
+        position: 2,
+      })
+    }
 
     // Insert all nodes
     for (const node of autoNodes) {
@@ -3064,23 +3102,23 @@ if (sv === "end") {
                     </div>
                   )}
 
-                  {/* Step 3: Buttons (optional) */}
+                  {/* Step 3: Cobranca (optional) */}
                   {basicWizardStep === 3 && (
                     <div className="flex flex-col gap-4 py-4">
                       <div>
-                        <h3 className="text-lg font-bold text-foreground mb-1">Botoes</h3>
-                        <p className="text-sm text-muted-foreground">Quer adicionar botoes de link na mensagem?</p>
+                        <h3 className="text-lg font-bold text-foreground mb-1">Cobranca</h3>
+                        <p className="text-sm text-muted-foreground">Quer adicionar botoes de pagamento na mensagem?</p>
                       </div>
 
                       {/* Toggle buttons */}
                       <div className="flex items-center justify-between p-4 rounded-xl border border-border/60 bg-secondary/20">
                         <div className="flex items-center gap-3">
                           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 border border-accent/20">
-                            <Link className="h-5 w-5 text-accent" />
+                            <CreditCard className="h-5 w-5 text-accent" />
                           </div>
                           <div>
-                            <p className="text-sm font-medium text-foreground">Adicionar botoes</p>
-                            <p className="text-xs text-muted-foreground/60">Opcional</p>
+                            <p className="text-sm font-medium text-foreground">Gerar cobranca</p>
+                            <p className="text-xs text-muted-foreground/60">Cobranca automatica via PIX</p>
                           </div>
                         </div>
                         <Switch
@@ -3088,7 +3126,7 @@ if (sv === "end") {
                           onCheckedChange={(checked) => {
                             setBasicHasButtons(checked)
                             if (checked && basicButtons.length === 0) {
-                              setBasicButtons([{ text: "", url: "" }])
+                              setBasicButtons([{ id: crypto.randomUUID(), text: "", amount: "" }])
                             } else if (!checked) {
                               setBasicButtons([])
                             }
@@ -3096,42 +3134,105 @@ if (sv === "end") {
                         />
                       </div>
 
-                      {/* Buttons list */}
+                      {/* Payment buttons list */}
                       {basicHasButtons && (
-                        <div className="flex flex-col gap-3">
+                        <div className="flex flex-col gap-4">
                           {basicButtons.map((btn, i) => (
-                            <div key={i} className="flex gap-2 items-start">
-                              <div className="flex-1 flex flex-col gap-2">
-                                <Input
-                                  value={btn.text}
-                                  onChange={(e) => {
+                            <div key={btn.id} className="flex flex-col gap-3 p-4 rounded-xl border border-border/60 bg-secondary/10">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-medium text-muted-foreground">Produto {i + 1}</span>
+                                {basicButtons.length > 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                                    onClick={() => setBasicButtons(basicButtons.filter((_, j) => j !== i))}
+                                  >
+                                    <X className="h-3.5 w-3.5" />
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="flex gap-3">
+                                <div className="flex-1">
+                                  <Input
+                                    value={btn.text}
+                                    onChange={(e) => {
+                                      const updated = [...basicButtons]
+                                      updated[i].text = e.target.value
+                                      setBasicButtons(updated)
+                                    }}
+                                    placeholder="Nome do produto"
+                                    className="bg-secondary/50 border-border rounded-xl text-foreground h-10"
+                                  />
+                                </div>
+                                <div className="w-32">
+                                  <div className="relative">
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">R$</span>
+                                    <Input
+                                      value={btn.amount}
+                                      onChange={(e) => {
+                                        const updated = [...basicButtons]
+                                        updated[i].amount = e.target.value.replace(/[^0-9.,]/g, "")
+                                        setBasicButtons(updated)
+                                      }}
+                                      placeholder="0,00"
+                                      className="bg-secondary/50 border-border rounded-xl text-foreground h-10 pl-9"
+                                    />
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Order Bump toggle */}
+                              <div className="flex items-center justify-between pt-2 border-t border-border/40">
+                                <div className="flex items-center gap-2">
+                                  <Package className="h-4 w-4 text-purple-400" />
+                                  <span className="text-xs text-muted-foreground">Order Bump</span>
+                                </div>
+                                <Switch
+                                  checked={btn.hasOrderBump || false}
+                                  onCheckedChange={(checked) => {
                                     const updated = [...basicButtons]
-                                    updated[i].text = e.target.value
+                                    updated[i].hasOrderBump = checked
+                                    if (!checked) {
+                                      updated[i].orderBumpName = ""
+                                      updated[i].orderBumpAmount = ""
+                                    }
                                     setBasicButtons(updated)
                                   }}
-                                  placeholder="Texto do botao"
-                                  className="bg-secondary/50 border-border rounded-xl text-foreground h-10"
-                                />
-                                <Input
-                                  value={btn.url}
-                                  onChange={(e) => {
-                                    const updated = [...basicButtons]
-                                    updated[i].url = e.target.value
-                                    setBasicButtons(updated)
-                                  }}
-                                  placeholder="https://..."
-                                  className="bg-secondary/50 border-border rounded-xl text-foreground h-10"
                                 />
                               </div>
-                              {basicButtons.length > 1 && (
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-10 w-10 text-muted-foreground hover:text-destructive shrink-0"
-                                  onClick={() => setBasicButtons(basicButtons.filter((_, j) => j !== i))}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
+
+                              {/* Order Bump fields */}
+                              {btn.hasOrderBump && (
+                                <div className="flex gap-3 pl-6 border-l-2 border-purple-400/30">
+                                  <div className="flex-1">
+                                    <Input
+                                      value={btn.orderBumpName || ""}
+                                      onChange={(e) => {
+                                        const updated = [...basicButtons]
+                                        updated[i].orderBumpName = e.target.value
+                                        setBasicButtons(updated)
+                                      }}
+                                      placeholder="Nome do bump"
+                                      className="bg-secondary/50 border-border rounded-xl text-foreground h-9 text-sm"
+                                    />
+                                  </div>
+                                  <div className="w-28">
+                                    <div className="relative">
+                                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">R$</span>
+                                      <Input
+                                        value={btn.orderBumpAmount || ""}
+                                        onChange={(e) => {
+                                          const updated = [...basicButtons]
+                                          updated[i].orderBumpAmount = e.target.value.replace(/[^0-9.,]/g, "")
+                                          setBasicButtons(updated)
+                                        }}
+                                        placeholder="0,00"
+                                        className="bg-secondary/50 border-border rounded-xl text-foreground h-9 text-sm pl-9"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
                               )}
                             </div>
                           ))}
@@ -3140,10 +3241,10 @@ if (sv === "end") {
                               variant="outline"
                               size="sm"
                               className="w-fit text-xs"
-                              onClick={() => setBasicButtons([...basicButtons, { text: "", url: "" }])}
+                              onClick={() => setBasicButtons([...basicButtons, { id: crypto.randomUUID(), text: "", amount: "" }])}
                             >
                               <Plus className="h-3 w-3 mr-1.5" />
-                              Adicionar botao
+                              Adicionar produto
                             </Button>
                           )}
                         </div>
@@ -3195,12 +3296,14 @@ if (sv === "end") {
                         </p>
                       </div>
 
-                      {/* Button previews */}
-                      {basicHasButtons && basicButtons.filter(b => b.text).map((btn, i) => (
-                        <div key={i} className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
-                          <span className="text-[10px] text-background dark:text-foreground font-medium">{btn.text}</span>
-                        </div>
-                      ))}
+                    {/* Payment button previews */}
+                    {basicHasButtons && basicButtons.filter(b => b.text || b.amount).map((btn, i) => (
+                      <div key={i} className="bg-[#2b5278] rounded-lg py-1.5 px-2 text-center">
+                        <span className="text-[10px] text-background dark:text-foreground font-medium">
+                          {btn.text || "Produto"} {btn.amount ? `- R$${btn.amount}` : ""}
+                        </span>
+                      </div>
+                    ))}
                     </div>
                   </div>
                 </div>
