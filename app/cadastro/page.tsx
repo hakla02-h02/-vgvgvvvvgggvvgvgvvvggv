@@ -4,15 +4,15 @@ import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { Loader2, Eye, EyeOff, Gift } from "lucide-react"
+import { Loader2, Eye, EyeOff, Gift, Zap, Shield, Clock } from "lucide-react"
 import { DragonIcon } from "@/components/dragon-icon"
 
 export default function CadastroPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex h-screen w-screen items-center justify-center bg-background">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg animate-pulse">
+        <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a]">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl animate-pulse">
             <DragonIcon className="h-5 w-5" />
           </div>
         </div>
@@ -116,8 +116,8 @@ function CadastroContent() {
 
   if (isLoading || session) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg animate-pulse">
+      <div className="flex h-screen w-screen items-center justify-center bg-[#0a0a0a]">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl animate-pulse">
           <DragonIcon className="h-5 w-5" />
         </div>
       </div>
@@ -125,207 +125,245 @@ function CadastroContent() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-background">
+    <div className="flex min-h-screen w-full bg-[#0a0a0a]">
       {/* LADO ESQUERDO: FORMULARIO */}
-      <div className="flex w-full lg:w-[480px] flex-col justify-center px-6 py-12 lg:px-12 overflow-y-auto">
-        <div className="w-full max-w-sm mx-auto">
+      <div className="flex w-full lg:w-1/2 flex-col justify-center px-8 py-12 lg:px-16 xl:px-24 overflow-y-auto">
+        <div className="w-full max-w-[400px] mx-auto">
           {/* Logo */}
-          <div className="flex items-center gap-2.5 mb-8">
-            <div className="w-9 h-9 bg-accent rounded-lg flex items-center justify-center">
-              <DragonIcon className="w-5 h-5 text-accent-foreground" />
+          <div className="flex items-center gap-3 mb-10">
+            <div className="w-10 h-10 bg-[#b8ff29] rounded-xl flex items-center justify-center">
+              <DragonIcon className="w-5 h-5 text-[#0a0a0a]" />
             </div>
-            <span className="text-xl font-semibold text-foreground">Dragon</span>
+            <span className="text-xl font-semibold text-white">Dragon</span>
           </div>
 
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-semibold text-foreground mb-1.5">Crie sua conta</h1>
-            <p className="text-sm text-muted-foreground">Preencha os dados para comecar.</p>
+            <h1 className="text-3xl font-bold text-white mb-2">Crie sua conta</h1>
+            <p className="text-[#888] text-base">Preencha os dados para comecar.</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {referralCoupon && (
-              <div className="flex items-center gap-2 rounded-lg bg-accent/10 border border-accent/20 px-3 py-2">
-                <Gift className="h-3.5 w-3.5 text-accent shrink-0" />
-                <span className="text-xs text-accent">
-                  Cupom: <span className="font-medium">{referralCoupon}</span>
+              <div className="flex items-center gap-2 rounded-xl bg-[#b8ff29]/10 border border-[#b8ff29]/20 px-4 py-3">
+                <Gift className="h-4 w-4 text-[#b8ff29] shrink-0" />
+                <span className="text-sm text-[#b8ff29]">
+                  Cupom aplicado: <span className="font-semibold">{referralCoupon}</span>
                 </span>
               </div>
             )}
 
-            <div className="space-y-1.5">
-              <label htmlFor="name" className="text-sm font-medium text-foreground">Nome</label>
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-medium text-[#ccc]">Nome</label>
               <input 
                 type="text" 
                 id="name" 
                 placeholder="Seu nome completo" 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#222] bg-[#111] text-base text-white placeholder:text-[#555] focus:outline-none focus:border-[#b8ff29] focus:ring-1 focus:ring-[#b8ff29]/30 transition-all"
                 autoComplete="name"
                 autoFocus
                 disabled={isSubmitting}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="text-sm font-medium text-foreground">E-mail</label>
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-medium text-[#ccc]">E-mail</label>
               <input 
                 type="email" 
                 id="email" 
                 placeholder="seu@email.com" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#222] bg-[#111] text-base text-white placeholder:text-[#555] focus:outline-none focus:border-[#b8ff29] focus:ring-1 focus:ring-[#b8ff29]/30 transition-all"
                 autoComplete="email"
                 disabled={isSubmitting}
               />
             </div>
 
-            <div className="space-y-1.5">
-              <label htmlFor="phone" className="text-sm font-medium text-foreground">Telefone</label>
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-medium text-[#ccc]">Telefone</label>
               <input 
                 type="tel" 
                 id="phone" 
                 placeholder="(11) 99999-9999" 
                 value={phone}
                 onChange={(e) => setPhone(formatPhone(e.target.value))}
-                className="w-full h-10 px-3 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                className="w-full h-12 px-4 rounded-xl border border-[#222] bg-[#111] text-base text-white placeholder:text-[#555] focus:outline-none focus:border-[#b8ff29] focus:ring-1 focus:ring-[#b8ff29]/30 transition-all"
                 autoComplete="tel"
                 disabled={isSubmitting}
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <label htmlFor="password" className="text-sm font-medium text-foreground">Senha</label>
+              <div className="space-y-2">
+                <label htmlFor="password" className="text-sm font-medium text-[#ccc]">Senha</label>
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"} 
                     id="password" 
-                    placeholder="••••••" 
+                    placeholder="Min. 6 caracteres" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="w-full h-10 px-3 pr-9 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                    className="w-full h-12 px-4 pr-11 rounded-xl border border-[#222] bg-[#111] text-base text-white placeholder:text-[#555] focus:outline-none focus:border-[#b8ff29] focus:ring-1 focus:ring-[#b8ff29]/30 transition-all"
                     autoComplete="new-password"
                     disabled={isSubmitting}
                   />
                   <button 
                     type="button" 
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#555] hover:text-white transition-colors"
                     tabIndex={-1}
                   >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label htmlFor="confirm-password" className="text-sm font-medium text-foreground">Confirmar</label>
+              <div className="space-y-2">
+                <label htmlFor="confirm-password" className="text-sm font-medium text-[#ccc]">Confirmar</label>
                 <div className="relative">
                   <input 
                     type={showConfirm ? "text" : "password"} 
                     id="confirm-password" 
-                    placeholder="••••••" 
+                    placeholder="Repita a senha" 
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    className="w-full h-10 px-3 pr-9 rounded-lg border border-border bg-card text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-2 focus:ring-accent/20 transition-all"
+                    className="w-full h-12 px-4 pr-11 rounded-xl border border-[#222] bg-[#111] text-base text-white placeholder:text-[#555] focus:outline-none focus:border-[#b8ff29] focus:ring-1 focus:ring-[#b8ff29]/30 transition-all"
                     autoComplete="new-password"
                     disabled={isSubmitting}
                   />
                   <button 
                     type="button" 
                     onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-[#555] hover:text-white transition-colors"
                     tabIndex={-1}
                   >
-                    {showConfirm ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
             </div>
 
             {error && (
-              <p className="text-xs text-destructive">{error}</p>
+              <p className="text-sm text-red-400">{error}</p>
             )}
 
             <button 
               type="submit" 
               disabled={isSubmitting}
-              className="w-full h-10 bg-accent text-accent-foreground text-sm font-medium rounded-lg hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              className="w-full h-12 bg-[#b8ff29] text-[#0a0a0a] text-base font-semibold rounded-xl hover:bg-[#a8ef19] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-2"
             >
               {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 "Criar conta"
               )}
             </button>
           </form>
 
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Ja tem conta? <Link href="/login" className="text-accent font-medium hover:underline">Entrar</Link>
+          <p className="mt-6 text-center text-base text-[#888]">
+            Ja tem conta?{" "}
+            <Link href="/login" className="text-[#b8ff29] font-medium hover:underline">Entrar</Link>
           </p>
         </div>
       </div>
 
-      {/* LADO DIREITO: VISUAL */}
-      <div className="hidden lg:flex flex-1 relative bg-muted/30 border-l border-border">
-        {/* Subtle gradient */}
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-accent/10" />
+      {/* LADO DIREITO: VISUAL INOVADOR */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden">
+        {/* Background com gradiente */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f0f] via-[#111] to-[#0a0a0a]" />
         
-        {/* Grid */}
-        <div 
-          className="absolute inset-0 opacity-[0.4]"
-          style={{
-            backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-            backgroundSize: '32px 32px',
-            color: 'var(--border)'
-          }}
-        />
+        {/* Linhas diagonais animadas */}
+        <div className="absolute inset-0 opacity-20">
+          {[...Array(8)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute h-[1px] bg-gradient-to-r from-transparent via-[#b8ff29] to-transparent"
+              style={{
+                width: '200%',
+                left: '-50%',
+                top: `${12 + i * 12}%`,
+                transform: `rotate(-15deg)`,
+                animation: `slideRight ${3 + i * 0.5}s linear infinite`,
+                animationDelay: `${i * 0.3}s`,
+                opacity: 0.3 + (i * 0.1)
+              }}
+            />
+          ))}
+        </div>
 
-        {/* Center content */}
-        <div className="relative z-10 flex flex-col items-center justify-center w-full px-16">
-          {/* Dragon visual */}
-          <div className="relative mb-12">
-            <div className="absolute inset-0 w-32 h-32 rounded-2xl bg-accent/10 blur-2xl" />
-            <div className="relative w-32 h-32 rounded-2xl bg-gradient-to-br from-accent to-accent/80 flex items-center justify-center shadow-xl">
-              <DragonIcon className="w-16 h-16 text-accent-foreground" />
+        {/* Circulos decorativos */}
+        <div className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full border border-[#222] opacity-40" />
+        <div className="absolute bottom-1/3 left-1/3 w-96 h-96 rounded-full border border-[#1a1a1a] opacity-30" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-[#b8ff29]/10" />
+
+        {/* Conteudo central */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full px-12">
+          {/* Logo grande com glow */}
+          <div className="relative mb-16">
+            <div className="absolute inset-0 w-40 h-40 rounded-3xl bg-[#b8ff29]/20 blur-3xl" />
+            <div className="absolute inset-0 w-40 h-40 rounded-3xl bg-[#b8ff29]/10 blur-xl animate-pulse" />
+            <div className="relative w-40 h-40 rounded-3xl bg-gradient-to-br from-[#b8ff29] to-[#8acc00] flex items-center justify-center shadow-2xl shadow-[#b8ff29]/20">
+              <DragonIcon className="w-20 h-20 text-[#0a0a0a]" />
             </div>
           </div>
 
-          {/* Stats */}
-          <div className="flex gap-8 mb-12">
-            <div className="text-center">
-              <div className="text-3xl font-semibold text-foreground">5.8k</div>
-              <div className="text-xs text-muted-foreground mt-1">Usuarios</div>
+          {/* Feature cards */}
+          <div className="grid grid-cols-3 gap-4 mb-12 w-full max-w-lg">
+            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 text-center hover:border-[#b8ff29]/30 transition-colors">
+              <div className="w-10 h-10 bg-[#b8ff29]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Zap className="w-5 h-5 text-[#b8ff29]" />
+              </div>
+              <div className="text-2xl font-bold text-white">5.8k</div>
+              <div className="text-xs text-[#666] mt-1">Usuarios</div>
             </div>
-            <div className="w-px bg-border" />
-            <div className="text-center">
-              <div className="text-3xl font-semibold text-accent">98%</div>
-              <div className="text-xs text-muted-foreground mt-1">Satisfacao</div>
+            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 text-center hover:border-[#b8ff29]/30 transition-colors">
+              <div className="w-10 h-10 bg-[#b8ff29]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Shield className="w-5 h-5 text-[#b8ff29]" />
+              </div>
+              <div className="text-2xl font-bold text-[#b8ff29]">98%</div>
+              <div className="text-xs text-[#666] mt-1">Satisfacao</div>
             </div>
-            <div className="w-px bg-border" />
-            <div className="text-center">
-              <div className="text-3xl font-semibold text-foreground">24/7</div>
-              <div className="text-xs text-muted-foreground mt-1">Suporte</div>
+            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 text-center hover:border-[#b8ff29]/30 transition-colors">
+              <div className="w-10 h-10 bg-[#b8ff29]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
+                <Clock className="w-5 h-5 text-[#b8ff29]" />
+              </div>
+              <div className="text-2xl font-bold text-white">24/7</div>
+              <div className="text-xs text-[#666] mt-1">Suporte</div>
             </div>
           </div>
 
-          {/* Text */}
+          {/* Texto */}
           <div className="text-center max-w-md">
-            <h2 className="text-xl font-semibold text-foreground mb-2">Comece sua jornada</h2>
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <h2 className="text-2xl font-bold text-white mb-3">Comece sua jornada</h2>
+            <p className="text-[#888] leading-relaxed">
               Crie sua conta e tenha acesso a automacao inteligente para escalar seu negocio.
             </p>
           </div>
         </div>
 
-        {/* Corner accents */}
-        <div className="absolute top-8 right-8 w-2 h-2 rounded-full bg-accent/40" />
-        <div className="absolute bottom-8 left-8 w-2 h-2 rounded-full bg-accent/40" />
+        {/* Pontos decorativos nos cantos */}
+        <div className="absolute top-8 right-8 flex gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#b8ff29]" />
+          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/50" />
+          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/25" />
+        </div>
+        <div className="absolute bottom-8 left-8 flex gap-2">
+          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/25" />
+          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/50" />
+          <div className="w-2 h-2 rounded-full bg-[#b8ff29]" />
+        </div>
       </div>
+
+      <style jsx>{`
+        @keyframes slideRight {
+          0% { transform: rotate(-15deg) translateX(-10%); }
+          100% { transform: rotate(-15deg) translateX(10%); }
+        }
+      `}</style>
     </div>
   )
 }
