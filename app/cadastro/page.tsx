@@ -6,10 +6,6 @@ import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
 import { Loader2, Eye, EyeOff, Gift } from "lucide-react"
 import { DragonIcon } from "@/components/dragon-icon"
-import Image from "next/image"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 
 export default function CadastroPage() {
   return (
@@ -48,12 +44,10 @@ function CadastroContent() {
     }
   }, [isLoading, session, router])
 
-  // Pick up referral coupon from URL query param first, then fallback to localStorage
   useEffect(() => {
     const refParam = searchParams.get("ref")
     if (refParam) {
       setReferralCoupon(refParam.toLowerCase())
-      // Also save to localStorage as backup
       localStorage.setItem("referral_coupon", refParam.toLowerCase())
     } else {
       const storedCoupon = localStorage.getItem("referral_coupon")
@@ -109,7 +103,6 @@ function CadastroContent() {
         password,
         referralCoupon: referralCoupon || undefined,
       })
-      // Clear the coupon from localStorage after successful registration
       localStorage.removeItem("referral_coupon")
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -132,158 +125,216 @@ function CadastroContent() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <div className="w-full max-w-sm">
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <Image
-            src="/images/dragon-logo.png"
-            alt="Dragon"
-            width={180}
-            height={180}
-            className="object-contain w-auto h-auto"
-            priority
-          />
-          <p className="text-sm text-muted-foreground">
-            Crie sua conta
+    <div className="flex h-screen w-screen overflow-hidden bg-background">
+      {/* LADO ESQUERDO: FORMULARIO */}
+      <section className="w-full lg:w-1/2 flex items-center justify-center p-8 lg:p-16 z-10 overflow-y-auto">
+        <div className="w-full max-w-md">
+          {/* Logo Dragon */}
+          <div className="flex items-center gap-3 mb-8">
+            <div className="w-11 h-11 bg-accent rounded-xl flex items-center justify-center shadow-lg shadow-accent/20">
+              <DragonIcon className="w-6 h-6 text-accent-foreground" />
+            </div>
+            <span className="text-2xl font-bold text-foreground tracking-tight">Dragon</span>
+          </div>
+
+          {/* Boas-vindas */}
+          <div className="mb-8">
+            <h1 className="text-3xl lg:text-4xl font-bold text-foreground mb-2">Crie sua conta</h1>
+            <p className="text-muted-foreground">Preencha os dados abaixo para comecar.</p>
+          </div>
+
+          {/* Formulario */}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {referralCoupon && (
+              <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 p-3">
+                <Gift className="h-4 w-4 text-accent shrink-0" />
+                <span className="text-sm text-accent">
+                  Cupom de indicacao: <span className="font-semibold">{referralCoupon}</span>
+                </span>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label htmlFor="name" className="text-sm font-semibold text-foreground">Nome</label>
+              <input 
+                type="text" 
+                id="name" 
+                placeholder="Seu nome completo" 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 transition-all"
+                autoComplete="name"
+                autoFocus
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="email" className="text-sm font-semibold text-foreground">E-mail</label>
+              <input 
+                type="email" 
+                id="email" 
+                placeholder="email@provedor.com" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 transition-all"
+                autoComplete="email"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="phone" className="text-sm font-semibold text-foreground">Telefone</label>
+              <input 
+                type="tel" 
+                id="phone" 
+                placeholder="(11) 99999-9999" 
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 transition-all"
+                autoComplete="tel"
+                disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="text-sm font-semibold text-foreground">Senha</label>
+              <div className="relative">
+                <input 
+                  type={showPassword ? "text" : "password"} 
+                  id="password" 
+                  placeholder="Minimo 6 caracteres" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 transition-all pr-12"
+                  autoComplete="new-password"
+                  disabled={isSubmitting}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="confirm-password" className="text-sm font-semibold text-foreground">Confirmar Senha</label>
+              <div className="relative">
+                <input 
+                  type={showConfirm ? "text" : "password"} 
+                  id="confirm-password" 
+                  placeholder="Repita a senha" 
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-accent focus:ring-[3px] focus:ring-accent/20 transition-all pr-12"
+                  autoComplete="new-password"
+                  disabled={isSubmitting}
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirm(!showConfirm)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  tabIndex={-1}
+                  aria-label={showConfirm ? "Esconder senha" : "Mostrar senha"}
+                >
+                  {showConfirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            {error && (
+              <p className="text-sm text-destructive">{error}</p>
+            )}
+
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="w-full bg-accent text-accent-foreground font-bold py-4 rounded-xl hover:bg-accent/90 transition-all transform active:scale-[0.98] shadow-lg shadow-accent/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+              ) : (
+                "Criar Conta"
+              )}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-muted-foreground">
+            Ja tem uma conta? <Link href="/login" className="text-accent font-semibold hover:underline">Entrar</Link>
           </p>
         </div>
+      </section>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {referralCoupon && (
-            <div className="flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 p-3">
-              <Gift className="h-4 w-4 text-accent shrink-0" />
-              <span className="text-sm text-accent">
-                Cupom de indicacao: <span className="font-semibold">{referralCoupon}</span>
-              </span>
+      {/* LADO DIREITO: VISUAL DRAGON */}
+      <section className="hidden lg:flex w-1/2 relative overflow-hidden bg-card">
+        {/* Background gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-background via-card to-muted" />
+        
+        {/* Accent glows */}
+        <div className="absolute w-[500px] h-[500px] -top-32 -right-32 bg-accent rounded-full opacity-10 blur-[100px]" />
+        <div className="absolute w-[400px] h-[400px] bottom-0 left-0 bg-accent rounded-full opacity-5 blur-[80px]" />
+        
+        {/* Grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.03]"
+          style={{
+            backgroundImage: `linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)`,
+            backgroundSize: '40px 40px'
+          }}
+        />
+
+        {/* Central Dragon Sphere */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <div className="relative">
+            {/* Outer glow ring */}
+            <div className="absolute inset-0 w-64 h-64 rounded-full bg-accent/20 blur-xl animate-pulse" />
+            
+            {/* Main sphere */}
+            <div className="relative w-64 h-64 rounded-full bg-gradient-to-br from-accent via-accent/80 to-accent/60 shadow-2xl shadow-accent/30 flex items-center justify-center animate-float">
+              {/* Inner highlight */}
+              <div className="absolute top-6 left-6 w-20 h-20 rounded-full bg-white/20 blur-md" />
+              
+              {/* Dragon Icon */}
+              <DragonIcon className="w-28 h-28 text-accent-foreground drop-shadow-lg" />
             </div>
-          )}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name" className="text-sm text-foreground">
-              Nome
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Seu nome completo"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
-              autoComplete="name"
-              autoFocus
-              disabled={isSubmitting}
-            />
+            
+            {/* Orbiting particles */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-8 w-3 h-3 bg-accent rounded-full shadow-lg shadow-accent/50 animate-bounce" />
+            <div className="absolute bottom-0 right-0 translate-x-4 translate-y-4 w-2 h-2 bg-accent/70 rounded-full animate-pulse" />
+            <div className="absolute top-1/2 left-0 -translate-x-12 w-2 h-2 bg-accent/50 rounded-full" />
           </div>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="email" className="text-sm text-foreground">
-              Email
-            </Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="seu@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
-              autoComplete="email"
-              disabled={isSubmitting}
-            />
+        {/* Content */}
+        <div className="relative z-10 w-full h-full flex flex-col justify-end px-16 pb-20">
+          <div className="space-y-4">
+            <div className="w-16 h-1 bg-accent rounded-full" />
+            <h2 className="text-4xl font-bold text-foreground leading-tight">
+              Comece sua <br /> <span className="text-accent">jornada.</span>
+            </h2>
+            <p className="text-muted-foreground text-lg max-w-sm">
+              Crie sua conta e tenha acesso a automacao inteligente para seu negocio.
+            </p>
           </div>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="phone" className="text-sm text-foreground">
-              Telefone
-            </Label>
-            <Input
-              id="phone"
-              type="tel"
-              placeholder="(11) 99999-9999"
-              value={phone}
-              onChange={(e) => setPhone(formatPhone(e.target.value))}
-              className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground"
-              autoComplete="tel"
-              disabled={isSubmitting}
-            />
-          </div>
+        {/* Floating stats cards */}
+        <div className="absolute top-20 right-16 bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4 shadow-xl">
+          <div className="text-xs text-muted-foreground mb-1">Usuarios ativos</div>
+          <div className="text-2xl font-bold text-foreground">5,832</div>
+          <div className="text-xs text-accent">+23% este mes</div>
+        </div>
 
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="password" className="text-sm text-foreground">
-              Senha
-            </Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                placeholder="Minimo 6 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-11"
-                autoComplete="new-password"
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
-                aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
-              >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="confirm-password" className="text-sm text-foreground">
-              Confirmar Senha
-            </Label>
-            <div className="relative">
-              <Input
-                id="confirm-password"
-                type={showConfirm ? "text" : "password"}
-                placeholder="Repita a senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="h-11 bg-card border-border text-foreground placeholder:text-muted-foreground pr-11"
-                autoComplete="new-password"
-                disabled={isSubmitting}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirm(!showConfirm)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                tabIndex={-1}
-                aria-label={showConfirm ? "Esconder senha" : "Mostrar senha"}
-              >
-                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
-            </div>
-          </div>
-
-          {error && (
-            <p className="text-sm text-destructive">{error}</p>
-          )}
-
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-11 w-full bg-accent text-accent-foreground hover:bg-accent/90 font-medium"
-          >
-            {isSubmitting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Criar Conta"
-            )}
-          </Button>
-        </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-          Ja tem conta?{" "}
-          <Link href="/login" className="text-accent hover:underline font-medium">
-            Entrar
-          </Link>
-        </p>
-      </div>
+        <div className="absolute top-44 right-8 bg-card/80 backdrop-blur-sm border border-border rounded-xl p-4 shadow-xl">
+          <div className="text-xs text-muted-foreground mb-1">Satisfacao</div>
+          <div className="text-2xl font-bold text-accent">98%</div>
+        </div>
+      </section>
     </div>
   )
 }
