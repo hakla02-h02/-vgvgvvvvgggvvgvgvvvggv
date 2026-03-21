@@ -5,12 +5,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { CreateBotWizard } from "@/components/create-bot-wizard"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import {
   Plus, Search, Bot as BotIcon, MoreHorizontal, Activity, Users, Trash2, Settings, ChevronLeft,
   DollarSign, Tag, CalendarDays, Hash, LinkIcon, KeyRound, Save, Loader2, Zap, TrendingUp,
   Filter, MoreVertical, Sparkles, MessageSquare, Shield, Globe, Eye, EyeOff, Copy, ExternalLink,
-  ChevronRight, Signal, Cpu, Clock, CheckCircle2, LayoutGrid, List,
+  ChevronRight, Signal, Cpu, Clock, CheckCircle2, LayoutGrid, List, X,
 } from "lucide-react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -35,15 +35,18 @@ export default function BotsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid")
 
-  // Config panel
+  // Config Modal
   const [configBot, setConfigBot] = useState<Bot | null>(null)
   const [cfgName, setCfgName] = useState("")
   const [cfgToken, setCfgToken] = useState("")
-  const [cfgGroupName, setCfgGroupName] = useState("")
-  const [cfgGroupId, setCfgGroupId] = useState("")
-  const [cfgGroupLink, setCfgGroupLink] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [showToken, setShowToken] = useState(false)
+
+  // Create Bot Modal
+  const [newBotName, setNewBotName] = useState("")
+  const [newBotToken, setNewBotToken] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState("")
 
   // Plans
   const [plans, setPlans] = useState<BotPlan[]>([])
@@ -51,7 +54,6 @@ export default function BotsPage() {
   const [newPlanName, setNewPlanName] = useState("")
   const [newPlanPrice, setNewPlanPrice] = useState("")
   const [newPlanDays, setNewPlanDays] = useState("30")
-  const [newPlanDesc, setNewPlanDesc] = useState("")
   const [addingPlan, setAddingPlan] = useState(false)
 
   const filteredBots = bots.filter(
@@ -59,8 +61,6 @@ export default function BotsPage() {
       bot.name.toLowerCase().includes(search.toLowerCase()) ||
       bot.token.toLowerCase().includes(search.toLowerCase())
   )
-
-  const activeBots = bots.filter((b) => b.status === "active").length
 
   // Fetch plans when config bot changes
   const fetchPlans = useCallback(async (botId: string) => {
@@ -89,10 +89,15 @@ export default function BotsPage() {
     setConfigBot(bot)
     setCfgName(bot.name)
     setCfgToken(bot.token)
-    setCfgGroupName(bot.group_name || "")
-    setCfgGroupId(bot.group_id || "")
-    setCfgGroupLink(bot.group_link || "")
     setShowToken(false)
+  }
+
+  function closeConfig() {
+    setConfigBot(null)
+    setCfgName("")
+    setCfgToken("")
+    setShowToken(false)
+    setPlans([])
   }
 
   async function handleSaveConfig() {
@@ -102,9 +107,6 @@ export default function BotsPage() {
       await updateBot(configBot.id, {
         name: cfgName.trim() || configBot.name,
         token: cfgToken.trim() || configBot.token,
-        group_name: cfgGroupName.trim() || null,
-        group_id: cfgGroupId.trim() || null,
-        group_link: cfgGroupLink.trim() || null,
       })
       if (cfgToken.trim() !== configBot.token) {
         await fetch("/api/telegram/register", {
@@ -113,7 +115,7 @@ export default function BotsPage() {
           body: JSON.stringify({ botToken: cfgToken.trim(), action: "register" }),
         })
       }
-      setConfigBot({ ...configBot, name: cfgName.trim() || configBot.name, token: cfgToken.trim() || configBot.token, group_name: cfgGroupName.trim() || null, group_id: cfgGroupId.trim() || null, group_link: cfgGroupLink.trim() || null })
+      setConfigBot({ ...configBot, name: cfgName.trim() || configBot.name, token: cfgToken.trim() || configBot.token })
     } catch {
       // handled
     } finally {
@@ -131,7 +133,7 @@ export default function BotsPage() {
         name: newPlanName.trim(),
         price: parseFloat(newPlanPrice.replace(",", ".")),
         duration_days: parseInt(newPlanDays) || 30,
-        description: newPlanDesc.trim() || null,
+        description: null,
       })
       .select()
       .single()
@@ -141,7 +143,6 @@ export default function BotsPage() {
       setNewPlanName("")
       setNewPlanPrice("")
       setNewPlanDays("30")
-      setNewPlanDesc("")
     }
     setAddingPlan(false)
   }
@@ -160,19 +161,28 @@ export default function BotsPage() {
     }
   }
 
-  async function handleCreate(data: {
-    name: string
-    token: string
-    group_name?: string
-    group_id?: string
-    group_link?: string
-  }) {
-    const createdBot = await addBot(data)
-    await fetch("/api/telegram/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ botToken: createdBot.token, action: "register" }),
-    })
+  async function handleCreateBot() {
+    if (!newBotName.trim() || !newBotToken.trim()) {
+      setCreateError("Preencha todos os campos")
+      return
+    }
+    setIsCreating(true)
+    setCreateError("")
+    try {
+      const createdBot = await addBot({ name: newBotName.trim(), token: newBotToken.trim() })
+      await fetch("/api/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ botToken: createdBot.token, action: "register" }),
+      })
+      setCreateOpen(false)
+      setNewBotName("")
+      setNewBotToken("")
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Erro ao criar bot")
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   async function handleDelete(id: string) {
@@ -186,67 +196,135 @@ export default function BotsPage() {
         })
       }
       await deleteBot(id)
-      if (configBot?.id === id) setConfigBot(null)
+      if (configBot?.id === id) closeConfig()
     } catch { /* handled */ }
   }
 
-  // ── CONFIG PANEL ──
-  if (configBot) {
-    return (
-      <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
-        {/* Header Minimalista */}
-        <header className="px-4 md:px-8 py-5 flex items-center gap-4 flex-shrink-0 bg-card border-b border-border">
-          <button
-            onClick={() => setConfigBot(null)}
-            className="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-xl font-bold text-foreground">Configuracoes</h1>
-            <p className="text-sm text-muted-foreground">{configBot.name}</p>
+  return (
+    <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
+      {/* Header */}
+      <header className="px-4 md:px-8 py-6 flex items-center justify-between flex-shrink-0">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Meus Bots</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{bots.length} bot(s) cadastrado(s)</p>
+        </div>
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1 bg-card rounded-xl p-1 border border-border">
+            <button
+              onClick={() => setViewMode("grid")}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                viewMode === "grid" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode("list")}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+                viewMode === "list" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <List className="h-4 w-4" />
+            </button>
           </div>
           <button
-            onClick={handleSaveConfig}
-            disabled={isSaving}
-            className="flex items-center gap-2 bg-[#a3e635] text-[#111] px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors disabled:opacity-50"
+            onClick={() => setCreateOpen(true)}
+            className="flex items-center gap-2 bg-accent text-accent-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
           >
-            {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {isSaving ? "Salvando..." : "Salvar"}
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Novo Bot</span>
           </button>
-        </header>
+        </div>
+      </header>
 
-        <ScrollArea className="flex-1">
-          <div className="p-4 md:p-8 max-w-4xl mx-auto space-y-6">
-            
-            {/* Bot Status Hero */}
-            <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[250px] h-[250px] bg-[#a3e635] opacity-[0.08] blur-[100px] rounded-full" />
-              <div className="absolute bottom-0 left-20 w-[150px] h-[150px] bg-[#22c55e] opacity-[0.05] blur-[60px] rounded-full" />
-              
-              <div className="relative z-10">
+      {/* Create Bot Dialog - Simplificado */}
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent className="sm:max-w-md bg-card border-border p-0 gap-0 overflow-hidden">
+          <div className="p-6 pb-4">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center">
+                <BotIcon className="h-7 w-7 text-accent" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Criar Novo Bot</h2>
+                <p className="text-sm text-muted-foreground">Adicione seu bot do Telegram</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-2 block">Nome do Bot</Label>
+                <Input
+                  placeholder="Ex: Bot de Vendas"
+                  value={newBotName}
+                  onChange={(e) => setNewBotName(e.target.value)}
+                  className="h-11 bg-muted border-border rounded-xl"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                  <KeyRound className="h-3.5 w-3.5 text-muted-foreground" />
+                  Token do Telegram
+                </Label>
+                <Input
+                  placeholder="123456:ABC-DEF..."
+                  value={newBotToken}
+                  onChange={(e) => setNewBotToken(e.target.value)}
+                  className="h-11 bg-muted border-border rounded-xl font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-2">Pegue o token com o @BotFather no Telegram</p>
+              </div>
+            </div>
+
+            {createError && (
+              <p className="text-sm text-destructive mt-4">{createError}</p>
+            )}
+          </div>
+
+          <div className="px-6 py-4 bg-muted/50 border-t border-border flex items-center justify-end gap-3">
+            <button
+              onClick={() => setCreateOpen(false)}
+              className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleCreateBot}
+              disabled={isCreating || !newBotName.trim() || !newBotToken.trim()}
+              className="flex items-center gap-2 bg-accent text-accent-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+            >
+              {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {isCreating ? "Criando..." : "Criar Bot"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Config Bot Dialog - Popup bonito */}
+      <Dialog open={!!configBot} onOpenChange={(open) => !open && closeConfig()}>
+        <DialogContent className="sm:max-w-lg bg-card border-border p-0 gap-0 overflow-hidden max-h-[90vh]">
+          {configBot && (
+            <>
+              {/* Header com status */}
+              <div className="p-6 pb-4 bg-gradient-to-br from-accent/5 to-transparent border-b border-border">
                 <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-5">
-                    <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center relative">
-                      <BotIcon className="h-10 w-10 text-[#a3e635]" />
-                      <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4 border-[#111] ${
-                        configBot.status === "active" ? "bg-[#22c55e]" : "bg-muted0"
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center relative">
+                      <BotIcon className="h-8 w-8 text-accent" />
+                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-card ${
+                        configBot.status === "active" ? "bg-green-500" : "bg-muted-foreground"
                       }`} />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-bold text-background dark:text-foreground mb-1">{configBot.name}</h2>
-                      <div className="flex items-center gap-4">
-                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${
+                      <h2 className="text-xl font-bold text-foreground">{configBot.name}</h2>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           configBot.status === "active" 
-                            ? "bg-[#22c55e]/20 text-[#22c55e]" 
-                            : "bg-gray-700 text-muted-foreground"
+                            ? "bg-green-500/10 text-green-600" 
+                            : "bg-muted text-muted-foreground"
                         }`}>
                           <Signal className="h-3 w-3" />
                           {configBot.status === "active" ? "Online" : "Offline"}
-                        </span>
-                        <span className="text-sm text-muted-foreground flex items-center gap-1.5">
-                          <Clock className="h-3.5 w-3.5" />
-                          {new Date(configBot.created_at).toLocaleDateString("pt-BR")}
                         </span>
                       </div>
                     </div>
@@ -264,281 +342,177 @@ export default function BotsPage() {
                     }}
                   />
                 </div>
-
-                {/* Quick Stats */}
-                <div className="grid grid-cols-3 gap-4 mt-8 pt-6 border-t border-white/10">
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-background dark:text-foreground">0</p>
-                    <p className="text-xs text-muted-foreground mt-1">Mensagens Hoje</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-[#a3e635]">{plans.length}</p>
-                    <p className="text-xs text-muted-foreground mt-1">Planos Ativos</p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-3xl font-bold text-background dark:text-foreground">100%</p>
-                    <p className="text-xs text-muted-foreground mt-1">Uptime</p>
-                  </div>
-                </div>
               </div>
-            </div>
 
-            {/* Config Cards */}
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Bot Info */}
-              <div className="bg-card rounded-[24px] p-6 border border-border">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-11 h-11 rounded-2xl bg-[#a3e635]/10 flex items-center justify-center">
-                    <Cpu className="h-5 w-5 text-[#65a30d]" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground">Informacoes</h3>
-                    <p className="text-xs text-muted-foreground">Dados do bot</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1.5 block">Nome do Bot</Label>
-                    <Input value={cfgName} onChange={(e) => setCfgName(e.target.value)} className="bg-muted border-0 rounded-xl h-11" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-2">
-                      <KeyRound className="h-3 w-3" />
-                      Token do Telegram
-                    </Label>
-                    <div className="relative">
-                      <Input
-                        value={cfgToken}
-                        onChange={(e) => setCfgToken(e.target.value)}
-                        type={showToken ? "text" : "password"}
-                        className="bg-muted border-0 rounded-xl h-11 font-mono text-xs pr-24"
-                      />
-                      <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                        <button
-                          onClick={() => navigator.clipboard.writeText(cfgToken)}
-                          className="w-8 h-8 rounded-lg hover:bg-gray-200 flex items-center justify-center transition-colors"
-                        >
-                          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                        <button
-                          onClick={() => setShowToken(!showToken)}
-                          className="w-8 h-8 rounded-lg hover:bg-gray-200 flex items-center justify-center transition-colors"
-                        >
-                          {showToken ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
-                        </button>
+              <ScrollArea className="max-h-[60vh]">
+                <div className="p-6 space-y-6">
+                  {/* Informacoes do Bot */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Cpu className="h-4 w-4 text-muted-foreground" />
+                      Informacoes
+                    </h3>
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1.5 block">Nome do Bot</Label>
+                        <Input 
+                          value={cfgName} 
+                          onChange={(e) => setCfgName(e.target.value)} 
+                          className="h-10 bg-muted border-0 rounded-xl" 
+                        />
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Group Config */}
-              <div className="bg-card rounded-[24px] p-6 border border-border">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-11 h-11 rounded-2xl bg-blue-50 flex items-center justify-center">
-                    <MessageSquare className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground">Grupo VIP</h3>
-                    <p className="text-xs text-muted-foreground">Configuracoes do grupo</p>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1.5 block">Nome do Grupo</Label>
-                    <Input value={cfgGroupName} onChange={(e) => setCfgGroupName(e.target.value)} placeholder="VIP Premium" className="bg-muted border-0 rounded-xl h-11" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1.5 block">ID do Grupo</Label>
-                    <Input value={cfgGroupId} onChange={(e) => setCfgGroupId(e.target.value)} placeholder="-1001234567890" className="bg-muted border-0 rounded-xl h-11 font-mono text-xs" />
-                  </div>
-                  <div>
-                    <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-2">
-                      <LinkIcon className="h-3 w-3" />
-                      Link de Convite
-                    </Label>
-                    <Input value={cfgGroupLink} onChange={(e) => setCfgGroupLink(e.target.value)} placeholder="https://t.me/+abc123" className="bg-muted border-0 rounded-xl h-11" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Plans Section */}
-            <div className="bg-card rounded-[24px] border border-border overflow-hidden">
-              <div className="flex items-center justify-between p-6 border-b border-border">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-[#a3e635]/10 flex items-center justify-center">
-                    <Tag className="h-5 w-5 text-[#65a30d]" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-foreground">Planos de Assinatura</h3>
-                    <p className="text-xs text-muted-foreground">{plans.length} plano(s) configurado(s)</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 space-y-4">
-                {loadingPlans ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                  </div>
-                ) : plans.length === 0 ? (
-                  <div className="rounded-2xl border-2 border-dashed border-gray-200 py-12 text-center">
-                    <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                      <DollarSign className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-foreground font-semibold">Nenhum plano criado</p>
-                    <p className="text-sm text-muted-foreground mt-1">Adicione planos para seus clientes</p>
-                  </div>
-                ) : (
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    {plans.map((plan) => (
-                      <div
-                        key={plan.id}
-                        className={`relative rounded-2xl border p-5 transition-all ${
-                          plan.active 
-                            ? "border-[#a3e635]/30 bg-[#a3e635]/5" 
-                            : "border-gray-200 bg-muted/50 opacity-60"
-                        }`}
-                      >
-                        {plan.active && (
-                          <div className="absolute top-3 right-3">
-                            <CheckCircle2 className="h-5 w-5 text-[#65a30d]" />
-                          </div>
-                        )}
-                        <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-xl bg-[#a3e635]/20 flex items-center justify-center">
-                            <DollarSign className="h-5 w-5 text-[#65a30d]" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-foreground">{plan.name}</p>
-                            <p className="text-xs text-muted-foreground">{plan.duration_days} dias</p>
-                          </div>
-                        </div>
-                        <p className="text-2xl font-bold text-[#65a30d] mb-4">
-                          R$ {plan.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                        </p>
-                        <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                          <Switch
-                            checked={plan.active}
-                            onCheckedChange={(checked) => handleTogglePlan(plan.id, checked)}
+                      <div>
+                        <Label className="text-xs text-muted-foreground mb-1.5 flex items-center gap-2">
+                          <KeyRound className="h-3 w-3" />
+                          Token do Telegram
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            value={cfgToken}
+                            onChange={(e) => setCfgToken(e.target.value)}
+                            type={showToken ? "text" : "password"}
+                            className="h-10 bg-muted border-0 rounded-xl font-mono text-xs pr-20"
                           />
-                          <button
-                            onClick={() => handleDeletePlan(plan.id)}
-                            className="w-8 h-8 rounded-lg hover:bg-red-50 flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                          <div className="absolute right-1.5 top-1/2 -translate-y-1/2 flex items-center gap-0.5">
+                            <button
+                              onClick={() => navigator.clipboard.writeText(cfgToken)}
+                              className="w-7 h-7 rounded-lg hover:bg-background flex items-center justify-center transition-colors"
+                            >
+                              <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+                            </button>
+                            <button
+                              onClick={() => setShowToken(!showToken)}
+                              className="w-7 h-7 rounded-lg hover:bg-background flex items-center justify-center transition-colors"
+                            >
+                              {showToken ? <EyeOff className="h-3.5 w-3.5 text-muted-foreground" /> : <Eye className="h-3.5 w-3.5 text-muted-foreground" />}
+                            </button>
+                          </div>
                         </div>
                       </div>
-                    ))}
+                    </div>
                   </div>
-                )}
 
-                {/* Add Plan */}
-                <div className="rounded-2xl bg-muted border border-gray-200 p-5 mt-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-4">Adicionar Novo Plano</p>
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Nome</Label>
-                      <Input value={newPlanName} onChange={(e) => setNewPlanName(e.target.value)} placeholder="Mensal" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Preco (R$)</Label>
-                      <Input value={newPlanPrice} onChange={(e) => setNewPlanPrice(e.target.value)} placeholder="29,90" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Duracao (dias)</Label>
-                      <Input value={newPlanDays} onChange={(e) => setNewPlanDays(e.target.value)} placeholder="30" type="number" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-muted-foreground">Descricao</Label>
-                      <Input value={newPlanDesc} onChange={(e) => setNewPlanDesc(e.target.value)} placeholder="Acesso completo" className="mt-1.5 bg-card border-gray-200 rounded-xl" />
-                    </div>
-                  </div>
-                  <button
-                    onClick={handleAddPlan}
-                    disabled={addingPlan || !newPlanName.trim() || !newPlanPrice.trim()}
-                    className="mt-4 flex items-center gap-2 bg-foreground dark:bg-card text-background dark:text-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-gray-800 transition-colors disabled:opacity-50"
-                  >
-                    {addingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    Adicionar Plano
-                  </button>
-                </div>
-              </div>
-            </div>
+                  {/* Planos */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                      <Tag className="h-4 w-4 text-muted-foreground" />
+                      Planos ({plans.length})
+                    </h3>
 
-            {/* Danger Zone */}
-            <div className="bg-red-50 rounded-[24px] border border-red-100 p-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-2xl bg-red-100 flex items-center justify-center">
-                    <Trash2 className="h-5 w-5 text-red-500" />
+                    {loadingPlans ? (
+                      <div className="flex items-center justify-center py-8">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : plans.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-border py-6 text-center">
+                        <DollarSign className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">Nenhum plano criado</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {plans.map((plan) => (
+                          <div
+                            key={plan.id}
+                            className={`flex items-center justify-between p-3 rounded-xl border transition-all ${
+                              plan.active 
+                                ? "border-accent/30 bg-accent/5" 
+                                : "border-border bg-muted/30 opacity-60"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center">
+                                <DollarSign className="h-4 w-4 text-accent" />
+                              </div>
+                              <div>
+                                <p className="font-medium text-foreground text-sm">{plan.name}</p>
+                                <p className="text-xs text-muted-foreground">{plan.duration_days} dias</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <p className="font-bold text-accent text-sm">
+                                R$ {plan.price.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                              </p>
+                              <Switch
+                                checked={plan.active}
+                                onCheckedChange={(checked) => handleTogglePlan(plan.id, checked)}
+                              />
+                              <button
+                                onClick={() => handleDeletePlan(plan.id)}
+                                className="w-7 h-7 rounded-lg hover:bg-destructive/10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Adicionar Plano Inline */}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Nome"
+                        value={newPlanName}
+                        onChange={(e) => setNewPlanName(e.target.value)}
+                        className="h-9 bg-muted border-0 rounded-lg text-sm flex-1"
+                      />
+                      <Input
+                        placeholder="R$"
+                        value={newPlanPrice}
+                        onChange={(e) => setNewPlanPrice(e.target.value)}
+                        className="h-9 bg-muted border-0 rounded-lg text-sm w-20"
+                      />
+                      <Input
+                        placeholder="Dias"
+                        value={newPlanDays}
+                        onChange={(e) => setNewPlanDays(e.target.value)}
+                        type="number"
+                        className="h-9 bg-muted border-0 rounded-lg text-sm w-16"
+                      />
+                      <button
+                        onClick={handleAddPlan}
+                        disabled={addingPlan || !newPlanName.trim() || !newPlanPrice.trim()}
+                        className="h-9 w-9 rounded-lg bg-accent text-accent-foreground flex items-center justify-center hover:bg-accent/90 transition-colors disabled:opacity-50"
+                      >
+                        {addingPlan ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-red-700">Zona de Perigo</h3>
-                    <p className="text-xs text-red-500">Acoes irreversiveis</p>
+
+                  {/* Zona de Perigo */}
+                  <div className="pt-4 border-t border-border">
+                    <button
+                      onClick={() => handleDelete(configBot.id)}
+                      className="flex items-center gap-2 text-sm text-destructive hover:text-destructive/80 transition-colors"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Excluir este bot
+                    </button>
                   </div>
                 </div>
+              </ScrollArea>
+
+              {/* Footer com Salvar */}
+              <div className="px-6 py-4 bg-muted/50 border-t border-border flex items-center justify-end gap-3">
                 <button
-                  onClick={() => handleDelete(configBot.id)}
-                  className="flex items-center gap-2 bg-red-500 text-background dark:text-foreground px-5 py-2.5 rounded-xl font-medium text-sm hover:bg-red-600 transition-colors"
+                  onClick={closeConfig}
+                  className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  <Trash2 className="h-4 w-4" />
-                  Excluir Bot
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleSaveConfig}
+                  disabled={isSaving}
+                  className="flex items-center gap-2 bg-accent text-accent-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {isSaving ? "Salvando..." : "Salvar"}
                 </button>
               </div>
-            </div>
-          </div>
-        </ScrollArea>
-      </div>
-    )
-  }
-
-  // ── BOT LIST ──
-  return (
-    <div className="flex flex-1 flex-col h-full overflow-hidden bg-background">
-      {/* Header Clean */}
-      <header className="px-4 md:px-8 py-6 flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground tracking-tight">Meus Bots</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">{bots.length} bot(s) cadastrado(s)</p>
-        </div>
-        <div className="flex items-center gap-3">
-          {/* View Toggle */}
-          <div className="hidden sm:flex items-center gap-1 bg-card rounded-xl p-1 border border-border">
-            <button
-              onClick={() => setViewMode("grid")}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                viewMode === "grid" ? "bg-[#a3e635] text-[#111]" : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode("list")}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                viewMode === "list" ? "bg-[#a3e635] text-[#111]" : "text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              <List className="h-4 w-4" />
-            </button>
-          </div>
-          <button
-            onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-2 bg-[#a3e635] text-[#111] px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Novo Bot</span>
-          </button>
-        </div>
-      </header>
-
-      <CreateBotWizard
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onCreateBot={handleCreate}
-      />
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
         {/* Search */}
@@ -550,7 +524,7 @@ export default function BotsPage() {
               placeholder="Buscar bots..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-card rounded-xl border border-gray-200 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#a3e635]/30 focus:border-[#a3e635] transition-all"
+              className="w-full bg-card rounded-xl border border-border pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent transition-all"
             />
           </div>
         </div>
@@ -558,14 +532,14 @@ export default function BotsPage() {
         {/* Empty State */}
         {bots.length === 0 ? (
           <div className="bg-card rounded-[28px] border border-border p-12 text-center">
-            <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/10 flex items-center justify-center mx-auto mb-6">
-              <BotIcon className="h-12 w-12 text-[#65a30d]" />
+            <div className="w-24 h-24 rounded-3xl bg-accent/10 flex items-center justify-center mx-auto mb-6">
+              <BotIcon className="h-12 w-12 text-accent" />
             </div>
             <h3 className="text-xl font-bold text-foreground">Nenhum bot criado</h3>
-            <p className="text-muted-foreground mt-2 mb-6 max-w-sm mx-auto">Crie seu primeiro bot para comecar a gerenciar seus grupos VIP</p>
+            <p className="text-muted-foreground mt-2 mb-6 max-w-sm mx-auto">Crie seu primeiro bot para comecar</p>
             <button
               onClick={() => setCreateOpen(true)}
-              className="inline-flex items-center gap-2 bg-[#a3e635] text-[#111] px-6 py-3 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors"
+              className="inline-flex items-center gap-2 bg-accent text-accent-foreground px-6 py-3 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors"
             >
               <Plus className="h-4 w-4" />
               Criar Primeiro Bot
@@ -582,25 +556,25 @@ export default function BotsPage() {
                 <div
                   key={bot.id}
                   onClick={() => setSelectedBot(bot)}
-                  className={`bg-card rounded-[24px] border cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 group ${
-                    isSelected ? "border-[#a3e635] ring-2 ring-[#a3e635]/20" : "border-border"
+                  className={`bg-card rounded-2xl border cursor-pointer transition-all hover:shadow-lg hover:-translate-y-1 group ${
+                    isSelected ? "border-accent ring-2 ring-accent/20" : "border-border"
                   }`}
                 >
                   <div className="p-5">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center relative ${
-                        isActive ? "bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20" : "bg-gray-100"
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center relative ${
+                        isActive ? "bg-accent/10" : "bg-muted"
                       }`}>
-                        <BotIcon className={`h-7 w-7 ${isActive ? "text-[#65a30d]" : "text-muted-foreground"}`} />
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white ${
-                          isActive ? "bg-[#22c55e]" : "bg-gray-300"
+                        <BotIcon className={`h-6 w-6 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-card ${
+                          isActive ? "bg-green-500" : "bg-muted-foreground"
                         }`} />
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <MoreVertical className="h-4 w-4 text-muted-foreground" />
@@ -615,7 +589,7 @@ export default function BotsPage() {
                             Configurar
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="flex items-center gap-2 py-2.5 cursor-pointer text-red-600"
+                            className="flex items-center gap-2 py-2.5 cursor-pointer text-destructive"
                             onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}
                           >
                             <Trash2 className="h-4 w-4" />
@@ -627,28 +601,20 @@ export default function BotsPage() {
 
                     {/* Info */}
                     <h3 className="text-lg font-bold text-foreground truncate">{bot.name}</h3>
-                    {bot.group_name ? (
-                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5 truncate">
-                        <Globe className="h-3.5 w-3.5 flex-shrink-0" />
-                        {bot.group_name}
-                      </p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1.5">
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        Sem grupo vinculado
-                      </p>
-                    )}
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Criado em {new Date(bot.created_at).toLocaleDateString("pt-BR")}
+                    </p>
 
                     {/* Footer */}
                     <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
                       <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${
-                        isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-muted-foreground"
+                        isActive ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"
                       }`}>
                         {isActive ? "Online" : "Offline"}
                       </span>
                       <button
                         onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
-                        className="text-xs font-medium text-[#65a30d] hover:underline flex items-center gap-1"
+                        className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                       >
                         Configurar
                         <ChevronRight className="h-3 w-3" />
@@ -658,8 +624,8 @@ export default function BotsPage() {
 
                   {/* Selected Badge */}
                   {isSelected && (
-                    <div className="px-5 py-3 bg-[#a3e635]/10 border-t border-[#a3e635]/20 rounded-b-[24px]">
-                      <p className="text-xs font-medium text-[#65a30d] text-center flex items-center justify-center gap-1.5">
+                    <div className="px-5 py-3 bg-accent/10 border-t border-accent/20 rounded-b-2xl">
+                      <p className="text-xs font-medium text-accent text-center flex items-center justify-center gap-1.5">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                         Bot selecionado
                       </p>
@@ -671,7 +637,7 @@ export default function BotsPage() {
           </div>
         ) : (
           /* List View */
-          <div className="bg-card rounded-[24px] border border-border overflow-hidden">
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
             {filteredBots.map((bot, index) => {
               const isSelected = selectedBot?.id === bot.id
               const isActive = bot.status === "active"
@@ -682,15 +648,15 @@ export default function BotsPage() {
                   onClick={() => setSelectedBot(bot)}
                   className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors hover:bg-muted ${
                     index !== filteredBots.length - 1 ? "border-b border-border" : ""
-                  } ${isSelected ? "bg-[#a3e635]/5" : ""}`}
+                  } ${isSelected ? "bg-accent/5" : ""}`}
                 >
                   {/* Icon */}
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center relative flex-shrink-0 ${
-                    isActive ? "bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20" : "bg-gray-100"
+                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center relative flex-shrink-0 ${
+                    isActive ? "bg-accent/10" : "bg-muted"
                   }`}>
-                    <BotIcon className={`h-6 w-6 ${isActive ? "text-[#65a30d]" : "text-muted-foreground"}`} />
-                    <div className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                      isActive ? "bg-[#22c55e]" : "bg-gray-300"
+                    <BotIcon className={`h-5 w-5 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
+                    <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                      isActive ? "bg-green-500" : "bg-muted-foreground"
                     }`} />
                   </div>
 
@@ -699,19 +665,19 @@ export default function BotsPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-foreground truncate">{bot.name}</h3>
                       {isSelected && (
-                        <span className="text-[10px] font-medium text-[#65a30d] bg-[#a3e635]/20 px-2 py-0.5 rounded-full flex-shrink-0">
+                        <span className="text-[10px] font-medium text-accent bg-accent/20 px-2 py-0.5 rounded-full flex-shrink-0">
                           Em uso
                         </span>
                       )}
                     </div>
                     <p className="text-sm text-muted-foreground truncate mt-0.5">
-                      {bot.group_name || "Sem grupo vinculado"}
+                      Criado em {new Date(bot.created_at).toLocaleDateString("pt-BR")}
                     </p>
                   </div>
 
                   {/* Status */}
                   <span className={`text-xs font-medium px-3 py-1.5 rounded-full flex-shrink-0 ${
-                    isActive ? "bg-[#22c55e]/10 text-[#22c55e]" : "bg-gray-100 text-muted-foreground"
+                    isActive ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"
                   }`}>
                     {isActive ? "Online" : "Offline"}
                   </span>
@@ -720,13 +686,13 @@ export default function BotsPage() {
                   <div className="flex items-center gap-2 flex-shrink-0">
                     <button
                       onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
-                      className="w-9 h-9 rounded-lg hover:bg-gray-100 flex items-center justify-center text-muted-foreground hover:text-gray-600 transition-colors"
+                      className="w-9 h-9 rounded-lg hover:bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                     >
                       <Settings className="h-4 w-4" />
                     </button>
                     <button
                       onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}
-                      className="w-9 h-9 rounded-lg hover:bg-red-50 flex items-center justify-center text-muted-foreground hover:text-red-500 transition-colors"
+                      className="w-9 h-9 rounded-lg hover:bg-destructive/10 flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
