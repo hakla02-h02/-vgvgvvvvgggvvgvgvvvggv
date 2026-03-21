@@ -138,13 +138,40 @@ export default function BotsPage() {
     }
   }
 
-  // Abrir configurações
-  function openConfig(bot: Bot) {
+  // Abrir configurações e buscar dados atualizados do Telegram
+  async function openConfig(bot: Bot) {
     const extendedBot = bot as ExtendedBot
     setConfigBot(extendedBot)
     setCfgName(bot.name)
     setCfgDescription(extendedBot.description || "")
     setCfgShortDescription(extendedBot.short_description || "")
+    
+    // Buscar dados atualizados do Telegram
+    try {
+      const response = await fetch("/api/telegram/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: bot.token }),
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        if (data.bot) {
+          const updatedBot: ExtendedBot = {
+            ...extendedBot,
+            username: data.bot.username,
+            description: data.bot.description || "",
+            short_description: data.bot.short_description || "",
+            photo_url: data.bot.photo_url,
+          }
+          setConfigBot(updatedBot)
+          setCfgDescription(data.bot.description || "")
+          setCfgShortDescription(data.bot.short_description || "")
+        }
+      }
+    } catch {
+      // Se falhar ao buscar, usa os dados locais
+    }
   }
 
   // Fechar configurações
