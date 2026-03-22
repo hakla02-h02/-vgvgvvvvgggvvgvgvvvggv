@@ -16,6 +16,12 @@ export async function POST(request: NextRequest) {
     const photo = formData.get("photo") as File | null
     const deletePhoto = formData.get("deletePhoto") === "true"
 
+    console.log("[v0] UPDATE API - Received request")
+    console.log("[v0] UPDATE API - token exists:", !!token)
+    console.log("[v0] UPDATE API - name:", name)
+    console.log("[v0] UPDATE API - photo:", photo ? `File: ${photo.name}, size: ${photo.size}, type: ${photo.type}` : "null")
+    console.log("[v0] UPDATE API - photo instanceof File:", photo instanceof File)
+
     if (!token || typeof token !== "string") {
       return NextResponse.json(
         { error: "Token é obrigatório" },
@@ -24,7 +30,7 @@ export async function POST(request: NextRequest) {
     }
 
     const baseUrl = `https://api.telegram.org/bot${token}`
-    const results: { name?: boolean; description?: boolean; shortDescription?: boolean; photo?: boolean } = {}
+    const results: { name?: boolean; description?: boolean; shortDescription?: boolean; photo?: boolean; photoError?: string } = {}
 
     // Update bot name
     if (name !== undefined && name !== null) {
@@ -85,22 +91,45 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload new profile photo
-    if (photo && photo instanceof File) {
+    console.log("[v0] UPDATE API - Checking photo upload condition")
+    console.log("[v0] UPDATE API - photo:", photo)
+    console.log("[v0] UPDATE API - photo is truthy:", !!photo)
+    
+    if (photo) {
+      console.log("[v0] UPDATE API - Photo condition passed, starting upload...")
       try {
         // Converter File para Buffer/Blob para enviar ao Telegram
+        const arrayBuffer = await photo.arrayBuffer()
+        console.log("[v0] UPDATE API - ArrayBuffer size:", arrayBuffer.byteLength)
+        
         const photoFormData = new FormData()
-        const photoBlob = new Blob([await photo.arrayBuffer()], { type: photo.type })
+        const photoBlob = new Blob([arrayBuffer], { type: photo.type || "image/jpeg" })
         photoFormData.append("photo", photoBlob, photo.name || "photo.jpg")
+        
+        console.log("[v0] UPDATE API - Sending to Telegram:", `${baseUrl}/setMyProfilePhoto`)
         
         const response = await fetch(`${baseUrl}/setMyProfilePhoto`, {
           method: "POST",
           body: photoFormData,
         })
+        
         const data = await response.json()
+        console.log("[v0] UPDATE API - Telegram response:", JSON.stringify(data))
+        
         results.photo = data.ok
-      } catch {
+        if (!data.ok) {
+          results.photoError = data.description || "Unknown error"
+          console.log("[v0] UPDATE API - Photo upload FAILED:", data.description)
+        } else {
+          console.log("[v0] UPDATE API - Photo upload SUCCESS")
+        }
+      } catch (err) {
+        console.log("[v0] UPDATE API - Photo upload EXCEPTION:", err)
         results.photo = false
+        results.photoError = String(err)
       }
+    } else {
+      console.log("[v0] UPDATE API - No photo to upload")
     }
 
     return NextResponse.json({

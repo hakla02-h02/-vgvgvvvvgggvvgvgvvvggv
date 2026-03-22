@@ -257,11 +257,18 @@ export default function BotsPage() {
 
   // Handler para seleção de foto
   function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    console.log("[v0] PHOTO SELECT - Event triggered")
+    console.log("[v0] PHOTO SELECT - Files:", e.target.files)
+    
     const file = e.target.files?.[0]
+    console.log("[v0] PHOTO SELECT - Selected file:", file)
+    
     if (file) {
+      console.log("[v0] PHOTO SELECT - File details:", file.name, file.size, file.type)
       setCfgPhoto(file)
       const reader = new FileReader()
       reader.onloadend = () => {
+        console.log("[v0] PHOTO SELECT - FileReader completed, preview ready")
         setCfgPhotoPreview(reader.result as string)
       }
       reader.readAsDataURL(file)
@@ -273,6 +280,10 @@ export default function BotsPage() {
     if (!configBot) return
     setIsSaving(true)
     
+    console.log("[v0] SAVE CONFIG - Starting...")
+    console.log("[v0] SAVE CONFIG - cfgPhoto:", cfgPhoto)
+    console.log("[v0] SAVE CONFIG - cfgPhoto details:", cfgPhoto ? `name: ${cfgPhoto.name}, size: ${cfgPhoto.size}, type: ${cfgPhoto.type}` : "null")
+    
     try {
       // Usar FormData para suportar upload de foto
       const formData = new FormData()
@@ -282,8 +293,15 @@ export default function BotsPage() {
       formData.append("shortDescription", cfgShortDescription.trim())
       
       if (cfgPhoto) {
+        console.log("[v0] SAVE CONFIG - Appending photo to FormData")
         formData.append("photo", cfgPhoto)
+        
+        // Verificar se foi adicionado
+        const photoFromForm = formData.get("photo")
+        console.log("[v0] SAVE CONFIG - Photo in FormData:", photoFromForm)
       }
+      
+      console.log("[v0] SAVE CONFIG - Sending request to /api/telegram/update")
       
       const response = await fetch("/api/telegram/update", {
         method: "POST",
@@ -291,6 +309,7 @@ export default function BotsPage() {
       })
       
       const result = await response.json()
+      console.log("[v0] SAVE CONFIG - API Response:", JSON.stringify(result))
       
       // Atualizar no banco local
       await updateBot(configBot.id, {
