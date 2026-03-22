@@ -62,6 +62,63 @@ export default function BotsPage() {
   const [cfgPhoto, setCfgPhoto] = useState<File | null>(null)
   const [cfgPhotoPreview, setCfgPhotoPreview] = useState<string | null>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
+  
+  // Cache de dados do Telegram (foto, username, etc.)
+  const [telegramDataCache, setTelegramDataCache] = useState<Record<string, TelegramBotData>>({})
+  const [isLoadingTelegramData, setIsLoadingTelegramData] = useState(false)
+  
+  // Carregar dados do Telegram para todos os bots
+  const loadTelegramData = useCallback(async (botsToLoad: Bot[]) => {
+    // Verificar quais bots precisam carregar
+    const botsNeedingData = botsToLoad.filter(bot => !telegramDataCache[bot.id])
+    if (botsNeedingData.length === 0) return
+    
+    setIsLoadingTelegramData(true)
+    const newCache: Record<string, TelegramBotData> = { ...telegramDataCache }
+    
+    // Carregar em paralelo
+    await Promise.all(botsNeedingData.map(async (bot) => {
+      try {
+        const response = await fetch("/api/telegram/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token: bot.token }),
+        })
+        
+        if (response.ok) {
+          const data = await response.json()
+          if (data.bot) {
+            newCache[bot.id] = data.bot
+          }
+        }
+      } catch {
+        // Ignora erros de validação
+      }
+    }))
+    
+    setTelegramDataCache(newCache)
+    setIsLoadingTelegramData(false)
+  }, [telegramDataCache])
+  
+  // Carregar dados do Telegram quando bots mudam
+  useEffect(() => {
+    if (bots.length > 0) {
+      loadTelegramData(bots)
+    }
+  }, [bots])
+  
+  // Função para obter dados extendidos de um bot
+  const getExtendedBot = useCallback((bot: Bot): ExtendedBot => {
+    const telegramData = telegramDataCache[bot.id]
+    return {
+      ...bot,
+      username: telegramData?.username,
+      description: telegramData?.description,
+      short_description: telegramData?.short_description,
+      photo_url: telegramData?.photo_url,
+      telegram_bot_id: telegramData?.telegram_bot_id,
+    }
+  }, [telegramDataCache])
 
   const filteredBots = bots.filter(
     (bot) =>
@@ -240,24 +297,44 @@ export default function BotsPage() {
         name: cfgName.trim() || configBot.name,
       })
       
-      // Atualizar estado local com nova foto se foi enviada
-      const newPhotoUrl = cfgPhotoPreview || (configBot as ExtendedBot).photo_url
-      setConfigBot({ 
-        ...configBot, 
-        name: cfgName.trim() || configBot.name,
-        description: cfgDescription.trim(),
-        short_description: cfgShortDescription.trim(),
-        photo_url: cfgPhoto ? newPhotoUrl : (configBot as ExtendedBot).photo_url,
+      // Buscar dados atualizados do Telegram para atualizar o cache
+      const validateResponse = await fetch("/api/telegram/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: configBot.token }),
       })
+      
+      if (validateResponse.ok) {
+        const validateData = await validateResponse.json()
+        if (validateData.bot) {
+          // Atualizar o cache com os novos dados do Telegram
+          setTelegramDataCache(prev => ({
+            ...prev,
+            [configBot.id]: validateData.bot
+          }))
+          
+          // Atualizar o configBot com os novos dados
+          const updatedBot: ExtendedBot = { 
+            ...configBot, 
+            name: cfgName.trim() || configBot.name,
+            description: validateData.bot.description,
+            short_description: validateData.bot.short_description,
+            photo_url: validateData.bot.photo_url,
+          }
+          setConfigBot(updatedBot)
+        }
+      }
       
       setCfgPhoto(null)
       setCfgPhotoPreview(null)
       
+      const photoFailed = cfgPhoto && result.results?.photo === false
       toast({
-        title: "Sucesso",
-        description: result.results?.photo === false 
-          ? "Alterações salvas! (Foto pode levar alguns segundos para atualizar)"
+        title: photoFailed ? "Parcialmente salvo" : "Sucesso",
+        description: photoFailed 
+          ? "Alterações salvas, mas houve erro ao atualizar a foto. Tente uma imagem menor ou use o @BotFather."
           : "Alterações salvas com sucesso!",
+        variant: photoFailed ? "destructive" : "default",
       })
     } catch {
       toast({
@@ -667,10 +744,10 @@ export default function BotsPage() {
         ) : viewMode === "grid" ? (
           /* Grid View */
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredBots.map((bot) => {
-              const isSelected = selectedBot?.id === bot.id
-              const isActive = bot.status === "active"
-              const extendedBot = bot as ExtendedBot
+{filteredBots.map((bot) => {
+  const isSelected = selectedBot?.id === bot.id
+  const isActive = bot.status === "active"
+  const extendedBot = getExtendedBot(bot)
               
               return (
                 <div
@@ -683,21 +760,23 @@ export default function BotsPage() {
                   <div className="p-5">
                     {/* Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        {extendedBot.photo_url ? (
+                      <div className="flex items-center gap-3 relative">
+                        {isLoadingTelegramData && !telegramDataCache[bot.id] ? (
+                          <div className="w-12 h-12 rounded-xl bg-muted animate-pulse" />
+                        ) : extendedBot.photo_url ? (
                           <img
                             src={extendedBot.photo_url}
                             alt={bot.name}
                             className="w-12 h-12 rounded-xl object-cover"
                           />
                         ) : (
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center relative ${
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                             isActive ? "bg-accent/10" : "bg-muted"
                           }`}>
                             <BotIcon className={`h-6 w-6 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
                           </div>
                         )}
-                        <div className={`w-3.5 h-3.5 rounded-full border-2 border-card absolute ml-9 mt-9 ${
+                        <div className={`w-3.5 h-3.5 rounded-full border-2 border-card absolute left-9 top-9 ${
                           isActive ? "bg-green-500" : "bg-muted-foreground"
                         }`} />
                       </div>
@@ -776,10 +855,10 @@ export default function BotsPage() {
         ) : (
           /* List View */
           <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            {filteredBots.map((bot, index) => {
-              const isSelected = selectedBot?.id === bot.id
-              const isActive = bot.status === "active"
-              const extendedBot = bot as ExtendedBot
+{filteredBots.map((bot, index) => {
+  const isSelected = selectedBot?.id === bot.id
+  const isActive = bot.status === "active"
+  const extendedBot = getExtendedBot(bot)
               
               return (
                 <div
@@ -790,7 +869,9 @@ export default function BotsPage() {
                   } ${isSelected ? "bg-accent/5" : ""}`}
                 >
                   {/* Icon */}
-                  {extendedBot.photo_url ? (
+                  {isLoadingTelegramData && !telegramDataCache[bot.id] ? (
+                    <div className="w-11 h-11 rounded-xl bg-muted animate-pulse flex-shrink-0" />
+                  ) : extendedBot.photo_url ? (
                     <img
                       src={extendedBot.photo_url}
                       alt={bot.name}

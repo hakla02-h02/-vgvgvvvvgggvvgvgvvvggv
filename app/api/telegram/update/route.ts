@@ -87,14 +87,16 @@ export async function POST(request: NextRequest) {
     // Upload new profile photo
     if (photo && photo instanceof File) {
       try {
+        // Converter File para Buffer/Blob para enviar ao Telegram
         const photoFormData = new FormData()
-        photoFormData.append("photo", photo)
+        const photoBlob = new Blob([await photo.arrayBuffer()], { type: photo.type })
+        photoFormData.append("photo", photoBlob, photo.name || "photo.jpg")
         
         const response = await fetch(`${baseUrl}/setMyProfilePhoto`, {
           method: "POST",
           body: photoFormData,
         })
-        const data: TelegramResponse<boolean> = await response.json()
+        const data = await response.json()
         results.photo = data.ok
       } catch {
         results.photo = false
