@@ -98,13 +98,24 @@ export async function POST(request: NextRequest) {
     if (photo) {
       console.log("[v0] UPDATE API - Photo condition passed, starting upload...")
       try {
-        // Converter File para Buffer/Blob para enviar ao Telegram
+        // Ler o arquivo como ArrayBuffer
         const arrayBuffer = await photo.arrayBuffer()
-        console.log("[v0] UPDATE API - ArrayBuffer size:", arrayBuffer.byteLength)
+        const buffer = Buffer.from(arrayBuffer)
+        console.log("[v0] UPDATE API - Buffer size:", buffer.length)
         
+        // Criar um novo File object com o buffer
+        const photoFile = new File([buffer], photo.name || "photo.jpg", { 
+          type: photo.type || "image/jpeg" 
+        })
+        
+        // Criar FormData e adicionar o arquivo
         const photoFormData = new FormData()
-        const photoBlob = new Blob([arrayBuffer], { type: photo.type || "image/jpeg" })
-        photoFormData.append("photo", photoBlob, photo.name || "photo.jpg")
+        photoFormData.set("photo", photoFile)
+        
+        console.log("[v0] UPDATE API - FormData entries:")
+        for (const [key, value] of photoFormData.entries()) {
+          console.log(`[v0] UPDATE API - ${key}:`, value)
+        }
         
         console.log("[v0] UPDATE API - Sending to Telegram:", `${baseUrl}/setMyProfilePhoto`)
         
