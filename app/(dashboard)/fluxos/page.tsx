@@ -9,9 +9,12 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { useAuth } from "@/lib/auth-context"
 import { supabase } from "@/lib/supabase"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { useToast } from "@/hooks/use-toast"
 import {
   Plus, Zap, Link2, Workflow, Settings, RotateCcw, 
-  Loader2, Bot, Upload
+  Loader2, Bot, Upload, CheckCircle2, Sparkles
 } from "lucide-react"
 
 // Types
@@ -46,6 +49,7 @@ interface FlowStats {
 export default function FluxosPage() {
   const router = useRouter()
   const { session } = useAuth()
+  const { toast } = useToast()
 
   // State
   const [flows, setFlows] = useState<Flow[]>([])
@@ -53,10 +57,55 @@ export default function FluxosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState<FlowStats>({ linkedBots: 0, basicFlows: 0, n8nFlows: 0 })
 
-
+  // Create flow modal
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [newFlowName, setNewFlowName] = useState("")
+  const [newFlowMode, setNewFlowMode] = useState<"basic" | "n8n">("basic")
+  const [isCreating, setIsCreating] = useState(false)
 
   // Import flow dialog
   const [showImportDialog, setShowImportDialog] = useState(false)
+
+  // Create flow handler
+  const handleCreateFlow = async () => {
+    if (!session?.userId) {
+      toast({ title: "Erro", description: "Voce precisa estar logado", variant: "destructive" })
+      return
+    }
+    if (!newFlowName.trim()) {
+      toast({ title: "Erro", description: "Digite um nome para o fluxo", variant: "destructive" })
+      return
+    }
+    if (newFlowMode === "n8n") {
+      toast({ title: "Em breve", description: "Modo n8n ainda nao disponivel", variant: "destructive" })
+      return
+    }
+
+    setIsCreating(true)
+
+    const { data, error } = await supabase
+      .from("flows")
+      .insert({
+        user_id: session.userId,
+        name: newFlowName.trim(),
+        mode: newFlowMode,
+        status: "active",
+        config: {},
+      })
+      .select()
+      .single()
+
+    if (error) {
+      toast({ title: "Erro ao criar", description: error.message, variant: "destructive" })
+      setIsCreating(false)
+      return
+    }
+
+    toast({ title: "Fluxo criado!", description: "Redirecionando para o editor..." })
+    setShowCreateModal(false)
+    setNewFlowName("")
+    router.push(`/fluxos/${data.id}`)
+  }
 
   // Fetch flows
   const fetchFlows = useCallback(async () => {
@@ -236,7 +285,7 @@ export default function FluxosPage() {
           <Upload className="h-4 w-4 mr-2" />
           Importar Fluxo
         </Button>
-        <Button onClick={() => router.push("/fluxos/novo")}>
+        <Button onClick={() => setShowCreateModal(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Criar Primeiro Fluxo
         </Button>
@@ -263,7 +312,7 @@ export default function FluxosPage() {
               <Upload className="h-4 w-4 mr-2" />
               Importar Fluxo
             </Button>
-            <Button onClick={() => router.push("/fluxos/novo")}>
+            <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="h-4 w-4 mr-2" />
               Criar Fluxo ({currentFlows}/{maxFlows})
             </Button>
@@ -324,6 +373,118 @@ export default function FluxosPage() {
           </div>
         )}
       </main>
+
+      {/* Create Flow Modal */}
+      <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+        <DialogContent className="sm:max-w-2xl bg-card border-border max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/30">
+                <Sparkles className="h-5 w-5 text-accent" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg">Criar Novo Fluxo</DialogTitle>
+                <p className="text-sm text-muted-foreground">Configure seu fluxo de automacao</p>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6 py-4">
+            {/* Nome do Fluxo */}
+            <div className="space-y-2">
+              <Label htmlFor="flow-name">
+                Nome do Fluxo <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="flow-name"
+                placeholder="Ex: Boas-vindas e Vendas"
+                value={newFlowName}
+                onChange={(e) => setNewFlowName(e.target.value.slice(0, 30))}
+                className="bg-secondary/30 border-border/50"
+              />
+              <p className="text-xs text-muted-foreground">
+                {newFlowName.length}/30 caracteres
+              </p>
+            </div>
+
+            {/* Modo do Fluxo */}
+            <div className="space-y-3">
+              <Label>
+                Modo do Fluxo <span className="text-destructive">*</span>
+              </Label>
+              <div className="grid grid-cols-2 gap-4">
+                {/* Basico */}
+                <button
+                  type="button"
+                  onClick={() => setNewFlowMode("basic")}
+                  className={`relative flex flex-col p-5 rounded-xl border-2 transition-all text-left ${
+                    newFlowMode === "basic"
+                      ? "border-accent bg-accent/5"
+                      : "border-border/50 bg-secondary/20 hover:border-border"
+                  }`}
+                >
+                  {newFlowMode === "basic" && (
+                    <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-accent" />
+                  )}
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="h-5 w-5 text-accent" />
+                    <span className="font-semibold">Basico</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Editor visual simples com blocos pre-configurados
+                  </p>
+                </button>
+
+                {/* n8n */}
+                <button
+                  type="button"
+                  disabled
+                  className="relative flex flex-col p-5 rounded-xl border-2 border-border/30 bg-secondary/10 opacity-50 cursor-not-allowed text-left"
+                >
+                  <Badge className="absolute top-3 right-3 text-[9px] bg-purple-500/20 text-purple-400 border-purple-500/30">
+                    Em breve
+                  </Badge>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Workflow className="h-5 w-5 text-purple-400" />
+                    <span className="font-semibold">Fluxo n8n</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Editor visual com blocos arrastaveis
+                  </p>
+                </button>
+              </div>
+            </div>
+
+            {/* Dica */}
+            <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <Bot className="h-4 w-4 text-accent" />
+                <span className="text-sm font-medium text-accent">Sobre os Bots</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Apos criar o fluxo, voce podera adicionar bots na aba &quot;Bots&quot;. Um mesmo fluxo pode ser executado por multiplos bots.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleCreateFlow} 
+              disabled={!newFlowName.trim() || isCreating}
+            >
+              {isCreating ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Workflow className="h-4 w-4 mr-2" />
+              )}
+              Criar Fluxo
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Import Flow Dialog (placeholder) */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
