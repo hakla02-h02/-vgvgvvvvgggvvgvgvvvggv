@@ -121,8 +121,24 @@ export async function POST(request: NextRequest) {
           headers: form.getHeaders(),
         })
         
-        const data: TelegramResponse<boolean> & { description?: string } = await response.json()
-        console.log("[v0] UPDATE API - Telegram response:", JSON.stringify(data))
+        // Logar status da resposta
+        console.log("[v0] UPDATE API - Response status:", response.status)
+        console.log("[v0] UPDATE API - Response ok:", response.ok)
+        
+        // Primeiro pegar como texto para evitar erro de JSON
+        const responseText = await response.text()
+        console.log("[v0] UPDATE API - Response text:", responseText)
+        
+        // Tentar fazer parse do JSON
+        let data: TelegramResponse<boolean> & { description?: string }
+        try {
+          data = JSON.parse(responseText)
+          console.log("[v0] UPDATE API - Parsed JSON:", JSON.stringify(data))
+        } catch {
+          console.log("[v0] UPDATE API - Failed to parse JSON, using response.ok as fallback")
+          // Se o status é OK mas não conseguiu parsear JSON, considera sucesso
+          data = { ok: response.ok, description: responseText || "Unknown response" }
+        }
         
         results.photo = data.ok
         if (!data.ok) {
