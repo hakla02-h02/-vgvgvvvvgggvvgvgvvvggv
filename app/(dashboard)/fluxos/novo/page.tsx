@@ -52,7 +52,7 @@ export default function NovoFluxoPage() {
   const canCreate = flowName.trim().length > 0 && flowMode === "basic"
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex flex-col h-full overflow-auto bg-background">
       {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center justify-between px-6">
@@ -100,7 +100,7 @@ export default function NovoFluxoPage() {
       </header>
 
       {/* Content */}
-      <main className="container max-w-6xl mx-auto py-8 px-6">
+      <main className="flex-1 container max-w-6xl mx-auto py-8 px-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Main Form - 2 columns */}
