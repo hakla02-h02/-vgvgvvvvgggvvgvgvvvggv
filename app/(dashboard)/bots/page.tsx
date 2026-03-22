@@ -57,6 +57,7 @@ export default function BotsPage() {
   const [cfgDescription, setCfgDescription] = useState("")
   const [cfgShortDescription, setCfgShortDescription] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoadingConfig, setIsLoadingConfig] = useState(false)
 
   const filteredBots = bots.filter(
     (bot) =>
@@ -143,8 +144,9 @@ export default function BotsPage() {
     const extendedBot = bot as ExtendedBot
     setConfigBot(extendedBot)
     setCfgName(bot.name)
-    setCfgDescription(extendedBot.description || "")
-    setCfgShortDescription(extendedBot.short_description || "")
+    setCfgDescription("")
+    setCfgShortDescription("")
+    setIsLoadingConfig(true)
     
     // Buscar dados atualizados do Telegram
     try {
@@ -159,18 +161,25 @@ export default function BotsPage() {
         if (data.bot) {
           const updatedBot: ExtendedBot = {
             ...extendedBot,
+            name: data.bot.name || extendedBot.name,
             username: data.bot.username,
             description: data.bot.description || "",
             short_description: data.bot.short_description || "",
             photo_url: data.bot.photo_url,
           }
           setConfigBot(updatedBot)
+          setCfgName(data.bot.name || bot.name)
           setCfgDescription(data.bot.description || "")
           setCfgShortDescription(data.bot.short_description || "")
         }
       }
     } catch {
       // Se falhar ao buscar, usa os dados locais
+      setCfgName(bot.name)
+      setCfgDescription(extendedBot.description || "")
+      setCfgShortDescription(extendedBot.short_description || "")
+    } finally {
+      setIsLoadingConfig(false)
     }
   }
 
@@ -180,6 +189,7 @@ export default function BotsPage() {
     setCfgName("")
     setCfgDescription("")
     setCfgShortDescription("")
+    setIsLoadingConfig(false)
   }
 
   // Salvar configurações
@@ -424,141 +434,164 @@ export default function BotsPage() {
         <DialogContent className="sm:max-w-md bg-card border-border p-0 gap-0 overflow-hidden">
           {configBot && (
             <>
-              {/* Header com foto e status */}
-              <div className="p-6 pb-5 border-b border-border">
-                <div className="flex items-center gap-4">
-                  {(configBot as ExtendedBot).photo_url ? (
-                    <img
-                      src={(configBot as ExtendedBot).photo_url!}
-                      alt={configBot.name}
-                      className="w-16 h-16 rounded-2xl object-cover"
-                    />
-                  ) : (
-                    <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center relative">
-                      <BotIcon className="h-8 w-8 text-accent" />
-                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${
-                        configBot.status === "active" ? "bg-green-500" : "bg-muted-foreground"
-                      }`} />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <h2 className="text-xl font-bold text-foreground">Configurações</h2>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        configBot.status === "active" 
-                          ? "bg-green-500/10 text-green-600" 
-                          : "bg-muted text-muted-foreground"
-                      }`}>
-                        <Signal className="h-3 w-3" />
-                        {configBot.status === "active" ? "Online" : "Offline"}
-                      </span>
+              {/* Loading state */}
+              {isLoadingConfig ? (
+                <div className="p-12 flex flex-col items-center justify-center">
+                  <Loader2 className="h-10 w-10 text-accent animate-spin mb-4" />
+                  <p className="text-muted-foreground text-sm">Carregando dados do bot...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Header com foto e status */}
+                  <div className="p-6 pb-5 border-b border-border">
+                    <div className="flex items-center gap-4">
+                      <div className="relative group">
+                        {(configBot as ExtendedBot).photo_url ? (
+                          <img
+                            src={(configBot as ExtendedBot).photo_url!}
+                            alt={configBot.name}
+                            className="w-16 h-16 rounded-2xl object-cover"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
+                            <BotIcon className="h-8 w-8 text-accent" />
+                          </div>
+                        )}
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${
+                          configBot.status === "active" ? "bg-green-500" : "bg-muted-foreground"
+                        }`} />
+                        {/* Tooltip para trocar foto */}
+                        <div className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
+                          onClick={() => {
+                            toast({
+                              title: "Trocar foto",
+                              description: "Para trocar a foto do bot, use o @BotFather no Telegram e envie /setuserpic",
+                            })
+                          }}
+                        >
+                          <span className="text-white text-xs font-medium text-center px-1">Trocar</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h2 className="text-xl font-bold text-foreground">Configurações</h2>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                            configBot.status === "active" 
+                              ? "bg-green-500/10 text-green-600" 
+                              : "bg-muted text-muted-foreground"
+                          }`}>
+                            <Signal className="h-3 w-3" />
+                            {configBot.status === "active" ? "Online" : "Offline"}
+                          </span>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={configBot.status === "active"}
+                        onCheckedChange={async (checked) => {
+                          await updateBot(configBot.id, { status: checked ? "active" : "inactive" })
+                          setConfigBot({ ...configBot, status: checked ? "active" : "inactive" })
+                          await fetch("/api/telegram/register", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ botToken: configBot.token, action: checked ? "register" : "unregister" }),
+                          })
+                        }}
+                      />
                     </div>
                   </div>
-                  <Switch
-                    checked={configBot.status === "active"}
-                    onCheckedChange={async (checked) => {
-                      await updateBot(configBot.id, { status: checked ? "active" : "inactive" })
-                      setConfigBot({ ...configBot, status: checked ? "active" : "inactive" })
-                      await fetch("/api/telegram/register", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ botToken: configBot.token, action: checked ? "register" : "unregister" }),
-                      })
-                    }}
-                  />
-                </div>
-              </div>
 
-              {/* Campos editáveis */}
-              <div className="p-6 space-y-5">
-                {/* Nome */}
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">
-                    Nome exibido
-                  </Label>
-                  <Input 
-                    value={cfgName} 
-                    onChange={(e) => setCfgName(e.target.value)} 
-                    className="h-11 bg-muted border-0 rounded-xl" 
-                    placeholder="Nome do bot"
-                  />
-                </div>
+                  {/* Campos editáveis */}
+                  <div className="p-6 space-y-5">
+                    {/* Nome */}
+                    <div>
+                      <Label className="text-sm font-medium text-foreground mb-2 block">
+                        Nome exibido
+                      </Label>
+                      <Input 
+                        value={cfgName} 
+                        onChange={(e) => setCfgName(e.target.value)} 
+                        className="h-11 bg-muted border-0 rounded-xl" 
+                        placeholder="Nome do bot"
+                      />
+                    </div>
 
-                {/* Username (somente leitura) */}
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                    <AtSign className="h-3.5 w-3.5 text-muted-foreground" />
-                    Username
-                    <span className="text-xs text-muted-foreground font-normal">(somente leitura)</span>
-                  </Label>
-                  <Input 
-                    value={(configBot as ExtendedBot).username || ""} 
-                    disabled
-                    className="h-11 bg-muted/50 border-0 rounded-xl text-muted-foreground" 
-                  />
-                </div>
+                    {/* Username (somente leitura) */}
+                    <div>
+                      <Label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
+                        <AtSign className="h-3.5 w-3.5 text-muted-foreground" />
+                        Username
+                        <span className="text-xs text-muted-foreground font-normal">(somente leitura)</span>
+                      </Label>
+                      <Input 
+                        value={(configBot as ExtendedBot).username || ""} 
+                        disabled
+                        className="h-11 bg-muted/50 border-0 rounded-xl text-muted-foreground" 
+                      />
+                    </div>
 
-                {/* Descrição curta */}
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">
-                    Bio (descrição curta)
-                  </Label>
-                  <Input 
-                    value={cfgShortDescription} 
-                    onChange={(e) => setCfgShortDescription(e.target.value)} 
-                    className="h-11 bg-muted border-0 rounded-xl" 
-                    placeholder="Uma breve descrição do seu bot"
-                    maxLength={120}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1.5 text-right">
-                    {cfgShortDescription.length}/120
-                  </p>
-                </div>
+                    {/* Descrição curta */}
+                    <div>
+                      <Label className="text-sm font-medium text-foreground mb-2 block">
+                        Bio (descrição curta)
+                      </Label>
+                      <Input 
+                        value={cfgShortDescription} 
+                        onChange={(e) => setCfgShortDescription(e.target.value)} 
+                        className="h-11 bg-muted border-0 rounded-xl" 
+                        placeholder="Uma breve descrição do seu bot"
+                        maxLength={120}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1.5 text-right">
+                        {cfgShortDescription.length}/120
+                      </p>
+                    </div>
 
-                {/* Descrição longa */}
-                <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">
-                    Descrição completa
-                  </Label>
-                  <Textarea 
-                    value={cfgDescription} 
-                    onChange={(e) => setCfgDescription(e.target.value)} 
-                    className="min-h-[100px] bg-muted border-0 rounded-xl resize-none" 
-                    placeholder="Descreva o que seu bot faz..."
-                    maxLength={512}
-                  />
-                  <p className="text-xs text-muted-foreground mt-1.5 text-right">
-                    {cfgDescription.length}/512
-                  </p>
-                </div>
-              </div>
+                    {/* Descrição longa */}
+                    <div>
+                      <Label className="text-sm font-medium text-foreground mb-2 block">
+                        Descrição completa
+                      </Label>
+                      <Textarea 
+                        value={cfgDescription} 
+                        onChange={(e) => setCfgDescription(e.target.value)} 
+                        className="min-h-[100px] bg-muted border-0 rounded-xl resize-none" 
+                        placeholder="Descreva o que seu bot faz..."
+                        maxLength={512}
+                      />
+                      <p className="text-xs text-muted-foreground mt-1.5 text-right">
+                        {cfgDescription.length}/512
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Footer */}
-              <div className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between">
-                <button
-                  onClick={() => handleDelete(configBot.id)}
-                  className="text-sm text-destructive hover:text-destructive/80 transition-colors flex items-center gap-1.5"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Excluir
-                </button>
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={closeConfig}
-                    className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={handleSaveConfig}
-                    disabled={isSaving}
-                    className="flex items-center gap-2 bg-accent text-accent-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
-                  >
-                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                    {isSaving ? "Salvando..." : "Salvar"}
-                  </button>
-                </div>
-              </div>
+                  {/* Footer */}
+                  <div className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between">
+                    <button
+                      onClick={() => handleDelete(configBot.id)}
+                      className="text-sm text-destructive hover:text-destructive/80 transition-colors flex items-center gap-1.5"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Excluir
+                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={closeConfig}
+                        className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={handleSaveConfig}
+                        disabled={isSaving}
+                        className="flex items-center gap-2 bg-accent text-accent-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+                      >
+                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {isSaving ? "Salvando..." : "Salvar"}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </>
           )}
         </DialogContent>
