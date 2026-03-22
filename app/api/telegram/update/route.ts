@@ -90,59 +90,58 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Upload new profile photo using form-data library (Node.js compatible)
+    // Upload new profile photo usando undici (mais confiavel no Vercel)
     if (photo) {
       console.log("[v0] UPDATE API - Photo upload starting...")
       try {
-        // Converter File para Buffer
         const arrayBuffer = await photo.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
-        const fileName = photo.name || "photo.jpg"
-        const mimeType = photo.type || "image/jpeg"
+        
+        if (buffer.length === 0) {
+          throw new Error("Buffer vazio - arquivo invalido")
+        }
         
         console.log("[v0] UPDATE API - Buffer size:", buffer.length)
-        console.log("[v0] UPDATE API - File name:", fileName)
-        console.log("[v0] UPDATE API - MIME type:", mimeType)
         
-        // Usar form-data library
-        const form = new FormData()
-        form.append("photo", buffer, {
-          filename: fileName,
-          contentType: mimeType,
+        // Criar boundary unico
+        const boundary = `----FormBoundary${Date.now()}`
+        
+        // Construir body multipart manualmente (mais confiavel)
+        const filename = photo.name || "photo.png"
+        const bodyParts = [
+          `--${boundary}`,
+          `Content-Disposition: form-data; name="photo"; filename="${filename}"`,
+          `Content-Type: image/png`,
+          ``,
+          ``, // placeholder para o buffer
+        ]
+        const headerPart = Buffer.from(bodyParts.join("\r\n"))
+        const footerPart = Buffer.from(`\r\n--${boundary}--\r\n`)
+        
+        // Concatenar tudo
+        const body = Buffer.concat([headerPart, buffer, footerPart])
+        
+        console.log("[v0] UPDATE API - Sending to Telegram...")
+        
+        const response = await fetch(`${baseUrl}/setMyProfilePhoto`, {
+          method: "POST",
+          headers: {
+            "Content-Type": `multipart/form-data; boundary=${boundary}`,
+            "Content-Length": body.length.toString(),
+          },
+          body: body,
         })
         
-        // Usar o método submit do form-data que lida corretamente com streams
-        const telegramResponse = await new Promise<{ ok: boolean; description?: string }>((resolve, reject) => {
-          form.submit(`${baseUrl}/setMyProfilePhoto`, (err, res) => {
-            if (err) {
-              console.log("[v0] UPDATE API - Submit error:", err)
-              reject(err)
-              return
-            }
-            
-            console.log("[v0] UPDATE API - Response status:", res.statusCode)
-            
-            let data = ""
-            res.on("data", (chunk) => {
-              data += chunk
-            })
-            res.on("end", () => {
-              console.log("[v0] UPDATE API - Response data:", data)
-              try {
-                const parsed = JSON.parse(data)
-                resolve(parsed)
-              } catch {
-                resolve({ ok: res.statusCode === 200, description: data })
-              }
-            })
-            res.on("error", (e) => {
-              console.log("[v0] UPDATE API - Response error:", e)
-              reject(e)
-            })
-          })
-        })
+        const responseText = await response.text()
+        console.log("[v0] UPDATE API - Response status:", response.status)
+        console.log("[v0] UPDATE API - Response text:", responseText)
         
-        console.log("[v0] UPDATE API - Telegram response:", JSON.stringify(telegramResponse))
+        let telegramResponse: { ok: boolean; description?: string }
+        try {
+          telegramResponse = JSON.parse(responseText)
+        } catch {
+          telegramResponse = { ok: false, description: `Parse error: ${responseText}` }
+        }
         
         results.photo = telegramResponse.ok
         if (!telegramResponse.ok) {

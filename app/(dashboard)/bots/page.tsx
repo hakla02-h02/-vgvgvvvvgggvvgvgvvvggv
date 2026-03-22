@@ -348,10 +348,13 @@ export default function BotsPage() {
       setCfgPhotoPreview(null)
       
       const photoFailed = cfgPhoto && result.results?.photo === false
+      const photoError = result.results?.photoError
+      console.log("[v0] SAVE CONFIG - Photo failed:", photoFailed, "Error:", photoError)
+      
       toast({
-        title: photoFailed ? "Parcialmente salvo" : "Sucesso",
+        title: photoFailed ? "Erro na foto" : "Sucesso",
         description: photoFailed 
-          ? "Alterações salvas, mas houve erro ao atualizar a foto. Tente uma imagem menor ou use o @BotFather."
+          ? `Erro do Telegram: ${photoError || "desconhecido"}. Tente PNG quadrado < 5MB.`
           : "Alterações salvas com sucesso!",
         variant: photoFailed ? "destructive" : "default",
       })
