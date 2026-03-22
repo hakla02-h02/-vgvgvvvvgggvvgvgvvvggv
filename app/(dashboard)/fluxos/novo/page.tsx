@@ -23,10 +23,26 @@ export default function NovoFluxoPage() {
   const [isCreating, setIsCreating] = useState(false)
 
   const handleCreate = async () => {
-    if (!session?.userId || !flowName.trim()) return
-    if (flowMode === "n8n") return
+    console.log("[v0] handleCreate called")
+    console.log("[v0] session:", session)
+    console.log("[v0] flowName:", flowName)
+    console.log("[v0] flowMode:", flowMode)
+    
+    if (!session?.userId) {
+      console.log("[v0] No session userId - returning")
+      return
+    }
+    if (!flowName.trim()) {
+      console.log("[v0] No flow name - returning")
+      return
+    }
+    if (flowMode === "n8n") {
+      console.log("[v0] n8n mode selected - returning")
+      return
+    }
 
     setIsCreating(true)
+    console.log("[v0] Creating flow...")
 
     const { data, error } = await supabase
       .from("flows")
@@ -40,12 +56,15 @@ export default function NovoFluxoPage() {
       .select()
       .single()
 
+    console.log("[v0] Supabase response - data:", data, "error:", error)
+
     if (error) {
       console.error("[v0] Error creating flow:", error)
       setIsCreating(false)
       return
     }
 
+    console.log("[v0] Redirecting to /fluxos/" + data.id)
     router.push(`/fluxos/${data.id}`)
   }
 
