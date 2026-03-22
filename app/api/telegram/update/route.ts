@@ -104,46 +104,50 @@ export async function POST(request: NextRequest) {
         console.log("[v0] UPDATE API - File name:", fileName)
         console.log("[v0] UPDATE API - MIME type:", mimeType)
         
-        // Usar form-data library (funciona corretamente no Node.js)
+        // Usar form-data library
         const form = new FormData()
         form.append("photo", buffer, {
           filename: fileName,
           contentType: mimeType,
         })
         
-        console.log("[v0] UPDATE API - FormData headers:", form.getHeaders())
-        console.log("[v0] UPDATE API - Sending to Telegram:", `${baseUrl}/setMyProfilePhoto`)
-        
-        // Usar fetch com headers do form-data (inclui boundary correto)
-        const response = await fetch(`${baseUrl}/setMyProfilePhoto`, {
-          method: "POST",
-          body: form as unknown as BodyInit,
-          headers: form.getHeaders(),
+        // Usar o método submit do form-data que lida corretamente com streams
+        const telegramResponse = await new Promise<{ ok: boolean; description?: string }>((resolve, reject) => {
+          form.submit(`${baseUrl}/setMyProfilePhoto`, (err, res) => {
+            if (err) {
+              console.log("[v0] UPDATE API - Submit error:", err)
+              reject(err)
+              return
+            }
+            
+            console.log("[v0] UPDATE API - Response status:", res.statusCode)
+            
+            let data = ""
+            res.on("data", (chunk) => {
+              data += chunk
+            })
+            res.on("end", () => {
+              console.log("[v0] UPDATE API - Response data:", data)
+              try {
+                const parsed = JSON.parse(data)
+                resolve(parsed)
+              } catch {
+                resolve({ ok: res.statusCode === 200, description: data })
+              }
+            })
+            res.on("error", (e) => {
+              console.log("[v0] UPDATE API - Response error:", e)
+              reject(e)
+            })
+          })
         })
         
-        // Logar status da resposta
-        console.log("[v0] UPDATE API - Response status:", response.status)
-        console.log("[v0] UPDATE API - Response ok:", response.ok)
+        console.log("[v0] UPDATE API - Telegram response:", JSON.stringify(telegramResponse))
         
-        // Primeiro pegar como texto para evitar erro de JSON
-        const responseText = await response.text()
-        console.log("[v0] UPDATE API - Response text:", responseText)
-        
-        // Tentar fazer parse do JSON
-        let data: TelegramResponse<boolean> & { description?: string }
-        try {
-          data = JSON.parse(responseText)
-          console.log("[v0] UPDATE API - Parsed JSON:", JSON.stringify(data))
-        } catch {
-          console.log("[v0] UPDATE API - Failed to parse JSON, using response.ok as fallback")
-          // Se o status é OK mas não conseguiu parsear JSON, considera sucesso
-          data = { ok: response.ok, description: responseText || "Unknown response" }
-        }
-        
-        results.photo = data.ok
-        if (!data.ok) {
-          results.photoError = data.description || "Unknown error"
-          console.log("[v0] UPDATE API - Photo upload FAILED:", data.description)
+        results.photo = telegramResponse.ok
+        if (!telegramResponse.ok) {
+          results.photoError = telegramResponse.description || "Unknown error"
+          console.log("[v0] UPDATE API - Photo upload FAILED:", telegramResponse.description)
         } else {
           console.log("[v0] UPDATE API - Photo upload SUCCESS")
         }
