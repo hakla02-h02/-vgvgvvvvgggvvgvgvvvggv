@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { FormData as UndiciFormData, fetch as undiciFetch } from "undici"
+import FormData from "form-data"
 
 interface TelegramResponse<T> {
   ok: boolean
@@ -21,7 +21,6 @@ export async function POST(request: NextRequest) {
     console.log("[v0] UPDATE API - token exists:", !!token)
     console.log("[v0] UPDATE API - name:", name)
     console.log("[v0] UPDATE API - photo:", photo ? `File: ${photo.name}, size: ${photo.size}, type: ${photo.type}` : "null")
-    console.log("[v0] UPDATE API - photo instanceof File:", photo instanceof File)
 
     if (!token || typeof token !== "string") {
       return NextResponse.json(
@@ -91,15 +90,11 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Upload new profile photo
-    console.log("[v0] UPDATE API - Checking photo upload condition")
-    console.log("[v0] UPDATE API - photo:", photo)
-    console.log("[v0] UPDATE API - photo is truthy:", !!photo)
-    
+    // Upload new profile photo using form-data library (Node.js compatible)
     if (photo) {
-      console.log("[v0] UPDATE API - Photo condition passed, starting upload...")
+      console.log("[v0] UPDATE API - Photo upload starting...")
       try {
-        // Ler o arquivo como ArrayBuffer
+        // Converter File para Buffer
         const arrayBuffer = await photo.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
         const fileName = photo.name || "photo.jpg"
@@ -109,23 +104,24 @@ export async function POST(request: NextRequest) {
         console.log("[v0] UPDATE API - File name:", fileName)
         console.log("[v0] UPDATE API - MIME type:", mimeType)
         
-        // Criar Blob com o buffer
-        const blob = new Blob([buffer], { type: mimeType })
-        
-        // Usar undici FormData que funciona melhor com file uploads
-        const photoFormData = new UndiciFormData()
-        photoFormData.append("photo", blob, fileName)
-        
-        console.log("[v0] UPDATE API - Blob size:", blob.size)
-        console.log("[v0] UPDATE API - Sending to Telegram with undici:", `${baseUrl}/setMyProfilePhoto`)
-        
-        // Usar undici fetch que lida melhor com FormData e file uploads
-        const response = await undiciFetch(`${baseUrl}/setMyProfilePhoto`, {
-          method: "POST",
-          body: photoFormData,
+        // Usar form-data library (funciona corretamente no Node.js)
+        const form = new FormData()
+        form.append("photo", buffer, {
+          filename: fileName,
+          contentType: mimeType,
         })
         
-        const data = await response.json()
+        console.log("[v0] UPDATE API - FormData headers:", form.getHeaders())
+        console.log("[v0] UPDATE API - Sending to Telegram:", `${baseUrl}/setMyProfilePhoto`)
+        
+        // Usar fetch com headers do form-data (inclui boundary correto)
+        const response = await fetch(`${baseUrl}/setMyProfilePhoto`, {
+          method: "POST",
+          body: form as unknown as BodyInit,
+          headers: form.getHeaders(),
+        })
+        
+        const data: TelegramResponse<boolean> & { description?: string } = await response.json()
         console.log("[v0] UPDATE API - Telegram response:", JSON.stringify(data))
         
         results.photo = data.ok
@@ -140,8 +136,6 @@ export async function POST(request: NextRequest) {
         results.photo = false
         results.photoError = String(err)
       }
-    } else {
-      console.log("[v0] UPDATE API - No photo to upload")
     }
 
     return NextResponse.json({
