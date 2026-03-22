@@ -6,14 +6,12 @@ import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { useAuth } from "@/lib/auth-context"
 import { supabase } from "@/lib/supabase"
 import {
   Plus, Zap, Link2, Workflow, Settings, RotateCcw, 
-  Loader2, Pencil, Bot, CheckCircle2, Upload
+  Loader2, Bot, Upload
 } from "lucide-react"
 
 // Types
@@ -55,11 +53,7 @@ export default function FluxosPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [stats, setStats] = useState<FlowStats>({ linkedBots: 0, basicFlows: 0, n8nFlows: 0 })
 
-  // Create flow dialog
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [newFlowName, setNewFlowName] = useState("")
-  const [newFlowMode, setNewFlowMode] = useState<"basic" | "n8n">("basic")
-  const [isCreating, setIsCreating] = useState(false)
+
 
   // Import flow dialog
   const [showImportDialog, setShowImportDialog] = useState(false)
@@ -133,34 +127,7 @@ export default function FluxosPage() {
     fetchFlows()
   }, [fetchFlows])
 
-  // Create flow
-  const handleCreateFlow = async () => {
-    if (!session?.userId || !newFlowName.trim()) return
-    if (newFlowMode === "n8n") return // n8n is disabled
 
-    setIsCreating(true)
-
-    const { data, error } = await supabase
-      .from("flows")
-      .insert({
-        user_id: session.userId,
-        name: newFlowName.trim(),
-        mode: newFlowMode,
-        status: "active",
-        config: {},
-      })
-      .select()
-      .single()
-
-    if (error) {
-      console.error("[v0] Error creating flow:", error)
-      setIsCreating(false)
-      return
-    }
-
-    // Redirect to flow editor
-    router.push(`/fluxos/${data.id}`)
-  }
 
   // Flow card component
   const FlowCard = ({ flow }: { flow: Flow }) => {
@@ -269,7 +236,7 @@ export default function FluxosPage() {
           <Upload className="h-4 w-4 mr-2" />
           Importar Fluxo
         </Button>
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button onClick={() => router.push("/fluxos/novo")}>
           <Plus className="h-4 w-4 mr-2" />
           Criar Primeiro Fluxo
         </Button>
@@ -296,7 +263,7 @@ export default function FluxosPage() {
               <Upload className="h-4 w-4 mr-2" />
               Importar Fluxo
             </Button>
-            <Button onClick={() => setShowCreateDialog(true)}>
+            <Button onClick={() => router.push("/fluxos/novo")}>
               <Plus className="h-4 w-4 mr-2" />
               Criar Fluxo ({currentFlows}/{maxFlows})
             </Button>
@@ -357,206 +324,6 @@ export default function FluxosPage() {
           </div>
         )}
       </main>
-
-      {/* Create Flow Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent className="sm:max-w-[700px] bg-card border-border">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary/50 border border-border/50">
-                <Workflow className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div>
-                <DialogTitle className="text-xl">Criar Novo Fluxo</DialogTitle>
-                <p className="text-sm text-muted-foreground">Configure seu fluxo conversacional</p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-4">
-            {/* Left side - Form */}
-            <div className="lg:col-span-3 space-y-5">
-              {/* Flow Name */}
-              <div className="space-y-2">
-                <Label htmlFor="flow-name">
-                  Nome do Fluxo <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="flow-name"
-                  placeholder="Ex: Boas-vindas e Vendas"
-                  value={newFlowName}
-                  onChange={(e) => setNewFlowName(e.target.value.slice(0, 30))}
-                  className="bg-secondary/30 border-border/50"
-                />
-                <p className="text-xs text-muted-foreground">
-                  {newFlowName.length}/30 caracteres
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Um nome descritivo para identificar seu fluxo
-                </p>
-              </div>
-
-              {/* Flow Mode */}
-              <div className="space-y-2">
-                <Label>
-                  Modo do Fluxo <span className="text-destructive">*</span>
-                </Label>
-                <div className="grid grid-cols-2 gap-3">
-                  {/* Basic Mode */}
-                  <button
-                    type="button"
-                    onClick={() => setNewFlowMode("basic")}
-                    className={`relative flex flex-col items-start p-4 rounded-xl border-2 transition-all text-left ${
-                      newFlowMode === "basic"
-                        ? "border-accent bg-accent/5"
-                        : "border-border/50 bg-secondary/20 hover:border-border"
-                    }`}
-                  >
-                    {newFlowMode === "basic" && (
-                      <div className="absolute top-3 right-3">
-                        <CheckCircle2 className="h-5 w-5 text-accent" />
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 mb-2">
-                      <Zap className="h-5 w-5 text-accent" />
-                      <span className="font-semibold text-foreground">Basico</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Editor visual simples com blocos pre-configurados
-                    </p>
-                  </button>
-
-                  {/* n8n Mode (Coming Soon) */}
-                  <button
-                    type="button"
-                    disabled
-                    className="relative flex flex-col items-start p-4 rounded-xl border-2 border-border/30 bg-secondary/10 opacity-60 cursor-not-allowed text-left"
-                  >
-                    <Badge className="absolute top-2 right-2 text-[9px] bg-purple-500/20 text-purple-400 border-purple-500/30">
-                      Em breve
-                    </Badge>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Workflow className="h-5 w-5 text-purple-400" />
-                      <span className="font-semibold text-foreground">Fluxo n8n</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Editor visual com blocos arrastaveis estilo n8n
-                    </p>
-                  </button>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Escolha o modo que melhor se adapta a complexidade do seu fluxo
-                </p>
-              </div>
-
-              {/* About Bots */}
-              <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <Bot className="h-4 w-4 text-accent" />
-                  <span className="text-sm font-medium text-accent">Sobre os Bots</span>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Apos criar o fluxo, voce podera adicionar bots na aba &quot;Bots&quot;. Um mesmo fluxo pode ser executado por multiplos bots simultaneamente.
-                </p>
-              </div>
-            </div>
-
-            {/* Right side - Info */}
-            <div className="lg:col-span-2 space-y-4">
-              {/* What are Flows */}
-              <Card className="border-border/50 bg-secondary/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Workflow className="h-4 w-4 text-accent" />
-                    <span className="text-sm font-medium text-foreground">O que sao Fluxos?</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Fluxos sao sequencias de mensagens e acoes automaticas que seu bot executa quando um usuario interage com ele. Voce pode criar conversas complexas, aceitar pagamentos e muito mais.
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Understanding Modes */}
-              <Card className="border-border/50 bg-secondary/20">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Zap className="h-4 w-4 text-success" />
-                    <span className="text-sm font-medium text-foreground">Entenda os Modos</span>
-                  </div>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-foreground mb-1">Modo Basico</p>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Ideal para iniciantes. Interface simplificada com blocos pre-configurados.
-                      </p>
-                      <ul className="space-y-1">
-                        <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="h-1 w-1 rounded-full bg-accent" />
-                          Mensagens de texto simples
-                        </li>
-                        <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="h-1 w-1 rounded-full bg-accent" />
-                          Configure Planos para venda
-                        </li>
-                        <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="h-1 w-1 rounded-full bg-accent" />
-                          Configure Upsell, Downsell e etc
-                        </li>
-                      </ul>
-                    </div>
-
-                    <div className="pt-3 border-t border-border/30">
-                      <p className="text-sm font-medium text-foreground mb-1">Fluxo n8n</p>
-                      <p className="text-xs text-muted-foreground mb-2">
-                        Editor visual estilo n8n. Arraste blocos e conecte para criar fluxos.
-                      </p>
-                      <ul className="space-y-1">
-                        <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="h-1 w-1 rounded-full bg-success" />
-                          Tudo do Modo Basico +
-                        </li>
-                        <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="h-1 w-1 rounded-full bg-warning" />
-                          Condicoes logicas (IF/ELSE)
-                        </li>
-                        <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="h-1 w-1 rounded-full bg-purple-400" />
-                          Variaveis e contexto
-                        </li>
-                        <li className="flex items-center gap-2 text-xs text-muted-foreground">
-                          <span className="h-1 w-1 rounded-full bg-destructive" />
-                          Delays e agendamentos
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          <DialogFooter className="mt-4 pt-4 border-t border-border/30">
-            <p className="flex-1 text-xs text-muted-foreground">
-              Preencha o nome do fluxo para continuar
-            </p>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleCreateFlow} 
-              disabled={!newFlowName.trim() || isCreating || newFlowMode === "n8n"}
-            >
-              {isCreating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Workflow className="h-4 w-4 mr-2" />
-              )}
-              Criar Fluxo
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Import Flow Dialog (placeholder) */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
