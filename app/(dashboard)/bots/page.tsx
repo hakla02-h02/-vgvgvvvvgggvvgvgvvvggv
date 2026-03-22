@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import {
   Plus, Search, Bot as BotIcon, MoreVertical, Trash2, Settings,
-  Loader2, CheckCircle2, LayoutGrid, List, ChevronRight, Signal, X, AtSign, Save
+  Loader2, CheckCircle2, LayoutGrid, List, ChevronRight, Signal, X, AtSign, Save, Camera
 } from "lucide-react"
+import { useRef } from "react"
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
@@ -58,6 +59,9 @@ export default function BotsPage() {
   const [cfgShortDescription, setCfgShortDescription] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [isLoadingConfig, setIsLoadingConfig] = useState(false)
+  const [cfgPhoto, setCfgPhoto] = useState<File | null>(null)
+  const [cfgPhotoPreview, setCfgPhotoPreview] = useState<string | null>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   const filteredBots = bots.filter(
     (bot) =>
@@ -190,6 +194,21 @@ export default function BotsPage() {
     setCfgDescription("")
     setCfgShortDescription("")
     setIsLoadingConfig(false)
+    setCfgPhoto(null)
+    setCfgPhotoPreview(null)
+  }
+
+  // Handler para seleção de foto
+  function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (file) {
+      setCfgPhoto(file)
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setCfgPhotoPreview(reader.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   // Salvar configurações
@@ -198,33 +217,47 @@ export default function BotsPage() {
     setIsSaving(true)
     
     try {
-      // Atualizar via API do Telegram
-      await fetch("/api/telegram/update", {
+      // Usar FormData para suportar upload de foto
+      const formData = new FormData()
+      formData.append("token", configBot.token)
+      formData.append("name", cfgName.trim())
+      formData.append("description", cfgDescription.trim())
+      formData.append("shortDescription", cfgShortDescription.trim())
+      
+      if (cfgPhoto) {
+        formData.append("photo", cfgPhoto)
+      }
+      
+      const response = await fetch("/api/telegram/update", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          token: configBot.token,
-          name: cfgName.trim(),
-          description: cfgDescription.trim(),
-          shortDescription: cfgShortDescription.trim(),
-        }),
+        body: formData,
       })
+      
+      const result = await response.json()
       
       // Atualizar no banco local
       await updateBot(configBot.id, {
         name: cfgName.trim() || configBot.name,
       })
       
+      // Atualizar estado local com nova foto se foi enviada
+      const newPhotoUrl = cfgPhotoPreview || (configBot as ExtendedBot).photo_url
       setConfigBot({ 
         ...configBot, 
         name: cfgName.trim() || configBot.name,
         description: cfgDescription.trim(),
         short_description: cfgShortDescription.trim(),
+        photo_url: cfgPhoto ? newPhotoUrl : (configBot as ExtendedBot).photo_url,
       })
+      
+      setCfgPhoto(null)
+      setCfgPhotoPreview(null)
       
       toast({
         title: "Sucesso",
-        description: "Alterações salvas com sucesso!",
+        description: result.results?.photo === false 
+          ? "Alterações salvas! (Foto pode levar alguns segundos para atualizar)"
+          : "Alterações salvas com sucesso!",
       })
     } catch {
       toast({
@@ -429,61 +462,63 @@ export default function BotsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Config Bot Dialog - MINIMALISTA */}
+      {/* Config Bot Dialog - COMPACTO */}
       <Dialog open={!!configBot} onOpenChange={(open) => !open && closeConfig()}>
-        <DialogContent className="sm:max-w-md bg-card border-border p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-sm bg-card border-border p-0 gap-0 overflow-hidden">
           {configBot && (
             <>
               {/* Loading state */}
               {isLoadingConfig ? (
-                <div className="p-12 flex flex-col items-center justify-center">
-                  <Loader2 className="h-10 w-10 text-accent animate-spin mb-4" />
-                  <p className="text-muted-foreground text-sm">Carregando dados do bot...</p>
+                <div className="p-8 flex flex-col items-center justify-center">
+                  <Loader2 className="h-8 w-8 text-accent animate-spin mb-3" />
+                  <p className="text-muted-foreground text-sm">Carregando...</p>
                 </div>
               ) : (
                 <>
-                  {/* Header com foto e status */}
-                  <div className="p-6 pb-5 border-b border-border">
-                    <div className="flex items-center gap-4">
-                      <div className="relative group">
-                        {(configBot as ExtendedBot).photo_url ? (
+                  {/* Header compacto com foto clicável */}
+                  <div className="p-4 pb-3 border-b border-border">
+                    <div className="flex items-center gap-3">
+                      {/* Foto clicável para upload */}
+                      <input
+                        type="file"
+                        ref={photoInputRef}
+                        onChange={handlePhotoSelect}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <div 
+                        className="relative group cursor-pointer"
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        {cfgPhotoPreview || (configBot as ExtendedBot).photo_url ? (
                           <img
-                            src={(configBot as ExtendedBot).photo_url!}
+                            src={cfgPhotoPreview || (configBot as ExtendedBot).photo_url!}
                             alt={configBot.name}
-                            className="w-16 h-16 rounded-2xl object-cover"
+                            className="w-12 h-12 rounded-xl object-cover"
                           />
                         ) : (
-                          <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
-                            <BotIcon className="h-8 w-8 text-accent" />
+                          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+                            <BotIcon className="h-6 w-6 text-accent" />
                           </div>
                         )}
-                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
                           configBot.status === "active" ? "bg-green-500" : "bg-muted-foreground"
                         }`} />
-                        {/* Tooltip para trocar foto */}
-                        <div className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer"
-                          onClick={() => {
-                            toast({
-                              title: "Trocar foto",
-                              description: "Para trocar a foto do bot, use o @BotFather no Telegram e envie /setuserpic",
-                            })
-                          }}
-                        >
-                          <span className="text-white text-xs font-medium text-center px-1">Trocar</span>
+                        {/* Overlay para trocar foto */}
+                        <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Camera className="h-4 w-4 text-white" />
                         </div>
                       </div>
-                      <div className="flex-1">
-                        <h2 className="text-xl font-bold text-foreground">Configurações</h2>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                            configBot.status === "active" 
-                              ? "bg-green-500/10 text-green-600" 
-                              : "bg-muted text-muted-foreground"
-                          }`}>
-                            <Signal className="h-3 w-3" />
-                            {configBot.status === "active" ? "Online" : "Offline"}
-                          </span>
-                        </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-base font-bold text-foreground truncate">Configurações</h2>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                          configBot.status === "active" 
+                            ? "bg-green-500/10 text-green-600" 
+                            : "bg-muted text-muted-foreground"
+                        }`}>
+                          <Signal className="h-2.5 w-2.5" />
+                          {configBot.status === "active" ? "Online" : "Offline"}
+                        </span>
                       </div>
                       <Switch
                         checked={configBot.status === "active"}
@@ -500,92 +535,91 @@ export default function BotsPage() {
                     </div>
                   </div>
 
-                  {/* Campos editáveis */}
-                  <div className="p-6 space-y-5">
+                  {/* Campos editáveis - mais compactos */}
+                  <div className="p-4 space-y-3">
                     {/* Nome */}
                     <div>
-                      <Label className="text-sm font-medium text-foreground mb-2 block">
-                        Nome exibido
+                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Nome
                       </Label>
                       <Input 
                         value={cfgName} 
                         onChange={(e) => setCfgName(e.target.value)} 
-                        className="h-11 bg-muted border-0 rounded-xl" 
+                        className="h-9 bg-muted border-0 rounded-lg text-sm" 
                         placeholder="Nome do bot"
                       />
                     </div>
 
                     {/* Username (somente leitura) */}
                     <div>
-                      <Label className="text-sm font-medium text-foreground mb-2 flex items-center gap-2">
-                        <AtSign className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                        <AtSign className="h-3 w-3" />
                         Username
-                        <span className="text-xs text-muted-foreground font-normal">(somente leitura)</span>
                       </Label>
                       <Input 
                         value={(configBot as ExtendedBot).username || ""} 
                         disabled
-                        className="h-11 bg-muted/50 border-0 rounded-xl text-muted-foreground" 
+                        className="h-9 bg-muted/50 border-0 rounded-lg text-sm text-muted-foreground" 
                       />
                     </div>
 
                     {/* Descrição curta */}
                     <div>
-                      <Label className="text-sm font-medium text-foreground mb-2 block">
-                        Bio (descrição curta)
+                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Bio
                       </Label>
                       <Input 
                         value={cfgShortDescription} 
                         onChange={(e) => setCfgShortDescription(e.target.value)} 
-                        className="h-11 bg-muted border-0 rounded-xl" 
-                        placeholder="Uma breve descrição do seu bot"
+                        className="h-9 bg-muted border-0 rounded-lg text-sm" 
+                        placeholder="Descrição curta"
                         maxLength={120}
                       />
-                      <p className="text-xs text-muted-foreground mt-1.5 text-right">
+                      <p className="text-[10px] text-muted-foreground mt-1 text-right">
                         {cfgShortDescription.length}/120
                       </p>
                     </div>
 
                     {/* Descrição longa */}
                     <div>
-                      <Label className="text-sm font-medium text-foreground mb-2 block">
-                        Descrição completa
+                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                        Descrição
                       </Label>
                       <Textarea 
                         value={cfgDescription} 
                         onChange={(e) => setCfgDescription(e.target.value)} 
-                        className="min-h-[100px] bg-muted border-0 rounded-xl resize-none" 
-                        placeholder="Descreva o que seu bot faz..."
+                        className="min-h-[60px] bg-muted border-0 rounded-lg resize-none text-sm" 
+                        placeholder="O que seu bot faz..."
                         maxLength={512}
                       />
-                      <p className="text-xs text-muted-foreground mt-1.5 text-right">
+                      <p className="text-[10px] text-muted-foreground mt-1 text-right">
                         {cfgDescription.length}/512
                       </p>
                     </div>
                   </div>
 
-                  {/* Footer */}
-                  <div className="px-6 py-4 bg-muted/30 border-t border-border flex items-center justify-between">
+                  {/* Footer compacto */}
+                  <div className="px-4 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
                     <button
                       onClick={() => handleDelete(configBot.id)}
-                      className="text-sm text-destructive hover:text-destructive/80 transition-colors flex items-center gap-1.5"
+                      className="text-xs text-destructive hover:text-destructive/80 transition-colors flex items-center gap-1"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                       Excluir
                     </button>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={closeConfig}
-                        className="px-4 py-2.5 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        className="px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={handleSaveConfig}
                         disabled={isSaving}
-                        className="flex items-center gap-2 bg-accent text-accent-foreground px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+                        className="flex items-center gap-1.5 bg-accent text-accent-foreground px-4 py-2 rounded-lg font-semibold text-xs hover:bg-accent/90 transition-colors disabled:opacity-50"
                       >
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                         {isSaving ? "Salvando..." : "Salvar"}
                       </button>
                     </div>

@@ -8,7 +8,13 @@ interface TelegramResponse<T> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, name, description, shortDescription } = await request.json()
+    const formData = await request.formData()
+    const token = formData.get("token") as string
+    const name = formData.get("name") as string | null
+    const description = formData.get("description") as string | null
+    const shortDescription = formData.get("shortDescription") as string | null
+    const photo = formData.get("photo") as File | null
+    const deletePhoto = formData.get("deletePhoto") === "true"
 
     if (!token || typeof token !== "string") {
       return NextResponse.json(
@@ -18,10 +24,10 @@ export async function POST(request: NextRequest) {
     }
 
     const baseUrl = `https://api.telegram.org/bot${token}`
-    const results: { name?: boolean; description?: boolean; shortDescription?: boolean } = {}
+    const results: { name?: boolean; description?: boolean; shortDescription?: boolean; photo?: boolean } = {}
 
     // Update bot name
-    if (name !== undefined) {
+    if (name !== undefined && name !== null) {
       try {
         const response = await fetch(`${baseUrl}/setMyName`, {
           method: "POST",
@@ -36,7 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update description
-    if (description !== undefined) {
+    if (description !== undefined && description !== null) {
       try {
         const response = await fetch(`${baseUrl}/setMyDescription`, {
           method: "POST",
@@ -51,7 +57,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update short description
-    if (shortDescription !== undefined) {
+    if (shortDescription !== undefined && shortDescription !== null) {
       try {
         const response = await fetch(`${baseUrl}/setMyShortDescription`, {
           method: "POST",
@@ -62,6 +68,36 @@ export async function POST(request: NextRequest) {
         results.shortDescription = data.ok
       } catch {
         results.shortDescription = false
+      }
+    }
+
+    // Delete profile photo
+    if (deletePhoto) {
+      try {
+        const response = await fetch(`${baseUrl}/deleteMyProfilePhoto`, {
+          method: "POST",
+        })
+        const data: TelegramResponse<boolean> = await response.json()
+        results.photo = data.ok
+      } catch {
+        results.photo = false
+      }
+    }
+
+    // Upload new profile photo
+    if (photo && photo instanceof File) {
+      try {
+        const photoFormData = new FormData()
+        photoFormData.append("photo", photo)
+        
+        const response = await fetch(`${baseUrl}/setMyProfilePhoto`, {
+          method: "POST",
+          body: photoFormData,
+        })
+        const data: TelegramResponse<boolean> = await response.json()
+        results.photo = data.ok
+      } catch {
+        results.photo = false
       }
     }
 
