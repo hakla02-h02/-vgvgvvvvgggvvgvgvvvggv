@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
 import { supabase } from "@/lib/supabase"
+import { useToast } from "@/hooks/use-toast"
 import {
   ArrowLeft, Zap, Workflow, Bot, CheckCircle2, 
   Loader2, Sparkles, MessageSquare, CreditCard, 
@@ -17,6 +18,7 @@ import {
 export default function NovoFluxoPage() {
   const router = useRouter()
   const { session } = useAuth()
+  const { toast } = useToast()
 
   const [flowName, setFlowName] = useState("")
   const [flowMode, setFlowMode] = useState<"basic" | "n8n">("basic")
@@ -60,6 +62,11 @@ export default function NovoFluxoPage() {
 
     if (error) {
       console.error("[v0] Error creating flow:", error)
+      toast({
+        title: "Erro ao criar fluxo",
+        description: error.message || "Tente novamente",
+        variant: "destructive",
+      })
       setIsCreating(false)
       return
     }
