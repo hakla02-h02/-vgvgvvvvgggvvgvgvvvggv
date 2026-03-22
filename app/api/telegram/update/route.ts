@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { FormData as UndiciFormData, fetch as undiciFetch } from "undici"
 
 interface TelegramResponse<T> {
   ok: boolean
@@ -101,25 +102,25 @@ export async function POST(request: NextRequest) {
         // Ler o arquivo como ArrayBuffer
         const arrayBuffer = await photo.arrayBuffer()
         const buffer = Buffer.from(arrayBuffer)
+        const fileName = photo.name || "photo.jpg"
+        const mimeType = photo.type || "image/jpeg"
+        
         console.log("[v0] UPDATE API - Buffer size:", buffer.length)
+        console.log("[v0] UPDATE API - File name:", fileName)
+        console.log("[v0] UPDATE API - MIME type:", mimeType)
         
-        // Criar um novo File object com o buffer
-        const photoFile = new File([buffer], photo.name || "photo.jpg", { 
-          type: photo.type || "image/jpeg" 
-        })
+        // Criar Blob com o buffer
+        const blob = new Blob([buffer], { type: mimeType })
         
-        // Criar FormData e adicionar o arquivo
-        const photoFormData = new FormData()
-        photoFormData.set("photo", photoFile)
+        // Usar undici FormData que funciona melhor com file uploads
+        const photoFormData = new UndiciFormData()
+        photoFormData.append("photo", blob, fileName)
         
-        console.log("[v0] UPDATE API - FormData entries:")
-        for (const [key, value] of photoFormData.entries()) {
-          console.log(`[v0] UPDATE API - ${key}:`, value)
-        }
+        console.log("[v0] UPDATE API - Blob size:", blob.size)
+        console.log("[v0] UPDATE API - Sending to Telegram with undici:", `${baseUrl}/setMyProfilePhoto`)
         
-        console.log("[v0] UPDATE API - Sending to Telegram:", `${baseUrl}/setMyProfilePhoto`)
-        
-        const response = await fetch(`${baseUrl}/setMyProfilePhoto`, {
+        // Usar undici fetch que lida melhor com FormData e file uploads
+        const response = await undiciFetch(`${baseUrl}/setMyProfilePhoto`, {
           method: "POST",
           body: photoFormData,
         })
