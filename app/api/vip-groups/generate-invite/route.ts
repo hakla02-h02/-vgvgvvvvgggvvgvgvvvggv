@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { getSupabase } from "@/lib/supabase"
 
 // POST /api/vip-groups/generate-invite
 // Generate a one-time invite link for a VIP group
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
+  const supabase = getSupabase()
   
   try {
     const body = await req.json()

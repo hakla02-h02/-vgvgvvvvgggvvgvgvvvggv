@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@/lib/supabase/server"
+import { getSupabase } from "@/lib/supabase"
 
 // GET /api/vip-groups?flow_id=xxx
 // Get VIP group for a flow
 export async function GET(req: NextRequest) {
-  const supabase = await createClient()
+  const supabase = getSupabase()
   const flowId = req.nextUrl.searchParams.get("flow_id")
 
   if (!flowId) {
@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
 // POST /api/vip-groups
 // Set VIP group for a flow
 export async function POST(req: NextRequest) {
-  const supabase = await createClient()
+  const supabase = getSupabase()
   
   try {
     const body = await req.json()
@@ -78,7 +78,7 @@ export async function POST(req: NextRequest) {
 // DELETE /api/vip-groups?flow_id=xxx
 // Remove VIP group from flow
 export async function DELETE(req: NextRequest) {
-  const supabase = await createClient()
+  const supabase = getSupabase()
   const flowId = req.nextUrl.searchParams.get("flow_id")
 
   if (!flowId) {
