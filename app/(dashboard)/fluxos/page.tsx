@@ -68,28 +68,19 @@ export default function FluxosPage() {
 
   // Create flow handler
   const handleCreateFlow = async () => {
-    console.log("[v0] handleCreateFlow chamado")
-    console.log("[v0] session:", session)
-    console.log("[v0] newFlowName:", newFlowName)
-    console.log("[v0] newFlowMode:", newFlowMode)
-    
     if (!session?.userId) {
-      console.log("[v0] SEM USER ID")
       toast({ title: "Erro", description: "Voce precisa estar logado", variant: "destructive" })
       return
     }
     if (!newFlowName.trim()) {
-      console.log("[v0] SEM NOME")
       toast({ title: "Erro", description: "Digite um nome para o fluxo", variant: "destructive" })
       return
     }
     if (newFlowMode === "n8n") {
-      console.log("[v0] MODO N8N")
       toast({ title: "Em breve", description: "Modo n8n ainda nao disponivel", variant: "destructive" })
       return
     }
 
-    console.log("[v0] Criando fluxo...")
     setIsCreating(true)
 
     const { data, error } = await supabase
@@ -97,23 +88,19 @@ export default function FluxosPage() {
       .insert({
         user_id: session.userId,
         name: newFlowName.trim(),
-        mode: newFlowMode,
-        status: "active",
+        flow_type: newFlowMode === "n8n" ? "n8n" : "complete",
+        status: "ativo",
         config: {},
       })
       .select()
       .single()
 
-    console.log("[v0] Resposta Supabase - data:", data, "error:", error)
-
     if (error) {
-      console.log("[v0] ERRO:", error.message)
       toast({ title: "Erro ao criar", description: error.message, variant: "destructive" })
       setIsCreating(false)
       return
     }
 
-    console.log("[v0] SUCESSO! Redirecionando para /fluxos/" + data.id)
     toast({ title: "Fluxo criado!", description: "Redirecionando para o editor..." })
     setShowCreateModal(false)
     setNewFlowName("")
