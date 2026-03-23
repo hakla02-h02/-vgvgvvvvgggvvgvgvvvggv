@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/lib/auth-context"
+import { useBots } from "@/lib/bot-context"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -130,6 +131,7 @@ export default function FlowEditorPage() {
   const params = useParams()
   const router = useRouter()
   const { session } = useAuth()
+  const { bots: userBots, addBot, refreshBots } = useBots()
   const { toast } = useToast()
   const flowId = params.id as string
 
@@ -153,6 +155,14 @@ export default function FlowEditorPage() {
   const [selectedBotToAdd, setSelectedBotToAdd] = useState<string>("")
   const [showAddBotDialog, setShowAddBotDialog] = useState(false)
   const [isLoadingBots, setIsLoadingBots] = useState(false)
+  
+  // Create bot inline
+  const [showCreateBotForm, setShowCreateBotForm] = useState(false)
+  const [newBotToken, setNewBotToken] = useState("")
+  const [isCreatingBot, setIsCreatingBot] = useState(false)
+  
+  // Bots already linked to other flows
+  const [botsInOtherFlows, setBotsInOtherFlows] = useState<string[]>([])
 
   // Welcome message
   const [welcomeMessage, setWelcomeMessage] = useState("")
@@ -261,23 +271,38 @@ export default function FlowEditorPage() {
     }
   }, [flowId])
 
-  // Fetch available bots (not linked to this flow)
+  // Fetch available bots (not linked to any flow - each bot can only be in 1 flow)
   const fetchAvailableBots = useCallback(async () => {
     if (!session?.userId) return
 
     setIsLoadingBots(true)
+    
+    // Get all bots linked to ANY flow (not just this one)
+    const { data: allFlowBots } = await supabase
+      .from("flow_bots")
+      .select("bot_id, flow_id")
+    
+    const botsLinkedToOtherFlows = (allFlowBots || [])
+      .filter(fb => fb.flow_id !== flowId)
+      .map(fb => fb.bot_id)
+    
+    setBotsInOtherFlows(botsLinkedToOtherFlows)
+    
     const { data } = await supabase
       .from("bots")
       .select("id, username, first_name, photo_url")
       .eq("user_id", session.userId)
 
     if (data) {
-      // Filter out bots already linked
+      // Filter out bots already linked to THIS flow
       const linkedBotIds = flowBots.map(fb => fb.bot_id)
-      setAvailableBots(data.filter(b => !linkedBotIds.includes(b.id)))
+      // Also filter out bots linked to OTHER flows (each bot can only be in 1 flow)
+      setAvailableBots(data.filter(b => 
+        !linkedBotIds.includes(b.id) && !botsLinkedToOtherFlows.includes(b.id)
+      ))
     }
     setIsLoadingBots(false)
-  }, [session?.userId, flowBots])
+  }, [session?.userId, flowBots, flowId])
 
   useEffect(() => {
     fetchFlow()
@@ -346,7 +371,59 @@ export default function FlowEditorPage() {
     setIsSaving(false)
   }
 
-  // Add bot to flow
+  // Create bot inline and add to flow
+  const handleCreateBotInline = async () => {
+    if (!newBotToken.trim()) {
+      toast({ title: "Erro", description: "Digite o token do bot", variant: "destructive" })
+      return
+    }
+
+    setIsCreatingBot(true)
+
+    try {
+      // Validate token with Telegram API
+      const response = await fetch(`https://api.telegram.org/bot${newBotToken.trim()}/getMe`)
+      const result = await response.json()
+
+      if (!result.ok) {
+        toast({ title: "Token invalido", description: "Verifique o token e tente novamente", variant: "destructive" })
+        setIsCreatingBot(false)
+        return
+      }
+
+      const botInfo = result.result
+      
+      // Create bot using context
+      const newBot = await addBot({
+        name: botInfo.first_name || "Bot",
+        token: newBotToken.trim(),
+      })
+      
+      // Link to this flow
+      const { error } = await supabase
+        .from("flow_bots")
+        .insert({
+          flow_id: flowId,
+          bot_id: newBot.id,
+        })
+
+      if (error) {
+        toast({ title: "Erro", description: "Bot criado mas nao foi possivel vincular ao fluxo", variant: "destructive" })
+      } else {
+        toast({ title: "Sucesso!", description: "Bot criado e vinculado ao fluxo" })
+        setNewBotToken("")
+        setShowCreateBotForm(false)
+        fetchFlowBots()
+        refreshBots()
+      }
+    } catch {
+      toast({ title: "Erro", description: "Erro ao criar bot", variant: "destructive" })
+    }
+
+    setIsCreatingBot(false)
+  }
+
+  // Add existing bot to flow
   const handleAddBot = async () => {
     if (!selectedBotToAdd || !flowId) return
 
@@ -368,17 +445,17 @@ export default function FlowEditorPage() {
       })
 
     if (error) {
-      console.error("[v0] Error adding bot:", error)
       toast({
         title: "Erro",
         description: "Nao foi possivel adicionar o bot",
         variant: "destructive",
       })
     } else {
-      toast({ title: "Bot adicionado!" })
+      toast({ title: "Bot vinculado!" })
       setShowAddBotDialog(false)
       setSelectedBotToAdd("")
       fetchFlowBots()
+      fetchAvailableBots()
     }
   }
 
@@ -624,16 +701,71 @@ export default function FlowEditorPage() {
                       <Bot className="h-10 w-10 text-muted-foreground/30 mb-3" />
                       <p className="font-medium text-foreground mb-1">Nenhum bot vinculado</p>
                       <p className="text-sm text-muted-foreground mb-4">Adicione bots para executar este fluxo</p>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          fetchAvailableBots()
-                          setShowAddBotDialog(true)
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Criar Bot
-                      </Button>
+                      
+                      {/* Se usuario nao tem bots, mostrar criar bot */}
+                      {userBots.length === 0 ? (
+                        showCreateBotForm ? (
+                          <div className="w-full max-w-sm space-y-3">
+                            <div className="space-y-2">
+                              <Label htmlFor="bot-token">Token do Bot</Label>
+                              <Input
+                                id="bot-token"
+                                value={newBotToken}
+                                onChange={(e) => setNewBotToken(e.target.value)}
+                                placeholder="Cole o token do BotFather aqui..."
+                                className="bg-secondary/30"
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Obtenha o token no @BotFather do Telegram
+                              </p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => {
+                                  setShowCreateBotForm(false)
+                                  setNewBotToken("")
+                                }}
+                              >
+                                Cancelar
+                              </Button>
+                              <Button
+                                className="flex-1"
+                                onClick={handleCreateBotInline}
+                                disabled={isCreatingBot || !newBotToken.trim()}
+                              >
+                                {isCreatingBot ? (
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <Plus className="h-4 w-4 mr-2" />
+                                )}
+                                Criar Bot
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowCreateBotForm(true)}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Criar Bot
+                          </Button>
+                        )
+                      ) : (
+                        /* Se usuario tem bots, mostrar selecionar */
+                        <Button
+                          variant="outline"
+                          onClick={() => {
+                            fetchAvailableBots()
+                            setShowAddBotDialog(true)
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Selecionar Bot
+                        </Button>
+                      )}
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -643,9 +775,17 @@ export default function FlowEditorPage() {
                           className="flex items-center justify-between p-4 rounded-xl border border-border/50 bg-secondary/20"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
-                              <Bot className="h-5 w-5 text-accent" />
-                            </div>
+                            {fb.bot?.photo_url ? (
+                              <img 
+                                src={fb.bot.photo_url} 
+                                alt={fb.bot.first_name}
+                                className="h-10 w-10 rounded-full object-cover"
+                              />
+                            ) : (
+                              <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center">
+                                <Bot className="h-5 w-5 text-accent" />
+                              </div>
+                            )}
                             <div>
                               <p className="font-medium text-foreground">
                                 {fb.bot?.first_name || "Bot"}
@@ -667,75 +807,82 @@ export default function FlowEditorPage() {
                       ))}
 
                       {flowBots.length < 5 && (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => {
-                            fetchAvailableBots()
-                            setShowAddBotDialog(true)
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Adicionar Bot
-                        </Button>
+                        <div className="flex gap-2">
+                          {/* Botao selecionar bot existente */}
+                          {userBots.length > flowBots.length && (
+                            <Button
+                              variant="outline"
+                              className="flex-1"
+                              onClick={() => {
+                                fetchAvailableBots()
+                                setShowAddBotDialog(true)
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Selecionar Bot
+                            </Button>
+                          )}
+                          {/* Botao criar novo bot */}
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={() => setShowCreateBotForm(true)}
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Criar Bot
+                          </Button>
+                        </div>
+                      )}
+                      
+                      {/* Form criar bot inline quando ja tem bots vinculados */}
+                      {showCreateBotForm && (
+                        <div className="p-4 border border-border/50 rounded-xl bg-secondary/10 space-y-3">
+                          <div className="space-y-2">
+                            <Label htmlFor="bot-token-inline">Token do Bot</Label>
+                            <Input
+                              id="bot-token-inline"
+                              value={newBotToken}
+                              onChange={(e) => setNewBotToken(e.target.value)}
+                              placeholder="Cole o token do BotFather aqui..."
+                              className="bg-secondary/30"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Obtenha o token no @BotFather do Telegram
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setShowCreateBotForm(false)
+                                setNewBotToken("")
+                              }}
+                            >
+                              Cancelar
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={handleCreateBotInline}
+                              disabled={isCreatingBot || !newBotToken.trim()}
+                            >
+                              {isCreatingBot ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Plus className="h-4 w-4 mr-2" />
+                              )}
+                              Criar e Vincular
+                            </Button>
+                          </div>
+                        </div>
                       )}
                     </div>
                   )}
-                </CardContent>
-              </Card>
-
-              {/* Add Bot Section */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">Adicionar Bot</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-3">
-                    <Select
-                      value={selectedBotToAdd}
-                      onValueChange={setSelectedBotToAdd}
-                    >
-                      <SelectTrigger className="flex-1">
-                        <SelectValue placeholder="Selecione um bot para adicionar..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableBots.map((bot) => (
-                          <SelectItem key={bot.id} value={bot.id}>
-                            @{bot.username} - {bot.first_name}
-                          </SelectItem>
-                        ))}
-                        {availableBots.length === 0 && (
-                          <SelectItem value="none" disabled>
-                            Nenhum bot disponivel
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={fetchAvailableBots}
-                      disabled={isLoadingBots}
-                    >
-                      <RefreshCw className={`h-4 w-4 ${isLoadingBots ? "animate-spin" : ""}`} />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Adicione multiplos bots para executar este fluxo simultaneamente (max. 10)
-                  </p>
-                  <Button
-                    variant="link"
-                    className="px-0 text-accent"
-                    onClick={() => router.push("/bots")}
-                  >
-                    Criar novo bot
-                  </Button>
-
-                  {/* Tip */}
-                  <div className="mt-4 p-4 rounded-xl border border-border/50 bg-secondary/20">
-                    <p className="text-sm font-medium text-foreground mb-2">Dica</p>
+                  
+                  {/* Aviso: cada bot so pode estar em 1 fluxo */}
+                  <div className="mt-4 p-3 rounded-lg border border-border/50 bg-secondary/10">
                     <p className="text-xs text-muted-foreground">
-                      Com multiplos bots, voce pode distribuir o atendimento entre eles. Cada bot recebera leads independentemente e executara o mesmo fluxo.
+                      <strong>Nota:</strong> Cada bot so pode estar vinculado a um unico fluxo por vez.
                     </p>
                   </div>
                 </CardContent>
@@ -1208,35 +1355,67 @@ export default function FlowEditorPage() {
       <Dialog open={showAddBotDialog} onOpenChange={setShowAddBotDialog}>
         <DialogContent className="sm:max-w-md bg-card border-border">
           <DialogHeader>
-            <DialogTitle>Adicionar Bot ao Fluxo</DialogTitle>
+            <DialogTitle>Selecionar Bot</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <Select value={selectedBotToAdd} onValueChange={setSelectedBotToAdd}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um bot..." />
-              </SelectTrigger>
-              <SelectContent>
-                {availableBots.map((bot) => (
-                  <SelectItem key={bot.id} value={bot.id}>
-                    @{bot.username} - {bot.first_name}
-                  </SelectItem>
-                ))}
-                {availableBots.length === 0 && (
-                  <SelectItem value="none" disabled>
-                    Nenhum bot disponivel
-                  </SelectItem>
-                )}
-              </SelectContent>
-            </Select>
+            {isLoadingBots ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            ) : availableBots.length === 0 ? (
+              <div className="text-center py-6">
+                <Bot className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                <p className="font-medium text-foreground mb-1">Nenhum bot disponivel</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {userBots.length === 0 
+                    ? "Voce ainda nao tem bots cadastrados"
+                    : "Todos os seus bots ja estao vinculados a outros fluxos"}
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddBotDialog(false)
+                    setShowCreateBotForm(true)
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Criar Novo Bot
+                </Button>
+              </div>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Selecione um bot para vincular a este fluxo. Cada bot so pode estar em um fluxo por vez.
+                </p>
+                <Select value={selectedBotToAdd} onValueChange={setSelectedBotToAdd}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um bot..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableBots.map((bot) => (
+                      <SelectItem key={bot.id} value={bot.id}>
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-4 w-4" />
+                          <span>@{bot.username}</span>
+                          <span className="text-muted-foreground">- {bot.first_name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddBotDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleAddBot} disabled={!selectedBotToAdd}>
-              Adicionar
-            </Button>
-          </DialogFooter>
+          {availableBots.length > 0 && (
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddBotDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleAddBot} disabled={!selectedBotToAdd}>
+                Vincular Bot
+              </Button>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>
