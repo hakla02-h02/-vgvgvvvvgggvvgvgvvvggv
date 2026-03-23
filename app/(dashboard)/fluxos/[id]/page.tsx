@@ -268,7 +268,7 @@ export default function FlowEditorPage() {
     }
   }, [flowId])
 
-  // Fetch available bots (not linked to any flow - each bot can only be in 1 flow)
+  // Fetch available bots (bots that are not already linked to THIS flow)
   const fetchAvailableBots = useCallback(async () => {
     if (!session?.userId) return
 
@@ -288,38 +288,19 @@ export default function FlowEditorPage() {
       return
     }
     
-    // Get bots linked to THIS flow
+    // Get bots linked to THIS flow only
     const linkedBotIds = flowBots.map(fb => fb.bot_id)
     console.log("[v0] Bots linked to THIS flow:", linkedBotIds)
     
-    // Get all flow_bots entries for user's bots to check which are in OTHER flows
-    const userBotIds = userBotsData.map(b => b.id)
-    const { data: allFlowBots, error: flowBotsError } = await supabase
-      .from("flow_bots")
-      .select("bot_id, flow_id")
-      .in("bot_id", userBotIds)
-    
-    console.log("[v0] All flow_bots for user's bots:", allFlowBots, "Error:", flowBotsError)
-    
-    // Filter to get only bots linked to OTHER flows (not this one)
-    const botsLinkedToOtherFlows = (allFlowBots || [])
-      .filter(fb => fb.flow_id !== flowId)
-      .map(fb => fb.bot_id)
-    
-    console.log("[v0] Bots in OTHER flows:", botsLinkedToOtherFlows)
-    
-    setBotsInOtherFlows(botsLinkedToOtherFlows)
-    
-    // Filter: exclude bots in THIS flow AND bots in OTHER flows
-    const available = userBotsData.filter(b => 
-      !linkedBotIds.includes(b.id) && !botsLinkedToOtherFlows.includes(b.id)
-    )
+    // Filter: exclude only bots already in THIS flow (allow bots to be in multiple flows)
+    const available = userBotsData.filter(b => !linkedBotIds.includes(b.id))
     
     console.log("[v0] Available bots:", available)
     
     setAvailableBots(available)
+    setBotsInOtherFlows([]) // Clear this since we're not restricting anymore
     setIsLoadingBots(false)
-  }, [session?.userId, flowBots, flowId])
+  }, [session?.userId, flowBots])
 
   useEffect(() => {
     fetchFlow()
@@ -1364,9 +1345,9 @@ export default function FlowEditorPage() {
                 <Bot className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
                 <p className="font-medium text-foreground mb-1">Nenhum bot disponivel</p>
                 <p className="text-sm text-muted-foreground mb-4">
-                  {userBots.length === 0 
-                    ? "Voce ainda nao tem bots cadastrados"
-                    : "Todos os seus bots ja estao vinculados a outros fluxos"}
+{userBots.length === 0
+  ? "Voce ainda nao tem bots cadastrados"
+  : "Todos os seus bots ja estao neste fluxo"}
                 </p>
                 <Button
                   variant="outline"
