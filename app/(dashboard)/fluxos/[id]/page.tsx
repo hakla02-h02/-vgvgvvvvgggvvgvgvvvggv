@@ -145,10 +145,7 @@ export default function FlowEditorPage() {
   // Edit name
   const [isEditingName, setIsEditingName] = useState(false)
   const [editName, setEditName] = useState("")
-
-  // Country/Region
-  const [region, setRegion] = useState<"BR" | "GLOBAL">("BR")
-
+  
   // Bots
   const [flowBots, setFlowBots] = useState<FlowBot[]>([])
   const [availableBots, setAvailableBots] = useState<AvailableBot[]>([])
@@ -590,26 +587,6 @@ export default function FlowEditorPage() {
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
               </button>
             )}
-
-            {/* Region Toggle */}
-            <div className="flex items-center gap-1 bg-secondary/50 rounded-lg p-1">
-              <button
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  region === "BR" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setRegion("BR")}
-              >
-                <span>🇧🇷</span> Brasil
-              </button>
-              <button
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                  region === "GLOBAL" ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:text-foreground"
-                }`}
-                onClick={() => setRegion("GLOBAL")}
-              >
-                <span>🇺🇸</span> Global
-              </button>
-            </div>
 
             <Button variant="ghost" size="icon" className="h-8 w-8">
               <HelpCircle className="h-4 w-4 text-muted-foreground" />
