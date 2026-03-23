@@ -21,7 +21,9 @@ import {
   ArrowLeft, Bot, MessageSquare, CreditCard, TrendingUp, TrendingDown,
   Package, Wallet, Crown, Save, Loader2, Plus, Trash2, RefreshCw,
   Users, DollarSign, HelpCircle, AlertTriangle, Lock, Pencil,
-  Globe, Link2, Settings2, Zap
+  Globe, Link2, Settings2, Zap, Image as ImageIcon, Bold, Italic,
+  Underline, Strikethrough, Code, Link as LinkIcon, Quote, Smile,
+  ExternalLink, MessageCircle
 } from "lucide-react"
 
 // Types
@@ -162,6 +164,15 @@ export default function FlowEditorPage() {
 
   // Welcome message
   const [welcomeMessage, setWelcomeMessage] = useState("")
+  const [welcomeMedias, setWelcomeMedias] = useState<string[]>([])
+  const [secondaryMessageEnabled, setSecondaryMessageEnabled] = useState(false)
+  const [secondaryMessage, setSecondaryMessage] = useState("")
+  const [ctaButtonEnabled, setCtaButtonEnabled] = useState(false)
+  const [ctaButtonText, setCtaButtonText] = useState("")
+  const [ctaButtonUrl, setCtaButtonUrl] = useState("")
+  const [redirectButtonEnabled, setRedirectButtonEnabled] = useState(false)
+  const [redirectButtonText, setRedirectButtonText] = useState("")
+  const [redirectButtonUrl, setRedirectButtonUrl] = useState("")
 
   // Plans
   const [plans, setPlans] = useState<FlowPlan[]>([])
@@ -932,29 +943,120 @@ export default function FlowEditorPage() {
           {/* Welcome Tab */}
           {activeTab === "welcome" && (
             <div className="space-y-6">
+              {/* Midias Card */}
               <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-base">
-                    <MessageSquare className="h-4 w-4 text-accent" />
-                    Mensagem de Boas-vindas
+                    <ImageIcon className="h-4 w-4 text-accent" />
+                    Midias
                   </CardTitle>
+                  <p className="text-sm text-muted-foreground">Adicione ate 3 midias</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-3">
+                    {welcomeMedias.map((media, index) => (
+                      <div key={index} className="relative w-24 h-24 rounded-lg border border-border/50 overflow-hidden group">
+                        <img src={media} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                        <button
+                          onClick={() => {
+                            setWelcomeMedias(welcomeMedias.filter((_, i) => i !== index))
+                            setHasChanges(true)
+                          }}
+                          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                        >
+                          <Trash2 className="h-5 w-5 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                    {welcomeMedias.length < 3 && (
+                      <label className="w-24 h-24 rounded-lg border-2 border-dashed border-border/50 flex flex-col items-center justify-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-colors">
+                        <Plus className="h-6 w-6 text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground">Adicionar</span>
+                        <span className="text-xs text-muted-foreground">({welcomeMedias.length}/3)</span>
+                        <input
+                          type="file"
+                          accept="image/*,video/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const url = URL.createObjectURL(file)
+                              setWelcomeMedias([...welcomeMedias, url])
+                              setHasChanges(true)
+                            }
+                          }}
+                        />
+                      </label>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Mensagem de Boas-vindas Card */}
+              <Card className="border-border/50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Label className="text-base font-semibold">Mensagem de Boas-vindas</Label>
+                    <span className="text-destructive">*</span>
+                  </div>
+                  <div className="flex items-center gap-1 mt-2">
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <Bold className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <Italic className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <Underline className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <Strikethrough className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <Code className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <LinkIcon className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <Quote className="h-4 w-4" />
+                    </Button>
+                    <div className="w-px h-4 bg-border mx-1" />
+                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground">
+                      <Smile className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Texto da mensagem</Label>
-                    <Textarea
-                      value={welcomeMessage}
-                      onChange={(e) => {
-                        setWelcomeMessage(e.target.value)
-                        setHasChanges(true)
-                      }}
-                      placeholder="Ola! Seja bem-vindo ao nosso bot..."
-                      rows={6}
-                      className="bg-secondary/30 border-border/50"
-                    />
+                  <Textarea
+                    value={welcomeMessage}
+                    onChange={(e) => {
+                      setWelcomeMessage(e.target.value)
+                      setHasChanges(true)
+                    }}
+                    placeholder="Ola {nome}! Bem-vindo ao @{bot.username}"
+                    rows={6}
+                    className="bg-secondary/30 border-border/50 font-mono text-sm"
+                  />
+                  <div className="flex items-center justify-between">
                     <p className="text-xs text-muted-foreground">
-                      Esta mensagem sera enviada quando o usuario iniciar o bot
+                      {welcomeMessage.length}/4000 caracteres
                     </p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-muted-foreground">Variaveis:</span>
+                      <Badge variant="outline" className="text-xs cursor-pointer hover:bg-accent/20" onClick={() => {
+                        setWelcomeMessage(welcomeMessage + "{nome}")
+                        setHasChanges(true)
+                      }}>
+                        {"{nome}"}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs cursor-pointer hover:bg-accent/20" onClick={() => {
+                        setWelcomeMessage(welcomeMessage + "{username}")
+                        setHasChanges(true)
+                      }}>
+                        {"{username}"}
+                      </Badge>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1392,7 +1494,137 @@ export default function FlowEditorPage() {
             </>
           )}
 
-          {/* Danger Zone */}
+          {/* Welcome Tab Sidebar Options */}
+          {activeTab === "welcome" && (
+            <div className="space-y-4">
+              {/* Mensagem Secundaria */}
+              <Card className="border-border/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MessageCircle className="h-4 w-4 text-purple-400" />
+                      <div>
+                        <p className="font-medium text-sm">Mensagem Secundaria</p>
+                        <p className="text-xs text-muted-foreground">Mensagem separada onde os botoes serao enviados</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={secondaryMessageEnabled}
+                      onCheckedChange={(checked) => {
+                        setSecondaryMessageEnabled(checked)
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+                  {secondaryMessageEnabled && (
+                    <div className="mt-4">
+                      <Textarea
+                        value={secondaryMessage}
+                        onChange={(e) => {
+                          setSecondaryMessage(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="Digite a mensagem secundaria..."
+                        rows={3}
+                        className="bg-secondary/30 border-border/50 text-sm"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Botao CTA */}
+              <Card className="border-border/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <ExternalLink className="h-4 w-4 text-blue-400" />
+                      <div>
+                        <p className="font-medium text-sm">Botao CTA</p>
+                        <p className="text-xs text-muted-foreground">Botao de chamada para acao</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={ctaButtonEnabled}
+                      onCheckedChange={(checked) => {
+                        setCtaButtonEnabled(checked)
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+                  {ctaButtonEnabled && (
+                    <div className="mt-4 space-y-3">
+                      <Input
+                        value={ctaButtonText}
+                        onChange={(e) => {
+                          setCtaButtonText(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="Texto do botao"
+                        className="bg-secondary/30 border-border/50"
+                      />
+                      <Input
+                        value={ctaButtonUrl}
+                        onChange={(e) => {
+                          setCtaButtonUrl(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="https://..."
+                        className="bg-secondary/30 border-border/50"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Botao Redirect */}
+              <Card className="border-border/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <ExternalLink className="h-4 w-4 text-blue-400" />
+                      <div>
+                        <p className="font-medium text-sm">Botao Redirect</p>
+                        <p className="text-xs text-muted-foreground">Redireciona para canal de previas</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={redirectButtonEnabled}
+                      onCheckedChange={(checked) => {
+                        setRedirectButtonEnabled(checked)
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+                  {redirectButtonEnabled && (
+                    <div className="mt-4 space-y-3">
+                      <Input
+                        value={redirectButtonText}
+                        onChange={(e) => {
+                          setRedirectButtonText(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="Texto do botao"
+                        className="bg-secondary/30 border-border/50"
+                      />
+                      <Input
+                        value={redirectButtonUrl}
+                        onChange={(e) => {
+                          setRedirectButtonUrl(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="@canal ou https://t.me/canal"
+                        className="bg-secondary/30 border-border/50"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Danger Zone - Only show on bots tab */}
+          {activeTab === "bots" && (
           <Card className="border-destructive/50 mt-6">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm text-destructive">
@@ -1415,6 +1647,7 @@ export default function FlowEditorPage() {
               </Button>
             </CardContent>
           </Card>
+          )}
         </div>
       </div>
 

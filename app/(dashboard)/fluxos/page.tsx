@@ -141,10 +141,9 @@ export default function FluxosPage() {
 
     // Fetch flow_bots for each flow
     const flowIds = fetchedFlows.map(f => f.id)
-    console.log("[v0] Flow IDs to fetch bots for:", flowIds)
     
     if (flowIds.length > 0) {
-      const { data: botsData, error: botsError } = await supabase
+      const { data: botsData } = await supabase
         .from("flow_bots")
         .select(`
           id,
@@ -158,8 +157,6 @@ export default function FluxosPage() {
         `)
         .in("flow_id", flowIds)
 
-      console.log("[v0] flow_bots query result:", botsData, "error:", botsError)
-
       if (botsData && botsData.length > 0) {
         const grouped: Record<string, FlowBot[]> = {}
         let totalLinked = 0
@@ -168,11 +165,8 @@ export default function FluxosPage() {
           grouped[fb.flow_id].push(fb as unknown as FlowBot)
           totalLinked++
         }
-        console.log("[v0] Grouped flow_bots:", grouped)
         setFlowBots(grouped)
         setStats(prev => ({ ...prev, linkedBots: totalLinked }))
-      } else {
-        console.log("[v0] No flow_bots found or empty result")
       }
     }
 
