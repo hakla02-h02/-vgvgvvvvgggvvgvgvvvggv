@@ -178,95 +178,62 @@ export default function FluxosPage() {
 
 
 
-  // Flow card component - Design horizontal moderno
+  // Flow card - Design limpo e funcional (estilo tabela)
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
     const isBasic = flow.mode === "basic" || !flow.mode
 
     return (
       <div 
-        className="group relative bg-gradient-to-br from-card to-card/80 rounded-2xl border border-border/40 hover:border-accent/40 hover:shadow-xl hover:shadow-accent/5 transition-all duration-300 cursor-pointer overflow-hidden"
+        className="group bg-card border border-border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
         onClick={() => router.push(`/fluxos/${flow.id}`)}
       >
-        {/* Glow effect on hover */}
-        <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        
-        {/* Content */}
-        <div className="relative p-5">
-          {/* Top row - Icon, Name, Badge, Menu */}
-          <div className="flex items-center gap-4 mb-4">
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${
-              isBasic 
-                ? "bg-gradient-to-br from-accent/20 to-accent/5 ring-1 ring-accent/20" 
-                : "bg-gradient-to-br from-purple-500/20 to-purple-500/5 ring-1 ring-purple-500/20"
-            }`}>
-              {isBasic ? (
-                <Zap className="h-6 w-6 text-accent" />
-              ) : (
-                <Workflow className="h-6 w-6 text-purple-400" />
-              )}
+        {/* Main row */}
+        <div className="flex items-center gap-4 p-4">
+          {/* Status indicator */}
+          <div className={`w-1 h-12 rounded-full ${isBasic ? "bg-accent" : "bg-purple-500"}`} />
+          
+          {/* Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-semibold text-foreground truncate">{flow.name}</h3>
+              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
+                isBasic ? "bg-accent/10 text-accent" : "bg-purple-500/10 text-purple-400"
+              }`}>
+                {isBasic ? "Basico" : "N8N"}
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-bold text-foreground truncate text-base mb-1">{flow.name}</h3>
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                  isBasic
-                    ? "bg-accent/15 text-accent"
-                    : "bg-purple-500/15 text-purple-400"
-                }`}>
-                  {isBasic ? "Basico" : "N8N"}
-                </span>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Bot className="h-3 w-3" />
-                  {bots.length === 0 ? "Sem bot" : `${bots.length} bot${bots.length > 1 ? 's' : ''}`}
-                </span>
-              </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Bot className="h-3 w-3" />
+                {bots.length === 0 ? "Nenhum bot" : `${bots.length} bot${bots.length > 1 ? 's' : ''}`}
+              </span>
+              <span>0 starts</span>
+              <span>0% conv.</span>
             </div>
           </div>
-
-          {/* Stats row */}
-          <div className="flex items-center gap-6 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                <Sparkles className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Starts</p>
-                <p className="text-sm font-bold text-foreground">0</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Conversao</p>
-                <p className="text-sm font-bold text-foreground">0%</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Actions row */}
-          <div className="flex items-center gap-2">
+          
+          {/* Actions */}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
             <button 
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-muted/50 hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation()
-                // TODO: Open remarketing
+                // TODO: Remarketing
               }}
+              title="Remarketing"
             >
-              <RotateCcw className="h-3.5 w-3.5" />
-              Remarketing
+              <RotateCcw className="h-4 w-4" />
             </button>
             <button 
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-accent/10 hover:bg-accent text-xs font-medium text-accent hover:text-accent-foreground transition-colors"
+              className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
               onClick={(e) => {
                 e.stopPropagation()
                 router.push(`/fluxos/${flow.id}`)
               }}
+              title="Editar"
             >
-              <Settings className="h-3.5 w-3.5" />
-              Editar
+              <Settings className="h-4 w-4" />
             </button>
           </div>
         </div>
@@ -308,73 +275,42 @@ export default function FluxosPage() {
       />
 
       <main className="flex-1 overflow-auto p-6">
-        {/* Actions */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-lg font-bold text-foreground">Seus Fluxos</h2>
-            <p className="text-sm text-muted-foreground">Gerencie e edite seus fluxos de automacao</p>
-          </div>
-          <div className="flex items-center gap-3">
+        {/* Header simples */}
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-foreground">Fluxos</h2>
+          <div className="flex items-center gap-2">
             <button 
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-border/50 bg-card hover:bg-muted text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border bg-card hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
               onClick={() => setShowImportDialog(true)}
             >
-              <Upload className="h-4 w-4" />
+              <Upload className="h-3.5 w-3.5" />
               Importar
             </button>
             <button 
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-accent hover:bg-accent/90 text-sm font-semibold text-accent-foreground transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-foreground hover:bg-foreground/90 text-xs font-medium text-background transition-colors"
               onClick={() => setShowCreateModal(true)}
             >
-              <Plus className="h-4 w-4" />
-              Criar Fluxo
-              <span className="ml-1 text-xs opacity-70">({currentFlows}/{maxFlows})</span>
+              <Plus className="h-3.5 w-3.5" />
+              Novo fluxo
             </button>
           </div>
         </div>
 
-        {/* Stats Cards - Design glassmorphism */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-          {/* Vinculados */}
-          <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/10 via-emerald-500/5 to-transparent border border-emerald-500/20 p-5 hover:border-emerald-500/40 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-emerald-500/20 transition-colors" />
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/20 ring-1 ring-emerald-500/30">
-                <Link2 className="h-6 w-6 text-emerald-400" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-emerald-400/80">Vinculados</p>
-                <p className="text-3xl font-black text-foreground">{stats.linkedBots}</p>
-              </div>
-            </div>
+        {/* Stats - Inline simples */}
+        <div className="flex items-center gap-6 mb-6 pb-4 border-b border-border">
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-foreground">{stats.linkedBots}</span>
+            <span className="text-sm text-muted-foreground">bots vinculados</span>
           </div>
-          
-          {/* Basicos */}
-          <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-accent/10 via-accent/5 to-transparent border border-accent/20 p-5 hover:border-accent/40 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-accent/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-accent/20 transition-colors" />
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/20 ring-1 ring-accent/30">
-                <Zap className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-accent/80">Basicos</p>
-                <p className="text-3xl font-black text-foreground">{stats.basicFlows}</p>
-              </div>
-            </div>
+          <div className="w-px h-6 bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-foreground">{stats.basicFlows}</span>
+            <span className="text-sm text-muted-foreground">fluxos basicos</span>
           </div>
-          
-          {/* N8N */}
-          <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500/10 via-purple-500/5 to-transparent border border-purple-500/20 p-5 hover:border-purple-500/40 transition-all duration-300">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-purple-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 group-hover:bg-purple-500/20 transition-colors" />
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/20 ring-1 ring-purple-500/30">
-                <Workflow className="h-6 w-6 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-purple-400/80">Fluxos N8N</p>
-                <p className="text-3xl font-black text-foreground">{stats.n8nFlows}</p>
-              </div>
-            </div>
+          <div className="w-px h-6 bg-border" />
+          <div className="flex items-center gap-2">
+            <span className="text-2xl font-bold text-foreground">{stats.n8nFlows}</span>
+            <span className="text-sm text-muted-foreground">fluxos n8n</span>
           </div>
         </div>
 
