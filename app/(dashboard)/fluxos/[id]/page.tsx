@@ -1065,92 +1065,182 @@ export default function FlowEditorPage() {
 
           {/* Plans Tab */}
           {activeTab === "plans" && (
-            <div className="space-y-6">
-              <Card className="border-border/50">
-                <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <CreditCard className="h-4 w-4 text-accent" />
-                    Planos de Acesso
-                  </CardTitle>
-                  <Button variant="outline" size="sm" onClick={handleAddPlan}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Plano
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  {plans.length === 0 ? (
-                    <div className="flex flex-col items-center py-8 border border-dashed border-border/50 rounded-xl">
-                      <CreditCard className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                      <p className="font-medium text-foreground mb-1">Nenhum plano configurado</p>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        Adicione planos para vender acesso
-                      </p>
-                      <Button variant="outline" onClick={handleAddPlan}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Criar Plano
-                      </Button>
+            <div className="flex gap-6">
+              {/* Left Column - Plans */}
+              <div className="flex-1 space-y-6">
+                {/* Planos de Pagamento */}
+                <Card className="border-border/50">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                          <CreditCard className="h-5 w-5 text-accent" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-base">Planos de Pagamento</CardTitle>
+                          <p className="text-sm text-muted-foreground">
+                            Configure ate 10 planos com entregas personalizadas
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-sm text-muted-foreground">{plans.length}/10</span>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {plans.map((plan) => (
-                        <div
-                          key={plan.id}
-                          className="p-4 rounded-xl border border-border/50 bg-secondary/20"
+                  </CardHeader>
+                  <CardContent>
+                    {plans.length === 0 ? (
+                      <div className="flex flex-col items-center py-12 border-2 border-dashed border-border/50 rounded-xl">
+                        <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-accent/10 mb-4">
+                          <CreditCard className="h-8 w-8 text-accent" />
+                        </div>
+                        <p className="text-muted-foreground mb-4">Nenhum plano configurado</p>
+                        <Button 
+                          variant="outline" 
+                          onClick={handleAddPlan}
+                          className="border-accent text-accent hover:bg-accent/10"
                         >
-                          <div className="grid grid-cols-4 gap-4">
-                            <div className="space-y-2">
-                              <Label>Nome</Label>
-                              <Input
-                                value={plan.name}
-                                onChange={(e) => handleUpdatePlan(plan.id, "name", e.target.value)}
-                                placeholder="Ex: Plano Mensal"
-                                className="bg-secondary/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Preco (R$)</Label>
-                              <Input
-                                type="number"
-                                value={plan.price}
-                                onChange={(e) => handleUpdatePlan(plan.id, "price", parseFloat(e.target.value) || 0)}
-                                placeholder="49.90"
-                                className="bg-secondary/50"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>Duracao (dias)</Label>
-                              <Input
-                                type="number"
-                                value={plan.duration_days}
-                                onChange={(e) => handleUpdatePlan(plan.id, "duration_days", parseInt(e.target.value) || 30)}
-                                placeholder="30"
-                                className="bg-secondary/50"
-                              />
-                            </div>
-                            <div className="flex items-end gap-2">
-                              <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={plan.active}
-                                  onCheckedChange={(checked) => handleUpdatePlan(plan.id, "active", checked)}
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar Plano
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {plans.map((plan) => (
+                          <div
+                            key={plan.id}
+                            className="p-4 rounded-xl border border-border/50 bg-secondary/20"
+                          >
+                            <div className="grid grid-cols-4 gap-4">
+                              <div className="space-y-2">
+                                <Label>Nome</Label>
+                                <Input
+                                  value={plan.name}
+                                  onChange={(e) => handleUpdatePlan(plan.id, "name", e.target.value)}
+                                  placeholder="Ex: Plano Mensal"
+                                  className="bg-secondary/50"
                                 />
-                                <span className="text-sm text-muted-foreground">Ativo</span>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="text-muted-foreground hover:text-destructive"
-                                onClick={() => handleRemovePlan(plan.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="space-y-2">
+                                <Label>Preco (R$)</Label>
+                                <Input
+                                  type="number"
+                                  value={plan.price}
+                                  onChange={(e) => handleUpdatePlan(plan.id, "price", parseFloat(e.target.value) || 0)}
+                                  placeholder="49.90"
+                                  className="bg-secondary/50"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Duracao (dias)</Label>
+                                <Input
+                                  type="number"
+                                  value={plan.duration_days}
+                                  onChange={(e) => handleUpdatePlan(plan.id, "duration_days", parseInt(e.target.value) || 30)}
+                                  placeholder="30"
+                                  className="bg-secondary/50"
+                                />
+                              </div>
+                              <div className="flex items-end gap-2">
+                                <div className="flex items-center gap-2">
+                                  <Switch
+                                    checked={plan.active}
+                                    onCheckedChange={(checked) => handleUpdatePlan(plan.id, "active", checked)}
+                                  />
+                                  <span className="text-sm text-muted-foreground">Ativo</span>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="text-muted-foreground hover:text-destructive"
+                                  onClick={() => handleRemovePlan(plan.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </div>
                           </div>
+                        ))}
+                        {plans.length < 10 && (
+                          <Button 
+                            variant="outline" 
+                            onClick={handleAddPlan}
+                            className="w-full border-dashed border-accent text-accent hover:bg-accent/10"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Adicionar Plano
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Variacao de Preco */}
+                <Card className="border-border/50">
+                  <CardContent className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
+                          <TrendingUp className="h-5 w-5 text-violet-400" />
                         </div>
-                      ))}
+                        <div>
+                          <p className="font-medium text-foreground">Variacao de Preco</p>
+                          <p className="text-sm text-muted-foreground">
+                            Preco unico por cliente (anti-fraude)
+                          </p>
+                        </div>
+                      </div>
+                      <Switch />
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Right Column - Entrega Padrao */}
+              <div className="w-80">
+                <Card className="border-border/50">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                        <Package className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-base">Entrega Padrao (Fallback)</CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          Usada quando o plano esta em "Usar padrao"
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>
+                        Destino da Entrega <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="flex gap-2">
+                        <Select>
+                          <SelectTrigger className="bg-secondary/50 border-border/50">
+                            <SelectValue placeholder="Selecione o destino" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="channel1">Canal 1</SelectItem>
+                            <SelectItem value="channel2">Canal 2</SelectItem>
+                            <SelectItem value="group1">Grupo 1</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button variant="outline" size="icon" className="shrink-0">
+                          <RefreshCw className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="rounded-lg bg-accent/10 p-3">
+                      <p className="text-sm text-accent">
+                        <span className="font-medium">Dica:</span> Esta configuracao sera usada quando um plano estiver marcado como "Usar entrega padrao". Cada plano pode ter sua propria entrega personalizada.
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
 
