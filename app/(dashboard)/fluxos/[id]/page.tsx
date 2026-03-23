@@ -539,7 +539,7 @@ useEffect(() => {
     fetchVipGroup()
   }, [fetchVipGroup])
 
-  // Fetch groups where bot is admin (from our database - populated by webhook)
+  // Fetch groups where bot is admin (directly from Telegram)
   const fetchBotGroups = async () => {
     if (flowBots.length === 0) {
       toast({
@@ -556,8 +556,21 @@ useEffect(() => {
     try {
       const firstBot = flowBots[0]
       
-      // Fetch from our database (populated by webhook)
-      const res = await fetch(`/api/telegram/bot-groups?bot_id=${firstBot.bot_id}`)
+      // Get bot token
+      const { data: botData } = await supabase
+        .from("bots")
+        .select("token")
+        .eq("id", firstBot.bot_id)
+        .single()
+
+      if (!botData?.token) {
+        toast({ title: "Erro", description: "Token do bot nao encontrado", variant: "destructive" })
+        setIsLoadingGroups(false)
+        return
+      }
+      
+      // Fetch directly from Telegram API
+      const res = await fetch(`/api/telegram/get-bot-groups?token=${botData.token}`)
       const data = await res.json()
 
       if (data.success) {
@@ -565,7 +578,7 @@ useEffect(() => {
         if (data.groups.length === 0) {
           toast({
             title: "Nenhum grupo encontrado",
-            description: "Configure o webhook e adicione o bot como admin em um grupo",
+            description: "Adicione o bot em um grupo e envie uma mensagem la para ele aparecer",
           })
         }
       } else {
@@ -578,16 +591,9 @@ useEffect(() => {
     setIsLoadingGroups(false)
   }
 
-  // Setup webhook for bot
-  const handleSetupWebhook = async () => {
-    if (flowBots.length === 0) {
-      toast({
-        title: "Nenhum bot vinculado",
-        description: "Vincule um bot primeiro",
-        variant: "destructive"
-      })
-      return
-    }
+  // Verify group manually by chat ID
+  const handleVerifyGroup = async (chatId: string) => {
+    if (!chatId || flowBots.length === 0) return
 
     try {
       const firstBot = flowBots[0]
@@ -602,24 +608,41 @@ useEffect(() => {
         return
       }
 
-      const res = await fetch("/api/telegram/set-webhook", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          botId: firstBot.bot_id,
-          token: botData.token
-        })
-      })
+      // Get chat info
+      const chatRes = await fetch(`https://api.telegram.org/bot${botData.token}/getChat?chat_id=${chatId}`)
+      const chatData = await chatRes.json()
 
-      const data = await res.json()
-      if (data.success) {
-        toast({ 
-          title: "Webhook configurado!", 
-          description: "Agora adicione o bot como admin em um grupo"
-        })
-      } else {
-        toast({ title: "Erro", description: data.error, variant: "destructive" })
+      if (!chatData.ok) {
+        toast({ title: "Erro", description: chatData.description || "Grupo nao encontrado", variant: "destructive" })
+        return
       }
+
+      const chat = chatData.result
+
+      // Get bot info
+      const meRes = await fetch(`https://api.telegram.org/bot${botData.token}/getMe`)
+      const meData = await meRes.json()
+
+      // Check bot status
+      const memberRes = await fetch(`https://api.telegram.org/bot${botData.token}/getChatMember?chat_id=${chatId}&user_id=${meData.result.id}`)
+      const memberData = await memberRes.json()
+
+      if (!memberData.ok) {
+        toast({ title: "Erro", description: "Bot nao esta neste grupo", variant: "destructive" })
+        return
+      }
+
+      const group = {
+        id: String(chat.id),
+        title: chat.title || "Grupo",
+        type: chat.type,
+        isAdmin: memberData.result.status === "administrator" || memberData.result.status === "creator",
+        canInvite: memberData.result.can_invite_users === true
+      }
+
+      setAvailableGroups([group])
+      setSelectedGroupId(group.id)
+      toast({ title: "Grupo encontrado!", description: group.title })
     } catch (error: any) {
       toast({ title: "Erro", description: error.message, variant: "destructive" })
     }
@@ -1110,100 +1133,120 @@ useEffect(() => {
                       Como configurar:
                     </h4>
                     <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
-                      <li>Clique em <strong>"Ativar Webhook"</strong> abaixo</li>
                       <li>Crie um grupo ou canal no Telegram</li>
-                      <li>Adicione o bot como <strong>administrador</strong> com permissao de <strong>convidar usuarios</strong></li>
-                      <li>O grupo aparecera automaticamente na lista</li>
-                      <li>Selecione o grupo e clique em "Definir como Grupo VIP"</li>
+                      <li>Adicione o bot como <strong>administrador</strong></li>
+                      <li>De permissao de <strong>convidar usuarios</strong> ao bot</li>
+                      <li>Envie uma mensagem no grupo</li>
+                      <li>Cole o ID do grupo abaixo ou busque automaticamente</li>
                     </ol>
                   </div>
 
-                  {/* Webhook Setup */}
-                  {flowBots.length > 0 && (
-                    <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h4 className="font-medium text-sm">Webhook do Telegram</h4>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Necessario para detectar quando o bot entra em grupos
-                          </p>
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleSetupWebhook}
-                          className="border-accent/30 hover:bg-accent/10"
-                        >
-                          <Zap className="h-4 w-4 mr-2 text-accent" />
-                          Ativar Webhook
-                        </Button>
-                      </div>
+                  {flowBots.length === 0 && (
+                    <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
+                      <AlertTriangle className="h-4 w-4 inline mr-2" />
+                      Vincule um bot na aba "Bots" primeiro
                     </div>
                   )}
 
-                  {/* Search Groups */}
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>Grupos disponiveis</Label>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchBotGroups}
-                        disabled={isLoadingGroups || flowBots.length === 0}
-                      >
-                        {isLoadingGroups ? (
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <RefreshCw className="h-4 w-4 mr-2" />
-                        )}
-                        Atualizar Lista
-                      </Button>
-                    </div>
-
-                    {flowBots.length === 0 && (
-                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
-                        <AlertTriangle className="h-4 w-4 inline mr-2" />
-                        Vincule um bot na aba "Bots" primeiro
+                  {flowBots.length > 0 && (
+                    <div className="space-y-4">
+                      {/* Manual Group ID Input */}
+                      <div className="space-y-2">
+                        <Label>Buscar por ID do Grupo</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Use @RawDataBot no Telegram para descobrir o ID do seu grupo
+                        </p>
+                        <div className="flex gap-2">
+                          <Input
+                            placeholder="Ex: -1001234567890"
+                            className="bg-secondary/30 border-border/50"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                handleVerifyGroup((e.target as HTMLInputElement).value)
+                              }
+                            }}
+                            id="manual-group-id"
+                          />
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              const input = document.getElementById("manual-group-id") as HTMLInputElement
+                              if (input?.value) handleVerifyGroup(input.value)
+                            }}
+                          >
+                            Verificar
+                          </Button>
+                        </div>
                       </div>
-                    )}
 
-                    {availableGroups.length > 0 && (
+                      {/* Or Separator */}
+                      <div className="flex items-center gap-3">
+                        <div className="h-px bg-border flex-1" />
+                        <span className="text-xs text-muted-foreground">ou</span>
+                        <div className="h-px bg-border flex-1" />
+                      </div>
+
+                      {/* Auto Search */}
                       <div className="space-y-3">
-                        <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
-                          <SelectTrigger className="bg-secondary/30 border-border/50">
-                            <SelectValue placeholder="Selecione um grupo" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableGroups.map((group) => (
-                              <SelectItem 
-                                key={group.id} 
-                                value={group.id}
-                                disabled={!group.canInvite}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Users className="h-4 w-4" />
-                                  <span>{group.title}</span>
-                                  {!group.canInvite && (
-                                    <span className="text-xs text-destructive">(sem permissao)</span>
-                                  )}
-                                  {group.canInvite && (
-                                    <Badge variant="outline" className="text-[10px]">
-                                      {group.type === "channel" ? "Canal" : "Grupo"}
-                                    </Badge>
-                                  )}
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <div className="flex items-center justify-between">
+                          <Label>Busca automatica</Label>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={fetchBotGroups}
+                            disabled={isLoadingGroups}
+                          >
+                            {isLoadingGroups ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-4 w-4 mr-2" />
+                            )}
+                            Buscar Grupos
+                          </Button>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          So encontra grupos onde o bot recebeu mensagens recentemente
+                        </p>
+                      </div>
 
-                        <Button
-                          onClick={handleSetVipGroup}
-                          disabled={!selectedGroupId}
-                          className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
-                        >
-                          Definir como Grupo VIP
-                        </Button>
+                      {/* Groups List */}
+                      {availableGroups.length > 0 && (
+                        <div className="space-y-3">
+                          <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                            <SelectTrigger className="bg-secondary/30 border-border/50">
+                              <SelectValue placeholder="Selecione um grupo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableGroups.map((group) => (
+                                <SelectItem 
+                                  key={group.id} 
+                                  value={group.id}
+                                  disabled={!group.canInvite}
+                                >
+                                  <div className="flex items-center gap-2">
+                                    <Users className="h-4 w-4" />
+                                    <span>{group.title}</span>
+                                    {!group.canInvite && (
+                                      <span className="text-xs text-destructive">(sem permissao)</span>
+                                    )}
+                                    {group.canInvite && (
+                                      <Badge variant="outline" className="text-[10px]">
+                                        {group.type === "channel" ? "Canal" : "Grupo"}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+
+                          <Button
+                            onClick={handleSetVipGroup}
+                            disabled={!selectedGroupId}
+                            className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                          >
+                            Definir como Grupo VIP
+                          </Button>
                       </div>
                     )}
                   </div>
