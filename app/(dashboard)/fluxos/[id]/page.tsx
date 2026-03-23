@@ -205,6 +205,10 @@ export default function FlowEditorPage() {
   // Stats (placeholder)
   const [stats] = useState({ leads: 0, vips: 0, revenue: 0 })
 
+  // Delete flow
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   // Fetch flow
   const fetchFlow = useCallback(async () => {
     if (!flowId || !session?.userId || isAuthLoading) return
@@ -330,11 +334,11 @@ export default function FlowEditorPage() {
     setIsLoadingBots(false)
   }, [session?.userId, flowBots])
 
-useEffect(() => {
-  if (!isAuthLoading && session?.userId) {
-    fetchFlow()
-    fetchFlowBots()
-  }
+  useEffect(() => {
+    if (!isAuthLoading && session?.userId) {
+      fetchFlow()
+      fetchFlowBots()
+    }
   }, [fetchFlow, fetchFlowBots, isAuthLoading, session?.userId])
 
   // Save flow
@@ -725,6 +729,48 @@ useEffect(() => {
   const handleUpdatePlan = (id: string, field: keyof FlowPlan, value: string | number | boolean) => {
     setPlans(plans.map(p => p.id === id ? { ...p, [field]: value } : p))
     setHasChanges(true)
+  }
+
+  // Delete flow
+  const handleDeleteFlow = async () => {
+    if (!flow || !session?.userId) return
+
+    setIsDeleting(true)
+    try {
+      // First delete flow_bots
+      await supabase
+        .from("flow_bots")
+        .delete()
+        .eq("flow_id", flow.id)
+
+      // Then delete vip_groups
+      await supabase
+        .from("vip_groups")
+        .delete()
+        .eq("flow_id", flow.id)
+
+      // Finally delete the flow
+      const { error } = await supabase
+        .from("flows")
+        .delete()
+        .eq("id", flow.id)
+        .eq("user_id", session.userId)
+
+      if (error) throw error
+
+      toast({ title: "Fluxo excluido com sucesso" })
+      router.push("/fluxos")
+    } catch (error: any) {
+      console.error("[v0] Error deleting flow:", error)
+      toast({ 
+        title: "Erro ao excluir fluxo", 
+        description: error.message, 
+        variant: "destructive" 
+      })
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteDialog(false)
+    }
   }
 
   // Show loading while auth or bots are loading
@@ -1252,10 +1298,10 @@ useEffect(() => {
                           >
                             Definir como Grupo VIP
                           </Button>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
               </Card>
             </div>
           )}
@@ -1718,8 +1764,86 @@ useEffect(() => {
               />
             </CardContent>
           </Card>
+
+          {/* Danger Zone */}
+          <Card className="border-destructive/50 mt-6">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-sm text-destructive">
+                <AlertTriangle className="h-4 w-4" />
+                Zona de Perigo
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-xs text-muted-foreground mb-3">
+                Ao excluir este fluxo, todos os bots vinculados e grupos VIP serao desvinculados. Esta acao nao pode ser desfeita.
+              </p>
+              <Button
+                variant="destructive"
+                size="sm"
+                className="w-full"
+                onClick={() => setShowDeleteDialog(true)}
+              >
+                <Trash2 className="h-4 w-4 mr-2" />
+                Excluir Fluxo
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
+
+      {/* Delete Flow Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Excluir Fluxo
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              Tem certeza que deseja excluir o fluxo <strong className="text-foreground">{flow.name}</strong>?
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Esta acao ira:
+            </p>
+            <ul className="text-sm text-muted-foreground mt-2 space-y-1">
+              <li>- Remover todos os bots vinculados a este fluxo</li>
+              <li>- Desvincular o grupo VIP configurado</li>
+              <li>- Excluir todas as configuracoes do fluxo</li>
+            </ul>
+            <p className="text-sm text-destructive font-medium mt-4">
+              Esta acao nao pode ser desfeita.
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteFlow}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Excluir Fluxo
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Bot Dialog */}
       <Dialog open={showAddBotDialog} onOpenChange={setShowAddBotDialog}>
