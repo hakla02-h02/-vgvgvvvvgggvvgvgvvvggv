@@ -544,64 +544,66 @@ export default function BotsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Config Bot Dialog - COMPACTO */}
+      {/* Config Bot Dialog - Design limpo e moderno */}
       <Dialog open={!!configBot} onOpenChange={(open) => !open && closeConfig()}>
-        <DialogContent className="sm:max-w-sm bg-card border-border p-0 gap-0 overflow-hidden">
+        <DialogContent className="sm:max-w-md bg-card border-border p-0 gap-0 overflow-hidden rounded-2xl">
           {configBot && (
             <>
               {/* Loading state */}
               {isLoadingConfig ? (
-                <div className="p-8 flex flex-col items-center justify-center">
+                <div className="p-12 flex flex-col items-center justify-center">
                   <Loader2 className="h-8 w-8 text-accent animate-spin mb-3" />
                   <p className="text-muted-foreground text-sm">Carregando...</p>
                 </div>
               ) : (
                 <>
-                  {/* Header compacto com foto clicável */}
-                  <div className="p-4 pb-3 border-b border-border">
-                    <div className="flex items-center gap-3">
-                      {/* Foto clicável para upload */}
-                      <input
-                        type="file"
-                        ref={photoInputRef}
-                        onChange={handlePhotoSelect}
-                        accept="image/*"
-                        className="hidden"
-                      />
-                      <div 
-                        className="relative group cursor-pointer"
-                        onClick={() => photoInputRef.current?.click()}
-                      >
-                        {cfgPhotoPreview || (configBot as ExtendedBot).photo_url ? (
-                          <img
-                            src={cfgPhotoPreview || (configBot as ExtendedBot).photo_url!}
-                            alt={configBot.name}
-                            className="w-12 h-12 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                            <BotIcon className="h-6 w-6 text-accent" />
-                          </div>
-                        )}
-                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
-                          configBot.status === "active" ? "bg-green-500" : "bg-muted-foreground"
-                        }`} />
-                        {/* Overlay para trocar foto */}
-                        <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Camera className="h-4 w-4 text-white" />
+                  {/* Header com foto centralizada */}
+                  <div className="pt-6 pb-4 px-6 text-center border-b border-border/50">
+                    {/* Foto clicavel para upload */}
+                    <input
+                      type="file"
+                      ref={photoInputRef}
+                      onChange={handlePhotoSelect}
+                      accept="image/*"
+                      className="hidden"
+                    />
+                    <div 
+                      className="relative inline-block group cursor-pointer mb-3"
+                      onClick={() => photoInputRef.current?.click()}
+                    >
+                      {cfgPhotoPreview || (configBot as ExtendedBot).photo_url ? (
+                        <img
+                          src={cfgPhotoPreview || (configBot as ExtendedBot).photo_url!}
+                          alt={configBot.name}
+                          className="w-20 h-20 rounded-2xl object-cover border-2 border-border"
+                        />
+                      ) : (
+                        <div className="w-20 h-20 rounded-2xl bg-accent/10 flex items-center justify-center border-2 border-border">
+                          <BotIcon className="h-8 w-8 text-accent" />
                         </div>
+                      )}
+                      {/* Overlay para trocar foto */}
+                      <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera className="h-5 w-5 text-white" />
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <h2 className="text-base font-bold text-foreground truncate">Configurações</h2>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                          configBot.status === "active" 
-                            ? "bg-green-500/10 text-green-600" 
-                            : "bg-muted text-muted-foreground"
-                        }`}>
-                          <Signal className="h-2.5 w-2.5" />
-                          {configBot.status === "active" ? "Online" : "Offline"}
-                        </span>
+                      {/* Badge de status */}
+                      <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-3 border-card flex items-center justify-center ${
+                        configBot.status === "active" ? "bg-green-500" : "bg-muted-foreground"
+                      }`}>
+                        {configBot.status === "active" && (
+                          <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                        )}
                       </div>
+                    </div>
+                    
+                    <h2 className="text-lg font-bold text-foreground">Configuracoes do Bot</h2>
+                    <p className="text-xs text-muted-foreground mt-0.5">Clique na foto para alterar</p>
+                    
+                    {/* Toggle de status */}
+                    <div className="flex items-center justify-center gap-3 mt-4">
+                      <span className={`text-xs font-medium ${configBot.status !== "active" ? "text-foreground" : "text-muted-foreground"}`}>
+                        Offline
+                      </span>
                       <Switch
                         checked={configBot.status === "active"}
                         onCheckedChange={async (checked) => {
@@ -614,96 +616,114 @@ export default function BotsPage() {
                           })
                         }}
                       />
+                      <span className={`text-xs font-medium ${configBot.status === "active" ? "text-accent" : "text-muted-foreground"}`}>
+                        Online
+                      </span>
                     </div>
                   </div>
 
-                  {/* Campos editáveis - mais compactos */}
-                  <div className="p-4 space-y-3">
+                  {/* Campos editaveis */}
+                  <div className="p-6 space-y-4">
                     {/* Nome */}
-                    <div>
-                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                         Nome
                       </Label>
                       <Input 
                         value={cfgName} 
                         onChange={(e) => setCfgName(e.target.value)} 
-                        className="h-9 bg-muted border-0 rounded-lg text-sm" 
+                        className="h-10 bg-muted/50 border-border/50 rounded-xl text-sm focus:border-accent" 
                         placeholder="Nome do bot"
                       />
                     </div>
 
                     {/* Username (somente leitura) */}
-                    <div>
-                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 flex items-center gap-1.5">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
                         <AtSign className="h-3 w-3" />
                         Username
                       </Label>
                       <Input 
                         value={(configBot as ExtendedBot).username || ""} 
                         disabled
-                        className="h-9 bg-muted/50 border-0 rounded-lg text-sm text-muted-foreground" 
+                        className="h-10 bg-muted/30 border-border/30 rounded-xl text-sm text-muted-foreground" 
                       />
                     </div>
 
-                    {/* Descrição curta */}
-                    <div>
-                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        Bio
-                      </Label>
+                    {/* Descricao curta */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Bio
+                        </Label>
+                        <span className="text-[10px] text-muted-foreground">
+                          {cfgShortDescription.length}/120
+                        </span>
+                      </div>
                       <Input 
                         value={cfgShortDescription} 
                         onChange={(e) => setCfgShortDescription(e.target.value)} 
-                        className="h-9 bg-muted border-0 rounded-lg text-sm" 
-                        placeholder="Descrição curta"
+                        className="h-10 bg-muted/50 border-border/50 rounded-xl text-sm focus:border-accent" 
+                        placeholder="Descricao curta visivel no perfil"
                         maxLength={120}
                       />
-                      <p className="text-[10px] text-muted-foreground mt-1 text-right">
-                        {cfgShortDescription.length}/120
-                      </p>
                     </div>
 
-                    {/* Descrição longa */}
-                    <div>
-                      <Label className="text-xs font-medium text-muted-foreground mb-1.5 block">
-                        Descrição
-                      </Label>
+                    {/* Descricao longa */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                          Descricao
+                        </Label>
+                        <span className="text-[10px] text-muted-foreground">
+                          {cfgDescription.length}/512
+                        </span>
+                      </div>
                       <Textarea 
                         value={cfgDescription} 
                         onChange={(e) => setCfgDescription(e.target.value)} 
-                        className="min-h-[60px] bg-muted border-0 rounded-lg resize-none text-sm" 
-                        placeholder="O que seu bot faz..."
+                        className="min-h-[80px] bg-muted/50 border-border/50 rounded-xl resize-none text-sm focus:border-accent" 
+                        placeholder="O que seu bot faz? (visivel ao iniciar conversa)"
                         maxLength={512}
                       />
-                      <p className="text-[10px] text-muted-foreground mt-1 text-right">
-                        {cfgDescription.length}/512
-                      </p>
                     </div>
                   </div>
 
-                  {/* Footer compacto */}
-                  <div className="px-4 py-3 bg-muted/30 border-t border-border flex items-center justify-between">
-                    <button
-                      onClick={() => handleDelete(configBot.id)}
-                      className="text-xs text-destructive hover:text-destructive/80 transition-colors flex items-center gap-1"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      Excluir
-                    </button>
-                    <div className="flex items-center gap-2">
+                  {/* Footer com acoes */}
+                  <div className="px-6 py-4 bg-muted/20 border-t border-border/50">
+                    <div className="flex items-center justify-between">
                       <button
-                        onClick={closeConfig}
-                        className="px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                        onClick={() => handleDelete(configBot.id)}
+                        className="text-xs text-destructive hover:text-destructive/80 transition-colors flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-destructive/10"
                       >
-                        Cancelar
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Excluir Bot
                       </button>
-                      <button
-                        onClick={handleSaveConfig}
-                        disabled={isSaving}
-                        className="flex items-center gap-1.5 bg-accent text-accent-foreground px-4 py-2 rounded-lg font-semibold text-xs hover:bg-accent/90 transition-colors disabled:opacity-50"
-                      >
-                        {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
-                        {isSaving ? "Salvando..." : "Salvar"}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={closeConfig}
+                          className="px-4 py-2 rounded-xl text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={handleSaveConfig}
+                          disabled={isSaving}
+                          className="flex items-center gap-2 bg-accent text-accent-foreground px-5 py-2 rounded-xl font-semibold text-xs hover:bg-accent/90 transition-colors disabled:opacity-50"
+                        >
+                          {isSaving ? (
+                            <>
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              Salvando...
+                            </>
+                          ) : (
+                            <>
+                              <Save className="h-3.5 w-3.5" />
+                              Salvar
+                            </>
+                          )}
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </>
