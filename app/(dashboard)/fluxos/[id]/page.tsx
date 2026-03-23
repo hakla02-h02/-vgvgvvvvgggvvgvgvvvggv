@@ -130,8 +130,8 @@ interface TelegramChat {
 export default function FlowEditorPage() {
   const params = useParams()
   const router = useRouter()
-  const { session } = useAuth()
-  const { bots: userBots, addBot, refreshBots } = useBots()
+  const { session, isLoading: isAuthLoading } = useAuth()
+  const { bots: userBots, addBot, refreshBots, isLoading: isBotsLoading } = useBots()
   const { toast } = useToast()
   const flowId = params.id as string
 
@@ -207,7 +207,7 @@ export default function FlowEditorPage() {
 
   // Fetch flow
   const fetchFlow = useCallback(async () => {
-    if (!flowId || !session?.userId) return
+    if (!flowId || !session?.userId || isAuthLoading) return
 
     setIsLoading(true)
     const { data, error } = await supabase
@@ -219,7 +219,9 @@ export default function FlowEditorPage() {
 
     if (error || !data) {
       console.error("[v0] Error fetching flow:", error)
-      router.push("/fluxos")
+      if (!isAuthLoading) {
+        router.push("/fluxos")
+      }
       return
     }
 
@@ -247,7 +249,7 @@ export default function FlowEditorPage() {
     setSubscriptionEnabled(config.subscription?.enabled || false)
 
     setIsLoading(false)
-  }, [flowId, session?.userId, router])
+  }, [flowId, session?.userId, router, isAuthLoading])
 
   // Fetch flow bots - using correct column names from bots table
   const fetchFlowBots = useCallback(async () => {
@@ -329,9 +331,11 @@ export default function FlowEditorPage() {
   }, [session?.userId, flowBots])
 
 useEffect(() => {
-  fetchFlow()
-  fetchFlowBots()
-  }, [fetchFlow, fetchFlowBots])
+  if (!isAuthLoading && session?.userId) {
+    fetchFlow()
+    fetchFlowBots()
+  }
+  }, [fetchFlow, fetchFlowBots, isAuthLoading, session?.userId])
 
   // Save flow
   const handleSave = async () => {
@@ -723,7 +727,8 @@ useEffect(() => {
     setHasChanges(true)
   }
 
-  if (isLoading) {
+  // Show loading while auth or bots are loading
+  if (isAuthLoading || isBotsLoading || isLoading) {
     return (
       <div className="flex h-full items-center justify-center bg-background">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
