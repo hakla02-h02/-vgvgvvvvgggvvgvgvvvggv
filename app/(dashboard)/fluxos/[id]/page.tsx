@@ -1,6 +1,5 @@
 "use client"
 
-// Flow Editor Page
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -452,12 +451,7 @@ export default function FlowEditorPage() {
 
   // Add existing bot to flow
   const handleAddBot = async () => {
-    console.log("[v0] handleAddBot called - selectedBotToAdd:", selectedBotToAdd, "flowId:", flowId)
-    
-    if (!selectedBotToAdd || !flowId) {
-      console.log("[v0] Missing selectedBotToAdd or flowId, returning")
-      return
-    }
+    if (!selectedBotToAdd || !flowId) return
 
     // Check max 5 bots
     if (flowBots.length >= 5) {
@@ -469,8 +463,6 @@ export default function FlowEditorPage() {
       return
     }
 
-    console.log("[v0] Inserting into flow_bots:", { flow_id: flowId, bot_id: selectedBotToAdd })
-    
     const { data, error } = await supabase
       .from("flow_bots")
       .insert({
@@ -479,10 +471,7 @@ export default function FlowEditorPage() {
       })
       .select()
 
-    console.log("[v0] Insert result - data:", data, "error:", error)
-
     if (error) {
-      console.log("[v0] Error inserting flow_bot:", error)
       toast({
         title: "Erro",
         description: error.message || "Nao foi possivel adicionar o bot",

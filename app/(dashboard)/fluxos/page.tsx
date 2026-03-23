@@ -176,7 +176,17 @@ export default function FluxosPage() {
     fetchFlows()
   }, [fetchFlows])
 
-
+  // Refresh when page becomes visible (user returns from flow editor)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchFlows()
+      }
+    }
+    
+    document.addEventListener("visibilitychange", handleVisibilityChange)
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
+  }, [fetchFlows])
 
   // Flow card - Design moderno com metricas visuais
   const FlowCard = ({ flow }: { flow: Flow }) => {
