@@ -1,5 +1,6 @@
 "use client"
 
+// Flow Editor Page
 import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
@@ -1302,9 +1303,9 @@ export default function FlowEditorPage() {
                       )}
                     </div>
                   </CardContent>
-              </Card>
-            </div>
-          )}
+                </Card>
+              </div>
+            )}
 
           {/* Welcome Tab */}
           {activeTab === "welcome" && (
