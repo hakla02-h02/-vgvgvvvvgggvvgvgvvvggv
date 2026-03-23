@@ -178,22 +178,23 @@ export default function FluxosPage() {
 
 
 
-  // Flow card component
+  // Flow card component - Design moderno e compacto
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
     const isBasic = flow.mode === "basic" || !flow.mode
 
     return (
-      <Card 
-        className="group border-border/60 bg-card hover:bg-secondary/20 hover:border-border transition-all cursor-pointer"
+      <div 
+        className="group bg-card rounded-xl border border-border/50 hover:border-border hover:shadow-md transition-all cursor-pointer overflow-hidden"
         onClick={() => router.push(`/fluxos/${flow.id}`)}
       >
-        <CardContent className="p-5">
-          <div className="flex items-start gap-4">
-            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+        {/* Header */}
+        <div className="p-4">
+          <div className="flex items-start gap-3">
+            <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${
               isBasic 
-                ? "bg-accent/10 border border-accent/30" 
-                : "bg-purple-500/10 border border-purple-500/30"
+                ? "bg-accent/10" 
+                : "bg-purple-500/10"
             }`}>
               {isBasic ? (
                 <Zap className="h-5 w-5 text-accent" />
@@ -202,71 +203,68 @@ export default function FluxosPage() {
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold text-foreground truncate">{flow.name}</h3>
+              <h3 className="font-semibold text-foreground truncate text-sm">{flow.name}</h3>
               <Badge 
                 variant="outline" 
-                className={`mt-1.5 text-[10px] uppercase tracking-wide ${
+                className={`mt-1 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0 h-5 ${
                   isBasic
                     ? "bg-accent/10 text-accent border-accent/30"
                     : "bg-purple-500/10 text-purple-400 border-purple-500/30"
                 }`}
               >
-                {isBasic ? "Basico" : "n8n"}
+                {isBasic ? "Basico" : "N8N"}
               </Badge>
-              
-              <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
-                <Bot className="h-3.5 w-3.5" />
-                <span>
-                  {bots.length === 0 
-                    ? "Nenhum bot vinculado ainda" 
-                    : `${bots.length} bot(s) vinculado(s)`
-                  }
-                </span>
-              </div>
             </div>
           </div>
+          
+          {/* Bot info */}
+          <div className="flex items-center gap-1.5 mt-3 text-xs text-muted-foreground">
+            <Bot className="h-3.5 w-3.5" />
+            <span>
+              {bots.length === 0 
+                ? "Nenhum bot vinculado ainda" 
+                : `${bots.length} bot(s) vinculado(s)`
+              }
+            </span>
+          </div>
+        </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-3 mt-5 pt-4 border-t border-border/40">
-            <div className="text-center">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Starts</p>
-              <p className="text-lg font-bold text-foreground">0</p>
-            </div>
-            <div className="text-center">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">Conversao</p>
-              <p className="text-lg font-bold text-foreground">0%</p>
-            </div>
+        {/* Stats */}
+        <div className="grid grid-cols-2 border-t border-border/30">
+          <div className="py-3 text-center border-r border-border/30">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Starts</p>
+            <p className="text-lg font-bold text-foreground">0</p>
           </div>
+          <div className="py-3 text-center">
+            <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground/70">Conversao</p>
+            <p className="text-lg font-bold text-foreground">0%</p>
+          </div>
+        </div>
 
-          {/* Actions */}
-          <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-border/40">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation()
-                // TODO: Open remarketing
-              }}
-            >
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Remarketing
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="w-full justify-start text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/fluxos/${flow.id}`)
-              }}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Editar Fluxo
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Actions */}
+        <div className="border-t border-border/30">
+          <button 
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+            onClick={(e) => {
+              e.stopPropagation()
+              // TODO: Open remarketing
+            }}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Remarketing
+          </button>
+          <button 
+            className="w-full flex items-center gap-2 px-4 py-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors border-t border-border/30"
+            onClick={(e) => {
+              e.stopPropagation()
+              router.push(`/fluxos/${flow.id}`)
+            }}
+          >
+            <Settings className="h-3.5 w-3.5" />
+            Editar Fluxo
+          </button>
+        </div>
+      </div>
     )
   }
 
@@ -305,57 +303,58 @@ export default function FluxosPage() {
 
       <main className="flex-1 overflow-auto p-6">
         {/* Actions */}
-        <div className="flex items-center justify-between mb-6">
-          <div />
-          <div className="flex items-center gap-3">
-            <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-              <Upload className="h-4 w-4 mr-2" />
-              Importar Fluxo
-            </Button>
-            <Button onClick={() => setShowCreateModal(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              Criar Fluxo ({currentFlows}/{maxFlows})
-            </Button>
-          </div>
+        <div className="flex items-center justify-end gap-2 mb-5">
+          <Button 
+            variant="outline" 
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => setShowImportDialog(true)}
+          >
+            <Upload className="h-3.5 w-3.5 mr-1.5" />
+            Importar
+          </Button>
+          <Button 
+            size="sm"
+            className="h-9 text-xs"
+            onClick={() => setShowCreateModal(true)}
+          >
+            <Plus className="h-3.5 w-3.5 mr-1.5" />
+            Criar Fluxo
+            <span className="ml-1.5 text-[10px] opacity-70">({currentFlows}/{maxFlows})</span>
+          </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card className="border-border/60 bg-card">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 border border-accent/30">
-                <Link2 className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Vinculados</p>
-                <p className="text-2xl font-bold text-foreground">{stats.linkedBots}</p>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stats Cards - Design compacto e moderno */}
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border/50 hover:border-accent/30 transition-colors">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+              <Link2 className="h-5 w-5 text-emerald-500" />
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Vinculados</p>
+              <p className="text-xl font-bold text-foreground">{stats.linkedBots}</p>
+            </div>
+          </div>
           
-          <Card className="border-border/60 bg-card">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/10 border border-accent/30">
-                <Zap className="h-6 w-6 text-accent" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Basicos</p>
-                <p className="text-2xl font-bold text-foreground">{stats.basicFlows}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border/50 hover:border-accent/30 transition-colors">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+              <Zap className="h-5 w-5 text-accent" />
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Basicos</p>
+              <p className="text-xl font-bold text-foreground">{stats.basicFlows}</p>
+            </div>
+          </div>
           
-          <Card className="border-border/60 bg-card">
-            <CardContent className="flex items-center gap-4 p-5">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/30">
-                <Workflow className="h-6 w-6 text-purple-400" />
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Fluxos n8n</p>
-                <p className="text-2xl font-bold text-foreground">{stats.n8nFlows}</p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-card border border-border/50 hover:border-purple-500/30 transition-colors">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+              <Workflow className="h-5 w-5 text-purple-400" />
+            </div>
+            <div>
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Fluxos N8N</p>
+              <p className="text-xl font-bold text-foreground">{stats.n8nFlows}</p>
+            </div>
+          </div>
         </div>
 
         {/* Flows Grid or Empty State */}
@@ -366,7 +365,7 @@ export default function FluxosPage() {
         ) : flows.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {flows.map(flow => (
               <FlowCard key={flow.id} flow={flow} />
             ))}
