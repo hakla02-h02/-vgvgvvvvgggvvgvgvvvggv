@@ -331,8 +331,7 @@ export default function FlowEditorPage() {
 useEffect(() => {
   fetchFlow()
   fetchFlowBots()
-  fetchVipGroup()
-  }, [fetchFlow, fetchFlowBots, fetchVipGroup])
+  }, [fetchFlow, fetchFlowBots])
 
   // Save flow
   const handleSave = async () => {
@@ -534,6 +533,11 @@ useEffect(() => {
       console.error("[v0] Error fetching VIP group:", error)
     }
   }, [flowId])
+
+  // Load VIP group on mount
+  useEffect(() => {
+    fetchVipGroup()
+  }, [fetchVipGroup])
 
   // Fetch groups where bot is admin
   const fetchBotGroups = async () => {
