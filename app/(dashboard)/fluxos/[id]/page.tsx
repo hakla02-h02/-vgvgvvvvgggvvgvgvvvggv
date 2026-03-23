@@ -1169,10 +1169,8 @@ export default function FlowEditorPage() {
           {/* Plans Tab */}
           {activeTab === "plans" && (
             <div className="space-y-6">
-              {/* Grid de 2 colunas */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Planos de Pagamento */}
-                <Card className="border-border/50">
+              {/* Planos de Pagamento */}
+              <Card className="border-border/50">
                   <CardHeader className="pb-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -1321,9 +1319,8 @@ export default function FlowEditorPage() {
                     </div>
                   </CardContent>
                 </Card>
-              </div>
 
-              {/* Variacao de Preco - Full width */}
+              {/* Variacao de Preco */}
               <Card className="border-border/50">
                 <CardContent className="py-4">
                   <div className="flex items-center justify-between">
