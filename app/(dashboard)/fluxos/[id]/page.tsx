@@ -184,12 +184,11 @@ export default function FlowEditorPage() {
 
   // Welcome message
   const [welcomeMessage, setWelcomeMessage] = useState("")
-  const [ctaButtonText, setCtaButtonText] = useState("Ver Planos")
   const [welcomeMedias, setWelcomeMedias] = useState<string[]>([])
   const [secondaryMessageEnabled, setSecondaryMessageEnabled] = useState(false)
   const [secondaryMessage, setSecondaryMessage] = useState("")
   const [ctaButtonEnabled, setCtaButtonEnabled] = useState(false)
-  const [ctaButtonText, setCtaButtonText] = useState("")
+  const [ctaButtonText, setCtaButtonText] = useState("Ver Planos")
   const [ctaButtonUrl, setCtaButtonUrl] = useState("")
   const [redirectButtonEnabled, setRedirectButtonEnabled] = useState(false)
   const [redirectButtonText, setRedirectButtonText] = useState("")
