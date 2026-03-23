@@ -274,13 +274,13 @@ export default function FlowEditorPage() {
 
     setIsLoadingBots(true)
     
-    // Get user's bots first
+    // Get user's bots - using correct column names from bots table
     const { data: userBotsData, error: botsError } = await supabase
       .from("bots")
-      .select("id, username, first_name, photo_url")
+      .select("id, name, token, status")
       .eq("user_id", session.userId)
 
-    console.log("[v0] User bots:", userBotsData, "Error:", botsError)
+    console.log("[v0] User bots from DB:", userBotsData, "Error:", botsError)
 
     if (!userBotsData || userBotsData.length === 0) {
       setAvailableBots([])
@@ -293,12 +293,20 @@ export default function FlowEditorPage() {
     console.log("[v0] Bots linked to THIS flow:", linkedBotIds)
     
     // Filter: exclude only bots already in THIS flow (allow bots to be in multiple flows)
-    const available = userBotsData.filter(b => !linkedBotIds.includes(b.id))
+    // Map to AvailableBot format
+    const available = userBotsData
+      .filter(b => !linkedBotIds.includes(b.id))
+      .map(b => ({
+        id: b.id,
+        username: b.name,
+        first_name: b.name,
+        photo_url: null
+      }))
     
-    console.log("[v0] Available bots:", available)
+    console.log("[v0] Available bots mapped:", available)
     
     setAvailableBots(available)
-    setBotsInOtherFlows([]) // Clear this since we're not restricting anymore
+    setBotsInOtherFlows([])
     setIsLoadingBots(false)
   }, [session?.userId, flowBots])
 
@@ -1363,7 +1371,7 @@ export default function FlowEditorPage() {
             ) : (
               <>
                 <p className="text-sm text-muted-foreground">
-                  Selecione um bot para vincular a este fluxo. Cada bot so pode estar em um fluxo por vez.
+                  Selecione um bot para vincular a este fluxo.
                 </p>
                 <Select value={selectedBotToAdd} onValueChange={setSelectedBotToAdd}>
                   <SelectTrigger>
@@ -1374,8 +1382,7 @@ export default function FlowEditorPage() {
                       <SelectItem key={bot.id} value={bot.id}>
                         <div className="flex items-center gap-2">
                           <Bot className="h-4 w-4" />
-                          <span>@{bot.username}</span>
-                          <span className="text-muted-foreground">- {bot.first_name}</span>
+                          <span>{bot.first_name || bot.username}</span>
                         </div>
                       </SelectItem>
                     ))}
