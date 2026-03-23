@@ -747,8 +747,8 @@ export default function BotsPage() {
             </button>
           </div>
         ) : viewMode === "grid" ? (
-          /* Grid View - Estilo card moderno */
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          /* Grid View - Cards compactos */
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {filteredBots.map((bot) => {
               const isSelected = selectedBot?.id === bot.id
               const isActive = bot.status === "active"
@@ -757,36 +757,36 @@ export default function BotsPage() {
               return (
                 <div
                   key={bot.id}
-                  className={`bg-card rounded-2xl border overflow-hidden transition-all hover:shadow-xl hover:-translate-y-1 group ${
-                    isSelected ? "border-accent ring-2 ring-accent/20" : "border-border"
+                  className={`bg-card rounded-xl border overflow-hidden transition-all hover:shadow-lg hover:-translate-y-0.5 group ${
+                    isSelected ? "border-accent ring-1 ring-accent/20" : "border-border"
                   }`}
                 >
                   {/* Topo com foto e status */}
-                  <div className="relative p-6 pb-4 flex flex-col items-center">
+                  <div className="relative pt-3 pb-3 px-3 flex flex-col items-center">
                     {/* Menu no canto */}
-                    <div className="absolute top-3 right-3">
+                    <div className="absolute top-2 right-2">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <button
-                            className="w-8 h-8 rounded-lg hover:bg-muted flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="w-7 h-7 rounded-lg hover:bg-muted flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                             onClick={(e) => e.stopPropagation()}
                           >
-                            <MoreVertical className="h-4 w-4 text-muted-foreground" />
+                            <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                        <DropdownMenuContent align="end" className="w-44 rounded-lg">
                           <DropdownMenuItem
-                            className="flex items-center gap-2 py-2.5 cursor-pointer"
+                            className="flex items-center gap-2 py-2 cursor-pointer text-sm"
                             onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
                           >
-                            <Settings className="h-4 w-4" />
+                            <Settings className="h-3.5 w-3.5" />
                             Configurar
                           </DropdownMenuItem>
                           <DropdownMenuItem
-                            className="flex items-center gap-2 py-2.5 cursor-pointer text-destructive"
+                            className="flex items-center gap-2 py-2 cursor-pointer text-sm text-destructive"
                             onClick={(e) => { e.stopPropagation(); handleDelete(bot.id) }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-3.5 w-3.5" />
                             Excluir
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -794,48 +794,46 @@ export default function BotsPage() {
                     </div>
 
                     {/* Badge de status */}
-                    <div className="absolute top-3 left-3">
-                      <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full border ${
+                    <div className="absolute top-2 left-2">
+                      <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-1 rounded-full ${
                         isActive 
-                          ? "bg-accent/10 text-accent border-accent/30" 
-                          : "bg-muted text-muted-foreground border-border"
+                          ? "bg-accent/15 text-accent" 
+                          : "bg-muted text-muted-foreground"
                       }`}>
-                        <span className={`w-2 h-2 rounded-full ${isActive ? "bg-accent animate-pulse" : "bg-muted-foreground"}`} />
+                        <span className={`w-1.5 h-1.5 rounded-full ${isActive ? "bg-accent" : "bg-muted-foreground"}`} />
                         {isActive ? "ONLINE" : "OFFLINE"}
                       </span>
                     </div>
 
                     {/* Foto do bot */}
-                    <div className="mt-6 relative">
+                    <div className="mt-5">
                       {isLoadingTelegramData && !telegramDataCache[bot.id] ? (
-                        <div className="w-24 h-24 rounded-2xl bg-muted animate-pulse" />
+                        <div className="w-16 h-16 rounded-xl bg-muted animate-pulse" />
                       ) : extendedBot.photo_url ? (
-                        <div className="relative">
-                          <img
-                            src={extendedBot.photo_url}
-                            alt={bot.name}
-                            className="w-24 h-24 rounded-2xl object-cover border-2 border-border shadow-lg"
-                          />
-                        </div>
+                        <img
+                          src={extendedBot.photo_url}
+                          alt={bot.name}
+                          className="w-16 h-16 rounded-xl object-cover border border-border"
+                        />
                       ) : (
-                        <div className={`w-24 h-24 rounded-2xl flex items-center justify-center border-2 ${
-                          isActive ? "bg-accent/10 border-accent/30" : "bg-muted border-border"
+                        <div className={`w-16 h-16 rounded-xl flex items-center justify-center ${
+                          isActive ? "bg-accent/10" : "bg-muted"
                         }`}>
-                          <BotIcon className={`h-10 w-10 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
+                          <BotIcon className={`h-7 w-7 ${isActive ? "text-accent" : "text-muted-foreground"}`} />
                         </div>
                       )}
                     </div>
 
                     {/* Nome do bot */}
-                    <h3 className="text-xl font-bold text-foreground text-center mt-4 truncate max-w-full">
+                    <h3 className="text-base font-bold text-foreground text-center mt-2.5 truncate max-w-full">
                       {bot.name}
                     </h3>
 
                     {/* Username com badge */}
                     {extendedBot.username && (
-                      <div className="mt-2 px-4 py-1.5 bg-muted rounded-full">
-                        <p className="text-sm text-muted-foreground flex items-center gap-1">
-                          <AtSign className="h-3.5 w-3.5" />
+                      <div className="mt-1.5 px-3 py-1 bg-muted rounded-full">
+                        <p className="text-xs text-muted-foreground flex items-center gap-0.5">
+                          <AtSign className="h-3 w-3" />
                           {extendedBot.username}
                         </p>
                       </div>
@@ -843,39 +841,39 @@ export default function BotsPage() {
                   </div>
 
                   {/* Estatisticas */}
-                  <div className="px-6 py-4 border-t border-border">
-                    <div className="grid grid-cols-2 gap-4">
+                  <div className="px-3 py-2.5 border-t border-border">
+                    <div className="grid grid-cols-2">
                       <div className="text-center">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Leads</p>
-                        <p className="text-2xl font-bold text-foreground mt-1">0</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Leads</p>
+                        <p className="text-lg font-bold text-foreground">0</p>
                       </div>
                       <div className="text-center border-l border-border">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Vendas</p>
-                        <p className="text-2xl font-bold text-foreground mt-1">0</p>
+                        <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">Vendas</p>
+                        <p className="text-lg font-bold text-foreground">0</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Botao Ver Fluxos */}
-                  <div className="px-4 pb-4">
+                  <div className="px-3 pb-3">
                     <button
                       onClick={(e) => { 
                         e.stopPropagation()
                         setSelectedBot(bot)
                         router.push("/fluxos")
                       }}
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-muted hover:bg-accent hover:text-accent-foreground text-muted-foreground font-semibold text-sm transition-all"
+                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground text-muted-foreground font-semibold text-xs transition-all"
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      <ChevronRight className="h-3.5 w-3.5" />
                       Fluxos
                     </button>
                   </div>
 
                   {/* Selected Badge */}
                   {isSelected && (
-                    <div className="px-5 py-2.5 bg-accent/10 border-t border-accent/20">
-                      <p className="text-xs font-medium text-accent text-center flex items-center justify-center gap-1.5">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
+                    <div className="py-2 bg-accent/10 border-t border-accent/20">
+                      <p className="text-[11px] font-medium text-accent text-center flex items-center justify-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
                         Bot selecionado
                       </p>
                     </div>
