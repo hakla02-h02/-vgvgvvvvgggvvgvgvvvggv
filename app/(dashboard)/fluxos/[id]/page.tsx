@@ -160,6 +160,12 @@ export default function FlowEditorPage() {
   
 
 
+  // VIP Group
+  const [vipGroup, setVipGroup] = useState<{ id: string; telegram_group_id: string; group_name: string; group_type: string } | null>(null)
+  const [availableGroups, setAvailableGroups] = useState<{ id: string; title: string; type: string; isAdmin: boolean; canInvite: boolean }[]>([])
+  const [isLoadingGroups, setIsLoadingGroups] = useState(false)
+  const [selectedGroupId, setSelectedGroupId] = useState("")
+
   // Welcome message
   const [welcomeMessage, setWelcomeMessage] = useState("")
 
@@ -322,10 +328,11 @@ export default function FlowEditorPage() {
     setIsLoadingBots(false)
   }, [session?.userId, flowBots])
 
-  useEffect(() => {
-    fetchFlow()
-    fetchFlowBots()
-  }, [fetchFlow, fetchFlowBots])
+useEffect(() => {
+  fetchFlow()
+  fetchFlowBots()
+  fetchVipGroup()
+  }, [fetchFlow, fetchFlowBots, fetchVipGroup])
 
   // Save flow
   const handleSave = async () => {
@@ -512,6 +519,120 @@ export default function FlowEditorPage() {
     }, 1000)
   }
 
+  // Fetch VIP group for this flow
+  const fetchVipGroup = useCallback(async () => {
+    if (!flowId) return
+    
+    try {
+      const res = await fetch(`/api/vip-groups?flow_id=${flowId}`)
+      const data = await res.json()
+      if (data.vipGroup) {
+        setVipGroup(data.vipGroup)
+        setSelectedGroupId(data.vipGroup.telegram_group_id)
+      }
+    } catch (error) {
+      console.error("[v0] Error fetching VIP group:", error)
+    }
+  }, [flowId])
+
+  // Fetch groups where bot is admin
+  const fetchBotGroups = async () => {
+    if (flowBots.length === 0) {
+      toast({
+        title: "Nenhum bot vinculado",
+        description: "Vincule um bot primeiro para buscar os grupos",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsLoadingGroups(true)
+    setAvailableGroups([])
+
+    try {
+      // Get the first bot's token
+      const firstBot = flowBots[0]
+      const { data: botData } = await supabase
+        .from("bots")
+        .select("token")
+        .eq("id", firstBot.bot_id)
+        .single()
+
+      if (!botData?.token) {
+        toast({ title: "Erro", description: "Token do bot nao encontrado", variant: "destructive" })
+        setIsLoadingGroups(false)
+        return
+      }
+
+      const res = await fetch(`/api/telegram/get-bot-groups?token=${botData.token}`)
+      const data = await res.json()
+
+      if (data.success) {
+        setAvailableGroups(data.groups)
+        if (data.groups.length === 0) {
+          toast({
+            title: "Nenhum grupo encontrado",
+            description: "Adicione o bot como admin em um grupo e envie uma mensagem la primeiro",
+          })
+        }
+      } else {
+        toast({ title: "Erro", description: data.error, variant: "destructive" })
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" })
+    }
+
+    setIsLoadingGroups(false)
+  }
+
+  // Set VIP group
+  const handleSetVipGroup = async () => {
+    if (!selectedGroupId || !flowId) return
+
+    const selectedGroup = availableGroups.find(g => g.id === selectedGroupId)
+    if (!selectedGroup) return
+
+    try {
+      const res = await fetch("/api/vip-groups", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          flow_id: flowId,
+          telegram_group_id: selectedGroupId,
+          group_name: selectedGroup.title,
+          group_type: selectedGroup.type,
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        setVipGroup(data.vipGroup)
+        toast({ title: "Grupo VIP definido!" })
+      } else {
+        toast({ title: "Erro", description: data.error, variant: "destructive" })
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" })
+    }
+  }
+
+  // Remove VIP group
+  const handleRemoveVipGroup = async () => {
+    if (!flowId) return
+
+    try {
+      const res = await fetch(`/api/vip-groups?flow_id=${flowId}`, { method: "DELETE" })
+      const data = await res.json()
+      if (data.success) {
+        setVipGroup(null)
+        setSelectedGroupId("")
+        toast({ title: "Grupo VIP removido" })
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" })
+    }
+  }
+
   // Add plan
   const handleAddPlan = () => {
     setPlans([
@@ -557,6 +678,7 @@ export default function FlowEditorPage() {
 
   const tabs = [
     { id: "bots", label: "Bots", icon: Bot },
+    { id: "vip", label: "Grupo VIP", icon: Users },
     { id: "welcome", label: "Boas-vindas", icon: MessageSquare, locked: false },
     { id: "plans", label: "Planos", icon: CreditCard, locked: false },
     { id: "upsell", label: "Upsell", icon: TrendingUp, locked: false },
@@ -889,6 +1011,139 @@ export default function FlowEditorPage() {
                   )}
                   
 
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* VIP Group Tab */}
+          {activeTab === "vip" && (
+            <div className="space-y-6">
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Users className="h-4 w-4 text-accent" />
+                    Grupo VIP
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Configure o grupo/canal do Telegram onde os compradores serao adicionados automaticamente
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Current VIP Group */}
+                  {vipGroup ? (
+                    <div className="p-4 rounded-xl bg-accent/10 border border-accent/20">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-accent/20 flex items-center justify-center">
+                            <Users className="h-5 w-5 text-accent" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{vipGroup.group_name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {vipGroup.group_type === "channel" ? "Canal" : "Grupo"} - ID: {vipGroup.telegram_group_id}
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleRemoveVipGroup}
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="h-10 w-10 mx-auto mb-3 opacity-30" />
+                      <p>Nenhum grupo VIP configurado</p>
+                      <p className="text-xs mt-1">Selecione um grupo abaixo para configurar</p>
+                    </div>
+                  )}
+
+                  {/* Instructions */}
+                  <div className="p-4 rounded-xl bg-secondary/30 border border-border/50">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <HelpCircle className="h-4 w-4 text-accent" />
+                      Como configurar:
+                    </h4>
+                    <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                      <li>Crie um grupo ou canal no Telegram</li>
+                      <li>Adicione o bot como <strong>administrador</strong></li>
+                      <li>De permissao para o bot <strong>convidar usuarios</strong></li>
+                      <li>Envie uma mensagem no grupo para ele aparecer aqui</li>
+                      <li>Clique em "Buscar Grupos" e selecione o grupo</li>
+                    </ol>
+                  </div>
+
+                  {/* Search Groups */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Grupos disponiveis</Label>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchBotGroups}
+                        disabled={isLoadingGroups || flowBots.length === 0}
+                      >
+                        {isLoadingGroups ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <RefreshCw className="h-4 w-4 mr-2" />
+                        )}
+                        Buscar Grupos
+                      </Button>
+                    </div>
+
+                    {flowBots.length === 0 && (
+                      <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-sm text-amber-400">
+                        <AlertTriangle className="h-4 w-4 inline mr-2" />
+                        Vincule um bot na aba "Bots" primeiro
+                      </div>
+                    )}
+
+                    {availableGroups.length > 0 && (
+                      <div className="space-y-3">
+                        <Select value={selectedGroupId} onValueChange={setSelectedGroupId}>
+                          <SelectTrigger className="bg-secondary/30 border-border/50">
+                            <SelectValue placeholder="Selecione um grupo" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableGroups.map((group) => (
+                              <SelectItem 
+                                key={group.id} 
+                                value={group.id}
+                                disabled={!group.canInvite}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <Users className="h-4 w-4" />
+                                  <span>{group.title}</span>
+                                  {!group.canInvite && (
+                                    <span className="text-xs text-destructive">(sem permissao)</span>
+                                  )}
+                                  {group.canInvite && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      {group.type === "channel" ? "Canal" : "Grupo"}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <Button
+                          onClick={handleSetVipGroup}
+                          disabled={!selectedGroupId}
+                          className="w-full bg-accent hover:bg-accent/90 text-accent-foreground"
+                        >
+                          Definir como Grupo VIP
+                        </Button>
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </div>
