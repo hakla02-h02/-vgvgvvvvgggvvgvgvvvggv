@@ -277,30 +277,50 @@ export default function FlowEditorPage() {
 
     setIsLoadingBots(true)
     
-    // Get all bots linked to ANY flow (not just this one)
-    const { data: allFlowBots } = await supabase
-      .from("flow_bots")
-      .select("bot_id, flow_id")
-    
-    const botsLinkedToOtherFlows = (allFlowBots || [])
-      .filter(fb => fb.flow_id !== flowId)
-      .map(fb => fb.bot_id)
-    
-    setBotsInOtherFlows(botsLinkedToOtherFlows)
-    
-    const { data } = await supabase
+    // Get user's bots first
+    const { data: userBotsData, error: botsError } = await supabase
       .from("bots")
       .select("id, username, first_name, photo_url")
       .eq("user_id", session.userId)
 
-    if (data) {
-      // Filter out bots already linked to THIS flow
-      const linkedBotIds = flowBots.map(fb => fb.bot_id)
-      // Also filter out bots linked to OTHER flows (each bot can only be in 1 flow)
-      setAvailableBots(data.filter(b => 
-        !linkedBotIds.includes(b.id) && !botsLinkedToOtherFlows.includes(b.id)
-      ))
+    console.log("[v0] User bots:", userBotsData, "Error:", botsError)
+
+    if (!userBotsData || userBotsData.length === 0) {
+      setAvailableBots([])
+      setIsLoadingBots(false)
+      return
     }
+    
+    // Get bots linked to THIS flow
+    const linkedBotIds = flowBots.map(fb => fb.bot_id)
+    console.log("[v0] Bots linked to THIS flow:", linkedBotIds)
+    
+    // Get all flow_bots entries for user's bots to check which are in OTHER flows
+    const userBotIds = userBotsData.map(b => b.id)
+    const { data: allFlowBots, error: flowBotsError } = await supabase
+      .from("flow_bots")
+      .select("bot_id, flow_id")
+      .in("bot_id", userBotIds)
+    
+    console.log("[v0] All flow_bots for user's bots:", allFlowBots, "Error:", flowBotsError)
+    
+    // Filter to get only bots linked to OTHER flows (not this one)
+    const botsLinkedToOtherFlows = (allFlowBots || [])
+      .filter(fb => fb.flow_id !== flowId)
+      .map(fb => fb.bot_id)
+    
+    console.log("[v0] Bots in OTHER flows:", botsLinkedToOtherFlows)
+    
+    setBotsInOtherFlows(botsLinkedToOtherFlows)
+    
+    // Filter: exclude bots in THIS flow AND bots in OTHER flows
+    const available = userBotsData.filter(b => 
+      !linkedBotIds.includes(b.id) && !botsLinkedToOtherFlows.includes(b.id)
+    )
+    
+    console.log("[v0] Available bots:", available)
+    
+    setAvailableBots(available)
     setIsLoadingBots(false)
   }, [session?.userId, flowBots, flowId])
 
