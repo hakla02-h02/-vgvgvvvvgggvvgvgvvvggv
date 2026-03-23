@@ -1169,9 +1169,9 @@ export default function FlowEditorPage() {
 
           {/* Plans Tab */}
           {activeTab === "plans" && (
-            <div className="flex gap-6">
-              {/* Left Column - Plans */}
-              <div className="flex-1 space-y-6">
+            <div className="space-y-6">
+              {/* Grid de 2 colunas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Planos de Pagamento */}
                 <Card className="border-border/50">
                   <CardHeader className="pb-4">
@@ -1213,7 +1213,7 @@ export default function FlowEditorPage() {
                             key={plan.id}
                             className="p-4 rounded-xl border border-border/50 bg-secondary/20"
                           >
-                            <div className="grid grid-cols-4 gap-4">
+                            <div className="grid grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label>Nome</Label>
                                 <Input
@@ -1243,7 +1243,7 @@ export default function FlowEditorPage() {
                                   className="bg-secondary/50"
                                 />
                               </div>
-                              <div className="flex items-end gap-2">
+                              <div className="flex items-end justify-between gap-2">
                                 <div className="flex items-center gap-2">
                                   <Switch
                                     checked={plan.active}
@@ -1278,29 +1278,7 @@ export default function FlowEditorPage() {
                   </CardContent>
                 </Card>
 
-                {/* Variacao de Preco */}
-                <Card className="border-border/50">
-                  <CardContent className="py-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
-                          <TrendingUp className="h-5 w-5 text-violet-400" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">Variacao de Preco</p>
-                          <p className="text-sm text-muted-foreground">
-                            Preco unico por cliente (anti-fraude)
-                          </p>
-                        </div>
-                      </div>
-                      <Switch />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Right Column - Entrega Padrao */}
-              <div className="w-80">
+                {/* Entrega Padrao */}
                 <Card className="border-border/50">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-3">
@@ -1345,25 +1323,48 @@ export default function FlowEditorPage() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Variacao de Preco - Full width */}
+              <Card className="border-border/50">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet-500/10">
+                        <TrendingUp className="h-5 w-5 text-violet-400" />
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground">Variacao de Preco</p>
+                        <p className="text-sm text-muted-foreground">
+                          Preco unico por cliente (anti-fraude)
+                        </p>
+                      </div>
+                    </div>
+                    <Switch />
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           )}
 
           {/* Upsell Tab */}
           {activeTab === "upsell" && (
-            <div className="flex gap-6">
-              {/* Left Sidebar - Config */}
-              <div className="w-72 space-y-4">
+            <div className="space-y-6">
+              {/* Header Card - Config */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card className="border-border/50">
                   <CardContent className="pt-6 space-y-4">
-                    <div className="flex items-center gap-3">
-                      <TrendingUp className="h-5 w-5 text-accent" />
-                      <span className="font-semibold text-accent">Upsell</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Aumente suas vendas com ofertas especiais
-                    </p>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">Ativar Upsell</span>
+                      <div className="flex items-center gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                          <TrendingUp className="h-5 w-5 text-accent" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Upsell</p>
+                          <p className="text-sm text-muted-foreground">
+                            Aumente suas vendas com ofertas especiais
+                          </p>
+                        </div>
+                      </div>
                       <Switch
                         checked={upsellEnabled}
                         onCheckedChange={(checked) => {
@@ -1374,69 +1375,73 @@ export default function FlowEditorPage() {
                     </div>
 
                     {upsellEnabled && (
-                      <>
-                        {/* Info box */}
-                        <div className="rounded-lg border border-border/50 p-4 space-y-3">
-                          <p className="text-sm font-medium text-accent">Como funciona?</p>
-                          <p className="text-sm text-muted-foreground">
-                            Upsell e enviado apos o cliente pagar, oferecendo produtos complementares.
-                          </p>
-                          <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
-                            <li>Ate 20 sequencias</li>
-                            <li>Ofertas premium</li>
-                            <li>Aumento do ticket medio</li>
-                          </ul>
-                        </div>
-
-                        {/* Entrega do Upsell */}
-                        <div className="space-y-2 pt-2">
-                          <Label className="text-sm font-medium">Entrega do Upsell</Label>
-                          <Select
-                            value={upsellDeliveryType}
-                            onValueChange={(value: "same" | "custom") => {
-                              setUpsellDeliveryType(value)
-                              setHasChanges(true)
-                            }}
-                          >
-                            <SelectTrigger className="bg-secondary/50 border-border/50">
-                              <div className="flex items-center gap-2">
-                                <RefreshCw className="h-4 w-4 text-muted-foreground" />
-                                <SelectValue />
-                              </div>
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="same">Mesmo do fluxo principal</SelectItem>
-                              <SelectItem value="custom">Entrega personalizada</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </>
+                      <div className="space-y-2 pt-2">
+                        <Label className="text-sm font-medium">Entrega do Upsell</Label>
+                        <Select
+                          value={upsellDeliveryType}
+                          onValueChange={(value: "same" | "custom") => {
+                            setUpsellDeliveryType(value)
+                            setHasChanges(true)
+                          }}
+                        >
+                          <SelectTrigger className="bg-secondary/50 border-border/50">
+                            <div className="flex items-center gap-2">
+                              <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                              <SelectValue />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="same">Mesmo do fluxo principal</SelectItem>
+                            <SelectItem value="custom">Entrega personalizada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     )}
                   </CardContent>
                 </Card>
+
+                {upsellEnabled && (
+                  <Card className="border-border/50">
+                    <CardContent className="pt-6 space-y-3">
+                      <p className="text-sm font-medium text-accent">Como funciona?</p>
+                      <p className="text-sm text-muted-foreground">
+                        Upsell e enviado apos o cliente pagar, oferecendo produtos complementares.
+                      </p>
+                      <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                        <li>Ate 20 sequencias</li>
+                        <li>Ofertas premium</li>
+                        <li>Aumento do ticket medio</li>
+                      </ul>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
-              {/* Main Content - Sequences */}
-              <div className="flex-1">
+              {/* Sequences Section */}
+              <div>
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold">Sequencias de Upsell</h3>
                   <span className="text-sm text-muted-foreground">{upsellSequences.length}/20</span>
                 </div>
 
                 {!upsellEnabled ? (
-                  <div className="flex flex-col items-center justify-center py-16 border border-border/50 rounded-xl">
-                    <TrendingUp className="h-10 w-10 text-muted-foreground/30 mb-4" />
-                    <p className="text-muted-foreground">Ative o Upsell para configurar sequencias</p>
-                  </div>
+                  <Card className="border-border/50">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <TrendingUp className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground">Ative o Upsell para configurar sequencias</p>
+                    </CardContent>
+                  </Card>
                 ) : upsellSequences.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 border border-border/50 rounded-xl">
-                    <Plus className="h-10 w-10 text-muted-foreground/30 mb-4" />
-                    <p className="text-muted-foreground mb-4">Nenhuma sequencia configurada</p>
-                    <Button onClick={handleAddUpsellSequence} className="bg-accent hover:bg-accent/90">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Adicionar Sequencia
-                    </Button>
-                  </div>
+                  <Card className="border-border/50">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <Plus className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground mb-4">Nenhuma sequencia configurada</p>
+                      <Button onClick={handleAddUpsellSequence} className="bg-accent hover:bg-accent/90">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Sequencia
+                      </Button>
+                    </CardContent>
+                  </Card>
                 ) : (
                   <div className="space-y-4">
                     {upsellSequences.map((seq, index) => (
