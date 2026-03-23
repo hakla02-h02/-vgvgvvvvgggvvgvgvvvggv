@@ -539,7 +539,7 @@ useEffect(() => {
     fetchVipGroup()
   }, [fetchVipGroup])
 
-  // Fetch groups where bot is admin
+  // Fetch groups where bot is admin (from our database - populated by webhook)
   const fetchBotGroups = async () => {
     if (flowBots.length === 0) {
       toast({
@@ -554,21 +554,10 @@ useEffect(() => {
     setAvailableGroups([])
 
     try {
-      // Get the first bot's token
       const firstBot = flowBots[0]
-      const { data: botData } = await supabase
-        .from("bots")
-        .select("token")
-        .eq("id", firstBot.bot_id)
-        .single()
-
-      if (!botData?.token) {
-        toast({ title: "Erro", description: "Token do bot nao encontrado", variant: "destructive" })
-        setIsLoadingGroups(false)
-        return
-      }
-
-      const res = await fetch(`/api/telegram/get-bot-groups?token=${botData.token}`)
+      
+      // Fetch from our database (populated by webhook)
+      const res = await fetch(`/api/telegram/bot-groups?bot_id=${firstBot.bot_id}`)
       const data = await res.json()
 
       if (data.success) {
@@ -576,7 +565,7 @@ useEffect(() => {
         if (data.groups.length === 0) {
           toast({
             title: "Nenhum grupo encontrado",
-            description: "Adicione o bot como admin em um grupo e envie uma mensagem la primeiro",
+            description: "Configure o webhook e adicione o bot como admin em um grupo",
           })
         }
       } else {
@@ -587,6 +576,53 @@ useEffect(() => {
     }
 
     setIsLoadingGroups(false)
+  }
+
+  // Setup webhook for bot
+  const handleSetupWebhook = async () => {
+    if (flowBots.length === 0) {
+      toast({
+        title: "Nenhum bot vinculado",
+        description: "Vincule um bot primeiro",
+        variant: "destructive"
+      })
+      return
+    }
+
+    try {
+      const firstBot = flowBots[0]
+      const { data: botData } = await supabase
+        .from("bots")
+        .select("token")
+        .eq("id", firstBot.bot_id)
+        .single()
+
+      if (!botData?.token) {
+        toast({ title: "Erro", description: "Token do bot nao encontrado", variant: "destructive" })
+        return
+      }
+
+      const res = await fetch("/api/telegram/set-webhook", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          botId: firstBot.bot_id,
+          token: botData.token
+        })
+      })
+
+      const data = await res.json()
+      if (data.success) {
+        toast({ 
+          title: "Webhook configurado!", 
+          description: "Agora adicione o bot como admin em um grupo"
+        })
+      } else {
+        toast({ title: "Erro", description: data.error, variant: "destructive" })
+      }
+    } catch (error: any) {
+      toast({ title: "Erro", description: error.message, variant: "destructive" })
+    }
   }
 
   // Set VIP group
@@ -1074,13 +1110,36 @@ useEffect(() => {
                       Como configurar:
                     </h4>
                     <ol className="text-sm text-muted-foreground space-y-2 list-decimal list-inside">
+                      <li>Clique em <strong>"Ativar Webhook"</strong> abaixo</li>
                       <li>Crie um grupo ou canal no Telegram</li>
-                      <li>Adicione o bot como <strong>administrador</strong></li>
-                      <li>De permissao para o bot <strong>convidar usuarios</strong></li>
-                      <li>Envie uma mensagem no grupo para ele aparecer aqui</li>
-                      <li>Clique em "Buscar Grupos" e selecione o grupo</li>
+                      <li>Adicione o bot como <strong>administrador</strong> com permissao de <strong>convidar usuarios</strong></li>
+                      <li>O grupo aparecera automaticamente na lista</li>
+                      <li>Selecione o grupo e clique em "Definir como Grupo VIP"</li>
                     </ol>
                   </div>
+
+                  {/* Webhook Setup */}
+                  {flowBots.length > 0 && (
+                    <div className="p-4 rounded-xl bg-accent/5 border border-accent/20">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-medium text-sm">Webhook do Telegram</h4>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Necessario para detectar quando o bot entra em grupos
+                          </p>
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSetupWebhook}
+                          className="border-accent/30 hover:bg-accent/10"
+                        >
+                          <Zap className="h-4 w-4 mr-2 text-accent" />
+                          Ativar Webhook
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Search Groups */}
                   <div className="space-y-3">
@@ -1097,7 +1156,7 @@ useEffect(() => {
                         ) : (
                           <RefreshCw className="h-4 w-4 mr-2" />
                         )}
-                        Buscar Grupos
+                        Atualizar Lista
                       </Button>
                     </div>
 
