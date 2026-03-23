@@ -178,62 +178,132 @@ export default function FluxosPage() {
 
 
 
-  // Flow card - Design limpo e funcional (estilo tabela)
+  // Flow card - Design moderno com metricas visuais
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
     const isBasic = flow.mode === "basic" || !flow.mode
+    
+    // Mock stats for now - these would come from real data
+    const starts = 0
+    const conversions = 0
+    const conversionRate = starts > 0 ? Math.round((conversions / starts) * 100) : 0
 
     return (
       <div 
-        className="group bg-card border border-border rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+        className="group bg-card border border-border rounded-2xl overflow-hidden hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 cursor-pointer"
         onClick={() => router.push(`/fluxos/${flow.id}`)}
       >
-        {/* Main row */}
-        <div className="flex items-center gap-4 p-4">
-          {/* Status indicator */}
-          <div className={`w-1 h-12 rounded-full ${isBasic ? "bg-accent" : "bg-purple-500"}`} />
+        {/* Header with gradient */}
+        <div className={`relative px-5 py-4 ${isBasic ? "bg-accent/10" : "bg-purple-500/10"}`}>
+          {/* Background pattern */}
+          <div className="absolute inset-0 opacity-30" style={{ 
+            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 8px, ${isBasic ? "hsl(100 71% 65% / 0.2)" : "rgb(168 85 247 / 0.2)"} 8px, ${isBasic ? "hsl(100 71% 65% / 0.2)" : "rgb(168 85 247 / 0.2)"} 16px)` 
+          }} />
           
-          {/* Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <h3 className="font-semibold text-foreground truncate">{flow.name}</h3>
-              <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded ${
-                isBasic ? "bg-accent/10 text-accent" : "bg-purple-500/10 text-purple-400"
+          <div className="relative flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                isBasic ? "bg-accent/20 text-accent" : "bg-purple-500/20 text-purple-400"
               }`}>
-                {isBasic ? "Basico" : "N8N"}
-              </span>
+                {isBasic ? <Zap className="h-5 w-5" /> : <Workflow className="h-5 w-5" />}
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground truncate max-w-[180px]">{flow.name}</h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                    isBasic ? "bg-accent/20 text-accent" : "bg-purple-500/20 text-purple-400"
+                  }`}>
+                    {isBasic ? "BASICO" : "N8N"}
+                  </span>
+                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                    flow.status === "active" ? "bg-emerald-500/20 text-emerald-400" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {flow.status === "active" ? "Ativo" : "Pausado"}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <Bot className="h-3 w-3" />
-                {bots.length === 0 ? "Nenhum bot" : `${bots.length} bot${bots.length > 1 ? 's' : ''}`}
-              </span>
-              <span>0 starts</span>
-              <span>0% conv.</span>
+            
+            {/* Actions */}
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button 
+                className="p-1.5 rounded-lg hover:bg-background/50 text-muted-foreground hover:text-foreground transition-colors"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  router.push(`/fluxos/${flow.id}`)
+                }}
+                title="Configurar"
+              >
+                <Settings className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Stats Grid */}
+        <div className="p-5">
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            {/* Starts */}
+            <div className="bg-secondary/50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-foreground">{starts}</div>
+              <div className="text-[10px] text-muted-foreground font-medium">Starts</div>
+            </div>
+            
+            {/* Conversions */}
+            <div className="bg-secondary/50 rounded-xl p-3 text-center">
+              <div className="text-lg font-bold text-foreground">{conversions}</div>
+              <div className="text-[10px] text-muted-foreground font-medium">Conv.</div>
+            </div>
+            
+            {/* Conversion Rate */}
+            <div className={`rounded-xl p-3 text-center ${
+              conversionRate > 0 ? "bg-emerald-500/10" : "bg-secondary/50"
+            }`}>
+              <div className={`text-lg font-bold ${
+                conversionRate > 0 ? "text-emerald-400" : "text-foreground"
+              }`}>{conversionRate}%</div>
+              <div className="text-[10px] text-muted-foreground font-medium">Taxa</div>
             </div>
           </div>
           
-          {/* Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Bots linked */}
+          <div className="flex items-center justify-between pt-3 border-t border-border">
+            <div className="flex items-center gap-2">
+              <div className="flex -space-x-2">
+                {bots.length > 0 ? (
+                  bots.slice(0, 3).map((fb, i) => (
+                    <div 
+                      key={fb.id}
+                      className="w-6 h-6 rounded-full bg-accent/20 border-2 border-card flex items-center justify-center"
+                    >
+                      <Bot className="h-3 w-3 text-accent" />
+                    </div>
+                  ))
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center">
+                    <Bot className="h-3 w-3 text-muted-foreground" />
+                  </div>
+                )}
+                {bots.length > 3 && (
+                  <div className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center text-[10px] font-medium text-muted-foreground">
+                    +{bots.length - 3}
+                  </div>
+                )}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {bots.length === 0 ? "Nenhum bot" : `${bots.length} bot${bots.length > 1 ? 's' : ''}`}
+              </span>
+            </div>
+            
             <button 
-              className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.stopPropagation()
-                // TODO: Remarketing
-              }}
-              title="Remarketing"
-            >
-              <RotateCcw className="h-4 w-4" />
-            </button>
-            <button 
-              className="p-2 rounded hover:bg-muted text-muted-foreground hover:text-foreground"
+              className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 font-medium transition-colors"
               onClick={(e) => {
                 e.stopPropagation()
                 router.push(`/fluxos/${flow.id}`)
               }}
-              title="Editar"
             >
-              <Settings className="h-4 w-4" />
+              Editar
+              <Link2 className="h-3 w-3" />
             </button>
           </div>
         </div>
