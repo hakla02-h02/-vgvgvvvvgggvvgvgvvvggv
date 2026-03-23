@@ -21,7 +21,7 @@ import {
   ArrowLeft, Bot, MessageSquare, CreditCard, TrendingUp, TrendingDown,
   Package, Wallet, Crown, Save, Loader2, Plus, Trash2, RefreshCw,
   Users, DollarSign, HelpCircle, AlertTriangle, Lock, Pencil,
-  Globe, Link2, Settings2
+  Globe, Link2, Settings2, Zap
 } from "lucide-react"
 
 // Types
