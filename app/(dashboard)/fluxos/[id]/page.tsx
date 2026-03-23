@@ -1303,90 +1303,94 @@ export default function FlowEditorPage() {
 
         {/* Sidebar */}
         <div className="w-80 border-l border-border/50 bg-card p-6 overflow-auto">
-          {/* Media Cache */}
-          <Card className="border-border/50 mb-6">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <Settings2 className="h-4 w-4 text-accent" />
-                Cache de Midia
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs text-muted-foreground mb-3">
-                Canal ou grupo para cache do Telegram
-              </p>
-              <div className="flex items-center gap-2">
-                <Select
-                  value={mediaCacheChat}
-                  onValueChange={(value) => {
-                    setMediaCacheChat(value)
-                    setHasChanges(true)
-                  }}
-                >
-                  <SelectTrigger className="bg-secondary/30">
-                    <SelectValue placeholder="Selecionar canal/grupo" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {telegramChats.map((chat) => (
-                      <SelectItem key={chat.id} value={chat.id}>
-                        {chat.title}
-                      </SelectItem>
-                    ))}
-                    {telegramChats.length === 0 && (
-                      <SelectItem value="none" disabled>
-                        Nenhum canal disponivel
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleRefreshChats}
-                  disabled={isLoadingChats}
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoadingChats ? "animate-spin" : ""}`} />
-                </Button>
-              </div>
+          {/* Media Cache - Only show in bots tab */}
+          {activeTab === "bots" && (
+            <>
+              <Card className="border-border/50 mb-6">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <Settings2 className="h-4 w-4 text-accent" />
+                    Cache de Midia
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    Canal ou grupo para cache do Telegram
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={mediaCacheChat}
+                      onValueChange={(value) => {
+                        setMediaCacheChat(value)
+                        setHasChanges(true)
+                      }}
+                    >
+                      <SelectTrigger className="bg-secondary/30">
+                        <SelectValue placeholder="Selecionar canal/grupo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {telegramChats.map((chat) => (
+                          <SelectItem key={chat.id} value={chat.id}>
+                            {chat.title}
+                          </SelectItem>
+                        ))}
+                        {telegramChats.length === 0 && (
+                          <SelectItem value="none" disabled>
+                            Nenhum canal disponivel
+                          </SelectItem>
+                        )}
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleRefreshChats}
+                      disabled={isLoadingChats}
+                    >
+                      <RefreshCw className={`h-4 w-4 ${isLoadingChats ? "animate-spin" : ""}`} />
+                    </Button>
+                  </div>
 
-              {/* Instructions */}
-              <div className="mt-4 p-3 rounded-lg bg-success/10 border border-success/30">
-                <p className="text-xs font-medium text-success mb-2">Como configurar:</p>
-                <ol className="text-xs text-muted-foreground space-y-1">
-                  <li>1. Crie um <span className="text-success font-medium">canal</span> ou <span className="text-success font-medium">grupo</span> no Telegram</li>
-                  <li>2. Adicione o bot como <span className="text-accent font-medium">administrador</span></li>
-                  <li>3. De permissao de <span className="font-medium">postar mensagens</span></li>
-                  <li>4. Clique no botao <span className="text-accent font-medium">&quot;Atualizar&quot;</span> ao lado</li>
-                </ol>
-                <div className="flex items-center gap-2 mt-3 pt-2 border-t border-success/20">
-                  <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                  <span className="text-[10px] text-warning">Necessario para enviar midia</span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                  {/* Instructions */}
+                  <div className="mt-4 p-3 rounded-lg bg-success/10 border border-success/30">
+                    <p className="text-xs font-medium text-success mb-2">Como configurar:</p>
+                    <ol className="text-xs text-muted-foreground space-y-1">
+                      <li>1. Crie um <span className="text-success font-medium">canal</span> ou <span className="text-success font-medium">grupo</span> no Telegram</li>
+                      <li>2. Adicione o bot como <span className="text-accent font-medium">administrador</span></li>
+                      <li>3. De permissao de <span className="font-medium">postar mensagens</span></li>
+                      <li>4. Clique no botao <span className="text-accent font-medium">&quot;Atualizar&quot;</span> ao lado</li>
+                    </ol>
+                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-success/20">
+                      <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                      <span className="text-[10px] text-warning">Necessario para enviar midia</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Support */}
-          <Card className="border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-sm">
-                <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                @ Suporte
-                <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Input
-                value={supportUsername}
-                onChange={(e) => {
-                  setSupportUsername(e.target.value.replace("@", ""))
-                  setHasChanges(true)
-                }}
-                placeholder="@username"
-                className="bg-secondary/30"
-              />
-            </CardContent>
-          </Card>
+              {/* Support */}
+              <Card className="border-border/50">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-sm">
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                    @ Suporte
+                    <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Input
+                    value={supportUsername}
+                    onChange={(e) => {
+                      setSupportUsername(e.target.value.replace("@", ""))
+                      setHasChanges(true)
+                    }}
+                    placeholder="@username"
+                    className="bg-secondary/30"
+                  />
+                </CardContent>
+              </Card>
+            </>
+          )}
 
           {/* Danger Zone */}
           <Card className="border-destructive/50 mt-6">
