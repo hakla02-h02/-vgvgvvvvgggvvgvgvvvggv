@@ -184,6 +184,7 @@ export default function FlowEditorPage() {
 
   // Welcome message
   const [welcomeMessage, setWelcomeMessage] = useState("")
+  const [ctaButtonText, setCtaButtonText] = useState("Ver Planos")
   const [welcomeMedias, setWelcomeMedias] = useState<string[]>([])
   const [secondaryMessageEnabled, setSecondaryMessageEnabled] = useState(false)
   const [secondaryMessage, setSecondaryMessage] = useState("")
@@ -1122,6 +1123,43 @@ export default function FlowEditorPage() {
                       }}>
                         {"{username}"}
                       </Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Botao CTA */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                        <ExternalLink className="h-5 w-5 text-accent" />
+                      </div>
+                      <div>
+                        <Label className="text-base font-semibold">Botao de Acao (CTA)</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Botao exibido apos a mensagem para mostrar os planos
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-4 space-y-3">
+                    <Label className="text-sm">Texto do Botao</Label>
+                    <Input
+                      value={ctaButtonText}
+                      onChange={(e) => {
+                        setCtaButtonText(e.target.value)
+                        setHasChanges(true)
+                      }}
+                      placeholder="Ver Planos"
+                      className="bg-secondary/30 border-border/50"
+                    />
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-accent/10 border border-accent/20">
+                      <HelpCircle className="h-4 w-4 text-accent shrink-0" />
+                      <p className="text-sm text-accent">
+                        Este botao sera exibido ao usuario apos a mensagem de boas-vindas para que ele possa ver os planos disponiveis.
+                      </p>
                     </div>
                   </div>
                 </CardContent>
