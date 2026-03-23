@@ -1305,7 +1305,8 @@ export default function FlowEditorPage() {
                   </CardContent>
                 </Card>
               </div>
-            )}
+            </div>
+          )}
 
           {/* Welcome Tab */}
           {activeTab === "welcome" && (
