@@ -158,8 +158,7 @@ export default function FlowEditorPage() {
   const [newBotToken, setNewBotToken] = useState("")
   const [isCreatingBot, setIsCreatingBot] = useState(false)
   
-  // Bots already linked to other flows
-  const [botsInOtherFlows, setBotsInOtherFlows] = useState<string[]>([])
+
 
   // Welcome message
   const [welcomeMessage, setWelcomeMessage] = useState("")
@@ -244,11 +243,11 @@ export default function FlowEditorPage() {
     setIsLoading(false)
   }, [flowId, session?.userId, router])
 
-  // Fetch flow bots
+  // Fetch flow bots - using correct column names from bots table
   const fetchFlowBots = useCallback(async () => {
     if (!flowId) return
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("flow_bots")
       .select(`
         id,
@@ -256,15 +255,29 @@ export default function FlowEditorPage() {
         bot_id,
         bots:bot_id (
           id,
-          username,
-          first_name,
-          photo_url
+          name,
+          token,
+          status
         )
       `)
       .eq("flow_id", flowId)
 
+    console.log("[v0] fetchFlowBots result:", data, "Error:", error)
+
     if (data) {
-      setFlowBots(data as unknown as FlowBot[])
+      // Map to expected FlowBot format
+      const mapped = data.map((fb: any) => ({
+        id: fb.id,
+        flow_id: fb.flow_id,
+        bot_id: fb.bot_id,
+        bot: fb.bots ? {
+          id: fb.bots.id,
+          username: fb.bots.name,
+          first_name: fb.bots.name,
+          photo_url: null
+        } : null
+      }))
+      setFlowBots(mapped)
     }
   }, [flowId])
 
@@ -306,7 +319,6 @@ export default function FlowEditorPage() {
     console.log("[v0] Available bots mapped:", available)
     
     setAvailableBots(available)
-    setBotsInOtherFlows([])
     setIsLoadingBots(false)
   }, [session?.userId, flowBots])
 
@@ -431,7 +443,12 @@ export default function FlowEditorPage() {
 
   // Add existing bot to flow
   const handleAddBot = async () => {
-    if (!selectedBotToAdd || !flowId) return
+    console.log("[v0] handleAddBot called - selectedBotToAdd:", selectedBotToAdd, "flowId:", flowId)
+    
+    if (!selectedBotToAdd || !flowId) {
+      console.log("[v0] Missing selectedBotToAdd or flowId, returning")
+      return
+    }
 
     // Check max 5 bots
     if (flowBots.length >= 5) {
@@ -443,17 +460,23 @@ export default function FlowEditorPage() {
       return
     }
 
-    const { error } = await supabase
+    console.log("[v0] Inserting into flow_bots:", { flow_id: flowId, bot_id: selectedBotToAdd })
+    
+    const { data, error } = await supabase
       .from("flow_bots")
       .insert({
         flow_id: flowId,
         bot_id: selectedBotToAdd,
       })
+      .select()
+
+    console.log("[v0] Insert result - data:", data, "error:", error)
 
     if (error) {
+      console.log("[v0] Error inserting flow_bot:", error)
       toast({
         title: "Erro",
-        description: "Nao foi possivel adicionar o bot",
+        description: error.message || "Nao foi possivel adicionar o bot",
         variant: "destructive",
       })
     } else {
@@ -865,12 +888,7 @@ export default function FlowEditorPage() {
                     </div>
                   )}
                   
-                  {/* Aviso: cada bot so pode estar em 1 fluxo */}
-                  <div className="mt-4 p-3 rounded-lg border border-border/50 bg-secondary/10">
-                    <p className="text-xs text-muted-foreground">
-                      <strong>Nota:</strong> Cada bot so pode estar vinculado a um unico fluxo por vez.
-                    </p>
-                  </div>
+
                 </CardContent>
               </Card>
             </div>
