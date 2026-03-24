@@ -25,7 +25,7 @@ import {
   Globe, Link2, Settings2, Zap, Image as ImageIcon, Bold, Italic,
   Underline, Strikethrough, Code, Link as LinkIcon, Quote, Smile,
   ExternalLink, MessageCircle, Copy, ChevronDown, ChevronRight, Clock,
-  Check, X, Workflow, BarChart3, Gift, Video, Music
+  Check, X, Workflow, Gift, Video, Music, BarChart3
 } from "lucide-react"
 
 // Types
