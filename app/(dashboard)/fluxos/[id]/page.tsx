@@ -515,6 +515,14 @@ Clique no botao abaixo para renovar com desconto especial!`)
     }
   }, [fetchFlow, fetchFlowBots, isAuthLoading, session?.userId])
 
+  // Adjust selected hours when notification count changes
+  useEffect(() => {
+    const maxHours = parseInt(notificationCount)
+    if (selectedHours.length > maxHours) {
+      setSelectedHours(selectedHours.slice(0, maxHours))
+    }
+  }, [notificationCount, selectedHours])
+
   // Save flow
   const handleSave = async () => {
     if (!flow) return
@@ -3404,10 +3412,13 @@ Clique no botao abaixo para renovar com desconto especial!`)
                           {["14 dias", "7 dias", "5 dias", "3 dias", "2 dias", "1 dia", "No dia"].map((day) => (
                             <button
                               key={day}
+                              type="button"
                               onClick={() => {
-                                setDaysBeforeExpire(daysBeforeExpire.includes(day) 
-                                  ? daysBeforeExpire.filter(d => d !== day) 
-                                  : [...daysBeforeExpire, day])
+                                if (daysBeforeExpire.includes(day)) {
+                                  setDaysBeforeExpire(daysBeforeExpire.filter(d => d !== day))
+                                } else {
+                                  setDaysBeforeExpire([...daysBeforeExpire, day])
+                                }
                                 setHasChanges(true)
                               }}
                               className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
@@ -3427,13 +3438,14 @@ Clique no botao abaixo para renovar com desconto especial!`)
                         <Label className="text-muted-foreground">Midia (opcional)</Label>
                         <div className="flex gap-2">
                           {[
-                            { id: "none", label: "Nenhuma" },
+                            { id: "none", label: "Nenhuma", icon: null },
                             { id: "image", label: "Imagem", icon: ImageIcon },
                             { id: "video", label: "Video", icon: Video },
                             { id: "audio", label: "Audio", icon: Music },
                           ].map((type) => (
                             <button
                               key={type.id}
+                              type="button"
                               onClick={() => { setRenewalMediaType(type.id); setHasChanges(true) }}
                               className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2 transition-colors ${
                                 renewalMediaType === type.id
@@ -3510,13 +3522,17 @@ Clique no botao abaixo para renovar com desconto especial!`)
                           {Array.from({ length: 24 }, (_, i) => {
                             const hour = `${i.toString().padStart(2, "0")}:00`
                             const isSelected = selectedHours.includes(hour)
+                            const maxReached = selectedHours.length >= parseInt(notificationCount)
+                            const isDisabled = !isSelected && maxReached
                             return (
                               <button
                                 key={hour}
+                                type="button"
+                                disabled={isDisabled}
                                 onClick={() => {
                                   if (isSelected) {
                                     setSelectedHours(selectedHours.filter(h => h !== hour))
-                                  } else if (selectedHours.length < parseInt(notificationCount)) {
+                                  } else {
                                     setSelectedHours([...selectedHours, hour])
                                   }
                                   setHasChanges(true)
@@ -3524,6 +3540,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
                                 className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
                                   isSelected
                                     ? "bg-amber-500/20 border-amber-500 text-amber-500"
+                                    : isDisabled
+                                    ? "bg-secondary/30 border-border/30 text-muted-foreground/50 cursor-not-allowed"
                                     : "bg-secondary/50 border-border/50 text-muted-foreground hover:border-amber-500/50"
                                 }`}
                               >
@@ -3532,7 +3550,9 @@ Clique no botao abaixo para renovar com desconto especial!`)
                             )
                           })}
                         </div>
-                        <p className="text-xs text-muted-foreground">Selecione {notificationCount} horario(s) para enviar as notificacoes</p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedHours.length}/{notificationCount} horario(s) selecionado(s)
+                        </p>
                       </div>
 
                       {/* Atencao */}
@@ -3565,13 +3585,14 @@ Clique no botao abaixo para renovar com desconto especial!`)
                         <Label className="text-muted-foreground">Midia (opcional)</Label>
                         <div className="flex gap-2">
                           {[
-                            { id: "none", label: "Nenhuma" },
+                            { id: "none", label: "Nenhuma", icon: null },
                             { id: "image", label: "Imagem", icon: ImageIcon },
                             { id: "video", label: "Video", icon: Video },
                             { id: "audio", label: "Audio", icon: Music },
                           ].map((type) => (
                             <button
                               key={type.id}
+                              type="button"
                               onClick={() => { setExpireMediaType(type.id); setHasChanges(true) }}
                               className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2 transition-colors ${
                                 expireMediaType === type.id
@@ -3682,6 +3703,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
                 ].map((period) => (
                   <button
                     key={period.id}
+                    type="button"
                     onClick={() => setConversionsPeriod(period.id)}
                     className={`px-4 py-2 rounded-lg text-sm transition-colors ${
                       conversionsPeriod === period.id
