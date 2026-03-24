@@ -63,6 +63,14 @@ interface FlowPlan {
   delivery_type: "default" | "custom"
   custom_delivery?: string
   order_bump_custom: boolean
+  order_bump_name?: string
+  order_bump_price?: number
+  order_bump_description?: string
+  order_bump_accept_text?: string
+  order_bump_reject_text?: string
+  order_bump_cta_message?: string
+  order_bump_delivery?: "same" | "custom"
+  order_bump_medias?: string[]
 }
 
 interface UpsellSequence {
@@ -581,6 +589,14 @@ export default function FlowEditorPage() {
         active: true,
         delivery_type: "default",
         order_bump_custom: false,
+        order_bump_name: "",
+        order_bump_price: 0,
+        order_bump_description: "",
+        order_bump_accept_text: "ADICIONAR",
+        order_bump_reject_text: "NAO QUERO",
+        order_bump_cta_message: "",
+        order_bump_delivery: "same",
+        order_bump_medias: [],
       },
     ])
     setExpandedPlan(newPlanId)
@@ -1374,7 +1390,7 @@ export default function FlowEditorPage() {
                                 </div>
 
                                 {/* Order Bump personalizado */}
-                                <div className="space-y-2">
+                                <div className="space-y-4">
                                   <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                       <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
@@ -1387,9 +1403,125 @@ export default function FlowEditorPage() {
                                       onCheckedChange={(checked) => handleUpdatePlan(plan.id, "order_bump_custom", checked)}
                                     />
                                   </div>
-                                  <p className="text-sm text-muted-foreground pl-10">
-                                    Usando order bump do fluxo (se configurado)
-                                  </p>
+                                  {!plan.order_bump_custom && (
+                                    <p className="text-sm text-muted-foreground pl-10">
+                                      Usando order bump do fluxo (se configurado)
+                                    </p>
+                                  )}
+
+                                  {/* Order Bump Form - quando ativo */}
+                                  {plan.order_bump_custom && (
+                                    <div className="rounded-xl border border-border/50 p-4 space-y-4 bg-secondary/10">
+                                      <p className="text-sm text-muted-foreground">
+                                        Este order bump substitui o do fluxo para este plano
+                                      </p>
+
+                                      {/* Nome e Preco */}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label className="text-muted-foreground">Nome</Label>
+                                          <Input
+                                            value={plan.order_bump_name || ""}
+                                            onChange={(e) => handleUpdatePlan(plan.id, "order_bump_name", e.target.value)}
+                                            placeholder="Ex: Pack Extra"
+                                            className="bg-secondary/50"
+                                          />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label className="text-muted-foreground">Preco (R$)</Label>
+                                          <Input
+                                            type="number"
+                                            value={plan.order_bump_price || 0}
+                                            onChange={(e) => handleUpdatePlan(plan.id, "order_bump_price", parseFloat(e.target.value) || 0)}
+                                            placeholder="0"
+                                            className="bg-secondary/50"
+                                          />
+                                        </div>
+                                      </div>
+
+                                      {/* Descricao */}
+                                      <div className="space-y-2">
+                                        <Label className="text-muted-foreground">Descricao</Label>
+                                        <Textarea
+                                          value={plan.order_bump_description || ""}
+                                          onChange={(e) => handleUpdatePlan(plan.id, "order_bump_description", e.target.value)}
+                                          placeholder="Descreva a oferta do order bump..."
+                                          rows={3}
+                                          className="bg-secondary/50 border-border/50"
+                                        />
+                                      </div>
+
+                                      {/* Botoes Aceitar/Recusar */}
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label className="text-muted-foreground">Botao Aceitar</Label>
+                                          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 border border-border/50">
+                                            <Check className="h-4 w-4 text-emerald-500" />
+                                            <Input
+                                              value={plan.order_bump_accept_text || "ADICIONAR"}
+                                              onChange={(e) => handleUpdatePlan(plan.id, "order_bump_accept_text", e.target.value)}
+                                              className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0 uppercase"
+                                            />
+                                          </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label className="text-muted-foreground">Botao Recusar</Label>
+                                          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 border border-border/50">
+                                            <X className="h-4 w-4 text-destructive" />
+                                            <Input
+                                              value={plan.order_bump_reject_text || "NAO QUERO"}
+                                              onChange={(e) => handleUpdatePlan(plan.id, "order_bump_reject_text", e.target.value)}
+                                              className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0 uppercase"
+                                            />
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Mensagem CTA */}
+                                      <div className="space-y-2">
+                                        <Label className="text-muted-foreground">Mensagem CTA (opcional)</Label>
+                                        <Input
+                                          value={plan.order_bump_cta_message || ""}
+                                          onChange={(e) => handleUpdatePlan(plan.id, "order_bump_cta_message", e.target.value)}
+                                          placeholder="Ex: CLIQUE EM ADICIONAR ANTES QUE TIREM DO AR"
+                                          className="bg-secondary/50"
+                                        />
+                                      </div>
+
+                                      <div className="border-t border-border/50 pt-4" />
+
+                                      {/* Entrega do Order Bump */}
+                                      <div className="space-y-2">
+                                        <Label className="text-muted-foreground">Entrega do Order Bump</Label>
+                                        <Select
+                                          value={plan.order_bump_delivery || "same"}
+                                          onValueChange={(value) => handleUpdatePlan(plan.id, "order_bump_delivery", value)}
+                                        >
+                                          <SelectTrigger className="bg-secondary/50 border-border/50">
+                                            <div className="flex items-center gap-2">
+                                              <Package className="h-4 w-4 text-muted-foreground" />
+                                              <SelectValue />
+                                            </div>
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="same">Mesmo delivery do plano</SelectItem>
+                                            <SelectItem value="custom">Entrega personalizada</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+
+                                      {/* Midias */}
+                                      <div className="space-y-2">
+                                        <Label className="text-muted-foreground">Midias (ate 3)</Label>
+                                        <div className="flex gap-2">
+                                          <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-orange-500/50 transition-colors">
+                                            <Plus className="h-5 w-5 text-muted-foreground" />
+                                            <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
 
                                 {/* Remover Plano */}
