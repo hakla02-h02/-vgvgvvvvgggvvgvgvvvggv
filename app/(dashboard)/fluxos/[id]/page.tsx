@@ -988,7 +988,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
         {/* N8N Flow Builder Tab - Full Width */}
         {activeTab === "n8n" && (
           <div className="flex-1 h-full">
-            <FlowBuilder flowName={flowName} />
+            <FlowBuilder flowName={flow?.name || "Novo Fluxo"} />
           </div>
         )}
 
