@@ -1916,7 +1916,8 @@ export default function FlowEditorPage() {
           )}
         </div>
 
-        {/* Sidebar */}
+        {/* Sidebar - Only show for tabs that need it */}
+        {(activeTab === "bots" || activeTab === "welcome") && (
         <div className="w-80 border-l border-border/50 bg-card p-6 overflow-auto">
           {/* Media Cache - Only show in bots tab */}
           {activeTab === "bots" && (
@@ -2162,6 +2163,7 @@ export default function FlowEditorPage() {
           </Card>
           )}
         </div>
+        )}
       </div>
 
       {/* Delete Flow Dialog */}
