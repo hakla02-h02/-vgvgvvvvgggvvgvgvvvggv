@@ -300,6 +300,30 @@ export default function FlowEditorPage() {
   const [expandedPack, setExpandedPack] = useState<string | null>(null)
   const [packsButtonText, setPacksButtonText] = useState("Packs Disponiveis")
 
+  // Payment Messages
+  const [showPlanBeforePix, setShowPlanBeforePix] = useState(false)
+  const [pixGeneratedMedia, setPixGeneratedMedia] = useState("")
+  const [pixGeneratedMessage, setPixGeneratedMessage] = useState(`<b>Como realizar o pagamento:</b>
+
+1. Abra o aplicativo do seu banco.
+2. Selecione a opcao "Pagar" ou "PIX".
+3. Escolha "PIX Copia e Cola".
+4. Cole a chave que esta abaixo e finalize o pagamento com seguranca.`)
+  const [qrCodeDisplay, setQrCodeDisplay] = useState("image")
+  const [pixCodeFormat, setPixCodeFormat] = useState("monospace")
+  const [showCopyButton, setShowCopyButton] = useState(true)
+  const [messageBeforeCode, setMessageBeforeCode] = useState("Copie o codigo abaixo:")
+  const [messageBeforeButtons, setMessageBeforeButtons] = useState("Apos efetuar o pagamento, clique no botao abaixo")
+  const [verifyStatusButtonText, setVerifyStatusButtonText] = useState("Verificar Status")
+  const [socialProofEnabled, setSocialProofEnabled] = useState(false)
+  const [approvedMedia, setApprovedMedia] = useState("")
+  const [approvedMessage, setApprovedMessage] = useState(`<b>Pagamento Aprovado!</b>
+
+Parabens {nome}! Seu pagamento do plano <b>{plano}</b> no valor de <b>{valor}</b> foi confirmado.
+
+Voce ja tem acesso ao conteudo!`)
+  const [accessButtonText, setAccessButtonText] = useState("Acessar Conteudo")
+
   // Packs
   const [packs, setPacks] = useState<PackConfig[]>([])
 
@@ -3034,44 +3058,237 @@ export default function FlowEditorPage() {
           {/* Payments Tab */}
           {activeTab === "payments" && (
             <div className="space-y-6">
+              {/* Header Card */}
               <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Wallet className="h-4 w-4 text-accent" />
-                    Configuracoes de Pagamento
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Gateway de Pagamento</Label>
-                    <Select
-                      value={paymentGateway}
-                      onValueChange={(value) => {
-                        setPaymentGateway(value)
-                        setHasChanges(true)
-                      }}
-                    >
-                      <SelectTrigger className="bg-secondary/30">
-                        <SelectValue placeholder="Selecione o gateway..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pushinpay">PushinPay</SelectItem>
-                        <SelectItem value="mercadopago">Mercado Pago</SelectItem>
-                        <SelectItem value="stripe">Stripe</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                      <DollarSign className="h-5 w-5 text-accent" />
+                    </div>
+                    <span className="font-semibold text-lg">Mensagem de Pagamento Gerado</span>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Chave PIX (opcional)</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Personalize a mensagem enviada quando o PIX e gerado
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* 1. Confirmacao do Plano */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">1. Confirmacao do Plano (antes do PIX)</h3>
+                <Card className="border-border/50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Mostrar Plano Antes do PIX</p>
+                        <p className="text-sm text-muted-foreground">Exibe detalhes do plano antes de gerar o codigo PIX</p>
+                      </div>
+                      <Switch
+                        checked={showPlanBeforePix}
+                        onCheckedChange={(checked) => { setShowPlanBeforePix(checked); setHasChanges(true) }}
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 2. Mensagem do PIX Gerado */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">2. Mensagem do PIX Gerado</h3>
+                
+                {/* Midia */}
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Midia (opcional)</Label>
+                  <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-accent/50 transition-colors">
+                    <Plus className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground mt-1">Adicionar midia</span>
+                  </div>
+                </div>
+
+                {/* Mensagem Personalizada */}
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Mensagem Personalizada</Label>
+                  <Textarea
+                    value={pixGeneratedMessage}
+                    onChange={(e) => { setPixGeneratedMessage(e.target.value); setHasChanges(true) }}
+                    rows={6}
+                    className="bg-secondary/50 border-border/50 font-mono text-sm"
+                  />
+                  <p className="text-xs text-muted-foreground text-right">{pixGeneratedMessage.length}/4000 caracteres</p>
+                </div>
+
+                {/* Variaveis */}
+                <Card className="border-border/50 bg-secondary/10">
+                  <CardContent className="pt-4">
+                    <p className="text-sm font-medium mb-3">Variaveis disponiveis:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {["{nome}", "{plano}", "{valor}", "{qr_code}", "{saudacao}", "{uf}"].map((v) => (
+                        <span key={v} className="px-3 py-1 rounded-full bg-secondary/50 text-sm text-muted-foreground border border-border/50">{v}</span>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 3. Configuracoes do QR Code e Codigo PIX */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">3. Configuracoes do QR Code e Codigo PIX</h3>
+                
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Exibicao do QR Code</Label>
+                  <Select value={qrCodeDisplay} onValueChange={(v) => { setQrCodeDisplay(v); setHasChanges(true) }}>
+                    <SelectTrigger className="bg-secondary/50 border-border/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">Na mensagem (imagem)</SelectItem>
+                      <SelectItem value="link">Link separado</SelectItem>
+                      <SelectItem value="none">Nao exibir</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">QR Code enviado junto com a mensagem</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Formato do Codigo PIX</Label>
+                  <Select value={pixCodeFormat} onValueChange={(v) => { setPixCodeFormat(v); setHasChanges(true) }}>
+                    <SelectTrigger className="bg-secondary/50 border-border/50">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="monospace">`Codigo` (monoespa&#231;ado)</SelectItem>
+                      <SelectItem value="normal">Texto normal</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium">Mostrar Botao "Copiar Codigo"</p>
+                        <p className="text-sm text-muted-foreground">Exibe um botao para copiar o codigo PIX facilmente</p>
+                      </div>
+                      <Switch checked={showCopyButton} onCheckedChange={(c) => { setShowCopyButton(c); setHasChanges(true) }} />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-muted-foreground">Mensagem Antes do Codigo</Label>
+                      <Input
+                        value={messageBeforeCode}
+                        onChange={(e) => { setMessageBeforeCode(e.target.value); setHasChanges(true) }}
+                        className="bg-secondary/50"
+                      />
+                      <p className="text-xs text-muted-foreground">Aparece logo antes do codigo PIX copiavel</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* 4. Textos dos Botoes */}
+              <div className="space-y-4">
+                <h3 className="font-semibold">4. Textos dos Botoes</h3>
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Mensagem Antes dos Botoes</Label>
+                  <Input
+                    value={messageBeforeButtons}
+                    onChange={(e) => { setMessageBeforeButtons(e.target.value); setHasChanges(true) }}
+                    className="bg-secondary/50"
+                  />
+                  <p className="text-xs text-muted-foreground">Aparece antes dos botoes de verificar status e QR Code</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-muted-foreground">Botao Verificar Status</Label>
+                  <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 border border-border/50">
+                    <Check className="h-4 w-4 text-emerald-500" />
                     <Input
-                      value={pixKey}
-                      onChange={(e) => {
-                        setPixKey(e.target.value)
-                        setHasChanges(true)
-                      }}
-                      placeholder="sua@chavepix.com"
-                      className="bg-secondary/30"
+                      value={verifyStatusButtonText}
+                      onChange={(e) => { setVerifyStatusButtonText(e.target.value); setHasChanges(true) }}
+                      className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0"
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Prova Social */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/50">
+                        <Users className="h-5 w-5 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <p className="font-semibold">Prova Social</p>
+                        <p className="text-sm text-muted-foreground">Mensagem enviada apos o PIX ser gerado — edita sequencialmente entre as mensagens configuradas</p>
+                      </div>
+                    </div>
+                    <Switch checked={socialProofEnabled} onCheckedChange={(c) => { setSocialProofEnabled(c); setHasChanges(true) }} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Mensagem de Pagamento Aprovado */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                      <Check className="h-5 w-5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="font-semibold">Mensagem de Pagamento Aprovado</p>
+                      <p className="text-sm text-muted-foreground">Enviada quando o pagamento e confirmado</p>
+                    </div>
+                  </div>
+
+                  {/* Midia */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Midia (opcional)</Label>
+                    <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500/50 transition-colors">
+                      <Plus className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-xs text-muted-foreground mt-1">Adicionar midia</span>
+                    </div>
+                  </div>
+
+                  {/* Mensagem */}
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Mensagem Personalizada</Label>
+                    <Textarea
+                      value={approvedMessage}
+                      onChange={(e) => { setApprovedMessage(e.target.value); setHasChanges(true) }}
+                      rows={5}
+                      className="bg-secondary/50 border-border/50 font-mono text-sm"
+                    />
+                    <p className="text-xs text-muted-foreground text-right">{approvedMessage.length}/4000 caracteres</p>
+                  </div>
+
+                  {/* Variaveis */}
+                  <Card className="border-border/50 bg-secondary/10">
+                    <CardContent className="pt-4">
+                      <p className="text-sm font-medium mb-3">Variaveis disponiveis:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {["{nome}", "{plano}", "{valor}", "{saudacao}", "{uf}"].map((v) => (
+                          <span key={v} className="px-3 py-1 rounded-full bg-secondary/50 text-sm text-muted-foreground border border-border/50">{v}</span>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Botao de Acesso */}
+                  <div className="border-t border-border/50 pt-4 space-y-2">
+                    <p className="font-semibold">Botao de Acesso</p>
+                    <Label className="text-muted-foreground">Texto do Botao de Acesso</Label>
+                    <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 border border-border/50">
+                      <Gift className="h-4 w-4 text-orange-500" />
+                      <Input
+                        value={accessButtonText}
+                        onChange={(e) => { setAccessButtonText(e.target.value); setHasChanges(true) }}
+                        className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0"
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">Texto exibido no botao que libera acesso ao conteudo</p>
                   </div>
                 </CardContent>
               </Card>
