@@ -324,6 +324,31 @@ Parabens {nome}! Seu pagamento do plano <b>{plano}</b> no valor de <b>{valor}</b
 Voce ja tem acesso ao conteudo!`)
   const [accessButtonText, setAccessButtonText] = useState("Acessar Conteudo")
 
+  // Renewal System
+  const [renewalDeliveryEnabled, setRenewalDeliveryEnabled] = useState(false)
+  const [notifyBeforeExpireEnabled, setNotifyBeforeExpireEnabled] = useState(true)
+  const [daysBeforeExpire, setDaysBeforeExpire] = useState<string[]>(["7 dias", "3 dias", "1 dia", "No dia"])
+  const [renewalMediaType, setRenewalMediaType] = useState("none")
+  const [renewalMessage, setRenewalMessage] = useState(`Ola {nome}!
+
+Sua assinatura do plano {plano} expira em {dias} dias.
+
+Renove agora e continue aproveitando todos os beneficios!`)
+  const [notifyOnDayEnabled, setNotifyOnDayEnabled] = useState(true)
+  const [notificationCount, setNotificationCount] = useState("3")
+  const [selectedHours, setSelectedHours] = useState<string[]>(["09:00", "15:00", "21:00"])
+  const [expireMessageEnabled, setExpireMessageEnabled] = useState(true)
+  const [expireMediaType, setExpireMediaType] = useState("none")
+  const [expireMessage, setExpireMessage] = useState(`{nome}, sua assinatura expirou!
+
+Renove agora para continuar com acesso ao conteudo exclusivo.
+
+Clique no botao abaixo para renovar com desconto especial!`)
+  const [useFlowPlans, setUseFlowPlans] = useState(true)
+  const [renewalDiscount, setRenewalDiscount] = useState("20%")
+  const [kickFromGroup, setKickFromGroup] = useState(true)
+  const [removeVipStatus, setRemoveVipStatus] = useState(true)
+
   // Packs
   const [packs, setPacks] = useState<PackConfig[]>([])
 
@@ -3298,33 +3323,316 @@ Voce ja tem acesso ao conteudo!`)
           {/* Subscription Tab */}
           {activeTab === "subscription" && (
             <div className="space-y-6">
+              {/* Header */}
               <Card className="border-border/50">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Crown className="h-4 w-4 text-amber-400" />
-                      Assinatura Recorrente
-                    </CardTitle>
-                    <Switch
-                      checked={subscriptionEnabled}
-                      onCheckedChange={(checked) => {
-                        setSubscriptionEnabled(checked)
-                        setHasChanges(true)
-                      }}
-                    />
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-3 mb-2">
+                    <RefreshCw className="h-5 w-5 text-accent" />
+                    <span className="font-semibold text-lg">Sistema de Renovacao</span>
                   </div>
-                </CardHeader>
-                {subscriptionEnabled && (
-                  <CardContent>
-                    <div className="flex flex-col items-center py-8 border border-dashed border-border/50 rounded-xl">
-                      <Crown className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                      <p className="font-medium text-foreground mb-1">Em breve</p>
-                      <p className="text-sm text-muted-foreground">
-                        Configure planos de assinatura recorrente
-                      </p>
+                  <p className="text-sm text-muted-foreground">
+                    Configure notificacoes de renovacao e acoes quando a assinatura expirar.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* Entrega Especifica para Renovacao */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Link2 className="h-5 w-5 text-emerald-500" />
+                      <div>
+                        <p className="font-semibold">Entrega Especifica para Renovacao</p>
+                        <p className="text-sm text-muted-foreground">Configure um grupo/canal diferente para entregas de renovacao. Util quando a venda inicial usa "link externo" ou "taxa" mas a renovacao deve entregar direto no grupo VIP.</p>
+                      </div>
                     </div>
-                  </CardContent>
-                )}
+                    <Switch checked={renewalDeliveryEnabled} onCheckedChange={(c) => { setRenewalDeliveryEnabled(c); setHasChanges(true) }} />
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Notificacoes Antes de Expirar */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-amber-500" />
+                      <span className="font-semibold">Notificacoes Antes de Expirar</span>
+                    </div>
+                    <Switch checked={notifyBeforeExpireEnabled} onCheckedChange={(c) => { setNotifyBeforeExpireEnabled(c); setHasChanges(true) }} />
+                  </div>
+
+                  {notifyBeforeExpireEnabled && (
+                    <>
+                      {/* Dias antes de expirar */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Dias antes de expirar</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {["14 dias", "7 dias", "5 dias", "3 dias", "2 dias", "1 dia", "No dia"].map((day) => (
+                            <button
+                              key={day}
+                              onClick={() => {
+                                setDaysBeforeExpire(daysBeforeExpire.includes(day) 
+                                  ? daysBeforeExpire.filter(d => d !== day) 
+                                  : [...daysBeforeExpire, day])
+                                setHasChanges(true)
+                              }}
+                              className={`px-4 py-2 rounded-lg border text-sm transition-colors ${
+                                daysBeforeExpire.includes(day)
+                                  ? "bg-amber-500/20 border-amber-500 text-amber-500"
+                                  : "bg-secondary/50 border-border/50 text-muted-foreground hover:border-amber-500/50"
+                              }`}
+                            >
+                              {day}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Midia */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Midia (opcional)</Label>
+                        <div className="flex gap-2">
+                          {[
+                            { id: "none", label: "Nenhuma" },
+                            { id: "image", label: "Imagem", icon: ImageIcon },
+                            { id: "video", label: "Video", icon: Video },
+                            { id: "audio", label: "Audio", icon: Music },
+                          ].map((type) => (
+                            <button
+                              key={type.id}
+                              onClick={() => { setRenewalMediaType(type.id); setHasChanges(true) }}
+                              className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2 transition-colors ${
+                                renewalMediaType === type.id
+                                  ? "bg-amber-500/20 border-amber-500 text-amber-500"
+                                  : "bg-secondary/50 border-border/50 text-muted-foreground hover:border-amber-500/50"
+                              }`}
+                            >
+                              {type.icon && <type.icon className="h-4 w-4" />}
+                              {type.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Mensagem */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Mensagem de Renovacao</Label>
+                        <Textarea
+                          value={renewalMessage}
+                          onChange={(e) => { setRenewalMessage(e.target.value); setHasChanges(true) }}
+                          rows={5}
+                          className="bg-secondary/50 border-border/50 font-mono text-sm"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          {["{nome}", "{plano}", "{dias}", "{data_expiracao}", "{saudacao}", "{uf}"].map((v) => (
+                            <span key={v} className="px-3 py-1 rounded-full bg-secondary/50 text-sm text-muted-foreground border border-border/50">{v}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Notificacoes no Dia da Expiracao */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Clock className="h-5 w-5 text-amber-500" />
+                      <span className="font-semibold">Notificacoes no Dia da Expiracao</span>
+                    </div>
+                    <Switch checked={notifyOnDayEnabled} onCheckedChange={(c) => { setNotifyOnDayEnabled(c); setHasChanges(true) }} />
+                  </div>
+
+                  {notifyOnDayEnabled && (
+                    <>
+                      <p className="text-sm text-muted-foreground">
+                        Envie multiplas notificacoes em horarios especificos no dia que a assinatura expirar (dia 0)
+                      </p>
+
+                      {/* Quantidade */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Quantas notificacoes enviar</Label>
+                        <Select value={notificationCount} onValueChange={(v) => { setNotificationCount(v); setHasChanges(true) }}>
+                          <SelectTrigger className="bg-secondary/50 border-border/50">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1">1 vez</SelectItem>
+                            <SelectItem value="2">2 vezes</SelectItem>
+                            <SelectItem value="3">3 vezes</SelectItem>
+                            <SelectItem value="4">4 vezes</SelectItem>
+                            <SelectItem value="5">5 vezes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Numero de notificacoes que serao enviadas durante o dia da expiracao</p>
+                      </div>
+
+                      {/* Horarios Grid */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Horarios (selecione {notificationCount})</Label>
+                        <div className="grid grid-cols-6 gap-2">
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const hour = `${i.toString().padStart(2, "0")}:00`
+                            const isSelected = selectedHours.includes(hour)
+                            return (
+                              <button
+                                key={hour}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    setSelectedHours(selectedHours.filter(h => h !== hour))
+                                  } else if (selectedHours.length < parseInt(notificationCount)) {
+                                    setSelectedHours([...selectedHours, hour])
+                                  }
+                                  setHasChanges(true)
+                                }}
+                                className={`px-3 py-2 rounded-lg border text-sm transition-colors ${
+                                  isSelected
+                                    ? "bg-amber-500/20 border-amber-500 text-amber-500"
+                                    : "bg-secondary/50 border-border/50 text-muted-foreground hover:border-amber-500/50"
+                                }`}
+                              >
+                                {hour}
+                              </button>
+                            )
+                          })}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Selecione {notificationCount} horario(s) para enviar as notificacoes</p>
+                      </div>
+
+                      {/* Atencao */}
+                      <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-4">
+                        <p className="text-sm">
+                          <span className="font-semibold text-amber-500">Atencao:</span>{" "}
+                          <span className="text-muted-foreground">Estas notificacoes usam a mesma mensagem e midia configuradas em "Notificacoes Antes de Expirar" acima, mas sao enviadas nos horarios especificos do dia da expiracao.</span>
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Mensagem Quando Expirar */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle className="h-5 w-5 text-destructive" />
+                      <span className="font-semibold">Mensagem Quando Expirar</span>
+                    </div>
+                    <Switch checked={expireMessageEnabled} onCheckedChange={(c) => { setExpireMessageEnabled(c); setHasChanges(true) }} />
+                  </div>
+
+                  {expireMessageEnabled && (
+                    <>
+                      {/* Midia */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Midia (opcional)</Label>
+                        <div className="flex gap-2">
+                          {[
+                            { id: "none", label: "Nenhuma" },
+                            { id: "image", label: "Imagem", icon: ImageIcon },
+                            { id: "video", label: "Video", icon: Video },
+                            { id: "audio", label: "Audio", icon: Music },
+                          ].map((type) => (
+                            <button
+                              key={type.id}
+                              onClick={() => { setExpireMediaType(type.id); setHasChanges(true) }}
+                              className={`px-4 py-2 rounded-lg border text-sm flex items-center gap-2 transition-colors ${
+                                expireMediaType === type.id
+                                  ? "bg-amber-500/20 border-amber-500 text-amber-500"
+                                  : "bg-secondary/50 border-border/50 text-muted-foreground hover:border-amber-500/50"
+                              }`}
+                            >
+                              {type.icon && <type.icon className="h-4 w-4" />}
+                              {type.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Mensagem de Expiracao */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Mensagem de Expiracao</Label>
+                        <Textarea
+                          value={expireMessage}
+                          onChange={(e) => { setExpireMessage(e.target.value); setHasChanges(true) }}
+                          rows={5}
+                          className="bg-secondary/50 border-border/50 font-mono text-sm"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          {["{nome}", "{plano}", "{saudacao}", "{uf}"].map((v) => (
+                            <span key={v} className="px-3 py-1 rounded-full bg-secondary/50 text-sm text-muted-foreground border border-border/50">{v}</span>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Planos de Renovacao */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <DollarSign className="h-5 w-5 text-accent" />
+                    <span className="font-semibold">Planos de Renovacao</span>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Usar planos do fluxo</span>
+                    <Switch checked={useFlowPlans} onCheckedChange={(c) => { setUseFlowPlans(c); setHasChanges(true) }} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-muted-foreground">Desconto na renovacao</Label>
+                    <Select value={renewalDiscount} onValueChange={(v) => { setRenewalDiscount(v); setHasChanges(true) }}>
+                      <SelectTrigger className="bg-secondary/50 border-border/50">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0%">Sem desconto</SelectItem>
+                        <SelectItem value="10%">10%</SelectItem>
+                        <SelectItem value="15%">15%</SelectItem>
+                        <SelectItem value="20%">20%</SelectItem>
+                        <SelectItem value="25%">25%</SelectItem>
+                        <SelectItem value="30%">30%</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">Desconto aplicado aos planos na oferta de renovacao</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Acoes ao Expirar */}
+              <Card className="border-border/50">
+                <CardContent className="pt-6 space-y-4">
+                  <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5 text-muted-foreground" />
+                    <span className="font-semibold">Acoes ao Expirar</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                      <div>
+                        <p className="font-medium">Expulsar do grupo</p>
+                        <p className="text-sm text-muted-foreground">Remove o usuario do grupo VIP quando expirar</p>
+                      </div>
+                      <Switch checked={kickFromGroup} onCheckedChange={(c) => { setKickFromGroup(c); setHasChanges(true) }} />
+                    </div>
+
+                    <div className="flex items-center justify-between p-3 rounded-lg bg-secondary/30">
+                      <div>
+                        <p className="font-medium">Remover status VIP</p>
+                        <p className="text-sm text-muted-foreground">Marca o lead como nao-VIP no sistema</p>
+                      </div>
+                      <Switch checked={removeVipStatus} onCheckedChange={(c) => { setRemoveVipStatus(c); setHasChanges(true) }} />
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             </div>
           )}
