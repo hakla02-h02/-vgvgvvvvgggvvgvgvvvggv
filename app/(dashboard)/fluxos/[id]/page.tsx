@@ -17,6 +17,7 @@ import { useAuth } from "@/lib/auth-context"
 import { useBots } from "@/lib/bot-context"
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
+import { FlowBuilder } from "@/components/flow-builder"
 import {
   ArrowLeft, Bot, MessageSquare, CreditCard, TrendingUp, TrendingDown,
   Package, Wallet, Crown, Save, Loader2, Plus, Trash2, RefreshCw,
@@ -24,7 +25,7 @@ import {
   Globe, Link2, Settings2, Zap, Image as ImageIcon, Bold, Italic,
   Underline, Strikethrough, Code, Link as LinkIcon, Quote, Smile,
   ExternalLink, MessageCircle, Copy, ChevronDown, ChevronRight, Clock,
-  Check, X
+  Check, X, Workflow, BarChart3, Gift, Video, Music
 } from "lucide-react"
 
 // Types
@@ -217,7 +218,7 @@ export default function FlowEditorPage() {
   const [flow, setFlow] = useState<Flow | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState("bots")
+  const [activeTab, setActiveTab] = useState("n8n")
   const [hasChanges, setHasChanges] = useState(false)
 
   // Edit name
@@ -887,6 +888,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
   }
 
   const tabs = [
+    { id: "n8n", label: "Fluxo N8N", icon: Workflow, locked: false },
     { id: "bots", label: "Bots", icon: Bot },
     { id: "welcome", label: "Boas-vindas", icon: MessageSquare, locked: false },
     { id: "plans", label: "Planos", icon: CreditCard, locked: false },
@@ -983,7 +985,15 @@ Clique no botao abaixo para renovar com desconto especial!`)
 
       {/* Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Main Content */}
+        {/* N8N Flow Builder Tab - Full Width */}
+        {activeTab === "n8n" && (
+          <div className="flex-1 h-full">
+            <FlowBuilder flowName={flowName} />
+          </div>
+        )}
+
+        {/* Main Content for other tabs */}
+        {activeTab !== "n8n" && (
         <div className="flex-1 overflow-auto p-6">
           {/* Bots Tab */}
           {activeTab === "bots" && (
@@ -3677,6 +3687,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
             </div>
           )}
         </div>
+        )}
 
         {/* Sidebar - Only show for tabs that need it */}
         {(activeTab === "bots" || activeTab === "welcome") && (
