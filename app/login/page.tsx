@@ -146,109 +146,74 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* LADO DIREITO: DESIGN PREMIUM */}
-      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-[#0c0c0c]">
-        {/* Background mesh gradient */}
-        <div className="absolute inset-0">
-          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_rgba(184,255,41,0.08)_0%,_transparent_50%)]" />
-          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_rgba(184,255,41,0.05)_0%,_transparent_50%)]" />
-        </div>
-
-        {/* Grid pattern */}
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
-          backgroundSize: '60px 60px'
-        }} />
-
-        {/* Floating orbs */}
-        <div className="absolute top-20 right-20 w-72 h-72 rounded-full bg-[#b8ff29]/5 blur-3xl animate-pulse" />
-        <div className="absolute bottom-32 left-16 w-48 h-48 rounded-full bg-[#b8ff29]/8 blur-2xl" />
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center w-full h-full px-16">
-          {/* Main headline */}
-          <div className="mb-16">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#b8ff29]/10 border border-[#b8ff29]/20 mb-8">
-              <div className="w-2 h-2 rounded-full bg-[#b8ff29] animate-pulse" />
-              <span className="text-sm text-[#b8ff29] font-medium">Plataforma ativa 24/7</span>
-            </div>
-            
-            <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-6">
-              Escale seu negocio<br />
-              <span className="text-[#b8ff29]">sem limites</span>
-            </h2>
-            
-            <p className="text-lg text-[#888] leading-relaxed max-w-md">
-              Automacao inteligente que trabalha por voce enquanto voce foca no que realmente importa.
-            </p>
-          </div>
-
-          {/* Stats row */}
-          <div className="flex gap-8 mb-16">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b8ff29]/20 to-[#b8ff29]/5 flex items-center justify-center">
-                <Zap className="w-6 h-6 text-[#b8ff29]" />
+      {/* LADO DIREITO: DESIGN LIMPO E LINEAR */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-[#0a0a0a] border-l border-[#1a1a1a]">
+        {/* Linha verde vertical accent */}
+        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-transparent via-[#b8ff29] to-transparent" />
+        
+        {/* Content - centralizado verticalmente */}
+        <div className="flex flex-col justify-center w-full h-full px-16 xl:px-24">
+          
+          {/* Lista de beneficios */}
+          <div className="space-y-8">
+            {/* Item 1 */}
+            <div className="flex items-start gap-5">
+              <div className="w-11 h-11 rounded-xl bg-[#b8ff29] flex items-center justify-center flex-shrink-0">
+                <Zap className="w-5 h-5 text-[#0a0a0a]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">10k+</div>
-                <div className="text-sm text-[#666]">Mensagens/dia</div>
+                <h3 className="text-lg font-semibold text-white mb-1">Automacao Inteligente</h3>
+                <p className="text-[#666] text-sm leading-relaxed">Configure uma vez e deixe o sistema trabalhar 24/7 no piloto automatico.</p>
               </div>
             </div>
-            
-            <div className="w-px h-16 bg-[#222]" />
-            
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b8ff29]/20 to-[#b8ff29]/5 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-[#b8ff29]" />
+
+            {/* Linha divisoria */}
+            <div className="h-px bg-[#1a1a1a] ml-16" />
+
+            {/* Item 2 */}
+            <div className="flex items-start gap-5">
+              <div className="w-11 h-11 rounded-xl bg-[#b8ff29] flex items-center justify-center flex-shrink-0">
+                <Shield className="w-5 h-5 text-[#0a0a0a]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">99.9%</div>
-                <div className="text-sm text-[#666]">Uptime</div>
+                <h3 className="text-lg font-semibold text-white mb-1">Seguranca Total</h3>
+                <p className="text-[#666] text-sm leading-relaxed">Seus dados protegidos com criptografia de ponta a ponta.</p>
               </div>
             </div>
-            
-            <div className="w-px h-16 bg-[#222]" />
-            
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b8ff29]/20 to-[#b8ff29]/5 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-[#b8ff29]" />
+
+            {/* Linha divisoria */}
+            <div className="h-px bg-[#1a1a1a] ml-16" />
+
+            {/* Item 3 */}
+            <div className="flex items-start gap-5">
+              <div className="w-11 h-11 rounded-xl bg-[#b8ff29] flex items-center justify-center flex-shrink-0">
+                <Clock className="w-5 h-5 text-[#0a0a0a]" />
               </div>
               <div>
-                <div className="text-2xl font-bold text-white">{`<`}1s</div>
-                <div className="text-sm text-[#666]">Resposta</div>
+                <h3 className="text-lg font-semibold text-white mb-1">Resposta Instantanea</h3>
+                <p className="text-[#666] text-sm leading-relaxed">Tempo de resposta inferior a 1 segundo para seus clientes.</p>
               </div>
             </div>
           </div>
 
-          {/* Testimonial card */}
-          <div className="bg-[#111]/80 backdrop-blur-sm border border-[#1a1a1a] rounded-2xl p-6 max-w-md">
-            <div className="flex gap-1 mb-4">
-              {[...Array(5)].map((_, i) => (
-                <svg key={i} className="w-4 h-4 text-[#b8ff29]" fill="currentColor" viewBox="0 0 20 20">
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                </svg>
-              ))}
-            </div>
-            <p className="text-[#ccc] text-sm leading-relaxed mb-4">
-              &ldquo;Triplicamos nossas vendas em 3 meses usando a automacao. O suporte e incrivel e a plataforma e muito intuitiva.&rdquo;
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#b8ff29] to-[#8acc00] flex items-center justify-center text-[#0a0a0a] font-bold text-sm">
-                MR
+          {/* Metricas em linha */}
+          <div className="mt-16 pt-8 border-t border-[#1a1a1a]">
+            <div className="grid grid-cols-3 gap-8">
+              <div>
+                <div className="text-3xl font-bold text-[#b8ff29]">10k+</div>
+                <div className="text-sm text-[#555] mt-1">Mensagens/dia</div>
               </div>
               <div>
-                <div className="text-white text-sm font-medium">Marcos Ribeiro</div>
-                <div className="text-[#666] text-xs">CEO, TechStore</div>
+                <div className="text-3xl font-bold text-[#b8ff29]">99.9%</div>
+                <div className="text-sm text-[#555] mt-1">Uptime</div>
+              </div>
+              <div>
+                <div className="text-3xl font-bold text-[#b8ff29]">500+</div>
+                <div className="text-sm text-[#555] mt-1">Clientes ativos</div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Corner accent */}
-        <div className="absolute bottom-0 right-0 w-32 h-32">
-          <div className="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-[#b8ff29]" />
-          <div className="absolute bottom-4 right-10 w-1.5 h-1.5 rounded-full bg-[#b8ff29]/50" />
-          <div className="absolute bottom-10 right-4 w-1.5 h-1.5 rounded-full bg-[#b8ff29]/50" />
         </div>
       </div>
     </div>
