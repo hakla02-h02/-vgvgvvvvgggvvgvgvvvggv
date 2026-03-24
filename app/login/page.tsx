@@ -146,99 +146,111 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* LADO DIREITO: VISUAL INOVADOR */}
-      <div className="hidden lg:flex w-1/2 relative overflow-hidden">
-        {/* Background com gradiente */}
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f0f] via-[#111] to-[#0a0a0a]" />
-        
-        {/* Linhas diagonais animadas */}
-        <div className="absolute inset-0 opacity-20">
-          {[...Array(8)].map((_, i) => (
-            <div
-              key={i}
-              className="absolute h-[1px] bg-gradient-to-r from-transparent via-[#b8ff29] to-transparent"
-              style={{
-                width: '200%',
-                left: '-50%',
-                top: `${12 + i * 12}%`,
-                transform: `rotate(-15deg)`,
-                animation: `slideRight ${3 + i * 0.5}s linear infinite`,
-                animationDelay: `${i * 0.3}s`,
-                opacity: 0.3 + (i * 0.1)
-              }}
-            />
-          ))}
+      {/* LADO DIREITO: DESIGN PREMIUM */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-[#0c0c0c]">
+        {/* Background mesh gradient */}
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_left,_rgba(184,255,41,0.08)_0%,_transparent_50%)]" />
+          <div className="absolute bottom-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_right,_rgba(184,255,41,0.05)_0%,_transparent_50%)]" />
         </div>
 
-        {/* Circulos decorativos */}
-        <div className="absolute top-1/4 right-1/4 w-64 h-64 rounded-full border border-[#222] opacity-40" />
-        <div className="absolute bottom-1/3 left-1/3 w-96 h-96 rounded-full border border-[#1a1a1a] opacity-30" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] rounded-full border border-[#b8ff29]/10" />
+        {/* Grid pattern */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px'
+        }} />
 
-        {/* Conteudo central */}
-        <div className="relative z-10 flex flex-col items-center justify-center w-full px-12">
-          {/* Logo grande com glow */}
-          <div className="relative mb-16">
-            <div className="absolute inset-0 w-40 h-40 rounded-3xl bg-[#b8ff29]/20 blur-3xl" />
-            <div className="absolute inset-0 w-40 h-40 rounded-3xl bg-[#b8ff29]/10 blur-xl animate-pulse" />
-            <div className="relative w-40 h-40 rounded-3xl bg-gradient-to-br from-[#b8ff29] to-[#8acc00] flex items-center justify-center shadow-2xl shadow-[#b8ff29]/20">
-              <DragonIcon className="w-20 h-20 text-[#0a0a0a]" />
-            </div>
-          </div>
+        {/* Floating orbs */}
+        <div className="absolute top-20 right-20 w-72 h-72 rounded-full bg-[#b8ff29]/5 blur-3xl animate-pulse" />
+        <div className="absolute bottom-32 left-16 w-48 h-48 rounded-full bg-[#b8ff29]/8 blur-2xl" />
 
-          {/* Feature cards */}
-          <div className="grid grid-cols-3 gap-4 mb-12 w-full max-w-lg">
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 text-center hover:border-[#b8ff29]/30 transition-colors">
-              <div className="w-10 h-10 bg-[#b8ff29]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Zap className="w-5 h-5 text-[#b8ff29]" />
-              </div>
-              <div className="text-2xl font-bold text-white">1.2k</div>
-              <div className="text-xs text-[#666] mt-1">Conversas/dia</div>
+        {/* Content */}
+        <div className="relative z-10 flex flex-col justify-center w-full h-full px-16">
+          {/* Main headline */}
+          <div className="mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#b8ff29]/10 border border-[#b8ff29]/20 mb-8">
+              <div className="w-2 h-2 rounded-full bg-[#b8ff29] animate-pulse" />
+              <span className="text-sm text-[#b8ff29] font-medium">Plataforma ativa 24/7</span>
             </div>
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 text-center hover:border-[#b8ff29]/30 transition-colors">
-              <div className="w-10 h-10 bg-[#b8ff29]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Shield className="w-5 h-5 text-[#b8ff29]" />
-              </div>
-              <div className="text-2xl font-bold text-[#b8ff29]">94%</div>
-              <div className="text-xs text-[#666] mt-1">Resolucao</div>
-            </div>
-            <div className="bg-[#111] border border-[#222] rounded-2xl p-5 text-center hover:border-[#b8ff29]/30 transition-colors">
-              <div className="w-10 h-10 bg-[#b8ff29]/10 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Clock className="w-5 h-5 text-[#b8ff29]" />
-              </div>
-              <div className="text-2xl font-bold text-white">2.5s</div>
-              <div className="text-xs text-[#666] mt-1">Resposta</div>
-            </div>
-          </div>
-
-          {/* Texto */}
-          <div className="text-center max-w-md">
-            <h2 className="text-2xl font-bold text-white mb-3">Automatize com inteligencia</h2>
-            <p className="text-[#888] leading-relaxed">
-              IA avancada para transformar seu atendimento e escalar seu negocio de forma eficiente.
+            
+            <h2 className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-6">
+              Escale seu negocio<br />
+              <span className="text-[#b8ff29]">sem limites</span>
+            </h2>
+            
+            <p className="text-lg text-[#888] leading-relaxed max-w-md">
+              Automacao inteligente que trabalha por voce enquanto voce foca no que realmente importa.
             </p>
           </div>
+
+          {/* Stats row */}
+          <div className="flex gap-8 mb-16">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b8ff29]/20 to-[#b8ff29]/5 flex items-center justify-center">
+                <Zap className="w-6 h-6 text-[#b8ff29]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">10k+</div>
+                <div className="text-sm text-[#666]">Mensagens/dia</div>
+              </div>
+            </div>
+            
+            <div className="w-px h-16 bg-[#222]" />
+            
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b8ff29]/20 to-[#b8ff29]/5 flex items-center justify-center">
+                <Shield className="w-6 h-6 text-[#b8ff29]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">99.9%</div>
+                <div className="text-sm text-[#666]">Uptime</div>
+              </div>
+            </div>
+            
+            <div className="w-px h-16 bg-[#222]" />
+            
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#b8ff29]/20 to-[#b8ff29]/5 flex items-center justify-center">
+                <Clock className="w-6 h-6 text-[#b8ff29]" />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-white">{`<`}1s</div>
+                <div className="text-sm text-[#666]">Resposta</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Testimonial card */}
+          <div className="bg-[#111]/80 backdrop-blur-sm border border-[#1a1a1a] rounded-2xl p-6 max-w-md">
+            <div className="flex gap-1 mb-4">
+              {[...Array(5)].map((_, i) => (
+                <svg key={i} className="w-4 h-4 text-[#b8ff29]" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+              ))}
+            </div>
+            <p className="text-[#ccc] text-sm leading-relaxed mb-4">
+              &ldquo;Triplicamos nossas vendas em 3 meses usando a automacao. O suporte e incrivel e a plataforma e muito intuitiva.&rdquo;
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#b8ff29] to-[#8acc00] flex items-center justify-center text-[#0a0a0a] font-bold text-sm">
+                MR
+              </div>
+              <div>
+                <div className="text-white text-sm font-medium">Marcos Ribeiro</div>
+                <div className="text-[#666] text-xs">CEO, TechStore</div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Pontos decorativos nos cantos */}
-        <div className="absolute top-8 right-8 flex gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#b8ff29]" />
-          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/50" />
-          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/25" />
-        </div>
-        <div className="absolute bottom-8 left-8 flex gap-2">
-          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/25" />
-          <div className="w-2 h-2 rounded-full bg-[#b8ff29]/50" />
-          <div className="w-2 h-2 rounded-full bg-[#b8ff29]" />
+        {/* Corner accent */}
+        <div className="absolute bottom-0 right-0 w-32 h-32">
+          <div className="absolute bottom-4 right-4 w-2 h-2 rounded-full bg-[#b8ff29]" />
+          <div className="absolute bottom-4 right-10 w-1.5 h-1.5 rounded-full bg-[#b8ff29]/50" />
+          <div className="absolute bottom-10 right-4 w-1.5 h-1.5 rounded-full bg-[#b8ff29]/50" />
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes slideRight {
-          0% { transform: rotate(-15deg) translateX(-10%); }
-          100% { transform: rotate(-15deg) translateX(10%); }
-        }
-      `}</style>
     </div>
   )
 }
