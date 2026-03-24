@@ -17,8 +17,39 @@ import {
   useReactFlow,
   Panel,
   BackgroundVariant,
+  Handle,
+  Position,
 } from "@xyflow/react"
 import "@xyflow/react/dist/style.css"
+
+// Custom styles for handles
+const handleStyles = `
+  .react-flow__handle {
+    width: 12px !important;
+    height: 12px !important;
+    border-radius: 50% !important;
+    background-color: #10b981 !important;
+    border: 2px solid hsl(var(--background)) !important;
+  }
+  .react-flow__handle:hover {
+    transform: scale(1.3);
+    background-color: #34d399 !important;
+  }
+  .react-flow__handle-top {
+    top: -6px !important;
+  }
+  .react-flow__handle-bottom {
+    bottom: -6px !important;
+  }
+  .react-flow__connection-line {
+    stroke: #10b981 !important;
+    stroke-width: 2px !important;
+  }
+  .react-flow__edge-path {
+    stroke: #10b981 !important;
+    stroke-width: 2px !important;
+  }
+`
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -129,7 +160,7 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
   if (isStart) {
     return (
       <div
-        className={`rounded-lg border-2 border-emerald-500 bg-emerald-500/10 px-4 py-3 min-w-[140px] ${
+        className={`rounded-lg border-2 border-emerald-500 bg-emerald-500/10 px-4 py-3 min-w-[140px] relative ${
           selected ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""
         }`}
       >
@@ -140,7 +171,12 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
             <p className="text-[10px] text-muted-foreground">Quando o usuario inicia</p>
           </div>
         </div>
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="source"
+          className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+        />
       </div>
     )
   }
@@ -149,12 +185,16 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
   if (data.type === "image") {
     return (
       <div
-        className={`rounded-lg border-2 ${colorMap[config.color]} min-w-[180px] ${
+        className={`rounded-lg border-2 ${colorMap[config.color]} min-w-[180px] relative ${
           selected ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""
         }`}
       >
-        {/* Connection points */}
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+        <Handle
+          type="target"
+          position={Position.Top}
+          id="target"
+          className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+        />
         
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
@@ -162,7 +202,7 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
             <Icon className={`h-4 w-4 ${iconColorMap[config.color]}`} />
             <span className="font-medium text-sm">{data.label || config.label} {data.index || ""}</span>
           </div>
-          <button className="p-1 hover:bg-destructive/20 rounded">
+          <button type="button" className="p-1 hover:bg-destructive/20 rounded">
             <Trash2 className="h-3 w-3 text-destructive" />
           </button>
         </div>
@@ -177,7 +217,12 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
           <Input placeholder="Legenda (opcional)" className="bg-secondary/30 text-xs h-8" />
         </div>
 
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="source"
+          className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+        />
       </div>
     )
   }
@@ -186,11 +231,16 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
   if (data.type === "pix") {
     return (
       <div
-        className={`rounded-lg border-2 ${colorMap[config.color]} min-w-[280px] max-w-[320px] ${
+        className={`rounded-lg border-2 ${colorMap[config.color]} min-w-[280px] max-w-[320px] relative ${
           selected ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""
         }`}
       >
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+        <Handle
+          type="target"
+          position={Position.Top}
+          id="target"
+          className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+        />
         
         {/* Header */}
         <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
@@ -317,7 +367,12 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
           </div>
         </div>
 
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="source"
+          className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+        />
       </div>
     )
   }
@@ -326,18 +381,23 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
   if (data.type === "text") {
     return (
       <div
-        className={`rounded-lg border-2 ${colorMap[config.color]} min-w-[200px] ${
+        className={`rounded-lg border-2 ${colorMap[config.color]} min-w-[200px] relative ${
           selected ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""
         }`}
       >
-        <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+        <Handle
+          type="target"
+          position={Position.Top}
+          id="target"
+          className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+        />
         
         <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
           <div className="flex items-center gap-2">
             <Icon className={`h-4 w-4 ${iconColorMap[config.color]}`} />
             <span className="font-medium text-sm">Texto {data.index || ""}</span>
           </div>
-          <button className="p-1 hover:bg-destructive/20 rounded">
+          <button type="button" className="p-1 hover:bg-destructive/20 rounded">
             <Trash2 className="h-3 w-3 text-destructive" />
           </button>
         </div>
@@ -346,7 +406,12 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
           <Textarea placeholder="Digite sua mensagem..." className="bg-secondary/30 text-xs min-h-[80px]" />
         </div>
 
-        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+        <Handle
+          type="source"
+          position={Position.Bottom}
+          id="source"
+          className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+        />
       </div>
     )
   }
@@ -354,18 +419,28 @@ function CustomNode({ id, data, selected }: { id: string; data: any; selected: b
   // Default node
   return (
     <div
-      className={`rounded-lg border-2 ${colorMap[config.color]} px-4 py-3 min-w-[140px] ${
+      className={`rounded-lg border-2 ${colorMap[config.color]} px-4 py-3 min-w-[140px] relative ${
         selected ? "ring-2 ring-accent ring-offset-2 ring-offset-background" : ""
       }`}
     >
-      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+      <Handle
+        type="target"
+        position={Position.Top}
+        id="target"
+        className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+      />
       
       <div className="flex items-center gap-2">
         <Icon className={`h-4 w-4 ${iconColorMap[config.color]}`} />
         <span className="font-medium text-sm">{data.label || config.label}</span>
       </div>
 
-      <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 border-2 border-background" />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="source"
+        className="!w-3 !h-3 !bg-emerald-500 !border-2 !border-background"
+      />
     </div>
   )
 }
@@ -481,6 +556,7 @@ function FlowBuilderInner({ flowName = "Novo Fluxo" }: { flowName?: string }) {
 
   return (
     <div className="flex h-full">
+      <style>{handleStyles}</style>
       {/* Sidebar */}
       <div className="w-64 border-r border-border/50 bg-background flex flex-col">
         <div className="p-4 border-b border-border/50">
