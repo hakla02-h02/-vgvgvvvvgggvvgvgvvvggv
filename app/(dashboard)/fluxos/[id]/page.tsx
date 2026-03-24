@@ -87,11 +87,24 @@ interface UpsellConfig {
   customDelivery?: string
 }
 
+interface DownsellSequence {
+  id: string
+  message: string
+  medias: string[]
+  sendDelay: number
+  discountType: "percent" | "fixed"
+  discountValue: number
+  deliveryType: "global" | "custom"
+  customDelivery?: string
+  createPlans: boolean
+}
+
 interface DownsellConfig {
   enabled: boolean
   message?: string
   discount_percent?: number
   plans?: FlowPlan[]
+  sequences?: DownsellSequence[]
 }
 
 interface OrderBumpConfig {
@@ -209,6 +222,10 @@ export default function FlowEditorPage() {
   const [downsellEnabled, setDownsellEnabled] = useState(false)
   const [downsellMessage, setDownsellMessage] = useState("")
   const [downsellDiscount, setDownsellDiscount] = useState(10)
+  const [downsellSequences, setDownsellSequences] = useState<DownsellSequence[]>([])
+  const [downsellDeliveryType, setDownsellDeliveryType] = useState<"same" | "custom">("same")
+  const [downsellSubTab, setDownsellSubTab] = useState<"geral" | "pix">("geral")
+  const [expandedDownsellSequence, setExpandedDownsellSequence] = useState<string | null>(null)
 
   // Order Bump
   const [orderBumpEnabled, setOrderBumpEnabled] = useState(false)
@@ -611,6 +628,45 @@ export default function FlowEditorPage() {
     if (upsellSequences.length >= 20) return
     const newSequence = { ...seq, id: `seq-${Date.now()}` }
     setUpsellSequences([...upsellSequences, newSequence])
+    setHasChanges(true)
+  }
+
+  // Add downsell sequence
+  const handleAddDownsellSequence = () => {
+    if (downsellSequences.length >= 20) return
+    const newSequence: DownsellSequence = {
+      id: `ds-seq-${Date.now()}`,
+      message: "",
+      medias: [],
+      sendDelay: 5,
+      discountType: "percent",
+      discountValue: 5,
+      deliveryType: "global",
+      createPlans: false,
+    }
+    setDownsellSequences([...downsellSequences, newSequence])
+    setExpandedDownsellSequence(newSequence.id)
+    setHasChanges(true)
+  }
+
+  // Remove downsell sequence
+  const handleRemoveDownsellSequence = (id: string) => {
+    setDownsellSequences(downsellSequences.filter(s => s.id !== id))
+    if (expandedDownsellSequence === id) setExpandedDownsellSequence(null)
+    setHasChanges(true)
+  }
+
+  // Update downsell sequence
+  const handleUpdateDownsellSequence = (id: string, field: keyof DownsellSequence, value: unknown) => {
+    setDownsellSequences(downsellSequences.map(s => s.id === id ? { ...s, [field]: value } : s))
+    setHasChanges(true)
+  }
+
+  // Duplicate downsell sequence
+  const handleDuplicateDownsellSequence = (seq: DownsellSequence) => {
+    if (downsellSequences.length >= 20) return
+    const newSequence = { ...seq, id: `ds-seq-${Date.now()}` }
+    setDownsellSequences([...downsellSequences, newSequence])
     setHasChanges(true)
   }
 
@@ -1710,53 +1766,357 @@ export default function FlowEditorPage() {
           {/* Downsell Tab */}
           {activeTab === "downsell" && (
             <div className="space-y-6">
-              <Card className="border-border/50">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <TrendingDown className="h-4 w-4 text-rose-400" />
-                      Configurar Downsell
-                    </CardTitle>
-                    <Switch
-                      checked={downsellEnabled}
-                      onCheckedChange={(checked) => {
-                        setDownsellEnabled(checked)
-                        setHasChanges(true)
-                      }}
-                    />
+              {/* Sub-tabs */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={downsellSubTab === "geral" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDownsellSubTab("geral")}
+                  className={downsellSubTab === "geral" ? "bg-accent hover:bg-accent/90" : ""}
+                >
+                  Geral
+                </Button>
+                <Button
+                  variant={downsellSubTab === "pix" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setDownsellSubTab("pix")}
+                  className={downsellSubTab === "pix" ? "bg-orange-500 hover:bg-orange-600" : ""}
+                >
+                  PIX Gerado
+                </Button>
+              </div>
+
+              {/* Sub-tab description */}
+              <p className="text-sm text-muted-foreground">
+                {downsellSubTab === "geral" 
+                  ? "Sequencias enviadas apos o /start para todos os leads que nao compraram. Ative o \"PIX Gerado\" para diferenciar quem gerou pagamento."
+                  : "Sequencias enviadas quando o lead gera pagamento mas nao paga. Quando ativo, substitui o downsell geral para esses leads."
+                }
+              </p>
+
+              {/* Main content */}
+              <div className="flex gap-6">
+                {/* Left Sidebar - Config */}
+                <div className="w-72 space-y-4">
+                  <Card className="border-border/50">
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="flex items-center gap-3">
+                        <TrendingDown className="h-5 w-5 text-pink-500" />
+                        <span className="font-semibold text-pink-500">Downsell</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Recupere vendas com ofertas alternativas
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm">Ativar Downsell</span>
+                        <Switch
+                          checked={downsellEnabled}
+                          onCheckedChange={(checked) => {
+                            setDownsellEnabled(checked)
+                            setHasChanges(true)
+                          }}
+                        />
+                      </div>
+
+                      {downsellEnabled && (
+                        <>
+                          {/* Info box */}
+                          <div className="rounded-lg border border-border/50 p-4 space-y-3">
+                            <p className="text-sm font-medium text-pink-500">Como funciona?</p>
+                            <p className="text-sm text-muted-foreground">
+                              Downsell e enviado automaticamente a cada X minutos apos o /start se o cliente nao comprar.
+                            </p>
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                              <li>Ate 20 sequencias</li>
+                              <li>Ofertas alternativas</li>
+                              <li>Recuperacao de vendas</li>
+                            </ul>
+                          </div>
+
+                          {/* Entrega do Downsell */}
+                          <div className="space-y-2 pt-2">
+                            <Label className="text-sm font-medium">Entrega do Downsell</Label>
+                            <Select
+                              value={downsellDeliveryType}
+                              onValueChange={(value: "same" | "custom") => {
+                                setDownsellDeliveryType(value)
+                                setHasChanges(true)
+                              }}
+                            >
+                              <SelectTrigger className="bg-secondary/50 border-border/50">
+                                <div className="flex items-center gap-2">
+                                  <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                                  <SelectValue />
+                                </div>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="same">Mesmo do fluxo principal</SelectItem>
+                                <SelectItem value="custom">Entrega personalizada</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Main Content - Sequences */}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">Sequencias de Downsell</h3>
+                    <span className="text-sm text-muted-foreground">{downsellSequences.length}/20</span>
                   </div>
-                </CardHeader>
-                {downsellEnabled && (
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Mensagem do Downsell</Label>
-                      <Textarea
-                        value={downsellMessage}
-                        onChange={(e) => {
-                          setDownsellMessage(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="Espere! Temos uma oferta especial para voce..."
-                        rows={4}
-                        className="bg-secondary/30 border-border/50"
-                      />
+
+                  {!downsellEnabled ? (
+                    <Card className="border-border/50">
+                      <CardContent className="flex flex-col items-center justify-center py-16">
+                        <TrendingDown className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                        <p className="text-muted-foreground">Ative o Downsell para configurar sequencias</p>
+                      </CardContent>
+                    </Card>
+                  ) : downsellSequences.length === 0 ? (
+                    <Card className="border-border/50">
+                      <CardContent className="flex flex-col items-center justify-center py-16">
+                        <Plus className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                        <p className="text-muted-foreground mb-4">Nenhuma sequencia configurada</p>
+                        <Button onClick={handleAddDownsellSequence} className="bg-pink-500 hover:bg-pink-600">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar Sequencia
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-4">
+                      {downsellSequences.map((seq, index) => (
+                        <Card key={seq.id} className="border-border/50">
+                          {/* Sequence Header */}
+                          <div
+                            className="flex items-center justify-between p-4 cursor-pointer"
+                            onClick={() => setExpandedDownsellSequence(expandedDownsellSequence === seq.id ? null : seq.id)}
+                          >
+                            <div className="flex items-center gap-2">
+                              {expandedDownsellSequence === seq.id ? (
+                                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                              )}
+                              <span className="font-medium">Sequencia {index + 1}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDuplicateDownsellSequence(seq)
+                                }}
+                              >
+                                <Copy className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleRemoveDownsellSequence(seq.id)
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Expanded Content */}
+                          {expandedDownsellSequence === seq.id && (
+                            <CardContent className="pt-0 space-y-6">
+                              {/* Midias */}
+                              <div className="space-y-2">
+                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                  <ImageIcon className="h-4 w-4" />
+                                  <span>Midias (ate 3)</span>
+                                </div>
+                                <div className="flex gap-2">
+                                  <div className="w-24 h-20 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-pink-500/50 transition-colors">
+                                    <Plus className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Enviar + Desconto */}
+                              <div className="flex gap-4">
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Enviar:</span>
+                                  </div>
+                                  <Select
+                                    value={String(seq.sendDelay)}
+                                    onValueChange={(value) => handleUpdateDownsellSequence(seq.id, "sendDelay", parseInt(value))}
+                                  >
+                                    <SelectTrigger className="w-40 bg-secondary/50 border-border/50">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="5">5 minutos</SelectItem>
+                                      <SelectItem value="10">10 minutos</SelectItem>
+                                      <SelectItem value="15">15 minutos</SelectItem>
+                                      <SelectItem value="30">30 minutos</SelectItem>
+                                      <SelectItem value="60">1 hora</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <DollarSign className="h-4 w-4" />
+                                    <span>Desconto:</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Select
+                                      value={seq.discountType}
+                                      onValueChange={(value: "percent" | "fixed") => handleUpdateDownsellSequence(seq.id, "discountType", value)}
+                                    >
+                                      <SelectTrigger className="w-20 bg-secondary/50 border-border/50">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="percent">%</SelectItem>
+                                        <SelectItem value="fixed">R$</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                    <Select
+                                      value={String(seq.discountValue)}
+                                      onValueChange={(value) => handleUpdateDownsellSequence(seq.id, "discountValue", parseInt(value))}
+                                    >
+                                      <SelectTrigger className="w-20 bg-secondary/50 border-border/50">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="5">5%</SelectItem>
+                                        <SelectItem value="10">10%</SelectItem>
+                                        <SelectItem value="15">15%</SelectItem>
+                                        <SelectItem value="20">20%</SelectItem>
+                                        <SelectItem value="25">25%</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Mensagem */}
+                              <div className="space-y-2">
+                                <Label>Mensagem <span className="text-destructive">*</span></Label>
+                                <div className="flex items-center gap-1 border-b border-border/50 pb-2">
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Bold className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Italic className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Underline className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Strikethrough className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Code className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <LinkIcon className="h-4 w-4" />
+                                  </Button>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Quote className="h-4 w-4" />
+                                  </Button>
+                                  <div className="w-px h-4 bg-border/50 mx-1" />
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <Smile className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                                <Textarea
+                                  value={seq.message}
+                                  onChange={(e) => handleUpdateDownsellSequence(seq.id, "message", e.target.value)}
+                                  placeholder="Nao conseguiu pagar? Temos uma oferta especial..."
+                                  rows={4}
+                                  className="bg-secondary/30 border-border/50"
+                                />
+                                <p className="text-xs text-muted-foreground text-right">{seq.message.length}/4000 caracteres</p>
+                              </div>
+
+                              <div className="border-t border-border/50 pt-4" />
+
+                              {/* Planos da Oferta */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <Package className="h-4 w-4 text-pink-500" />
+                                    <span className="font-medium">Planos da Oferta</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <span>Criar planos</span>
+                                    <Switch
+                                      checked={seq.createPlans}
+                                      onCheckedChange={(checked) => handleUpdateDownsellSequence(seq.id, "createPlans", checked)}
+                                    />
+                                  </div>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  Selecione os planos que serao exibidos com {seq.discountValue}% de desconto
+                                </p>
+                                <div className="rounded-lg bg-secondary/30 p-4">
+                                  <p className="text-sm text-muted-foreground">
+                                    Nenhum plano cadastrado. Configure seus planos na aba "Inicial" ou ative "Criar planos" acima.
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Entrega Personalizada */}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <h4 className="font-medium">Entrega Personalizada</h4>
+                                  <span className="text-sm text-muted-foreground">Opcional</span>
+                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  Por padrao, usa a "Entrega do Downsell" configurada. Configure aqui para usar entrega especifica nesta sequencia.
+                                </p>
+                                <Select
+                                  value={seq.deliveryType}
+                                  onValueChange={(value: "global" | "custom") => handleUpdateDownsellSequence(seq.id, "deliveryType", value)}
+                                >
+                                  <SelectTrigger className="bg-secondary/50 border-border/50">
+                                    <div className="flex items-center gap-2">
+                                      <RefreshCw className="h-4 w-4 text-muted-foreground" />
+                                      <SelectValue />
+                                    </div>
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="global">Usar entrega do Downsell (global)</SelectItem>
+                                    <SelectItem value="custom">Entrega personalizada</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </CardContent>
+                          )}
+                        </Card>
+                      ))}
+
+                      {/* Add Sequence Button */}
+                      {downsellSequences.length < 20 && (
+                        <Button
+                          variant="outline"
+                          className="w-full border-dashed"
+                          onClick={handleAddDownsellSequence}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Adicionar Sequencia
+                        </Button>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label>Desconto (%)</Label>
-                      <Input
-                        type="number"
-                        value={downsellDiscount}
-                        onChange={(e) => {
-                          setDownsellDiscount(parseInt(e.target.value) || 0)
-                          setHasChanges(true)
-                        }}
-                        placeholder="10"
-                        className="w-32 bg-secondary/30"
-                      />
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
+                  )}
+                </div>
+              </div>
             </div>
           )}
 
