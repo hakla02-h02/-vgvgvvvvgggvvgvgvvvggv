@@ -146,39 +146,49 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* LADO DIREITO: VISUAL BRANDING */}
-      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-[#080808]">
-        {/* Background pattern sutil */}
-        <div className="absolute inset-0 opacity-[0.015]">
-          <svg width="100%" height="100%">
-            <defs>
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#grid)" />
-          </svg>
-        </div>
+      {/* LADO DIREITO: VISUAL GEOMETRICO */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-[#0a0a0a]">
+        {/* Gradiente de fundo */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0f0f0f] via-[#0a0a0a] to-[#050505]" />
+        
+        {/* Formas geometricas */}
+        <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+          {/* Linhas diagonais */}
+          <line x1="0" y1="100" x2="100" y2="0" stroke="#b8ff29" strokeWidth="0.1" opacity="0.3" />
+          <line x1="20" y1="100" x2="100" y2="20" stroke="#b8ff29" strokeWidth="0.05" opacity="0.2" />
+          <line x1="0" y1="80" x2="80" y2="0" stroke="#b8ff29" strokeWidth="0.05" opacity="0.2" />
+          
+          {/* Quadrado grande rotacionado */}
+          <rect x="35" y="35" width="30" height="30" fill="none" stroke="#b8ff29" strokeWidth="0.15" opacity="0.4" transform="rotate(45 50 50)" />
+          <rect x="40" y="40" width="20" height="20" fill="none" stroke="#b8ff29" strokeWidth="0.1" opacity="0.25" transform="rotate(45 50 50)" />
+          
+          {/* Circulo central */}
+          <circle cx="50" cy="50" r="18" fill="none" stroke="#b8ff29" strokeWidth="0.08" opacity="0.15" />
+          <circle cx="50" cy="50" r="25" fill="none" stroke="#b8ff29" strokeWidth="0.05" opacity="0.1" />
+          
+          {/* Pontos nos cantos */}
+          <circle cx="15" cy="15" r="0.8" fill="#b8ff29" opacity="0.5" />
+          <circle cx="85" cy="15" r="0.8" fill="#b8ff29" opacity="0.5" />
+          <circle cx="15" cy="85" r="0.8" fill="#b8ff29" opacity="0.5" />
+          <circle cx="85" cy="85" r="0.8" fill="#b8ff29" opacity="0.5" />
+        </svg>
 
-        {/* Glow central */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#b8ff29]/[0.03] rounded-full blur-[120px]" />
-
-        {/* Content centralizado */}
-        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
-          {/* Logo grande */}
-          <div className="relative mb-8">
-            <div className="w-32 h-32 rounded-3xl bg-[#b8ff29] flex items-center justify-center shadow-[0_0_80px_rgba(184,255,41,0.3)]">
-              <DragonIcon className="w-16 h-16 text-[#080808]" />
+        {/* Logo central com glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+          <div className="relative">
+            {/* Glow */}
+            <div className="absolute inset-0 w-28 h-28 bg-[#b8ff29]/20 rounded-2xl blur-2xl" />
+            {/* Logo box */}
+            <div className="relative w-28 h-28 bg-[#b8ff29] rounded-2xl flex items-center justify-center">
+              <DragonIcon className="w-14 h-14 text-[#0a0a0a]" />
             </div>
           </div>
-
-          {/* Nome */}
-          <h2 className="text-5xl font-bold text-white tracking-tight mb-3">Dragon</h2>
-          <p className="text-[#555] text-lg">Automacao para Telegram</p>
         </div>
 
-        {/* Linha accent inferior */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-[#b8ff29] rounded-full" />
+        {/* Texto inferior */}
+        <div className="absolute bottom-12 left-0 right-0 text-center z-10">
+          <p className="text-[#333] text-sm tracking-[0.3em] uppercase">Dragon Automacao</p>
+        </div>
       </div>
     </div>
   )
