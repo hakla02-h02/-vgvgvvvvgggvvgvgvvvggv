@@ -119,6 +119,17 @@ interface DownsellConfig {
   sequences?: DownsellSequence[]
 }
 
+interface Pack {
+  id: string
+  emoji: string
+  name: string
+  price: number
+  description: string
+  previewMedia?: string
+  deliveryDestination: string
+  active: boolean
+}
+
 interface OrderBumpItem {
   enabled: boolean
   name: string
@@ -282,6 +293,12 @@ export default function FlowEditorPage() {
   const [orderBumpDownsell, setOrderBumpDownsell] = useState<OrderBumpItem>(defaultOrderBumpItem)
   const [orderBumpPacks, setOrderBumpPacks] = useState<OrderBumpItem>(defaultOrderBumpItem)
   const [applyInicialTo, setApplyInicialTo] = useState({ upsell: false, downsell: false, packs: false })
+
+  // Packs
+  const [packsEnabled, setPacksEnabled] = useState(false)
+  const [packsList, setPacksList] = useState<Pack[]>([])
+  const [expandedPack, setExpandedPack] = useState<string | null>(null)
+  const [packsButtonText, setPacksButtonText] = useState("Packs Disponiveis")
 
   // Packs
   const [packs, setPacks] = useState<PackConfig[]>([])
@@ -731,6 +748,36 @@ export default function FlowEditorPage() {
     if (downsellSequences.length >= 20) return
     const newSequence = { ...seq, id: `ds-seq-${Date.now()}` }
     setDownsellSequences([...downsellSequences, newSequence])
+    setHasChanges(true)
+  }
+
+  // Add pack
+  const handleAddPack = () => {
+    if (packsList.length >= 20) return
+    const newPack: Pack = {
+      id: `pack-${Date.now()}`,
+      emoji: "📦",
+      name: "",
+      price: 0,
+      description: "",
+      deliveryDestination: "",
+      active: true,
+    }
+    setPacksList([...packsList, newPack])
+    setExpandedPack(newPack.id)
+    setHasChanges(true)
+  }
+
+  // Remove pack
+  const handleRemovePack = (id: string) => {
+    setPacksList(packsList.filter(p => p.id !== id))
+    if (expandedPack === id) setExpandedPack(null)
+    setHasChanges(true)
+  }
+
+  // Update pack
+  const handleUpdatePack = (id: string, field: keyof Pack, value: unknown) => {
+    setPacksList(packsList.map(p => p.id === id ? { ...p, [field]: value } : p))
     setHasChanges(true)
   }
 
@@ -2749,24 +2796,238 @@ export default function FlowEditorPage() {
 
           {/* Packs Tab */}
           {activeTab === "packs" && (
-            <div className="space-y-6">
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Package className="h-4 w-4 text-accent" />
-                    Packs e Combos
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-col items-center py-8 border border-dashed border-border/50 rounded-xl">
-                    <Package className="h-10 w-10 text-muted-foreground/30 mb-3" />
-                    <p className="font-medium text-foreground mb-1">Em breve</p>
+            <div className="flex gap-6">
+              {/* Left Sidebar */}
+              <div className="w-72 space-y-4">
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Wallet className="h-5 w-5 text-emerald-500" />
+                      <span className="font-semibold">Packs</span>
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      Configure packs e combos para vender produtos agrupados
+                      Venda conteudos avulsos alem das assinaturas
                     </p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Ativar Packs</span>
+                      <Switch
+                        checked={packsEnabled}
+                        onCheckedChange={(checked) => {
+                          setPacksEnabled(checked)
+                          setHasChanges(true)
+                        }}
+                      />
+                    </div>
+
+                    {packsEnabled && (
+                      <>
+                        <div className="space-y-2">
+                          <Label className="text-sm text-muted-foreground">Texto do Botao</Label>
+                          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 border border-border/50">
+                            <span className="text-lg">📦</span>
+                            <Input
+                              value={packsButtonText}
+                              onChange={(e) => {
+                                setPacksButtonText(e.target.value)
+                                setHasChanges(true)
+                              }}
+                              className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0 font-medium"
+                            />
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Como funciona */}
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 space-y-3">
+                    <p className="text-sm font-medium">Como funciona?</p>
+                    <p className="text-sm text-muted-foreground">
+                      Packs sao conteudos avulsos que o cliente pode comprar alem das assinaturas.
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-1 list-disc list-inside">
+                      <li>Ate 20 packs por fluxo</li>
+                      <li>Cada pack com seu canal/grupo de entrega</li>
+                      <li>Pagamento via PIX</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Main Content - Packs List */}
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold">Lista de Packs</h3>
+                  <span className="text-sm text-muted-foreground">{packsList.length}/20</span>
+                </div>
+
+                {!packsEnabled ? (
+                  <Card className="border-border/50">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <Wallet className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground">Ative os Packs para configurar</p>
+                    </CardContent>
+                  </Card>
+                ) : packsList.length === 0 ? (
+                  <Card className="border-border/50">
+                    <CardContent className="flex flex-col items-center justify-center py-16">
+                      <Plus className="h-10 w-10 text-muted-foreground/30 mb-4" />
+                      <p className="text-muted-foreground mb-4">Nenhum pack configurado</p>
+                      <Button onClick={handleAddPack} variant="outline">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Pack
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {packsList.map((pack, index) => (
+                      <Card key={pack.id} className="border-border/50">
+                        {/* Pack Header */}
+                        <div
+                          className="flex items-center justify-between p-4 cursor-pointer"
+                          onClick={() => setExpandedPack(expandedPack === pack.id ? null : pack.id)}
+                        >
+                          <div className="flex items-center gap-3">
+                            {expandedPack === pack.id ? (
+                              <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            )}
+                            <span className="text-lg">{pack.emoji}</span>
+                            <span className="font-medium">{pack.name || `Pack ${index + 1}`}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={pack.active}
+                              onCheckedChange={(checked) => {
+                                handleUpdatePack(pack.id, "active", checked)
+                              }}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRemovePack(pack.id)
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Expanded Content */}
+                        {expandedPack === pack.id && (
+                          <CardContent className="pt-0 space-y-6">
+                            {/* Emoji, Nome, Preco */}
+                            <div className="grid grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-muted-foreground">Emoji</Label>
+                                <Input
+                                  value={pack.emoji}
+                                  onChange={(e) => handleUpdatePack(pack.id, "emoji", e.target.value)}
+                                  className="bg-secondary/50 text-center text-lg"
+                                  maxLength={2}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-muted-foreground">Nome do Pack</Label>
+                                <Input
+                                  value={pack.name}
+                                  onChange={(e) => handleUpdatePack(pack.id, "name", e.target.value)}
+                                  placeholder="Pack Especial"
+                                  className="bg-secondary/50"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-muted-foreground">Preco (R$)</Label>
+                                <Input
+                                  type="number"
+                                  value={pack.price}
+                                  onChange={(e) => handleUpdatePack(pack.id, "price", parseFloat(e.target.value) || 0)}
+                                  placeholder="0"
+                                  className="bg-secondary/50"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Descricao */}
+                            <div className="space-y-2">
+                              <Label className="text-muted-foreground">Descricao</Label>
+                              <Textarea
+                                value={pack.description}
+                                onChange={(e) => handleUpdatePack(pack.id, "description", e.target.value)}
+                                placeholder="Descricao do pack que sera exibida na previa..."
+                                rows={3}
+                                className="bg-secondary/50 border-border/50"
+                              />
+                            </div>
+
+                            {/* Midia de Preview */}
+                            <Card className="border-border/50 bg-secondary/10">
+                              <CardContent className="pt-4 space-y-3">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                  <span>Midia de Preview (exibida antes da compra)</span>
+                                </div>
+                                <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500/50 transition-colors">
+                                  <Plus className="h-5 w-5 text-muted-foreground" />
+                                  <span className="text-xs text-muted-foreground mt-1">Adicionar midia</span>
+                                </div>
+                              </CardContent>
+                            </Card>
+
+                            {/* Entrega do Pack */}
+                            <Card className="border-border/50 bg-secondary/10">
+                              <CardContent className="pt-4 space-y-3">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <Package className="h-4 w-4 text-emerald-500" />
+                                    <span className="font-medium">Entrega do Pack</span>
+                                  </div>
+                                  <Button variant="ghost" size="sm" className="text-muted-foreground">
+                                    <RefreshCw className="h-3 w-3 mr-1" />
+                                    Atualizar
+                                  </Button>
+                                </div>
+                                <Select
+                                  value={pack.deliveryDestination}
+                                  onValueChange={(value) => handleUpdatePack(pack.id, "deliveryDestination", value)}
+                                >
+                                  <SelectTrigger className="bg-secondary/50 border-border/50">
+                                    <SelectValue placeholder="Selecione o destino" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="channel1">Canal VIP</SelectItem>
+                                    <SelectItem value="channel2">Grupo Premium</SelectItem>
+                                    <SelectItem value="link">Link Externo</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </CardContent>
+                            </Card>
+                          </CardContent>
+                        )}
+                      </Card>
+                    ))}
+
+                    {/* Add Pack Button */}
+                    {packsList.length < 20 && (
+                      <Button
+                        variant="outline"
+                        className="w-full border-dashed"
+                        onClick={handleAddPack}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Adicionar Pack
+                      </Button>
+                    )}
                   </div>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             </div>
           )}
 
