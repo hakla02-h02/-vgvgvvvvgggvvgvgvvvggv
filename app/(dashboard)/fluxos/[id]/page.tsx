@@ -119,11 +119,31 @@ interface DownsellConfig {
   sequences?: DownsellSequence[]
 }
 
+interface OrderBumpItem {
+  enabled: boolean
+  name: string
+  price: number
+  description: string
+  acceptText: string
+  rejectText: string
+  ctaMessage: string
+  deliveryType: "same" | "channel" | "link" | "message" | "video"
+  medias: string[]
+}
+
 interface OrderBumpConfig {
   enabled: boolean
   name?: string
   price?: number
-  description?: string
+  inicial?: OrderBumpItem
+  upsell?: OrderBumpItem
+  downsell?: OrderBumpItem
+  packs?: OrderBumpItem
+  applyInicialTo?: {
+    upsell: boolean
+    downsell: boolean
+    packs: boolean
+  }
 }
 
 interface PackConfig {
@@ -244,6 +264,24 @@ export default function FlowEditorPage() {
   const [orderBumpEnabled, setOrderBumpEnabled] = useState(false)
   const [orderBumpName, setOrderBumpName] = useState("")
   const [orderBumpPrice, setOrderBumpPrice] = useState("")
+  
+  const defaultOrderBumpItem: OrderBumpItem = {
+    enabled: false,
+    name: "",
+    price: 0,
+    description: "",
+    acceptText: "ADICIONAR",
+    rejectText: "NAO QUERO",
+    ctaMessage: "",
+    deliveryType: "same",
+    medias: [],
+  }
+  
+  const [orderBumpInicial, setOrderBumpInicial] = useState<OrderBumpItem>(defaultOrderBumpItem)
+  const [orderBumpUpsell, setOrderBumpUpsell] = useState<OrderBumpItem>(defaultOrderBumpItem)
+  const [orderBumpDownsell, setOrderBumpDownsell] = useState<OrderBumpItem>(defaultOrderBumpItem)
+  const [orderBumpPacks, setOrderBumpPacks] = useState<OrderBumpItem>(defaultOrderBumpItem)
+  const [applyInicialTo, setApplyInicialTo] = useState({ upsell: false, downsell: false, packs: false })
 
   // Packs
   const [packs, setPacks] = useState<PackConfig[]>([])
@@ -2343,52 +2381,369 @@ export default function FlowEditorPage() {
 
           {/* Order Bump Tab */}
           {activeTab === "orderbump" && (
-            <div className="space-y-6">
-              <Card className="border-border/50">
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="flex items-center gap-2 text-base">
-                      <Package className="h-4 w-4 text-amber-400" />
-                      Configurar Order Bump
-                    </CardTitle>
-                    <Switch
-                      checked={orderBumpEnabled}
-                      onCheckedChange={(checked) => {
-                        setOrderBumpEnabled(checked)
-                        setHasChanges(true)
-                      }}
-                    />
-                  </div>
-                </CardHeader>
-                {orderBumpEnabled && (
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>Nome do Produto</Label>
-                      <Input
-                        value={orderBumpName}
-                        onChange={(e) => {
-                          setOrderBumpName(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="Ex: Bonus Exclusivo"
-                        className="bg-secondary/30"
-                      />
+            <div className="flex gap-6">
+              {/* Left Sidebar */}
+              <div className="w-72 space-y-4">
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 space-y-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/10">
+                        <Wallet className="h-5 w-5 text-purple-500" />
+                      </div>
+                      <span className="font-semibold">Order Bump</span>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Preco (R$)</Label>
-                      <Input
-                        value={orderBumpPrice}
-                        onChange={(e) => {
-                          setOrderBumpPrice(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="19.90"
-                        className="w-32 bg-secondary/30"
-                      />
-                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Produto adicional oferecido no checkout antes do pagamento
+                    </p>
                   </CardContent>
-                )}
-              </Card>
+                </Card>
+
+                {/* Como funciona */}
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 space-y-3">
+                    <p className="text-sm font-medium text-amber-500">Como funciona?</p>
+                    <p className="text-sm text-muted-foreground">
+                      Configure um Order Bump diferente para cada etapa do funil:
+                    </p>
+                    <ul className="text-sm text-muted-foreground space-y-2">
+                      <li><span className="text-blue-400 font-medium">Inicial:</span> Exibido junto aos planos principais</li>
+                      <li><span className="text-accent font-medium">Upsell:</span> Exibido nas ofertas de upsell</li>
+                      <li><span className="text-pink-500 font-medium">Downsell:</span> Exibido nas ofertas de downsell</li>
+                      <li><span className="text-emerald-500 font-medium">Packs:</span> Exibido na compra de packs avulsos</li>
+                    </ul>
+                  </CardContent>
+                </Card>
+
+                {/* Aplicar Order Bump Inicial */}
+                <Card className="border-border/50">
+                  <CardContent className="pt-6 space-y-3">
+                    <p className="text-sm font-medium">Aplicar Order Bump Inicial tambem em:</p>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-border/50"
+                          checked={applyInicialTo.upsell}
+                          onChange={(e) => {
+                            setApplyInicialTo({...applyInicialTo, upsell: e.target.checked})
+                            setHasChanges(true)
+                          }}
+                        />
+                        <TrendingUp className="h-4 w-4 text-accent" />
+                        <span className="text-sm text-accent">Upsell</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-border/50"
+                          checked={applyInicialTo.downsell}
+                          onChange={(e) => {
+                            setApplyInicialTo({...applyInicialTo, downsell: e.target.checked})
+                            setHasChanges(true)
+                          }}
+                        />
+                        <TrendingDown className="h-4 w-4 text-pink-500" />
+                        <span className="text-sm text-pink-500">Downsell</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-border/50"
+                          checked={applyInicialTo.packs}
+                          onChange={(e) => {
+                            setApplyInicialTo({...applyInicialTo, packs: e.target.checked})
+                            setHasChanges(true)
+                          }}
+                        />
+                        <Package className="h-4 w-4 text-emerald-500" />
+                        <span className="text-sm text-emerald-500">Packs</span>
+                      </label>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Marcando, o Order Bump do Fluxo Inicial sera usado tambem nesses fluxos
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Main Content - 4 Order Bump Cards */}
+              <div className="flex-1 space-y-4">
+                {/* Fluxo Inicial */}
+                <Card className="border-border/50">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Crown className="h-5 w-5 text-blue-400" />
+                        <span className="font-semibold">Fluxo Inicial</span>
+                      </div>
+                      <Switch
+                        checked={orderBumpInicial.enabled}
+                        onCheckedChange={(checked) => {
+                          setOrderBumpInicial({...orderBumpInicial, enabled: checked})
+                          setHasChanges(true)
+                        }}
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Exibido quando o cliente seleciona um plano principal
+                    </p>
+                  </CardHeader>
+                  {orderBumpInicial.enabled && (
+                    <CardContent className="space-y-4">
+                      {/* Nome e Preco */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Nome do Produto</Label>
+                          <Input
+                            value={orderBumpInicial.name}
+                            onChange={(e) => {
+                              setOrderBumpInicial({...orderBumpInicial, name: e.target.value})
+                              setHasChanges(true)
+                            }}
+                            placeholder="Ex: Acesso ao grupo exclusivo"
+                            className="bg-secondary/50"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Preco (R$)</Label>
+                          <Input
+                            type="number"
+                            value={orderBumpInicial.price}
+                            onChange={(e) => {
+                              setOrderBumpInicial({...orderBumpInicial, price: parseFloat(e.target.value) || 0})
+                              setHasChanges(true)
+                            }}
+                            placeholder="0"
+                            className="bg-secondary/50"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Descricao */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Descricao/Mensagem do Order Bump</Label>
+                        <Textarea
+                          value={orderBumpInicial.description}
+                          onChange={(e) => {
+                            setOrderBumpInicial({...orderBumpInicial, description: e.target.value})
+                            setHasChanges(true)
+                          }}
+                          placeholder="Descricao completa do produto adicional que sera enviada ao cliente..."
+                          rows={4}
+                          className="bg-secondary/50 border-border/50"
+                        />
+                        <p className="text-xs text-muted-foreground text-right">{orderBumpInicial.description.length}/4000 caracteres</p>
+                      </div>
+
+                      {/* Botoes */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Botao Aceitar</Label>
+                          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 border border-border/50">
+                            <Check className="h-4 w-4 text-emerald-500" />
+                            <Input
+                              value={orderBumpInicial.acceptText}
+                              onChange={(e) => {
+                                setOrderBumpInicial({...orderBumpInicial, acceptText: e.target.value})
+                                setHasChanges(true)
+                              }}
+                              className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0 uppercase font-medium"
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Botao Recusar</Label>
+                          <div className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 border border-border/50">
+                            <X className="h-4 w-4 text-destructive" />
+                            <Input
+                              value={orderBumpInicial.rejectText}
+                              onChange={(e) => {
+                                setOrderBumpInicial({...orderBumpInicial, rejectText: e.target.value})
+                                setHasChanges(true)
+                              }}
+                              className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0 uppercase font-medium"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CTA */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Mensagem CTA (opcional)</Label>
+                        <Input
+                          value={orderBumpInicial.ctaMessage}
+                          onChange={(e) => {
+                            setOrderBumpInicial({...orderBumpInicial, ctaMessage: e.target.value})
+                            setHasChanges(true)
+                          }}
+                          placeholder="Ex: CLIQUE EM ADICIONAR ANTES QUE TIREM DO AR"
+                          className="bg-secondary/50"
+                        />
+                      </div>
+
+                      {/* Midias */}
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <ImageIcon className="h-4 w-4" />
+                          <span>Midias (ate 3)</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400/50 transition-colors">
+                            <Plus className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Entrega */}
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Entrega do Order Bump</Label>
+                        <Select
+                          value={orderBumpInicial.deliveryType}
+                          onValueChange={(value: OrderBumpItem["deliveryType"]) => {
+                            setOrderBumpInicial({...orderBumpInicial, deliveryType: value})
+                            setHasChanges(true)
+                          }}
+                        >
+                          <SelectTrigger className="bg-secondary/50 border-border/50">
+                            <div className="flex items-center gap-2">
+                              <Check className="h-4 w-4 text-emerald-500" />
+                              <SelectValue />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="same">Mesmo do fluxo principal</SelectItem>
+                            <SelectItem value="channel">Canal especifico</SelectItem>
+                            <SelectItem value="link">Link Externo</SelectItem>
+                            <SelectItem value="message">Apenas Mensagem</SelectItem>
+                            <SelectItem value="video">Chamada de Video (+R$ 0,50)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Upsell */}
+                <Card className="border-border/50">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <TrendingUp className="h-5 w-5 text-accent" />
+                        <span className="font-semibold">Upsell</span>
+                      </div>
+                      <Switch
+                        checked={orderBumpUpsell.enabled}
+                        onCheckedChange={(checked) => {
+                          setOrderBumpUpsell({...orderBumpUpsell, enabled: checked})
+                          setHasChanges(true)
+                        }}
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Exibido quando o cliente aceita uma oferta de upsell
+                    </p>
+                  </CardHeader>
+                  {orderBumpUpsell.enabled && (
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Nome do Produto</Label>
+                          <Input value={orderBumpUpsell.name} onChange={(e) => { setOrderBumpUpsell({...orderBumpUpsell, name: e.target.value}); setHasChanges(true) }} placeholder="Ex: Pack Extra" className="bg-secondary/50" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Preco (R$)</Label>
+                          <Input type="number" value={orderBumpUpsell.price} onChange={(e) => { setOrderBumpUpsell({...orderBumpUpsell, price: parseFloat(e.target.value) || 0}); setHasChanges(true) }} className="bg-secondary/50" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Descricao</Label>
+                        <Textarea value={orderBumpUpsell.description} onChange={(e) => { setOrderBumpUpsell({...orderBumpUpsell, description: e.target.value}); setHasChanges(true) }} placeholder="Descricao do order bump..." rows={3} className="bg-secondary/50" />
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Downsell */}
+                <Card className="border-border/50">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <TrendingDown className="h-5 w-5 text-pink-500" />
+                        <span className="font-semibold">Downsell</span>
+                      </div>
+                      <Switch
+                        checked={orderBumpDownsell.enabled}
+                        onCheckedChange={(checked) => {
+                          setOrderBumpDownsell({...orderBumpDownsell, enabled: checked})
+                          setHasChanges(true)
+                        }}
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Exibido quando o cliente aceita uma oferta de downsell
+                    </p>
+                  </CardHeader>
+                  {orderBumpDownsell.enabled && (
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Nome do Produto</Label>
+                          <Input value={orderBumpDownsell.name} onChange={(e) => { setOrderBumpDownsell({...orderBumpDownsell, name: e.target.value}); setHasChanges(true) }} placeholder="Ex: Pack Extra" className="bg-secondary/50" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Preco (R$)</Label>
+                          <Input type="number" value={orderBumpDownsell.price} onChange={(e) => { setOrderBumpDownsell({...orderBumpDownsell, price: parseFloat(e.target.value) || 0}); setHasChanges(true) }} className="bg-secondary/50" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Descricao</Label>
+                        <Textarea value={orderBumpDownsell.description} onChange={(e) => { setOrderBumpDownsell({...orderBumpDownsell, description: e.target.value}); setHasChanges(true) }} placeholder="Descricao do order bump..." rows={3} className="bg-secondary/50" />
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+
+                {/* Packs */}
+                <Card className="border-border/50">
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Package className="h-5 w-5 text-emerald-500" />
+                        <span className="font-semibold">Packs</span>
+                      </div>
+                      <Switch
+                        checked={orderBumpPacks.enabled}
+                        onCheckedChange={(checked) => {
+                          setOrderBumpPacks({...orderBumpPacks, enabled: checked})
+                          setHasChanges(true)
+                        }}
+                      />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Exibido quando o cliente seleciona um pack avulso
+                    </p>
+                  </CardHeader>
+                  {orderBumpPacks.enabled && (
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Nome do Produto</Label>
+                          <Input value={orderBumpPacks.name} onChange={(e) => { setOrderBumpPacks({...orderBumpPacks, name: e.target.value}); setHasChanges(true) }} placeholder="Ex: Pack Extra" className="bg-secondary/50" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-muted-foreground">Preco (R$)</Label>
+                          <Input type="number" value={orderBumpPacks.price} onChange={(e) => { setOrderBumpPacks({...orderBumpPacks, price: parseFloat(e.target.value) || 0}); setHasChanges(true) }} className="bg-secondary/50" />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-muted-foreground">Descricao</Label>
+                        <Textarea value={orderBumpPacks.description} onChange={(e) => { setOrderBumpPacks({...orderBumpPacks, description: e.target.value}); setHasChanges(true) }} placeholder="Descricao do order bump..." rows={3} className="bg-secondary/50" />
+                      </div>
+                    </CardContent>
+                  )}
+                </Card>
+              </div>
             </div>
           )}
 
