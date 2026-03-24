@@ -57,8 +57,12 @@ interface FlowPlan {
   name: string
   price: number
   duration_days: number
+  duration_type: "daily" | "weekly" | "monthly" | "yearly" | "lifetime"
   description?: string
   active: boolean
+  delivery_type: "default" | "custom"
+  custom_delivery?: string
+  order_bump_custom: boolean
 }
 
 interface UpsellSequence {
@@ -209,6 +213,7 @@ export default function FlowEditorPage() {
 
   // Plans
   const [plans, setPlans] = useState<FlowPlan[]>([])
+  const [expandedPlan, setExpandedPlan] = useState<string | null>(null)
 
   // Upsell
   const [upsellEnabled, setUpsellEnabled] = useState(false)
@@ -564,16 +569,21 @@ export default function FlowEditorPage() {
 
   // Add plan
   const handleAddPlan = () => {
+    const newPlanId = crypto.randomUUID()
     setPlans([
       ...plans,
       {
-        id: crypto.randomUUID(),
+        id: newPlanId,
         name: "",
         price: 0,
         duration_days: 30,
+        duration_type: "monthly",
         active: true,
+        delivery_type: "default",
+        order_bump_custom: false,
       },
     ])
+    setExpandedPlan(newPlanId)
     setHasChanges(true)
   }
 
@@ -1261,66 +1271,145 @@ export default function FlowEditorPage() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {plans.map((plan) => (
+                        {plans.map((plan, index) => (
                           <div
                             key={plan.id}
-                            className="p-4 rounded-xl border border-border/50 bg-secondary/20"
+                            className="rounded-xl border border-border/50 bg-secondary/20 overflow-hidden"
                           >
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label>Nome</Label>
-                                <Input
-                                  value={plan.name}
-                                  onChange={(e) => handleUpdatePlan(plan.id, "name", e.target.value)}
-                                  placeholder="Ex: Plano Mensal"
-                                  className="bg-secondary/50"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Preco (R$)</Label>
-                                <Input
-                                  type="number"
-                                  value={plan.price}
-                                  onChange={(e) => handleUpdatePlan(plan.id, "price", parseFloat(e.target.value) || 0)}
-                                  placeholder="49.90"
-                                  className="bg-secondary/50"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Duracao (dias)</Label>
-                                <Input
-                                  type="number"
-                                  value={plan.duration_days}
-                                  onChange={(e) => handleUpdatePlan(plan.id, "duration_days", parseInt(e.target.value) || 30)}
-                                  placeholder="30"
-                                  className="bg-secondary/50"
-                                />
-                              </div>
-                              <div className="flex items-end justify-between gap-2">
-                                <div className="flex items-center gap-2">
-                                  <Switch
-                                    checked={plan.active}
-                                    onCheckedChange={(checked) => handleUpdatePlan(plan.id, "active", checked)}
-                                  />
-                                  <span className="text-sm text-muted-foreground">Ativo</span>
+                            {/* Plan Header - Collapsible */}
+                            <div
+                              className="flex items-center justify-between p-4 cursor-pointer hover:bg-secondary/30 transition-colors"
+                              onClick={() => setExpandedPlan(expandedPlan === plan.id ? null : plan.id)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10">
+                                  <Package className="h-5 w-5 text-accent" />
                                 </div>
+                                <div>
+                                  <p className="font-medium">{plan.name || `Plano ${index + 1}`}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    R$ {plan.price.toFixed(2)} • {
+                                      plan.duration_type === "daily" ? "Diario" :
+                                      plan.duration_type === "weekly" ? "Semanal" :
+                                      plan.duration_type === "monthly" ? "Mensal" :
+                                      plan.duration_type === "yearly" ? "Anual" : "Vitalicio"
+                                    } • {plan.delivery_type === "default" ? "Entrega padrao" : "Entrega personalizada"}
+                                  </p>
+                                </div>
+                              </div>
+                              {expandedPlan === plan.id ? (
+                                <ChevronDown className="h-5 w-5 text-muted-foreground" />
+                              ) : (
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                              )}
+                            </div>
+
+                            {/* Expanded Content */}
+                            {expandedPlan === plan.id && (
+                              <div className="p-4 pt-0 space-y-6">
+                                {/* Nome, Preco, Duracao */}
+                                <div className="grid grid-cols-3 gap-4">
+                                  <div className="space-y-2">
+                                    <Label className="text-muted-foreground">Nome do Plano</Label>
+                                    <Input
+                                      value={plan.name}
+                                      onChange={(e) => handleUpdatePlan(plan.id, "name", e.target.value)}
+                                      placeholder="Ex: Plano Mensal"
+                                      className="bg-secondary/50"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-muted-foreground">Preco (R$)</Label>
+                                    <Input
+                                      type="number"
+                                      value={plan.price}
+                                      onChange={(e) => handleUpdatePlan(plan.id, "price", parseFloat(e.target.value) || 0)}
+                                      placeholder="0"
+                                      className="bg-secondary/50"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-muted-foreground">Duracao</Label>
+                                    <Select
+                                      value={plan.duration_type}
+                                      onValueChange={(value) => handleUpdatePlan(plan.id, "duration_type", value)}
+                                    >
+                                      <SelectTrigger className="bg-secondary/50 border-border/50">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="daily">Diario</SelectItem>
+                                        <SelectItem value="weekly">Semanal</SelectItem>
+                                        <SelectItem value="monthly">Mensal</SelectItem>
+                                        <SelectItem value="yearly">Anual</SelectItem>
+                                        <SelectItem value="lifetime">Vitalicio</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+
+                                {/* Entrega deste Plano */}
+                                <div className="space-y-3">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10">
+                                      <Package className="h-4 w-4 text-emerald-500" />
+                                    </div>
+                                    <span className="font-medium">Entrega deste Plano</span>
+                                  </div>
+                                  <Select
+                                    value={plan.delivery_type}
+                                    onValueChange={(value) => handleUpdatePlan(plan.id, "delivery_type", value)}
+                                  >
+                                    <SelectTrigger className="bg-secondary/50 border-border/50">
+                                      <div className="flex items-center gap-2">
+                                        <Package className="h-4 w-4 text-muted-foreground" />
+                                        <SelectValue />
+                                      </div>
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="default">Usar entrega padrao do fluxo</SelectItem>
+                                      <SelectItem value="custom">Entrega personalizada</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                {/* Order Bump personalizado */}
+                                <div className="space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-500/10">
+                                        <Wallet className="h-4 w-4 text-orange-500" />
+                                      </div>
+                                      <span className="font-medium">Order Bump personalizado</span>
+                                    </div>
+                                    <Switch
+                                      checked={plan.order_bump_custom}
+                                      onCheckedChange={(checked) => handleUpdatePlan(plan.id, "order_bump_custom", checked)}
+                                    />
+                                  </div>
+                                  <p className="text-sm text-muted-foreground pl-10">
+                                    Usando order bump do fluxo (se configurado)
+                                  </p>
+                                </div>
+
+                                {/* Remover Plano */}
                                 <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="text-muted-foreground hover:text-destructive"
+                                  variant="outline"
+                                  className="w-full border-destructive/50 text-destructive hover:bg-destructive/10"
                                   onClick={() => handleRemovePlan(plan.id)}
                                 >
-                                  <Trash2 className="h-4 w-4" />
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Remover Plano
                                 </Button>
                               </div>
-                            </div>
+                            )}
                           </div>
                         ))}
                         {plans.length < 10 && (
                           <Button 
                             variant="outline" 
                             onClick={handleAddPlan}
-                            className="w-full border-dashed border-accent text-accent hover:bg-accent/10"
+                            className="w-full border-dashed"
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Adicionar Plano
