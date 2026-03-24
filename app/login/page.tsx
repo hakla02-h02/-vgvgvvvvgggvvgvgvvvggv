@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/lib/auth-context"
-import { Loader2, Eye, EyeOff, Zap, Shield, Clock } from "lucide-react"
+import { Loader2, Eye, EyeOff } from "lucide-react"
 import { DragonIcon } from "@/components/dragon-icon"
 
 export default function LoginPage() {
@@ -146,75 +146,39 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* LADO DIREITO: DESIGN LIMPO E LINEAR */}
-      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-[#0a0a0a] border-l border-[#1a1a1a]">
-        {/* Linha verde vertical accent */}
-        <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-gradient-to-b from-transparent via-[#b8ff29] to-transparent" />
-        
-        {/* Content - centralizado verticalmente */}
-        <div className="flex flex-col justify-center w-full h-full px-16 xl:px-24">
-          
-          {/* Lista de beneficios */}
-          <div className="space-y-8">
-            {/* Item 1 */}
-            <div className="flex items-start gap-5">
-              <div className="w-11 h-11 rounded-xl bg-[#b8ff29] flex items-center justify-center flex-shrink-0">
-                <Zap className="w-5 h-5 text-[#0a0a0a]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-1">Automacao Inteligente</h3>
-                <p className="text-[#666] text-sm leading-relaxed">Configure uma vez e deixe o sistema trabalhar 24/7 no piloto automatico.</p>
-              </div>
-            </div>
-
-            {/* Linha divisoria */}
-            <div className="h-px bg-[#1a1a1a] ml-16" />
-
-            {/* Item 2 */}
-            <div className="flex items-start gap-5">
-              <div className="w-11 h-11 rounded-xl bg-[#b8ff29] flex items-center justify-center flex-shrink-0">
-                <Shield className="w-5 h-5 text-[#0a0a0a]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-1">Seguranca Total</h3>
-                <p className="text-[#666] text-sm leading-relaxed">Seus dados protegidos com criptografia de ponta a ponta.</p>
-              </div>
-            </div>
-
-            {/* Linha divisoria */}
-            <div className="h-px bg-[#1a1a1a] ml-16" />
-
-            {/* Item 3 */}
-            <div className="flex items-start gap-5">
-              <div className="w-11 h-11 rounded-xl bg-[#b8ff29] flex items-center justify-center flex-shrink-0">
-                <Clock className="w-5 h-5 text-[#0a0a0a]" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-white mb-1">Resposta Instantanea</h3>
-                <p className="text-[#666] text-sm leading-relaxed">Tempo de resposta inferior a 1 segundo para seus clientes.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Metricas em linha */}
-          <div className="mt-16 pt-8 border-t border-[#1a1a1a]">
-            <div className="grid grid-cols-3 gap-8">
-              <div>
-                <div className="text-3xl font-bold text-[#b8ff29]">10k+</div>
-                <div className="text-sm text-[#555] mt-1">Mensagens/dia</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-[#b8ff29]">99.9%</div>
-                <div className="text-sm text-[#555] mt-1">Uptime</div>
-              </div>
-              <div>
-                <div className="text-3xl font-bold text-[#b8ff29]">500+</div>
-                <div className="text-sm text-[#555] mt-1">Clientes ativos</div>
-              </div>
-            </div>
-          </div>
-
+      {/* LADO DIREITO: VISUAL BRANDING */}
+      <div className="hidden lg:flex w-1/2 relative overflow-hidden bg-[#080808]">
+        {/* Background pattern sutil */}
+        <div className="absolute inset-0 opacity-[0.015]">
+          <svg width="100%" height="100%">
+            <defs>
+              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
+              </pattern>
+            </defs>
+            <rect width="100%" height="100%" fill="url(#grid)" />
+          </svg>
         </div>
+
+        {/* Glow central */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#b8ff29]/[0.03] rounded-full blur-[120px]" />
+
+        {/* Content centralizado */}
+        <div className="relative z-10 flex flex-col items-center justify-center w-full h-full">
+          {/* Logo grande */}
+          <div className="relative mb-8">
+            <div className="w-32 h-32 rounded-3xl bg-[#b8ff29] flex items-center justify-center shadow-[0_0_80px_rgba(184,255,41,0.3)]">
+              <DragonIcon className="w-16 h-16 text-[#080808]" />
+            </div>
+          </div>
+
+          {/* Nome */}
+          <h2 className="text-5xl font-bold text-white tracking-tight mb-3">Dragon</h2>
+          <p className="text-[#555] text-lg">Automacao para Telegram</p>
+        </div>
+
+        {/* Linha accent inferior */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-[#b8ff29] rounded-full" />
       </div>
     </div>
   )
