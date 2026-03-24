@@ -349,6 +349,9 @@ Clique no botao abaixo para renovar com desconto especial!`)
   const [kickFromGroup, setKickFromGroup] = useState(true)
   const [removeVipStatus, setRemoveVipStatus] = useState(true)
 
+  // Conversions
+  const [conversionsPeriod, setConversionsPeriod] = useState("all")
+
   // Packs
   const [packs, setPacks] = useState<PackConfig[]>([])
 
@@ -893,6 +896,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
     { id: "packs", label: "Packs", icon: Package, locked: false },
     { id: "payments", label: "Pagamentos", icon: Wallet, locked: false },
     { id: "subscription", label: "Assinatura", icon: Crown, locked: false },
+    { id: "conversions", label: "Conversoes", icon: BarChart3, locked: false },
   ]
 
   return (
@@ -3632,6 +3636,42 @@ Clique no botao abaixo para renovar com desconto especial!`)
                       <Switch checked={removeVipStatus} onCheckedChange={(c) => { setRemoveVipStatus(c); setHasChanges(true) }} />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Conversions Tab */}
+          {activeTab === "conversions" && (
+            <div className="space-y-6">
+              {/* Period Filter */}
+              <div className="flex gap-2">
+                {[
+                  { id: "today", label: "Hoje" },
+                  { id: "7days", label: "7 dias" },
+                  { id: "30days", label: "30 dias" },
+                  { id: "all", label: "Tudo" },
+                ].map((period) => (
+                  <button
+                    key={period.id}
+                    onClick={() => setConversionsPeriod(period.id)}
+                    className={`px-4 py-2 rounded-lg text-sm transition-colors ${
+                      conversionsPeriod === period.id
+                        ? "bg-accent text-accent-foreground"
+                        : "bg-secondary/50 text-muted-foreground hover:bg-secondary"
+                    }`}
+                  >
+                    {period.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Empty State */}
+              <Card className="border-border/50">
+                <CardContent className="flex flex-col items-center justify-center py-16">
+                  <BarChart3 className="h-12 w-12 text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground font-medium mb-1">Nenhuma venda registrada neste fluxo ainda.</p>
+                  <p className="text-sm text-muted-foreground">Os dados aparecerao quando houver pagamentos.</p>
                 </CardContent>
               </Card>
             </div>
