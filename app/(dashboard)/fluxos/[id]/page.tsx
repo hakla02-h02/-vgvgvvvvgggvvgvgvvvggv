@@ -33,8 +33,8 @@ interface Flow {
   id: string
   user_id: string
   name: string
-  mode: "basic" | "n8n"
-  status: "active" | "paused"
+  flow_type: "basic" | "complete" | "n8n"
+  status: "active" | "paused" | "ativo"
   config: FlowConfig
   welcome_message?: string
   media_cache_chat_id?: string
@@ -218,7 +218,7 @@ export default function FlowEditorPage() {
   const [flow, setFlow] = useState<Flow | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
-  const [activeTab, setActiveTab] = useState("n8n")
+  const [activeTab, setActiveTab] = useState("bots")
   const [hasChanges, setHasChanges] = useState(false)
 
   // Edit name
@@ -402,6 +402,13 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setWelcomeMessage(flowData.welcome_message || "")
     setMediaCacheChat(flowData.media_cache_chat_id || "")
     setSupportUsername(flowData.support_username || "")
+    
+    // Set default tab based on flow type
+    if (flowData.flow_type === "n8n") {
+      setActiveTab("n8n")
+    } else {
+      setActiveTab("bots")
+    }
 
     // Parse config
     const config = flowData.config || {}
@@ -887,8 +894,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
     )
   }
 
-  const tabs = [
-    { id: "n8n", label: "Fluxo N8N", icon: Workflow, locked: false },
+  // Tabs for basic/complete flows (normal editor)
+  const basicTabs = [
     { id: "bots", label: "Bots", icon: Bot },
     { id: "welcome", label: "Boas-vindas", icon: MessageSquare, locked: false },
     { id: "plans", label: "Planos", icon: CreditCard, locked: false },
@@ -900,6 +907,17 @@ Clique no botao abaixo para renovar com desconto especial!`)
     { id: "subscription", label: "Assinatura", icon: Crown, locked: false },
     { id: "conversions", label: "Conversoes", icon: BarChart3, locked: false },
   ]
+
+  // Tabs for n8n flows (visual flow builder)
+  const n8nTabs = [
+    { id: "n8n", label: "Editor de Fluxo", icon: Workflow, locked: false },
+    { id: "bots", label: "Bots", icon: Bot },
+    { id: "conversions", label: "Conversoes", icon: BarChart3, locked: false },
+  ]
+
+  // Select tabs based on flow type
+  const isN8nFlow = flow?.flow_type === "n8n"
+  const tabs = isN8nFlow ? n8nTabs : basicTabs
 
   return (
     <div className="flex h-full flex-col bg-background">

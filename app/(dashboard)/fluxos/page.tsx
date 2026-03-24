@@ -22,8 +22,8 @@ interface Flow {
   id: string
   user_id: string
   name: string
-  mode: "basic" | "n8n"
-  status: "active" | "paused"
+  flow_type: "basic" | "complete" | "n8n"
+  status: "active" | "paused" | "ativo"
   config: Record<string, unknown>
   created_at: string
   updated_at: string
@@ -76,10 +76,7 @@ export default function FluxosPage() {
       toast({ title: "Erro", description: "Digite um nome para o fluxo", variant: "destructive" })
       return
     }
-    if (newFlowMode === "n8n") {
-      toast({ title: "Em breve", description: "Modo n8n ainda nao disponivel", variant: "destructive" })
-      return
-    }
+
 
     setIsCreating(true)
 
@@ -135,8 +132,8 @@ export default function FluxosPage() {
 
     // Calculate stats
     const linkedBotsCount = 0 // Will be calculated from flow_bots
-    const basicCount = fetchedFlows.filter(f => f.mode === "basic" || !f.mode).length
-    const n8nCount = fetchedFlows.filter(f => f.mode === "n8n").length
+    const basicCount = fetchedFlows.filter(f => f.flow_type !== "n8n").length
+    const n8nCount = fetchedFlows.filter(f => f.flow_type === "n8n").length
     setStats({ linkedBots: linkedBotsCount, basicFlows: basicCount, n8nFlows: n8nCount })
 
     // Fetch flow_bots for each flow
@@ -192,7 +189,7 @@ export default function FluxosPage() {
   // Flow card - Design moderno com metricas visuais
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
-    const isBasic = flow.mode === "basic" || !flow.mode
+    const isBasic = flow.flow_type !== "n8n"
     
     // Mock stats for now - these would come from real data
     const starts = 0
@@ -478,18 +475,22 @@ export default function FluxosPage() {
                 {/* n8n */}
                 <button
                   type="button"
-                  disabled
-                  className="relative flex flex-col p-5 rounded-xl border-2 border-border/30 bg-secondary/10 opacity-50 cursor-not-allowed text-left"
+                  onClick={() => setNewFlowMode("n8n")}
+                  className={`relative flex flex-col p-5 rounded-xl border-2 transition-all text-left ${
+                    newFlowMode === "n8n"
+                      ? "border-purple-500 bg-purple-500/5"
+                      : "border-border/50 bg-secondary/20 hover:border-border"
+                  }`}
                 >
-                  <Badge className="absolute top-3 right-3 text-[9px] bg-purple-500/20 text-purple-400 border-purple-500/30">
-                    Em breve
-                  </Badge>
+                  {newFlowMode === "n8n" && (
+                    <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-purple-500" />
+                  )}
                   <div className="flex items-center gap-2 mb-2">
                     <Workflow className="h-5 w-5 text-purple-400" />
-                    <span className="font-semibold">Fluxo n8n</span>
+                    <span className="font-semibold">Fluxo N8N</span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Editor visual com blocos arrastaveis
+                    Editor visual estilo n8n com blocos arrastaveis
                   </p>
                 </button>
               </div>
