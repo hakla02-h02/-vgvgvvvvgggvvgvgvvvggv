@@ -141,62 +141,163 @@ export default function RewardsPage() {
               )}
             </div>
 
-            {/* Sua Jornada - Timeline horizontal */}
-            <div>
-              <h3 className="text-lg font-bold text-gray-900 mb-6 text-center">Sua Jornada</h3>
-              
-              {/* Timeline */}
-              <div className="relative flex items-center justify-between">
-                {/* Linha de conexao */}
-                <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200" />
-                <div 
-                  className="absolute top-5 left-0 h-0.5 bg-[#ccff00] transition-all duration-700"
-                  style={{ width: `${(nivelAtualIndex / (premiacoes.length - 1)) * 100}%` }}
-                />
-                
-                {/* Pontos */}
-                {premiacoes.map((premio, index) => {
-                  const unlocked = faturamentoAtual >= premio.pontosNum
-                  const isCurrent = index === nivelAtualIndex
-                  const isActive = index === activeIndex
-                  
-                  return (
-                    <button
-                      key={premio.id}
-                      onClick={() => setActiveIndex(index)}
-                      className="relative z-10 flex flex-col items-center group"
-                    >
-                      {/* Circulo */}
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                        unlocked 
-                          ? 'bg-[#ccff00] text-black' 
-                          : isCurrent
-                          ? 'bg-white border-2 border-[#ccff00] text-gray-900'
-                          : 'bg-white border-2 border-gray-200 text-gray-400'
-                      } ${isActive ? 'ring-4 ring-[#ccff00]/30 scale-110' : 'group-hover:scale-105'}`}>
-                        {unlocked ? (
-                          <Check className="w-5 h-5" />
-                        ) : (
-                          <span className="text-sm font-bold">{index + 1}</span>
-                        )}
+            {/* Jornada de Conquistas */}
+            <div className="mt-8">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900">Jornada de conquistas</h3>
+                <p className="text-gray-500 text-sm mt-1">Cada etapa e marcada por uma nova meta de faturamento.</p>
+              </div>
+
+              {/* Barra de nivel atual */}
+              <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-8">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600 text-sm">Seu nivel:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-[#ccff00] flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-black">D</span>
                       </div>
-                      
-                      {/* Label */}
-                      <span className={`mt-3 text-xs font-semibold transition-colors ${
-                        isActive ? 'text-[#9ab300]' : unlocked ? 'text-gray-900' : 'text-gray-400'
-                      }`}>
-                        {premio.pontos}
+                      <span className="font-semibold text-gray-900">
+                        {nivelAtualIndex === 0 ? "Iniciante" : premiacoes[Math.max(0, nivelAtualIndex - 1)].nivel}
                       </span>
-                      
-                      {/* Nome do nivel */}
-                      <span className={`text-[10px] transition-colors ${
-                        isActive ? 'text-gray-700' : 'text-gray-400'
-                      }`}>
-                        {premio.nivel}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-gray-600 text-sm">Proximo nivel:</span>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-black">D</span>
+                      </div>
+                      <span className="font-semibold text-gray-900">
+                        {premiacoes[Math.min(nivelAtualIndex, premiacoes.length - 1)].nivel}
                       </span>
-                    </button>
-                  )
-                })}
+                    </div>
+                  </div>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-[#ccff00] rounded-full transition-all duration-700"
+                    style={{ width: `${progressPercent}%` }}
+                  />
+                </div>
+              </div>
+
+              {/* Grid de niveis - Roadmap style */}
+              <div className="relative">
+                {/* Linha tracejada vertical central */}
+                <div className="absolute left-1/2 top-0 bottom-0 w-px border-l-2 border-dashed border-gray-200 -translate-x-1/2 hidden md:block" />
+                
+                {/* Cards em grid alternado */}
+                <div className="space-y-6">
+                  {/* Linha 1: Explorador e Avancado */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {premiacoes.slice(0, 2).map((premio, idx) => {
+                      const unlocked = faturamentoAtual >= premio.pontosNum
+                      const isCurrent = idx === nivelAtualIndex
+                      const isNext = idx === nivelAtualIndex
+                      const globalIdx = idx
+                      
+                      return (
+                        <button
+                          key={premio.id}
+                          onClick={() => setActiveIndex(globalIdx)}
+                          className={`relative text-left p-5 rounded-2xl border-2 transition-all hover:shadow-lg ${
+                            activeIndex === globalIdx 
+                              ? 'border-[#ccff00] bg-[#ccff00]/5' 
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          {/* Header do card */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                unlocked ? 'bg-[#ccff00]' : 'bg-gray-100'
+                              }`}>
+                                {unlocked ? (
+                                  <Check className="w-4 h-4 text-black" />
+                                ) : (
+                                  <span className="text-xs font-bold text-gray-400">D</span>
+                                )}
+                              </div>
+                              <span className="font-semibold text-gray-900">{premio.nivel}</span>
+                              <span className="px-2.5 py-1 bg-[#ccff00]/20 text-[#7a9900] text-xs font-semibold rounded-full">
+                                {premio.pontos}
+                              </span>
+                            </div>
+                            {isCurrent && (
+                              <span className="text-[#7a9900] text-xs font-medium">Seu nivel</span>
+                            )}
+                            {isNext && !unlocked && idx === nivelAtualIndex && (
+                              <span className="text-[#7a9900] text-xs font-medium">Proximo nivel</span>
+                            )}
+                          </div>
+                          
+                          {/* Descricao */}
+                          <p className="text-gray-500 text-sm leading-relaxed">
+                            {premio.descricao}
+                          </p>
+                        </button>
+                      )
+                    })}
+                  </div>
+
+                  {/* Linha tracejada horizontal */}
+                  <div className="flex justify-center">
+                    <div className="w-32 border-t-2 border-dashed border-gray-200" />
+                  </div>
+
+                  {/* Linha 2: Expert e Ouro */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {premiacoes.slice(2, 4).map((premio, idx) => {
+                      const unlocked = faturamentoAtual >= premio.pontosNum
+                      const globalIdx = idx + 2
+                      const isCurrent = globalIdx === nivelAtualIndex - 1
+                      const isNext = globalIdx === nivelAtualIndex
+                      
+                      return (
+                        <button
+                          key={premio.id}
+                          onClick={() => setActiveIndex(globalIdx)}
+                          className={`relative text-left p-5 rounded-2xl border-2 transition-all hover:shadow-lg ${
+                            activeIndex === globalIdx 
+                              ? 'border-[#ccff00] bg-[#ccff00]/5' 
+                              : 'border-gray-200 bg-white hover:border-gray-300'
+                          }`}
+                        >
+                          {/* Header do card */}
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                                unlocked ? 'bg-[#ccff00]' : 'bg-gray-100'
+                              }`}>
+                                {unlocked ? (
+                                  <Check className="w-4 h-4 text-black" />
+                                ) : (
+                                  <span className="text-xs font-bold text-gray-400">D</span>
+                                )}
+                              </div>
+                              <span className="font-semibold text-gray-900">{premio.nivel}</span>
+                              <span className="px-2.5 py-1 bg-[#ccff00]/20 text-[#7a9900] text-xs font-semibold rounded-full">
+                                {premio.pontos}
+                              </span>
+                            </div>
+                            {isCurrent && unlocked && (
+                              <span className="text-[#7a9900] text-xs font-medium">Seu nivel</span>
+                            )}
+                            {isNext && !unlocked && (
+                              <span className="text-[#7a9900] text-xs font-medium">Proximo nivel</span>
+                            )}
+                          </div>
+                          
+                          {/* Descricao */}
+                          <p className="text-gray-500 text-sm leading-relaxed">
+                            {premio.descricao}
+                          </p>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
