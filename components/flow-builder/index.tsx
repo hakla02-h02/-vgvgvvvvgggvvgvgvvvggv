@@ -80,11 +80,8 @@ const BLOCK_CATEGORIES = [
       { type: "video", label: "Video", icon: Video, color: "red" },
       { type: "audio", label: "Audio", icon: Mic, color: "purple" },
       { type: "file", label: "Arquivo", icon: FileText, color: "blue" },
-      { type: "video_note", label: "Video Nota", icon: Circle, color: "red" },
-      { type: "typing", label: "Digitando...", icon: Keyboard, color: "blue" },
       { type: "buttons", label: "Botoes", icon: MessageSquare, color: "pink" },
       { type: "input", label: "Input do Usuario", icon: MessageSquare, color: "blue" },
-      { type: "location", label: "Localizacao", icon: MapPin, color: "emerald" },
     ],
   },
   {
@@ -92,10 +89,7 @@ const BLOCK_CATEGORIES = [
     label: "TEMPO",
     blocks: [
       { type: "delay", label: "Atraso", icon: Clock, color: "amber" },
-      { type: "smart_delay", label: "Smart Delay", icon: Clock, color: "amber" },
-      { type: "trigger", label: "Gatilho", icon: Zap, color: "amber" },
       { type: "randomizer", label: "Randomizer", icon: Shuffle, color: "purple" },
-      { type: "goto", label: "Go To", icon: CornerDownRight, color: "blue" },
     ],
   },
   {
