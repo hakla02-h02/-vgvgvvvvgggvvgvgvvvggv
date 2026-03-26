@@ -141,163 +141,105 @@ export default function RewardsPage() {
               )}
             </div>
 
-            {/* Jornada de Conquistas */}
+            {/* Jornada de Conquistas - Design System IndieGanhe */}
             <div className="mt-8">
               <div className="mb-6">
                 <h3 className="text-xl font-bold text-gray-900">Jornada de conquistas</h3>
                 <p className="text-gray-500 text-sm mt-1">Cada etapa e marcada por uma nova meta de faturamento.</p>
               </div>
 
-              {/* Barra de nivel atual */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-8">
-                <div className="flex items-center justify-between mb-4">
+              {/* Card principal escuro - igual IndieGanhe */}
+              <div className="bg-[#16181d] rounded-2xl p-6 mb-8 border border-white/5">
+                <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <span className="text-gray-600 text-sm">Seu nivel:</span>
+                    <span className="text-[#888] text-sm uppercase tracking-wide">Seu nivel:</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-[#ccff00] flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-full bg-[#ccff00] flex items-center justify-center">
                         <span className="text-[10px] font-bold text-black">D</span>
                       </div>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-white">
                         {nivelAtualIndex === 0 ? "Iniciante" : premiacoes[Math.max(0, nivelAtualIndex - 1)].nivel}
                       </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-gray-600 text-sm">Proximo nivel:</span>
+                    <span className="text-[#888] text-sm uppercase tracking-wide">Proximo:</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-amber-400 flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-black">D</span>
+                      <div className="w-7 h-7 rounded-full bg-[#ccff00]/30 flex items-center justify-center border border-[#ccff00]">
+                        <span className="text-[10px] font-bold text-[#ccff00]">D</span>
                       </div>
-                      <span className="font-semibold text-gray-900">
+                      <span className="font-semibold text-white">
                         {premiacoes[Math.min(nivelAtualIndex, premiacoes.length - 1)].nivel}
                       </span>
                     </div>
                   </div>
                 </div>
-                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
                   <div 
                     className="h-full bg-[#ccff00] rounded-full transition-all duration-700"
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>
+                <div className="flex justify-between mt-2">
+                  <span className="text-xs text-[#666]">R$ 0</span>
+                  <span className="text-xs text-[#ccff00] font-semibold">{premiacoes[nivelAtualIndex]?.pontos || "1M"}</span>
+                </div>
               </div>
 
-              {/* Grid de niveis - Roadmap style */}
-              <div className="relative">
-                {/* Linha tracejada vertical central */}
-                <div className="absolute left-1/2 top-0 bottom-0 w-px border-l-2 border-dashed border-gray-200 -translate-x-1/2 hidden md:block" />
-                
-                {/* Cards em grid alternado */}
-                <div className="space-y-6">
-                  {/* Linha 1: Explorador e Avancado */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {premiacoes.slice(0, 2).map((premio, idx) => {
-                      const unlocked = faturamentoAtual >= premio.pontosNum
-                      const isCurrent = idx === nivelAtualIndex
-                      const isNext = idx === nivelAtualIndex
-                      const globalIdx = idx
-                      
-                      return (
-                        <button
-                          key={premio.id}
-                          onClick={() => setActiveIndex(globalIdx)}
-                          className={`relative text-left p-5 rounded-2xl border-2 transition-all hover:shadow-lg ${
-                            activeIndex === globalIdx 
-                              ? 'border-[#ccff00] bg-[#ccff00]/5' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
-                        >
-                          {/* Header do card */}
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                unlocked ? 'bg-[#ccff00]' : 'bg-gray-100'
-                              }`}>
-                                {unlocked ? (
-                                  <Check className="w-4 h-4 text-black" />
-                                ) : (
-                                  <span className="text-xs font-bold text-gray-400">D</span>
-                                )}
-                              </div>
-                              <span className="font-semibold text-gray-900">{premio.nivel}</span>
-                              <span className="px-2.5 py-1 bg-[#ccff00]/20 text-[#7a9900] text-xs font-semibold rounded-full">
-                                {premio.pontos}
-                              </span>
-                            </div>
-                            {isCurrent && (
-                              <span className="text-[#7a9900] text-xs font-medium">Seu nivel</span>
-                            )}
-                            {isNext && !unlocked && idx === nivelAtualIndex && (
-                              <span className="text-[#7a9900] text-xs font-medium">Proximo nivel</span>
+              {/* Grid de cards escuros - igual IndieGanhe */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {premiacoes.map((premio, idx) => {
+                  const unlocked = faturamentoAtual >= premio.pontosNum
+                  const isCurrent = idx === nivelAtualIndex - 1 && unlocked
+                  const isNext = idx === nivelAtualIndex
+                  
+                  return (
+                    <button
+                      key={premio.id}
+                      onClick={() => setActiveIndex(idx)}
+                      className={`relative text-left p-5 rounded-2xl transition-all border ${
+                        activeIndex === idx 
+                          ? 'bg-[#16181d] border-[#ccff00]' 
+                          : 'bg-[#16181d] border-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                            unlocked ? 'bg-[#ccff00]' : 'bg-white/10'
+                          }`}>
+                            {unlocked ? (
+                              <Check className="w-5 h-5 text-black" />
+                            ) : (
+                              <Lock className="w-4 h-4 text-[#666]" />
                             )}
                           </div>
-                          
-                          {/* Descricao */}
-                          <p className="text-gray-500 text-sm leading-relaxed">
-                            {premio.descricao}
-                          </p>
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {/* Linha tracejada horizontal */}
-                  <div className="flex justify-center">
-                    <div className="w-32 border-t-2 border-dashed border-gray-200" />
-                  </div>
-
-                  {/* Linha 2: Expert e Ouro */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {premiacoes.slice(2, 4).map((premio, idx) => {
-                      const unlocked = faturamentoAtual >= premio.pontosNum
-                      const globalIdx = idx + 2
-                      const isCurrent = globalIdx === nivelAtualIndex - 1
-                      const isNext = globalIdx === nivelAtualIndex
+                          <span className="font-semibold text-white">{premio.nivel}</span>
+                          <span className="px-2.5 py-1 bg-[#ccff00] text-black text-xs font-bold rounded-lg">
+                            {premio.pontos}
+                          </span>
+                        </div>
+                        {isCurrent && (
+                          <span className="text-[#ccff00] text-xs font-semibold">Seu nivel</span>
+                        )}
+                        {isNext && (
+                          <span className="text-[#ccff00] text-xs font-semibold">Proximo</span>
+                        )}
+                      </div>
                       
-                      return (
-                        <button
-                          key={premio.id}
-                          onClick={() => setActiveIndex(globalIdx)}
-                          className={`relative text-left p-5 rounded-2xl border-2 transition-all hover:shadow-lg ${
-                            activeIndex === globalIdx 
-                              ? 'border-[#ccff00] bg-[#ccff00]/5' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
-                        >
-                          {/* Header do card */}
-                          <div className="flex items-center justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                unlocked ? 'bg-[#ccff00]' : 'bg-gray-100'
-                              }`}>
-                                {unlocked ? (
-                                  <Check className="w-4 h-4 text-black" />
-                                ) : (
-                                  <span className="text-xs font-bold text-gray-400">D</span>
-                                )}
-                              </div>
-                              <span className="font-semibold text-gray-900">{premio.nivel}</span>
-                              <span className="px-2.5 py-1 bg-[#ccff00]/20 text-[#7a9900] text-xs font-semibold rounded-full">
-                                {premio.pontos}
-                              </span>
-                            </div>
-                            {isCurrent && unlocked && (
-                              <span className="text-[#7a9900] text-xs font-medium">Seu nivel</span>
-                            )}
-                            {isNext && !unlocked && (
-                              <span className="text-[#7a9900] text-xs font-medium">Proximo nivel</span>
-                            )}
-                          </div>
-                          
-                          {/* Descricao */}
-                          <p className="text-gray-500 text-sm leading-relaxed">
-                            {premio.descricao}
-                          </p>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+                      {/* Descricao */}
+                      <p className="text-[#888] text-sm leading-relaxed">
+                        {premio.descricao}
+                      </p>
+
+                      {/* Indicador de selecionado */}
+                      {activeIndex === idx && (
+                        <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#ccff00]" />
+                      )}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
