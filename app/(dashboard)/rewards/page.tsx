@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Check, Lock } from "lucide-react"
+import { Check, Lock, ChevronRight } from "lucide-react"
 
 const premiacoes = [
   { 
@@ -13,8 +13,7 @@ const premiacoes = [
     pontos: "10K",
     pontosNum: 10000,
     nivel: "Explorador",
-    emoji: "🪙",
-    descricao: "Primeiro degrau da jornada: a venda inaugural valida a proposta, comprova interesse real e abre reputacao inicial no mercado.",
+    descricao: "Primeiro degrau da jornada: a venda inaugural valida a proposta e abre reputacao inicial no mercado.",
     plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-TMhkBoA48JSpENaJVFkZRyrrQ2Y5JZ.png",
   },
   { 
@@ -24,8 +23,7 @@ const premiacoes = [
     pontos: "100K",
     pontosNum: 100000,
     nivel: "Avancado",
-    emoji: "💰",
-    descricao: "Com R$ 100.000 faturados, a operacao ganha ritmo previsivel; dados permitem refinar oferta, marketing e aprimorar suporte.",
+    descricao: "Com R$ 100.000 faturados, a operacao ganha ritmo previsivel e dados para refinar oferta.",
     plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Zjc1SF7AR4QiHPCSItIilGEKhwR6Uz.png",
   },
   { 
@@ -35,19 +33,17 @@ const premiacoes = [
     pontos: "500K",
     pontosNum: 500000,
     nivel: "Expert",
-    emoji: "🥫",
-    descricao: "R$ 500.000 em vendas consolidam autoridade; receita estavel viabiliza equipe enxuta, processos solidos e expansao sustentavel.",
+    descricao: "R$ 500.000 em vendas consolidam autoridade e viabilizam expansao sustentavel.",
     plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lh6iqRrOeYyMAq0IC6x8spZMt6dENP.png",
   },
   { 
     id: 4,
     titulo: "Parceria Oficial",
     subtitulo: "1 Milhao Faturado",
-    pontos: "1Mi",
+    pontos: "1M",
     pontosNum: 1000000,
     nivel: "Ouro",
-    emoji: "🏅",
-    descricao: "R$ 1 milhao faturado consolida marca reconhecida; comunidade engajada impulsiona reputacao, recomendacoes organicas e parcerias.",
+    descricao: "R$ 1 milhao faturado consolida marca reconhecida e parcerias estrategicas.",
     plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-E1Izb9ktpBbqZlZTcVf6kpy6MAbafF.png",
   },
 ]
@@ -61,10 +57,8 @@ export default function RewardsPage() {
   const isDesbloqueado = faturamentoAtual >= currentPremio.pontosNum
   const progressPercent = Math.min((faturamentoAtual / currentPremio.pontosNum) * 100, 100)
 
-  // Encontrar nivel atual e proximo
+  // Encontrar nivel atual
   const nivelAtualIndex = premiacoes.findIndex(p => faturamentoAtual < p.pontosNum)
-  const nivelAtual = nivelAtualIndex > 0 ? premiacoes[nivelAtualIndex - 1] : null
-  const proximoNivel = premiacoes[nivelAtualIndex] || premiacoes[premiacoes.length - 1]
 
   return (
     <>
@@ -147,91 +141,62 @@ export default function RewardsPage() {
               )}
             </div>
 
-            {/* Jornada de conquistas */}
-            <div className="mb-8">
-              <h3 className="text-xl font-bold text-gray-900 mb-1">Jornada de conquistas</h3>
-              <p className="text-gray-500 text-sm mb-6">Cada etapa e marcada por uma nova meta de faturamento.</p>
+            {/* Sua Jornada - Timeline horizontal */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-6 text-center">Sua Jornada</h3>
               
-              {/* Nivel atual e proximo */}
-              <div className="bg-white rounded-2xl border border-gray-200 p-5 mb-8">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Seu nivel:</span>
-                    <span className="text-xl">{nivelAtual?.emoji || "🪙"}</span>
-                    <span className="font-semibold text-gray-900">{nivelAtual?.nivel || "Iniciante"}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">Proximo nivel:</span>
-                    <span className="text-xl">{proximoNivel.emoji}</span>
-                    <span className="font-semibold text-gray-900">{proximoNivel.nivel}</span>
-                  </div>
-                </div>
-                <div className="h-2 bg-blue-100 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-blue-500 rounded-full transition-all duration-700"
-                    style={{ width: `${Math.min((faturamentoAtual / proximoNivel.pontosNum) * 100, 100)}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Grid de cards estilo roadmap */}
-              <div className="relative">
-                {/* Cards em grid 2x2 com linhas tracejadas conectando */}
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-                  {premiacoes.map((premio, index) => {
-                    const unlocked = faturamentoAtual >= premio.pontosNum
-                    const isActive = index === activeIndex
-                    const isCurrentLevel = nivelAtualIndex === index
-                    const isNextLevel = nivelAtualIndex === index
-                    
-                    return (
-                      <div key={premio.id} className="relative">
-                        {/* Linha tracejada conectora - horizontal */}
-                        {index % 2 === 0 && index < premiacoes.length - 1 && (
-                          <div className="absolute top-1/2 -right-4 w-8 border-t-2 border-dashed border-gray-200" />
+              {/* Timeline */}
+              <div className="relative flex items-center justify-between">
+                {/* Linha de conexao */}
+                <div className="absolute top-5 left-0 right-0 h-0.5 bg-gray-200" />
+                <div 
+                  className="absolute top-5 left-0 h-0.5 bg-[#ccff00] transition-all duration-700"
+                  style={{ width: `${(nivelAtualIndex / (premiacoes.length - 1)) * 100}%` }}
+                />
+                
+                {/* Pontos */}
+                {premiacoes.map((premio, index) => {
+                  const unlocked = faturamentoAtual >= premio.pontosNum
+                  const isCurrent = index === nivelAtualIndex
+                  const isActive = index === activeIndex
+                  
+                  return (
+                    <button
+                      key={premio.id}
+                      onClick={() => setActiveIndex(index)}
+                      className="relative z-10 flex flex-col items-center group"
+                    >
+                      {/* Circulo */}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                        unlocked 
+                          ? 'bg-[#ccff00] text-black' 
+                          : isCurrent
+                          ? 'bg-white border-2 border-[#ccff00] text-gray-900'
+                          : 'bg-white border-2 border-gray-200 text-gray-400'
+                      } ${isActive ? 'ring-4 ring-[#ccff00]/30 scale-110' : 'group-hover:scale-105'}`}>
+                        {unlocked ? (
+                          <Check className="w-5 h-5" />
+                        ) : (
+                          <span className="text-sm font-bold">{index + 1}</span>
                         )}
-                        
-                        {/* Linha tracejada conectora - vertical para proxima linha */}
-                        {index < premiacoes.length - 2 && index % 2 === 1 && (
-                          <div className="absolute -bottom-4 left-1/2 h-8 border-l-2 border-dashed border-gray-200" />
-                        )}
-                        
-                        {/* Card */}
-                        <button
-                          onClick={() => setActiveIndex(index)}
-                          className={`w-full text-left p-5 rounded-2xl border-2 transition-all ${
-                            isActive 
-                              ? 'border-blue-500 bg-white shadow-lg' 
-                              : 'border-gray-200 bg-white hover:border-gray-300'
-                          }`}
-                        >
-                          <div className="flex items-center gap-3 mb-3">
-                            <span className="text-2xl">{premio.emoji}</span>
-                            <span className="font-bold text-gray-900">{premio.nivel}</span>
-                            <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-semibold rounded-full">
-                              {premio.pontos}
-                            </span>
-                            {isCurrentLevel && nivelAtualIndex > 0 && (
-                              <span className="ml-auto text-xs text-gray-400">Seu nivel</span>
-                            )}
-                            {isNextLevel && (
-                              <span className="ml-auto text-xs text-blue-500">Proximo nivel</span>
-                            )}
-                          </div>
-                          <p className="text-sm text-gray-500 leading-relaxed">
-                            {premio.descricao}
-                          </p>
-                          {unlocked && (
-                            <div className="flex items-center gap-1.5 mt-3 text-green-600">
-                              <Check className="w-4 h-4" />
-                              <span className="text-xs font-medium">Desbloqueado</span>
-                            </div>
-                          )}
-                        </button>
                       </div>
-                    )
-                  })}
-                </div>
+                      
+                      {/* Label */}
+                      <span className={`mt-3 text-xs font-semibold transition-colors ${
+                        isActive ? 'text-[#9ab300]' : unlocked ? 'text-gray-900' : 'text-gray-400'
+                      }`}>
+                        {premio.pontos}
+                      </span>
+                      
+                      {/* Nome do nivel */}
+                      <span className={`text-[10px] transition-colors ${
+                        isActive ? 'text-gray-700' : 'text-gray-400'
+                      }`}>
+                        {premio.nivel}
+                      </span>
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
