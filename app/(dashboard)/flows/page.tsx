@@ -1621,6 +1621,14 @@ export default function FlowsPage() {
     if (!activeFlow) return
 
     setIsDeletingFlow(true)
+    
+    // First delete all nodes of this flow
+    await supabase
+      .from("flow_nodes")
+      .delete()
+      .eq("flow_id", activeFlow.id)
+    
+    // Then delete the flow itself
     const { error } = await supabase
       .from("flows")
       .delete()
