@@ -10,16 +10,8 @@ export async function registrarWebhook(token: string, botId: string): Promise<{
   error?: string
 }> {
   try {
-    // Usa APENAS BASE_URL - deve ser a URL da Render
-    const baseUrl = process.env.BASE_URL
-    
-    if (!baseUrl) {
-      console.error("[registrarWebhook] BASE_URL nao configurada! Deve ser: https://dragonteste.onrender.com")
-      return {
-        success: false,
-        error: "BASE_URL nao configurada. Configure: https://dragonteste.onrender.com"
-      }
-    }
+    // URL hardcoded da Render - nao depende de variavel de ambiente
+    const baseUrl = "https://dragonteste.onrender.com"
     
     console.log("[v0] Registrando webhook com URL:", baseUrl)
 
