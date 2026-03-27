@@ -1602,9 +1602,14 @@ export default function FlowsPage() {
 
     // Insert all nodes
     for (const node of autoNodes) {
-      await supabase
+      const { error: nodeError } = await supabase
         .from("flow_nodes")
         .insert({ flow_id: newFlow.id, ...node })
+      
+      if (nodeError) {
+        console.error("[v0] Erro ao inserir flow_node:", nodeError.message, nodeError.code)
+        alert(`Erro ao salvar node: ${nodeError.message}`)
+      }
     }
 
     setFlows((prev) => [...prev, newFlow])
@@ -1623,10 +1628,14 @@ export default function FlowsPage() {
     setIsDeletingFlow(true)
     
     // First delete all nodes of this flow
-    await supabase
+    const { error: nodesError } = await supabase
       .from("flow_nodes")
       .delete()
       .eq("flow_id", activeFlow.id)
+    
+    if (nodesError) {
+      console.error("[v0] Erro ao deletar flow_nodes:", nodesError.message)
+    }
     
     // Then delete the flow itself
     const { error } = await supabase

@@ -112,7 +112,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         .single()
 
       if (!existingLead) {
-        await supabase.from("leads").insert({
+        const { error: leadError } = await supabase.from("leads").insert({
           bot_id: botUuid,
           telegram_id: String(telegramUserId),
           chat_id: String(chatId),
@@ -122,6 +122,10 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           status: "active",
           source: "telegram"
         })
+        
+        if (leadError) {
+          console.error("[webhook] Erro ao inserir lead:", leadError.message, leadError.code)
+        }
       }
     }
 

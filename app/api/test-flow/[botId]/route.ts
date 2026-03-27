@@ -138,16 +138,20 @@ export async function GET(
 
 async function createBasicNodes(supabase: ReturnType<typeof getSupabase>, flowId: string) {
   // Node 1: Trigger
-  await supabase.from("flow_nodes").insert({
+  const { error: triggerError } = await supabase.from("flow_nodes").insert({
     flow_id: flowId,
     type: "trigger",
     label: "Usuario inicia bot",
     config: { subVariant: "start" },
     position: 0,
   })
+  
+  if (triggerError) {
+    console.error("[test-flow] Erro ao inserir trigger node:", triggerError.message, triggerError.code)
+  }
 
   // Node 2: Mensagem de boas-vindas
-  await supabase.from("flow_nodes").insert({
+  const { error: msgError } = await supabase.from("flow_nodes").insert({
     flow_id: flowId,
     type: "message",
     label: "Ola! Seja bem-vindo ao nosso bot!",
@@ -160,4 +164,8 @@ async function createBasicNodes(supabase: ReturnType<typeof getSupabase>, flowId
     },
     position: 1,
   })
+  
+  if (msgError) {
+    console.error("[test-flow] Erro ao inserir message node:", msgError.message, msgError.code)
+  }
 }
