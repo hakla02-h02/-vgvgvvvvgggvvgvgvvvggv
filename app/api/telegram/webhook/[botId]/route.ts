@@ -134,42 +134,52 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       // Find flow for this bot
       let startFlow = null
 
-      // Strategy 1: Primary active flow
-      const { data: primaryFlow } = await supabase
+      // Strategy 1: Check flows.bot_id (direct link)
+      const { data: directFlow } = await supabase
         .from("flows")
         .select("*")
         .eq("bot_id", botUuid)
-        .eq("is_primary", true)
         .eq("status", "ativo")
+        .order("is_primary", { ascending: false })
+        .limit(1)
         .single()
 
-      if (primaryFlow) {
-        startFlow = primaryFlow
+      if (directFlow) {
+        startFlow = directFlow
       } else {
-        // Strategy 2: Any active flow
-        const { data: anyFlow } = await supabase
-          .from("flows")
-          .select("*")
+        // Strategy 2: Check flow_bots table (many-to-many link from /fluxos page)
+        const { data: flowBotLink } = await supabase
+          .from("flow_bots")
+          .select("flow_id")
           .eq("bot_id", botUuid)
-          .eq("status", "ativo")
-          .order("created_at", { ascending: true })
           .limit(1)
           .single()
 
-        if (anyFlow) {
-          startFlow = anyFlow
-        } else {
-          // Strategy 3: Any flow
-          const { data: fallbackFlow } = await supabase
+        if (flowBotLink) {
+          const { data: linkedFlow } = await supabase
             .from("flows")
             .select("*")
-            .eq("bot_id", botUuid)
-            .order("created_at", { ascending: true })
-            .limit(1)
+            .eq("id", flowBotLink.flow_id)
             .single()
 
-          startFlow = fallbackFlow
+          if (linkedFlow) {
+            startFlow = linkedFlow
+          }
         }
+      }
+
+      // Strategy 3: Any flow from user (last resort)
+      if (!startFlow) {
+        const { data: anyUserFlow } = await supabase
+          .from("flows")
+          .select("*")
+          .eq("user_id", bot.user_id)
+          .eq("status", "ativo")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single()
+
+        startFlow = anyUserFlow
       }
 
       if (startFlow) {

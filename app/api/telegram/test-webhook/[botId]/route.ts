@@ -86,40 +86,78 @@ export async function GET(
   log(`Bot UUID: ${bot.id}`)
   log(`Bot token: ${bot.token?.substring(0, 20)}...`)
 
-  // 2. Buscar fluxo primario
+  // 2. Buscar fluxo - primeiro por bot_id direto, depois por flow_bots
   log("")
-  log("PASSO 2: Buscando fluxo primario...")
-  log(`Query: SELECT * FROM flows WHERE bot_id = '${bot.id}' AND (is_primary = true OR status = 'ativo') LIMIT 1`)
-
-  const { data: flow, error: flowError } = await supabase
+  log("PASSO 2: Buscando fluxo...")
+  
+  let flow = null
+  
+  // Strategy 1: Direct bot_id in flows table
+  log("Estrategia 1: Buscando por flows.bot_id...")
+  const { data: directFlow, error: directError } = await supabase
     .from("flows")
     .select("*")
     .eq("bot_id", bot.id)
-    .or("is_primary.eq.true,status.eq.ativo")
+    .eq("status", "ativo")
     .order("is_primary", { ascending: false })
     .limit(1)
     .single()
 
-  if (flowError) {
-    log(`ERRO ao buscar fluxo: ${flowError.message} (code: ${flowError.code})`)
+  if (directError && directError.code !== "PGRST116") {
+    log(`ERRO: ${directError.message}`)
+  }
+
+  if (directFlow) {
+    log(`Encontrado via bot_id direto: ${directFlow.name}`)
+    flow = directFlow
+  } else {
+    // Strategy 2: Check flow_bots table
+    log("Nao encontrado. Estrategia 2: Buscando por flow_bots...")
+    const { data: flowBotLink, error: fbError } = await supabase
+      .from("flow_bots")
+      .select("flow_id")
+      .eq("bot_id", bot.id)
+      .limit(1)
+      .single()
+
+    if (fbError && fbError.code !== "PGRST116") {
+      log(`ERRO flow_bots: ${fbError.message}`)
+    }
+
+    if (flowBotLink) {
+      log(`Encontrado link em flow_bots: flow_id = ${flowBotLink.flow_id}`)
+      const { data: linkedFlow } = await supabase
+        .from("flows")
+        .select("*")
+        .eq("id", flowBotLink.flow_id)
+        .single()
+
+      if (linkedFlow) {
+        log(`Fluxo vinculado encontrado: ${linkedFlow.name}`)
+        flow = linkedFlow
+      }
+    } else {
+      log("Nenhum link encontrado em flow_bots")
+    }
   }
 
   if (!flow) {
     log("Nenhum fluxo encontrado para este bot!")
     
-    // Lista fluxos existentes
-    const { data: allFlows } = await supabase
+    // Lista fluxos do usuario
+    const { data: userFlows } = await supabase
       .from("flows")
       .select("id, name, bot_id, status, is_primary, welcome_message")
-      .eq("bot_id", bot.id)
+      .eq("user_id", bot.user_id)
     
     log("")
-    log(`Fluxos com bot_id = ${bot.id}:`)
-    if (allFlows && allFlows.length > 0) {
-      allFlows.forEach((f, i) => {
-        log(`  ${i + 1}. ${f.name} - status: ${f.status} - is_primary: ${f.is_primary}`)
-        log(`     welcome_message: ${f.welcome_message?.substring(0, 50) || "(vazio)"}...`)
+    log(`Fluxos do usuario (${bot.user_id}):`)
+    if (userFlows && userFlows.length > 0) {
+      userFlows.forEach((f, i) => {
+        log(`  ${i + 1}. ${f.name} - bot_id: ${f.bot_id || "(nenhum)"} - status: ${f.status}`)
       })
+      log("")
+      log("DICA: Vincule um bot ao fluxo na aba 'Bots' do editor de fluxos")
     } else {
       log("  Nenhum fluxo encontrado!")
     }
@@ -128,7 +166,8 @@ export async function GET(
       success: false,
       error: "Nenhum fluxo encontrado",
       bot: { id: bot.id, name: bot.name },
-      logs
+      logs,
+      hint: "Vincule o bot a um fluxo na pagina /fluxos -> Editar -> Aba Bots"
     }, { status: 404 })
   }
 
