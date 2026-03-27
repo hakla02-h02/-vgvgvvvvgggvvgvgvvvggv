@@ -80,17 +80,21 @@ export async function POST(
     const update = await req.json()
     console.log("[webhook] Received update for bot:", botId, JSON.stringify(update).slice(0, 500))
 
-    // 1. Get bot from database
+    // 1. Get bot from database - botId is the Telegram numeric ID (e.g., 8339469623)
+    // The token format is: "8339469623:AAxxxxxxx" so we search by token starting with botId
     const { data: bot, error: botError } = await supabase
       .from("bots")
       .select("*")
-      .eq("id", botId)
+      .like("token", `${botId}:%`)
       .single()
 
     if (botError || !bot) {
-      console.error("[webhook] Bot not found:", botId, botError)
+      console.error("[webhook] Bot not found for telegram ID:", botId, botError)
       return NextResponse.json({ ok: true })
     }
+    
+    // Use the actual bot UUID for database operations
+    const botUuid = bot.id
 
     const botToken = bot.token
     if (!botToken) {
@@ -123,7 +127,7 @@ export async function POST(
       const { data: existingLead } = await supabase
         .from("leads")
         .select("*")
-        .eq("bot_id", botId)
+        .eq("bot_id", botUuid)
         .eq("telegram_id", String(telegramUserId))
         .single()
 
@@ -135,7 +139,7 @@ export async function POST(
         const { data: newLead } = await supabase
           .from("leads")
           .insert({
-            bot_id: botId,
+            bot_id: botUuid,
             telegram_id: String(telegramUserId),
             chat_id: String(chatId),
             first_name: from.first_name || "",
@@ -162,7 +166,7 @@ export async function POST(
       const { data: primaryFlow, error: primaryError } = await supabase
         .from("flows")
         .select("*")
-        .eq("bot_id", botId)
+        .eq("bot_id", botUuid)
         .eq("is_primary", true)
         .eq("status", "ativo")
         .single()
@@ -179,7 +183,7 @@ export async function POST(
         const { data: anyFlow } = await supabase
           .from("flows")
           .select("*")
-          .eq("bot_id", botId)
+          .eq("bot_id", botUuid)
           .eq("status", "ativo")
           .order("created_at", { ascending: true })
           .limit(1)
@@ -196,7 +200,7 @@ export async function POST(
         const { data: fallbackFlow } = await supabase
           .from("flows")
           .select("*")
-          .eq("bot_id", botId)
+          .eq("bot_id", botUuid)
           .order("created_at", { ascending: true })
           .limit(1)
           .single()

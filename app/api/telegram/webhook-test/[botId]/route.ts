@@ -18,18 +18,19 @@ export async function GET(
   try {
     const supabase = getSupabase()
 
-    // 1. Buscar bot
+    // 1. Buscar bot pelo ID do Telegram (token comeca com o botId)
     const { data: bot, error: botError } = await supabase
       .from("bots")
       .select("*")
-      .eq("id", botId)
+      .like("token", `${botId}:%`)
       .single()
 
-    result.bot = bot ? { id: bot.id, name: bot.name, hasToken: !!bot.token } : null
+    const botUuid = bot?.id || null
+    result.bot = bot ? { id: bot.id, name: bot.name, hasToken: !!bot.token, tokenPrefix: bot.token?.split(":")[0] } : null
     result.botError = botError?.message || null
 
     if (!bot?.token) {
-      return NextResponse.json({ ...result, error: "Bot nao encontrado ou sem token" })
+      return NextResponse.json({ ...result, error: "Bot nao encontrado. O token deve comecar com " + botId })
     }
 
     // 2. Verificar webhook no Telegram
@@ -37,11 +38,11 @@ export async function GET(
     const webhookInfo = await webhookRes.json()
     result.telegramWebhook = webhookInfo.result
 
-    // 3. Buscar fluxos do bot
+    // 3. Buscar fluxos do bot usando o UUID
     const { data: flows, error: flowsError } = await supabase
       .from("flows")
       .select("id, name, status, is_primary, category, bot_id, created_at")
-      .eq("bot_id", botId)
+      .eq("bot_id", botUuid)
 
     result.flows = flows
     result.flowsError = flowsError?.message || null
@@ -62,11 +63,11 @@ export async function GET(
       result.nodesCount = nodes?.length || 0
     }
 
-    // 5. Verificar flow_bots
+    // 5. Verificar flow_bots usando o UUID
     const { data: flowBots } = await supabase
       .from("flow_bots")
       .select("*")
-      .eq("bot_id", botId)
+      .eq("bot_id", botUuid)
 
     result.flowBots = flowBots
     result.flowBotsCount = flowBots?.length || 0
