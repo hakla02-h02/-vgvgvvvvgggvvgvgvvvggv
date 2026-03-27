@@ -1330,13 +1330,15 @@ export default function FlowsPage() {
     // Optimistic update
     setNodes(allReordered)
 
-    // Persist to DB
-    for (const node of allReordered) {
-      await supabase
-        .from("flow_nodes")
-        .update({ position: node.position })
-        .eq("id", node.id)
-    }
+    // Persist to DB via API
+    fetch("/api/flows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update_node_positions",
+        nodes: allReordered.map(n => ({ id: n.id, position: n.position })),
+      }),
+    }).catch(console.error)
   }
 
   // Derived: primary flow and secondary flows
@@ -1421,236 +1423,142 @@ export default function FlowsPage() {
     fetchNodes()
   }, [fetchNodes])
 
-  // ---- Create new flow ----
+  // ---- Create new flow via API ----
   const handleCreateFlow = async () => {
     if (!selectedBot || !session || !newFlowName.trim()) return
 
     setIsCreatingFlow(true)
 
-    // If this is the first flow, it becomes the primary
     const isFirst = flows.length === 0
     const category = isFirst ? "inicial" : newFlowCategory
 
-    // Try with category/is_primary columns first, fallback without them
-    let insertPayload: Record<string, unknown> = {
-      bot_id: selectedBot.id,
-      user_id: session.userId,
-      name: newFlowName.trim(),
-      status: "ativo",
-      category,
-      is_primary: isFirst,
-      flow_type: "complete",
-    }
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_flow",
+          botId: selectedBot.id,
+          userId: session.userId,
+          name: newFlowName.trim(),
+          flowType: "complete",
+          category,
+          isPrimary: isFirst,
+        }),
+      })
 
-    let { data, error } = await supabase
-      .from("flows")
-      .insert(insertPayload)
-      .select()
-      .single()
+      const result = await response.json()
 
-    // If columns don't exist yet, retry without them
-    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.message?.includes("flow_type") || error.code === "42703")) {
-      insertPayload = {
-        bot_id: selectedBot.id,
-        user_id: session.userId,
-        name: newFlowName.trim(),
-        status: "ativo",
+      if (!response.ok || !result.success) {
+        alert(`Erro ao criar fluxo: ${result.error || "Erro desconhecido"}`)
+        setIsCreatingFlow(false)
+        return
       }
-      const retry = await supabase
-        .from("flows")
-        .insert(insertPayload)
-        .select()
-        .single()
-      data = retry.data
-      error = retry.error
-    }
 
-    if (error) {
-      console.error("Error creating flow:", error)
+      const newFlow = { ...result.flow, category, is_primary: isFirst, flow_type: "complete" } as Flow
+      setFlows((prev) => [...prev, newFlow])
+      setActiveFlow(newFlow)
+      setNewFlowName("")
+      setNewFlowCategory("personalizado")
+      setShowNewFlowDialog(false)
+    } catch (err) {
+      console.error("Error creating flow:", err)
+      alert("Erro ao criar fluxo")
+    } finally {
       setIsCreatingFlow(false)
-      return
     }
-
-    const newFlow = { ...data, category, is_primary: isFirst, flow_type: "complete" } as Flow
-    setFlows((prev) => [...prev, newFlow])
-    setActiveFlow(newFlow)
-    setNewFlowName("")
-    setNewFlowCategory("personalizado")
-    setShowNewFlowDialog(false)
-    setIsCreatingFlow(false)
   }
 
-  // ---- Create BASIC flow (auto-generates nodes) ----
+  // ---- Create BASIC flow (auto-generates nodes) via API ----
   const handleCreateBasicFlow = async () => {
     if (!selectedBot || !session || !basicWelcomeMsg.trim()) return
 
     setIsCreatingFlow(true)
 
     const isFirst = flows.length === 0
-    // Generate flow name from first words of message or default
     const flowName = basicWelcomeMsg.trim().split(" ").slice(0, 3).join(" ") || "Boas-vindas"
 
-    let insertPayload: Record<string, unknown> = {
-      bot_id: selectedBot.id,
-      user_id: session.userId,
-      name: flowName,
-      status: "ativo",
-      category: isFirst ? "inicial" : "personalizado",
-      is_primary: isFirst,
-      flow_type: "basic",
-    }
-
-    let { data, error } = await supabase
-      .from("flows")
-      .insert(insertPayload)
-      .select()
-      .single()
-
-    if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.message?.includes("flow_type") || error.code === "42703")) {
-      insertPayload = {
-        bot_id: selectedBot.id,
-        user_id: session.userId,
-        name: flowName,
-        status: "ativo",
-      }
-      const retry = await supabase
-        .from("flows")
-        .insert(insertPayload)
-        .select()
-        .single()
-      data = retry.data
-      error = retry.error
-    }
-
-    if (error || !data) {
-      console.error("[v0] Error creating basic flow:", error?.message, error?.code, error?.details)
-      alert(`Erro ao criar fluxo: ${error?.message || "Erro desconhecido"}`)
-      setIsCreatingFlow(false)
-      return
-    }
-
-    console.log("[v0] Flow created successfully:", data.id, data.name)
-    const newFlow = { ...data, category: (isFirst ? "inicial" : "personalizado") as FlowCategory, is_primary: isFirst, flow_type: "basic" } as Flow
-
-    // Auto-generate nodes for basic flow
-    const autoNodes: { type: NodeType; label: string; config: Record<string, unknown>; position: number }[] = []
-
-    // 1) Trigger
-    autoNodes.push({
-      type: "trigger",
-      label: "Usuario inicia bot",
-      config: {},
-      position: 0,
-    })
-
-    // 2) Welcome message with media
-    const msgText = basicWelcomeMsg.trim()
-    
-    autoNodes.push({
-      type: "message",
-      label: msgText.length > 40 ? msgText.slice(0, 40) + "..." : msgText,
-      config: {
-        text: msgText,
-        media_url: basicHasMedia ? basicMediaUrl : "",
-        media_type: basicHasMedia ? basicMediaType : "",
-        buttons: "",
-        subVariant: basicHasMedia ? "media" : "text",
+    // Preparar nodes
+    const autoNodes = [
+      { type: "trigger", label: "Inicio", position: 0, config: { trigger_type: "start" } },
+      { 
+        type: "message", 
+        label: "Boas-vindas", 
+        position: 1, 
+        config: { 
+          text: basicWelcomeMsg,
+          media_type: basicMediaType !== "none" ? basicMediaType : undefined,
+          media_url: basicMediaUrl || undefined,
+          buttons: basicButtons.filter(b => b.text && b.url)
+        } 
       },
-      position: 1,
-    })
+    ]
 
-    // 3) Payment node if user added payment buttons
-    const validPaymentButtons = basicButtons.filter(b => b.text.trim() && b.amount.trim())
-    if (validPaymentButtons.length > 0) {
-      // Build payment_buttons in the same format as the complete flow
-      const paymentButtonsFormatted = validPaymentButtons.map(b => ({
-        id: b.id,
-        text: b.text.trim(),
-        amount: b.amount.replace(",", "."),
-      }))
-      
-      // Build upsells from order bumps (same format as complete flow)
-      const upsells = validPaymentButtons
-        .filter(b => b.hasOrderBump && b.orderBumpName?.trim() && b.orderBumpAmount?.trim())
-        .map(b => ({
-          id: crypto.randomUUID(),
-          media_url: "",
-          media_type: "none" as const,
-          description: "",
-          delay_seconds: "0",
-          buttons: [{
-            id: crypto.randomUUID(),
-            text: b.orderBumpName!.trim(),
-            amount: b.orderBumpAmount!.replace(",", "."),
-          }],
-        }))
-
-      const firstBtn = paymentButtonsFormatted[0]
-      autoNodes.push({
-        type: "payment",
-        label: `${firstBtn.text} - R$${firstBtn.amount}`,
-        config: {
-          subVariant: "charge",
-          amount: firstBtn.amount,
-          description: firstBtn.text,
-          gateway: "gate_uy",
-          payment_buttons: JSON.stringify(paymentButtonsFormatted),
-          upsells: JSON.stringify(upsells),
-          downsells: JSON.stringify([]),
-        },
-        position: 2,
-      })
+    // Adicionar delay se configurado
+    if (basicDelay > 0) {
+      autoNodes.push({ type: "delay", label: `Aguardar ${basicDelay}s`, position: 2, config: { seconds: basicDelay } })
     }
 
-    // Insert all nodes via API (bypasses RLS)
     try {
       const response = await fetch("/api/flows", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          action: "create_nodes",
-          flowId: newFlow.id,
+          action: "create_flow_with_nodes",
+          botId: selectedBot.id,
+          userId: session.userId,
+          name: flowName,
+          flowType: "basic",
+          category: isFirst ? "inicial" : "personalizado",
+          isPrimary: isFirst,
           nodes: autoNodes,
         }),
       })
-      const result = await response.json()
-      if (!response.ok) {
-        console.error("[v0] Error creating nodes via API:", result.error)
-        alert(`Erro ao criar nodes: ${result.error}`)
-      }
-    } catch (err) {
-      console.error("[v0] Error calling API:", err)
-    }
 
-    setFlows((prev) => [...prev, newFlow])
-    setActiveFlow(newFlow)
-    resetBasicFlow()
-    setNewFlowName("")
-    setNewFlowMode(null)
-    setShowNewFlowDialog(false)
-    setIsCreatingFlow(false)
+      const result = await response.json()
+
+      if (!response.ok || !result.success) {
+        alert(`Erro ao criar fluxo: ${result.error || "Erro desconhecido"}`)
+        setIsCreatingFlow(false)
+        return
+      }
+
+      const newFlow = result.flow as Flow
+      setFlows((prev) => [...prev, newFlow])
+      setActiveFlow(newFlow)
+      resetBasicFlow()
+      setNewFlowName("")
+      setNewFlowMode(null)
+      setShowNewFlowDialog(false)
+    } catch (err) {
+      console.error("Error creating flow:", err)
+      alert("Erro ao criar fluxo")
+    } finally {
+      setIsCreatingFlow(false)
+    }
   }
 
-  // ---- Delete flow ----
+  // ---- Delete flow via API ----
   const handleDeleteFlow = async () => {
     if (!activeFlow) return
 
     setIsDeletingFlow(true)
     
-    // First delete all nodes of this flow
-    await supabase
-      .from("flow_nodes")
-      .delete()
-      .eq("flow_id", activeFlow.id)
-    
-    // Then delete the flow itself
-    const { error } = await supabase
-      .from("flows")
-      .delete()
-      .eq("id", activeFlow.id)
-
-    if (error) {
-      console.error("Error deleting flow:", error)
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_flow", flowId: activeFlow.id }),
+      })
+      
+      if (!response.ok) {
+        const result = await response.json()
+        console.error("Error deleting flow:", result.error)
+        setIsDeletingFlow(false)
+        return
+      }
+    } catch (err) {
+      console.error("Error deleting flow:", err)
       setIsDeletingFlow(false)
       return
     }
@@ -1660,13 +1568,16 @@ export default function FlowsPage() {
       // If we deleted the primary, promote the first remaining
       if (activeFlow.is_primary && updated.length > 0) {
         updated[0] = { ...updated[0], is_primary: true, category: "inicial" }
-        // Update in DB (try with new cols, ignore if they don't exist)
-        supabase
-          .from("flows")
-          .update({ is_primary: true, category: "inicial" })
-          .eq("id", updated[0].id)
-          .then(() => {})
-          .catch(() => {})
+        // Update in DB via API
+        fetch("/api/flows", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            action: "update_flow",
+            flowId: updated[0].id,
+            updates: { is_primary: true, category: "inicial" },
+          }),
+        }).catch(() => {})
       }
       if (updated.length > 0) {
         setActiveFlow(updated[0])
@@ -1680,26 +1591,33 @@ export default function FlowsPage() {
     setIsDeletingFlow(false)
   }
 
-  // ---- Set as primary flow ----
+  // ---- Set as primary flow via API ----
   const handleSetPrimary = async (flow: Flow) => {
-    // Remove primary from current
     const oldPrimary = flows.find((f) => f.is_primary)
+    
+    // Remove primary from current via API
     if (oldPrimary) {
-      // Try updating new columns, ignore errors if they don't exist
-      await supabase
-        .from("flows")
-        .update({ is_primary: false })
-        .eq("id", oldPrimary.id)
-        .then(() => {})
-        .catch(() => {})
+      await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_flow",
+          flowId: oldPrimary.id,
+          updates: { is_primary: false },
+        }),
+      }).catch(() => {})
     }
-    // Set new primary (try with new columns)
-    await supabase
-      .from("flows")
-      .update({ is_primary: true, category: "inicial" })
-      .eq("id", flow.id)
-      .then(() => {})
-      .catch(() => {})
+    
+    // Set new primary via API
+    await fetch("/api/flows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update_flow",
+        flowId: flow.id,
+        updates: { is_primary: true, category: "inicial" },
+      }),
+    }).catch(() => {})
 
     setFlows((prev) =>
       prev.map((f) => ({
@@ -1722,29 +1640,27 @@ export default function FlowsPage() {
     if (!activeFlow) return
     setIsSavingFlow(true)
 
-    let { error } = await supabase
-      .from("flows")
-      .update({
-        name: editFlowName.trim(),
-        category: activeFlow.is_primary ? "inicial" : editFlowCategory,
-        updated_at: new Date().toISOString(),
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_flow",
+          flowId: activeFlow.id,
+          updates: {
+            name: editFlowName.trim(),
+            category: activeFlow.is_primary ? "inicial" : editFlowCategory,
+          },
+        }),
       })
-      .eq("id", activeFlow.id)
 
-    // Fallback without category column
-    if (error && (error.message?.includes("category") || error.code === "42703")) {
-      const retry = await supabase
-        .from("flows")
-        .update({
-          name: editFlowName.trim(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", activeFlow.id)
-      error = retry.error
-    }
-
-    if (error) {
-      console.error("Error updating flow:", error)
+      if (!response.ok) {
+        console.error("Error updating flow")
+        setIsSavingFlow(false)
+        return
+      }
+    } catch (err) {
+      console.error("Error updating flow:", err)
       setIsSavingFlow(false)
       return
     }
@@ -2087,36 +2003,46 @@ if (sv === "end") {
     setIsSavingNode(false)
   }
 
-  // ---- Delete node ----
+  // ---- Delete node via API ----
   const handleDeleteNode = async () => {
     if (!deletingNode) return
 
     setIsDeletingNode(true)
-    const { error } = await supabase
-      .from("flow_nodes")
-      .delete()
-      .eq("id", deletingNode.id)
+    
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete_node", nodeId: deletingNode.id }),
+      })
 
-    if (error) {
-      console.error("Error deleting node:", error)
+      if (!response.ok) {
+        console.error("Error deleting node")
+        setIsDeletingNode(false)
+        return
+      }
+
+      const remaining = nodes.filter((n) => n.id !== deletingNode.id)
+      const reordered = remaining.map((n, i) => ({ ...n, position: i }))
+
+      // Update positions via API
+      await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_node_positions",
+          nodes: reordered.map(n => ({ id: n.id, position: n.position })),
+        }),
+      })
+
+      setNodes(reordered)
+      setShowDeleteNodeDialog(false)
+      setDeletingNode(null)
+    } catch (err) {
+      console.error("Error deleting node:", err)
+    } finally {
       setIsDeletingNode(false)
-      return
     }
-
-    const remaining = nodes.filter((n) => n.id !== deletingNode.id)
-    const reordered = remaining.map((n, i) => ({ ...n, position: i }))
-
-    for (const node of reordered) {
-      await supabase
-        .from("flow_nodes")
-        .update({ position: node.position })
-        .eq("id", node.id)
-    }
-
-    setNodes(reordered)
-    setShowDeleteNodeDialog(false)
-    setDeletingNode(null)
-    setIsDeletingNode(false)
   }
 
   // ---- Load category config when active flow changes ----
@@ -2142,36 +2068,49 @@ if (sv === "end") {
   const handleSaveCategoryConfig = async () => {
     if (!activeFlow) return
     setIsSavingCategoryConfig(true)
-    // Save to localStorage as fallback (would be DB in production)
+    // Save to localStorage as fallback
     localStorage.setItem(`flow_config_${activeFlow.id}`, JSON.stringify(flowCategoryConfig))
-    // Attempt to save to supabase (if config column exists)
-    await supabase
-      .from("flows")
-      .update({ config: flowCategoryConfig, updated_at: new Date().toISOString() })
-      .eq("id", activeFlow.id)
-      .then(() => {})
-      .catch(() => {})
+    // Save to DB via API
+    await fetch("/api/flows", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "update_flow",
+        flowId: activeFlow.id,
+        updates: { config: flowCategoryConfig },
+      }),
+    }).catch(() => {})
     setIsSavingCategoryConfig(false)
   }
 
-  // ---- Toggle flow status ----
+  // ---- Toggle flow status via API ----
   const toggleFlowStatus = async (flow: Flow) => {
     const newStatus = flow.status === "ativo" ? "pausado" : "ativo"
-    const { error } = await supabase
-      .from("flows")
-      .update({ status: newStatus })
-      .eq("id", flow.id)
+    
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_flow",
+          flowId: flow.id,
+          updates: { status: newStatus },
+        }),
+      })
 
-    if (error) {
-      console.error("Error updating flow status:", error)
-      return
-    }
+      if (!response.ok) {
+        console.error("Error updating flow status")
+        return
+      }
 
-    setFlows((prev) =>
-      prev.map((f) => (f.id === flow.id ? { ...f, status: newStatus } : f))
-    )
-    if (activeFlow?.id === flow.id) {
-      setActiveFlow((prev) => (prev ? { ...prev, status: newStatus } : prev))
+      setFlows((prev) =>
+        prev.map((f) => (f.id === flow.id ? { ...f, status: newStatus } : f))
+      )
+      if (activeFlow?.id === flow.id) {
+        setActiveFlow((prev) => (prev ? { ...prev, status: newStatus } : prev))
+      }
+    } catch (err) {
+      console.error("Error updating flow status:", err)
     }
   }
 
@@ -3600,19 +3539,27 @@ if (sv === "end") {
                                     const label = "Encerrar Conversa"
                                     const config = { subVariant: tpl.subVariant }
                                     const newPosition = nodes.length
-                                    const { data, error } = await supabase
-                                      .from("flow_nodes")
-                                      .insert({
-                                        flow_id: activeFlow.id,
-                                        type: tpl.type,
-                                        label,
-                                        config,
-                                        position: newPosition,
+                                    const newNodeId = crypto.randomUUID()
+                                    
+                                    try {
+                                      const response = await fetch("/api/flows", {
+                                        method: "POST",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({
+                                          action: "create_node",
+                                          flowId: activeFlow.id,
+                                          type: tpl.type,
+                                          label,
+                                          config,
+                                          position: newPosition,
+                                        }),
                                       })
-                                      .select()
-                                      .single()
-                                    if (!error && data) {
-                                      setNodes((prev) => [...prev, data as FlowNode])
+                                      const result = await response.json()
+                                      if (response.ok && result.node) {
+                                        setNodes((prev) => [...prev, result.node as FlowNode])
+                                      }
+                                    } catch (err) {
+                                      console.error("Error adding node:", err)
                                     }
                                     setShowAddNodeDialog(false)
                                     setIsAddingNode(false)

@@ -28,209 +28,208 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({ flows })
 }
 
-// POST - Criar ou atualizar fluxo com mensagem de boas-vindas
+// POST - Todas as operacoes de escrita
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { action, botId, userId, flowId, welcomeMessage, buttons, nodes } = body
+    const { action } = body
 
-    console.log("[API flows] POST received:", { action, botId, userId, flowId })
+    // ============ FLOWS ============
 
-    // Acao para criar nodes diretamente (usado pela pagina de fluxos)
-    if (action === "create_nodes" && flowId && nodes) {
-      console.log("[API flows] Creating nodes for flow:", flowId, "Count:", nodes.length)
+    // Criar fluxo
+    if (action === "create_flow") {
+      const { botId, userId, name, flowType, category, isPrimary } = body
       
-      for (const node of nodes) {
-        const nodeData = { flow_id: flowId, ...node }
-        // Se nao tem id, remover para o banco gerar
-        if (!node.id) delete nodeData.id
-        
-        const { error: nodeError } = await supabase
-          .from("flow_nodes")
-          .insert(nodeData)
-
-        if (nodeError) {
-          console.error("[API flows] Error inserting node:", nodeError)
-          return NextResponse.json({ error: "Erro ao criar node: " + nodeError.message }, { status: 500 })
-        }
-      }
-
-      return NextResponse.json({ success: true, nodesCreated: nodes.length })
-    }
-
-    // Acao para atualizar um node existente
-    if (action === "update_node" && body.nodeId) {
-      const { nodeId, label, config, type, position } = body
-      console.log("[API flows] Updating node:", nodeId)
-
-      // Primeiro tenta update
-      const { data: updateData, error: updateError } = await supabase
-        .from("flow_nodes")
-        .update({
-          label,
-          config,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", nodeId)
-        .select()
-
-      if (updateError) {
-        console.error("[API flows] Update error:", updateError)
-        return NextResponse.json({ error: "Erro ao atualizar node: " + updateError.message }, { status: 500 })
-      }
-
-      // Se update nao afetou nenhuma linha, faz delete + insert
-      if (!updateData || updateData.length === 0) {
-        console.log("[API flows] Update returned empty, doing delete + insert")
-        
-        await supabase.from("flow_nodes").delete().eq("id", nodeId)
-        
-        const { error: insertError } = await supabase
-          .from("flow_nodes")
-          .insert({
-            id: nodeId,
-            flow_id: flowId,
-            type,
-            label,
-            config,
-            position,
-          })
-
-        if (insertError) {
-          console.error("[API flows] Insert error:", insertError)
-          return NextResponse.json({ error: "Erro ao inserir node: " + insertError.message }, { status: 500 })
-        }
-      }
-
-      return NextResponse.json({ success: true })
-    }
-
-    if (!botId || !userId) {
-      return NextResponse.json({ error: "botId e userId obrigatorios" }, { status: 400 })
-    }
-
-    if (!welcomeMessage) {
-      return NextResponse.json({ error: "welcomeMessage obrigatoria" }, { status: 400 })
-    }
-
-    let flow = null
-
-    // Se tem flowId, atualiza o fluxo existente
-    if (flowId) {
-      // Atualizar nodes do fluxo
-      // Primeiro deleta os nodes antigos
-      await supabase
-        .from("flow_nodes")
-        .delete()
-        .eq("flow_id", flowId)
-
-      // Criar novos nodes
-      const nodes = [
-        {
-          flow_id: flowId,
-          type: "trigger",
-          label: "Inicio",
-          position: 0,
-          config: { trigger_type: "start" }
-        },
-        {
-          flow_id: flowId,
-          type: "message",
-          label: "Boas-vindas",
-          position: 1,
-          config: { 
-            text: welcomeMessage,
-            buttons: buttons || []
-          }
-        }
-      ]
-
-      const { error: nodesError } = await supabase
-        .from("flow_nodes")
-        .insert(nodes)
-
-      if (nodesError) {
-        console.error("[API flows] Error inserting nodes:", nodesError)
-        return NextResponse.json({ error: "Erro ao salvar nodes: " + nodesError.message }, { status: 500 })
-      }
-
-      // Buscar fluxo atualizado
-      const { data: updatedFlow } = await supabase
-        .from("flows")
-        .select("*, flow_nodes(*)")
-        .eq("id", flowId)
-        .single()
-
-      flow = updatedFlow
-      console.log("[API flows] Flow updated:", flowId)
-
-    } else {
-      // Criar novo fluxo
-      const { data: newFlow, error: flowError } = await supabase
+      const { data, error } = await supabase
         .from("flows")
         .insert({
           bot_id: botId,
           user_id: userId,
-          name: "Fluxo de Boas-vindas",
+          name: name || "Novo Fluxo",
           status: "ativo",
-          is_primary: true,
-          flow_type: "basic",
-          category: "inicial"
+          is_primary: isPrimary || false,
+          flow_type: flowType || "basic",
+          category: category || "personalizado"
         })
         .select()
         .single()
 
-      if (flowError || !newFlow) {
-        console.error("[API flows] Error creating flow:", flowError)
-        return NextResponse.json({ error: "Erro ao criar fluxo: " + (flowError?.message || "desconhecido") }, { status: 500 })
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, flow: data })
+    }
+
+    // Atualizar fluxo
+    if (action === "update_flow") {
+      const { flowId, updates } = body
+      
+      const { data, error } = await supabase
+        .from("flows")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", flowId)
+        .select()
+        .single()
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, flow: data })
+    }
+
+    // Deletar fluxo
+    if (action === "delete_flow") {
+      const { flowId } = body
+      
+      // Deletar nodes primeiro
+      await supabase.from("flow_nodes").delete().eq("flow_id", flowId)
+      
+      const { error } = await supabase.from("flows").delete().eq("id", flowId)
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    // ============ NODES ============
+
+    // Criar nodes
+    if (action === "create_nodes") {
+      const { flowId, nodes } = body
+      
+      for (const node of nodes) {
+        const nodeData: Record<string, unknown> = { flow_id: flowId, ...node }
+        if (!node.id) delete nodeData.id
+        
+        const { error } = await supabase.from("flow_nodes").insert(nodeData)
+        if (error) {
+          return NextResponse.json({ error: error.message }, { status: 500 })
+        }
+      }
+      return NextResponse.json({ success: true, nodesCreated: nodes.length })
+    }
+
+    // Criar um node
+    if (action === "create_node") {
+      const { flowId, type, label, config, position } = body
+      
+      const { data, error } = await supabase
+        .from("flow_nodes")
+        .insert({
+          flow_id: flowId,
+          type,
+          label,
+          config,
+          position
+        })
+        .select()
+        .single()
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, node: data })
+    }
+
+    // Atualizar node
+    if (action === "update_node") {
+      const { nodeId, updates } = body
+      
+      const { data, error } = await supabase
+        .from("flow_nodes")
+        .update({ ...updates, updated_at: new Date().toISOString() })
+        .eq("id", nodeId)
+        .select()
+        .single()
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true, node: data })
+    }
+
+    // Deletar node
+    if (action === "delete_node") {
+      const { nodeId } = body
+      
+      const { error } = await supabase.from("flow_nodes").delete().eq("id", nodeId)
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    // Atualizar posicoes dos nodes
+    if (action === "update_node_positions") {
+      const { nodes } = body // Array de { id, position }
+      
+      for (const node of nodes) {
+        await supabase
+          .from("flow_nodes")
+          .update({ position: node.position })
+          .eq("id", node.id)
+      }
+      return NextResponse.json({ success: true })
+    }
+
+    // ============ FLUXO COMPLETO (criar fluxo + nodes) ============
+
+    if (action === "create_flow_with_nodes") {
+      const { botId, userId, name, flowType, category, isPrimary, nodes } = body
+      
+      // Criar fluxo
+      const { data: flow, error: flowError } = await supabase
+        .from("flows")
+        .insert({
+          bot_id: botId,
+          user_id: userId,
+          name: name || "Novo Fluxo",
+          status: "ativo",
+          is_primary: isPrimary || false,
+          flow_type: flowType || "basic",
+          category: category || "personalizado"
+        })
+        .select()
+        .single()
+
+      if (flowError || !flow) {
+        return NextResponse.json({ error: flowError?.message || "Erro ao criar fluxo" }, { status: 500 })
       }
 
-      console.log("[API flows] Flow created:", newFlow.id)
-
       // Criar nodes
-      const nodes = [
-        {
-          flow_id: newFlow.id,
-          type: "trigger",
-          label: "Inicio",
-          position: 0,
-          config: { trigger_type: "start" }
-        },
-        {
-          flow_id: newFlow.id,
-          type: "message",
-          label: "Boas-vindas",
-          position: 1,
-          config: { 
-            text: welcomeMessage,
-            buttons: buttons || []
+      if (nodes && nodes.length > 0) {
+        for (const node of nodes) {
+          const { error: nodeError } = await supabase
+            .from("flow_nodes")
+            .insert({
+              flow_id: flow.id,
+              type: node.type,
+              label: node.label,
+              config: node.config,
+              position: node.position
+            })
+
+          if (nodeError) {
+            // Rollback: deletar fluxo criado
+            await supabase.from("flows").delete().eq("id", flow.id)
+            return NextResponse.json({ error: nodeError.message }, { status: 500 })
           }
         }
-      ]
-
-      const { error: nodesError } = await supabase
-        .from("flow_nodes")
-        .insert(nodes)
-
-      if (nodesError) {
-        console.error("[API flows] Error inserting nodes:", nodesError)
-        // Deletar o fluxo criado ja que os nodes falharam
-        await supabase.from("flows").delete().eq("id", newFlow.id)
-        return NextResponse.json({ error: "Erro ao salvar nodes: " + nodesError.message }, { status: 500 })
       }
 
       // Buscar fluxo com nodes
       const { data: flowWithNodes } = await supabase
         .from("flows")
         .select("*, flow_nodes(*)")
-        .eq("id", newFlow.id)
+        .eq("id", flow.id)
         .single()
 
-      flow = flowWithNodes
-      console.log("[API flows] Flow with nodes created:", newFlow.id)
+      return NextResponse.json({ success: true, flow: flowWithNodes })
     }
 
-    return NextResponse.json({ success: true, flow })
+    return NextResponse.json({ error: "Acao invalida: " + action }, { status: 400 })
 
   } catch (error) {
     console.error("[API flows] Error:", error)
@@ -238,7 +237,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// DELETE - Deletar fluxo
+// DELETE - Deletar fluxo (mantido para compatibilidade)
 export async function DELETE(req: NextRequest) {
   const flowId = req.nextUrl.searchParams.get("flowId")
 
@@ -246,17 +245,8 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "flowId obrigatorio" }, { status: 400 })
   }
 
-  // Deletar nodes primeiro
-  await supabase
-    .from("flow_nodes")
-    .delete()
-    .eq("flow_id", flowId)
-
-  // Deletar fluxo
-  const { error } = await supabase
-    .from("flows")
-    .delete()
-    .eq("id", flowId)
+  await supabase.from("flow_nodes").delete().eq("flow_id", flowId)
+  const { error } = await supabase.from("flows").delete().eq("id", flowId)
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 })
