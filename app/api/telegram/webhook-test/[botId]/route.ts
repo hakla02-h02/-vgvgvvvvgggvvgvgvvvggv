@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+import { getSupabase } from "@/lib/supabase"
 
 export async function GET(
   req: NextRequest,
@@ -15,13 +12,11 @@ export async function GET(
     timestamp: new Date().toISOString(),
     env: {
       BASE_URL: process.env.BASE_URL || "NAO CONFIGURADA",
-      hasSupabaseUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      hasSupabaseKey: !!supabaseKey,
     }
   }
 
   try {
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = getSupabase()
 
     // 1. Buscar bot
     const { data: bot, error: botError } = await supabase
