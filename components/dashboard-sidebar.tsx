@@ -55,7 +55,7 @@ const navSections: NavSection[] = [
     category: "AUTOMACOES",
     items: [
       { label: "Meus Robos", description: "Gerenciar bots", href: "/bots", icon: Bot },
-      { label: "Boas-vindas", description: "Mensagem inicial", href: "/boas-vindas", icon: GitBranch },
+      { label: "Meus Fluxos", description: "Fluxos de venda", href: "/flows", icon: GitBranch },
       { label: "Remarketing", description: "Campanhas", href: "/campaigns", icon: Megaphone },
     ],
   },

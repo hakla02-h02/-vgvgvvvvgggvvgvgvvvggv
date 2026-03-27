@@ -32,9 +32,78 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { botId, userId, flowId, welcomeMessage, buttons } = body
+    const { action, botId, userId, flowId, welcomeMessage, buttons, nodes } = body
 
-    console.log("[API flows] POST received:", { botId, userId, flowId, welcomeMessage })
+    console.log("[API flows] POST received:", { action, botId, userId, flowId })
+
+    // Acao para criar nodes diretamente (usado pela pagina de fluxos)
+    if (action === "create_nodes" && flowId && nodes) {
+      console.log("[API flows] Creating nodes for flow:", flowId, "Count:", nodes.length)
+      
+      for (const node of nodes) {
+        const nodeData = { flow_id: flowId, ...node }
+        // Se nao tem id, remover para o banco gerar
+        if (!node.id) delete nodeData.id
+        
+        const { error: nodeError } = await supabase
+          .from("flow_nodes")
+          .insert(nodeData)
+
+        if (nodeError) {
+          console.error("[API flows] Error inserting node:", nodeError)
+          return NextResponse.json({ error: "Erro ao criar node: " + nodeError.message }, { status: 500 })
+        }
+      }
+
+      return NextResponse.json({ success: true, nodesCreated: nodes.length })
+    }
+
+    // Acao para atualizar um node existente
+    if (action === "update_node" && body.nodeId) {
+      const { nodeId, label, config, type, position } = body
+      console.log("[API flows] Updating node:", nodeId)
+
+      // Primeiro tenta update
+      const { data: updateData, error: updateError } = await supabase
+        .from("flow_nodes")
+        .update({
+          label,
+          config,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", nodeId)
+        .select()
+
+      if (updateError) {
+        console.error("[API flows] Update error:", updateError)
+        return NextResponse.json({ error: "Erro ao atualizar node: " + updateError.message }, { status: 500 })
+      }
+
+      // Se update nao afetou nenhuma linha, faz delete + insert
+      if (!updateData || updateData.length === 0) {
+        console.log("[API flows] Update returned empty, doing delete + insert")
+        
+        await supabase.from("flow_nodes").delete().eq("id", nodeId)
+        
+        const { error: insertError } = await supabase
+          .from("flow_nodes")
+          .insert({
+            id: nodeId,
+            flow_id: flowId,
+            type,
+            label,
+            config,
+            position,
+          })
+
+        if (insertError) {
+          console.error("[API flows] Insert error:", insertError)
+          return NextResponse.json({ error: "Erro ao inserir node: " + insertError.message }, { status: 500 })
+        }
+      }
+
+      return NextResponse.json({ success: true })
+    }
 
     if (!botId || !userId) {
       return NextResponse.json({ error: "botId e userId obrigatorios" }, { status: 400 })

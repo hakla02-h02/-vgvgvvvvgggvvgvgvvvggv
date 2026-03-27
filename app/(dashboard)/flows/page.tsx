@@ -1602,20 +1602,24 @@ export default function FlowsPage() {
       })
     }
 
-    // Insert all nodes
-    console.log("[v0] Creating nodes for flow:", newFlow.id, "Nodes:", autoNodes.length)
-    for (const node of autoNodes) {
-      const { data: nodeData, error: nodeError } = await supabase
-        .from("flow_nodes")
-        .insert({ flow_id: newFlow.id, ...node })
-        .select()
-        .single()
-      
-      console.log("[v0] Insert node result:", { type: node.type, data: nodeData, error: nodeError?.message })
-      
-      if (nodeError) {
-        console.error("[v0] Error inserting node:", nodeError)
+    // Insert all nodes via API (bypasses RLS)
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_nodes",
+          flowId: newFlow.id,
+          nodes: autoNodes,
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        console.error("[v0] Error creating nodes via API:", result.error)
+        alert(`Erro ao criar nodes: ${result.error}`)
       }
+    } catch (err) {
+      console.error("[v0] Error calling API:", err)
     }
 
     setFlows((prev) => [...prev, newFlow])
@@ -1833,26 +1837,50 @@ export default function FlowsPage() {
     }
 
     const newPosition = nodes.length
+    const newNodeId = crypto.randomUUID()
 
-    const { data, error } = await supabase
-      .from("flow_nodes")
-      .insert({
-        flow_id: activeFlow.id,
-        type: selectedTemplate.type,
-        label,
-        config,
-        position: newPosition,
+    // Inserir via API (bypasses RLS)
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "create_nodes",
+          flowId: activeFlow.id,
+          nodes: [{
+            id: newNodeId,
+            type: selectedTemplate.type,
+            label,
+            config,
+            position: newPosition,
+          }],
+        }),
       })
-      .select()
-      .single()
-
-    if (error) {
-      console.error("Error adding node:", error)
+      const result = await response.json()
+      if (!response.ok) {
+        console.error("[v0] Error adding node via API:", result.error)
+        alert(`Erro ao adicionar: ${result.error}`)
+        setIsAddingNode(false)
+        return
+      }
+    } catch (err) {
+      console.error("[v0] Error calling API:", err)
       setIsAddingNode(false)
       return
     }
 
-    setNodes((prev) => [...prev, data as FlowNode])
+    const newNode: FlowNode = {
+      id: newNodeId,
+      flow_id: activeFlow.id,
+      type: selectedTemplate.type as NodeType,
+      label,
+      config,
+      position: newPosition,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }
+    
+    setNodes((prev) => [...prev, newNode])
     setSelectedTemplate(null)
     setNodeConfigValues({})
     resetMessageConfig()
@@ -2018,60 +2046,32 @@ if (sv === "end") {
       }
     }
 
-    console.log("[v0] handleSaveNode - Saving to database:", { id: editingNode.id, label: finalLabel, config: finalConfig })
-    
-    const { error, data } = await supabase
-      .from("flow_nodes")
-      .update({
-        label: finalLabel,
-        config: finalConfig,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", editingNode.id)
-      .select()
-    
-    console.log("[v0] handleSaveNode - Result:", { error, data })
-
-    if (error) {
-      console.error("Error updating node:", error)
-      setIsSavingNode(false)
-      return
-    }
-
-    // Check if the update actually affected a row
-    if (!data || data.length === 0) {
-      
-      const { error: deleteError } = await supabase
-        .from("flow_nodes")
-        .delete()
-        .eq("id", editingNode.id)
-      
-      if (deleteError) {
-        console.error("Delete also failed:", deleteError)
-        setIsSavingNode(false)
-        return
-      }
-
-      const { data: insertData, error: insertError } = await supabase
-        .from("flow_nodes")
-        .insert({
-          id: editingNode.id,
-          flow_id: editingNode.flow_id,
-          type: editingNode.type,
+    // Salvar via API (bypasses RLS)
+    try {
+      const response = await fetch("/api/flows", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_node",
+          nodeId: editingNode.id,
+          flowId: editingNode.flow_id,
           label: finalLabel,
           config: finalConfig,
+          type: editingNode.type,
           position: editingNode.position,
-        })
-        .select()
-        .single()
-      
-      if (insertError) {
-        console.error("Re-insert also failed:", insertError)
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) {
+        console.error("[v0] Error saving node via API:", result.error)
+        alert(`Erro ao salvar: ${result.error}`)
         setIsSavingNode(false)
         return
       }
-      
-      // Delete + insert fallback succeeded
+    } catch (err) {
+      console.error("[v0] Error calling API:", err)
+      setIsSavingNode(false)
+      return
     }
 
     setNodes((prev) =>
