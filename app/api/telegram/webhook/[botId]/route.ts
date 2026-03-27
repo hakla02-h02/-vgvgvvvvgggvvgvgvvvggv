@@ -173,7 +173,20 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       }
 
       if (startFlow) {
-        // Get flow nodes
+        // PRIORITY 1: Use welcome_message field from flow (set in /fluxos/[id] page)
+        const welcomeMsg = startFlow.welcome_message as string
+        if (welcomeMsg && welcomeMsg.trim()) {
+          // Replace variables
+          let finalMsg = welcomeMsg
+            .replace(/\{nome\}/gi, (from?.first_name as string) || "")
+            .replace(/\{username\}/gi, (from?.username as string) ? `@${from.username}` : "")
+            .replace(/\{bot\.username\}/gi, bot.username ? `@${bot.username}` : bot.name || "")
+          
+          await sendTelegramMessage(botToken, chatId, finalMsg)
+          return
+        }
+
+        // PRIORITY 2: Get flow nodes
         const { data: nodes } = await supabase
           .from("flow_nodes")
           .select("*")
@@ -182,7 +195,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
 
         if (nodes && nodes.length > 0) {
           for (const node of nodes) {
-            await executeNode(botToken, chatId, node)
+            await executeNode(botToken, chatId, node, from as Record<string, unknown>)
             await new Promise(resolve => setTimeout(resolve, 300))
           }
         } else {
@@ -201,10 +214,17 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
 // Execute a flow node
 // ---------------------------------------------------------------------------
 
-async function executeNode(botToken: string, chatId: number, node: Record<string, unknown>) {
+async function executeNode(botToken: string, chatId: number, node: Record<string, unknown>, from?: Record<string, unknown>) {
   const nodeType = node.type as string
   const config = (node.config as Record<string, unknown>) || {}
   const subVariant = (config.subVariant as string) || ""
+
+  // Helper to replace variables
+  const replaceVars = (text: string) => {
+    return text
+      .replace(/\{nome\}/gi, (from?.first_name as string) || "")
+      .replace(/\{username\}/gi, (from?.username as string) ? `@${from.username}` : "")
+  }
 
   switch (nodeType) {
     case "trigger":
@@ -212,7 +232,8 @@ async function executeNode(botToken: string, chatId: number, node: Record<string
 
     case "text":
     case "message": {
-      const text = (config.text as string) || (config.content as string) || ""
+      let text = (config.text as string) || (config.content as string) || ""
+      text = replaceVars(text)
       const mediaUrl = (config.media_url as string) || ""
       const mediaType = (config.media_type as string) || ""
       
