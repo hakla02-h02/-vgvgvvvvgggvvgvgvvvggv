@@ -583,8 +583,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
     const updatePayload = {
       name: editName,
       welcome_message: welcomeMessage,
-      media_cache_chat_id: mediaCacheChat,
-      support_username: supportUsername,
+      media_cache_chat_id: mediaCacheChat && mediaCacheChat.trim() ? mediaCacheChat.trim() : null,
+      support_username: supportUsername || null,
       config,
       updated_at: new Date().toISOString(),
     }
