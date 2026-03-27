@@ -1915,6 +1915,8 @@ export default function FlowsPage() {
 
   const handleSaveNode = async () => {
     if (!editingNode) return
+    
+    console.log("[v0] handleSaveNode - Starting save for node:", editingNode.id)
 
     setIsSavingNode(true)
 
@@ -1997,6 +1999,8 @@ if (sv === "end") {
       }
     }
 
+    console.log("[v0] handleSaveNode - Saving to database:", { id: editingNode.id, label: finalLabel, config: finalConfig })
+    
     const { error, data } = await supabase
       .from("flow_nodes")
       .update({
@@ -2006,6 +2010,8 @@ if (sv === "end") {
       })
       .eq("id", editingNode.id)
       .select()
+    
+    console.log("[v0] handleSaveNode - Result:", { error, data })
 
     if (error) {
       console.error("Error updating node:", error)

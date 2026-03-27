@@ -10,17 +10,18 @@ export async function registrarWebhook(token: string, botId: string): Promise<{
   error?: string
 }> {
   try {
-    // Usa a BASE_URL do ambiente ou fallback para a URL do Vercel
-    const baseUrl = process.env.BASE_URL || 
-                    process.env.NEXT_PUBLIC_APP_URL ||
-                    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
-
+    // Usa APENAS BASE_URL - deve ser a URL da Render
+    const baseUrl = process.env.BASE_URL
+    
     if (!baseUrl) {
+      console.error("[registrarWebhook] BASE_URL nao configurada! Deve ser: https://dragonteste.onrender.com")
       return {
         success: false,
-        error: "BASE_URL nao configurada nas variaveis de ambiente"
+        error: "BASE_URL nao configurada. Configure: https://dragonteste.onrender.com"
       }
     }
+    
+    console.log("[v0] Registrando webhook com URL:", baseUrl)
 
     // Monta a URL do webhook com botId dinamico
     const webhookUrl = `${baseUrl}/api/telegram/webhook/${botId}`

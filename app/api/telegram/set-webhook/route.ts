@@ -10,15 +10,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "botId and token required" }, { status: 400 })
     }
 
-    // Get the base URL from the request or environment
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
-                    process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 
-                    req.headers.get("origin") || 
-                    "https://your-app.vercel.app"
+    // Usa BASE_URL obrigatoriamente - URL da Render
+    const baseUrl = process.env.BASE_URL
+    
+    if (!baseUrl) {
+      return NextResponse.json({ 
+        error: "BASE_URL nao configurada. Configure: https://dragonteste.onrender.com" 
+      }, { status: 500 })
+    }
 
     const webhookUrl = `${baseUrl}/api/telegram/webhook/${botId}`
 
-    console.log("[v0] Setting webhook for bot:", botId, "URL:", webhookUrl)
+    console.log("[v0] Setting webhook for bot:", botId, "URL:", webhookUrl, "BASE_URL:", baseUrl)
 
     // Set webhook with Telegram
     const telegramUrl = `https://api.telegram.org/bot${token}/setWebhook`
