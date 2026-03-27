@@ -77,17 +77,22 @@ export async function GET(
 
     // 3. Criar novo fluxo
     logs.push("Criando novo fluxo...")
+    logs.push(`bot.id: ${bot.id}`)
+    logs.push(`bot.user_id: ${bot.user_id}`)
+
+    const insertPayload = {
+      bot_id: bot.id,
+      user_id: bot.user_id,
+      name: "Fluxo Principal",
+      welcome_message: welcomeMessage,
+      status: "ativo",
+      is_primary: true,
+    }
+    logs.push(`Insert payload: ${JSON.stringify(insertPayload)}`)
 
     const { data: newFlow, error: flowError } = await supabase
       .from("flows")
-      .insert({
-        bot_id: bot.id,
-        user_id: bot.user_id,
-        name: "Fluxo Principal",
-        welcome_message: welcomeMessage,
-        status: "ativo",
-        is_primary: true,
-      })
+      .insert(insertPayload)
       .select()
       .single()
 
