@@ -22,8 +22,8 @@ export async function registrarWebhook(token: string, botId: string): Promise<{
       }
     }
 
-    // Monta a URL do webhook
-    const webhookUrl = `${baseUrl}/api/telegram/webhook?token=${encodeURIComponent(token)}`
+    // Monta a URL do webhook com botId dinamico
+    const webhookUrl = `${baseUrl}/api/telegram/webhook/${botId}`
 
     // Primeiro, deleta o webhook existente para garantir estado limpo
     await fetch(`https://api.telegram.org/bot${token}/deleteWebhook?drop_pending_updates=true`)
