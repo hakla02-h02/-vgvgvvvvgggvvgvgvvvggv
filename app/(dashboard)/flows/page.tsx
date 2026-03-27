@@ -1523,11 +1523,13 @@ export default function FlowsPage() {
     }
 
     if (error || !data) {
-      console.error("Error creating basic flow:", error)
+      console.error("[v0] Error creating basic flow:", error?.message, error?.code, error?.details)
+      alert(`Erro ao criar fluxo: ${error?.message || "Erro desconhecido"}`)
       setIsCreatingFlow(false)
       return
     }
 
+    console.log("[v0] Flow created successfully:", data.id, data.name)
     const newFlow = { ...data, category: (isFirst ? "inicial" : "personalizado") as FlowCategory, is_primary: isFirst, flow_type: "basic" } as Flow
 
     // Auto-generate nodes for basic flow
@@ -1601,10 +1603,19 @@ export default function FlowsPage() {
     }
 
     // Insert all nodes
+    console.log("[v0] Creating nodes for flow:", newFlow.id, "Nodes:", autoNodes.length)
     for (const node of autoNodes) {
-      await supabase
+      const { data: nodeData, error: nodeError } = await supabase
         .from("flow_nodes")
         .insert({ flow_id: newFlow.id, ...node })
+        .select()
+        .single()
+      
+      console.log("[v0] Insert node result:", { type: node.type, data: nodeData, error: nodeError?.message })
+      
+      if (nodeError) {
+        console.error("[v0] Error inserting node:", nodeError)
+      }
     }
 
     setFlows((prev) => [...prev, newFlow])
