@@ -4,6 +4,7 @@ import { Metadata } from "next"
 import { PresellAgeVerification } from "./presell-age"
 import { PresellThankYou } from "./presell-thank-you"
 import { PresellRedirect } from "./presell-redirect"
+import { PrivacyPage } from "./privacy-page"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -62,6 +63,11 @@ export default async function DragonBioPage({ params }: PageProps) {
     if (site.presell_type === "redirect" && pageData.redirectData) {
       return <PresellRedirect data={pageData.redirectData} />
     }
+  }
+
+  // Se for uma pagina Privacy/Conversao (detecta pelo page_data ou slug)
+  if (site.page_data && (site.page_data.username || site.page_data.handle || site.page_data.plans)) {
+    return <PrivacyPage data={site.page_data} />
   }
 
   // Ordenar links
