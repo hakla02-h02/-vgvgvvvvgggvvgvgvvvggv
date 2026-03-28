@@ -3,338 +3,244 @@
 import { useState } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Check, Lock, Gift, Users, Award, Trophy, Star, Copy, Share2 } from "lucide-react"
-import Image from "next/image"
+import { Check, Lock, ChevronRight } from "lucide-react"
 
-const niveis = [
-  { 
-    id: 0,
-    nome: "Iniciante",
-    meta: 0,
-    metaLabel: "0",
-    premios: [],
-    descricao: "Comece sua jornada no Dragon!",
-  },
+const premiacoes = [
   { 
     id: 1,
-    nome: "Explorador",
-    meta: 10000,
-    metaLabel: "10K",
-    premios: ["Caneca Exclusiva", "Grupo VIP de Networking"],
+    titulo: "Caneca + Pulseira",
+    subtitulo: "Grupo de Networking",
+    pontos: "10K",
+    pontosNum: 10000,
+    nivel: "Explorador",
     descricao: "Primeiro degrau da jornada: a venda inaugural valida a proposta e abre reputacao inicial no mercado.",
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-TMhkBoA48JSpENaJVFkZRyrrQ2Y5JZ.png",
   },
   { 
     id: 2,
-    nome: "Avancado",
-    meta: 100000,
-    metaLabel: "100K",
-    premios: ["Kit Premium Completo", "Sessao de Mentoria 1:1"],
+    titulo: "Kit Premium",
+    subtitulo: "Mentoria Exclusiva",
+    pontos: "100K",
+    pontosNum: 100000,
+    nivel: "Avancado",
     descricao: "Com R$ 100.000 faturados, a operacao ganha ritmo previsivel e dados para refinar oferta.",
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-Zjc1SF7AR4QiHPCSItIilGEKhwR6Uz.png",
   },
   { 
     id: 3,
-    nome: "Expert",
-    meta: 500000,
-    metaLabel: "500K",
-    premios: ["Convite Evento Presencial", "Selo Verificado"],
+    titulo: "Experiencia VIP",
+    subtitulo: "Evento Presencial",
+    pontos: "500K",
+    pontosNum: 500000,
+    nivel: "Expert",
     descricao: "R$ 500.000 em vendas consolidam autoridade e viabilizam expansao sustentavel.",
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-lh6iqRrOeYyMAq0IC6x8spZMt6dENP.png",
   },
   { 
     id: 4,
-    nome: "Ouro",
-    meta: 1000000,
-    metaLabel: "1M",
-    premios: ["Trofeu Personalizado", "Parceria Oficial Dragon"],
+    titulo: "Parceria Oficial",
+    subtitulo: "1 Milhao Faturado",
+    pontos: "1M",
+    pontosNum: 1000000,
+    nivel: "Ouro",
     descricao: "R$ 1 milhao faturado consolida marca reconhecida e parcerias estrategicas.",
+    plaquinha: "https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-E1Izb9ktpBbqZlZTcVf6kpy6MAbafF.png",
   },
 ]
 
 export default function RewardsPage() {
-  const [copied, setCopied] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(0)
+  const currentPremio = premiacoes[activeIndex]
   
   // Dados do usuario (mock) - TODO: Buscar do banco de dados
   const faturamentoAtual = 0
-  const referralCode = "DRAGON2024"
-  const referralLink = `https://dragon.app/ref/${referralCode}`
-  
-  // Encontrar nivel atual do usuario
-  const nivelAtualIndex = niveis.findIndex(n => faturamentoAtual < n.meta) - 1
-  const nivelAtual = nivelAtualIndex >= 0 ? nivelAtualIndex : (faturamentoAtual >= 1000000 ? 4 : 0)
-  const proximoNivel = Math.min(nivelAtual + 1, niveis.length - 1)
-  
-  // Progresso para o proximo nivel
-  const metaAtual = niveis[nivelAtual]?.meta || 0
-  const metaProxima = niveis[proximoNivel]?.meta || 1000000
-  const progressoNoNivel = metaProxima > metaAtual 
-    ? ((faturamentoAtual - metaAtual) / (metaProxima - metaAtual)) * 100 
-    : 100
+  const isDesbloqueado = faturamentoAtual >= currentPremio.pontosNum
+  const progressPercent = Math.min((faturamentoAtual / currentPremio.pontosNum) * 100, 100)
 
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(referralLink)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
+  // Encontrar nivel atual
+  const nivelAtualIndex = premiacoes.findIndex(p => faturamentoAtual < p.pontosNum)
 
   return (
     <>
       <DashboardHeader title="Premiacoes" />
       <ScrollArea className="flex-1">
-        <div className="min-h-full bg-background">
-          <div className="max-w-4xl mx-auto px-6 py-10">
+        <div className="min-h-full bg-[#f3f4f6]">
+          <div className="max-w-3xl mx-auto px-6 py-10">
             
-            {/* Header - Faturamento Total */}
-            <div className="text-center mb-8">
-              <p className="text-xs uppercase tracking-[0.2em] text-[#b8ff29] font-medium mb-2">
+            {/* Faturamento */}
+            <div className="text-center mb-3">
+              <p className="text-[11px] uppercase tracking-[0.2em] text-gray-400 font-medium mb-2">
                 Faturamento Total
               </p>
-              <p className="text-5xl font-black text-foreground tracking-tight">
+              <p className="text-5xl font-black text-gray-900 tracking-tight">
                 R$ {faturamentoAtual.toLocaleString("pt-BR")}
               </p>
             </div>
 
-            {/* Barra de Progresso */}
-            <div className="mb-10">
-              <div className="h-3 bg-secondary rounded-full overflow-hidden">
+            {/* Barra de progresso */}
+            <div className="mb-16">
+              <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden">
                 <div 
-                  className="h-full bg-[#b8ff29] rounded-full transition-all duration-700"
-                  style={{ width: `${Math.max(progressoNoNivel, 0)}%` }}
+                  className="absolute left-0 top-0 h-full bg-[#ccff00] rounded-full transition-all duration-700 ease-out"
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
               <div className="flex justify-between mt-2">
-                <span className="text-xs text-muted-foreground">R$ {metaAtual.toLocaleString("pt-BR")}</span>
-                <span className="text-xs text-[#b8ff29] font-bold">{niveis[proximoNivel].metaLabel}</span>
+                <span className="text-[11px] text-gray-400">R$ 0</span>
+                <span className="text-[11px] text-[#9ab300] font-semibold">{currentPremio.pontos}</span>
               </div>
             </div>
 
-            {/* Card Premiacao Central - Trofeu/Plaquinha */}
-            <Card className="mb-10 bg-gradient-to-br from-secondary/50 to-secondary/30 border-border/50 overflow-hidden">
-              <CardContent className="p-0">
-                <div className="flex flex-col items-center py-10">
-                  {/* Imagem do Trofeu */}
-                  <div className="relative w-48 h-48 mb-6">
-                    <div className="w-full h-full bg-gradient-to-br from-gray-300 via-white to-gray-400 rounded-2xl flex items-center justify-center shadow-2xl border-4 border-gray-300">
-                      <div className="text-center">
-                        <div className="flex justify-center mb-2">
-                          <svg className="w-12 h-12 text-gray-500" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z"/>
-                          </svg>
-                        </div>
-                        <p className="text-xs font-bold text-gray-600 tracking-wider">DRAGON</p>
-                        <p className="text-3xl font-black text-gray-500 mt-1">{niveis[proximoNivel].metaLabel}</p>
-                        <div className="w-10 h-10 rounded-full bg-gray-400/50 flex items-center justify-center mx-auto mt-2">
-                          <Lock className="w-5 h-5 text-gray-500" />
-                        </div>
-                        <p className="text-[8px] text-gray-500 mt-2 tracking-wider">PARABENS PELO FATURAMENTO</p>
-                      </div>
+            {/* Premiacao Central */}
+            <div className="flex flex-col items-center mb-20">
+              {/* Imagem */}
+              <div className="relative w-56 h-56 mb-6">
+                <img 
+                  src={currentPremio.plaquinha} 
+                  alt={currentPremio.titulo}
+                  className={`w-full h-full object-contain drop-shadow-2xl transition-all duration-500 ${
+                    !isDesbloqueado && 'opacity-40 grayscale'
+                  }`}
+                />
+                {!isDesbloqueado && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-full bg-gray-200 flex items-center justify-center border border-gray-300">
+                      <Lock className="w-6 h-6 text-gray-400" />
                     </div>
                   </div>
-                  
-                  {/* Info da Meta */}
-                  <p className="text-sm text-[#b8ff29] font-bold tracking-wider mb-1">META {niveis[proximoNivel].metaLabel}</p>
-                  <h3 className="text-2xl font-bold text-foreground mb-1">
-                    {niveis[proximoNivel].premios[0] || "Premiacao Especial"}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-6">
-                    {niveis[proximoNivel].premios[1] || "Desbloqueie ao atingir a meta"}
-                  </p>
-                  
-                  {/* Botao */}
-                  <Button className="bg-[#b8ff29] text-black hover:bg-[#a8ef19] font-bold px-8">
-                    Ver Detalhes da Premiacao
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </div>
 
-            {/* Card Convide Amigos */}
-            <Card className="mb-12 bg-secondary/30 border-border/50">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#b8ff29]/20 flex items-center justify-center">
-                    <Users className="w-6 h-6 text-[#b8ff29]" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-foreground">Convide Amigos</h3>
-                    <p className="text-sm text-muted-foreground">Ganhe bonus por cada indicacao</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-3">
-                  <div className="flex-1 bg-secondary/50 rounded-lg px-4 py-3 flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground truncate">{referralLink}</span>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    className="border-[#b8ff29]/50 text-[#b8ff29] hover:bg-[#b8ff29]/10"
-                    onClick={handleCopyLink}
-                  >
-                    {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                  </Button>
-                  <Button className="bg-[#b8ff29] text-black hover:bg-[#a8ef19]">
-                    <Share2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Meta */}
+              <span className="text-[#9ab300] text-xs font-bold tracking-widest mb-2">
+                META {currentPremio.pontos}
+              </span>
 
-            {/* Titulo Jornada de Conquistas */}
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-foreground mb-2">Jornada de Conquistas</h2>
-              <p className="text-muted-foreground">Cada etapa e marcada por uma nova meta de faturamento.</p>
+              {/* Titulo */}
+              <h2 className="text-2xl font-bold text-gray-900 mb-1 text-center">
+                {currentPremio.titulo}
+              </h2>
+              <p className="text-gray-500 text-sm mb-4">
+                {currentPremio.subtitulo}
+              </p>
+
+              {/* Descricao */}
+              <p className="text-gray-500 text-sm text-center max-w-md leading-relaxed mb-8">
+                {currentPremio.descricao}
+              </p>
+
+              {/* Botao */}
+              {isDesbloqueado ? (
+                <button className="px-10 py-3.5 bg-[#ccff00] text-black font-bold text-sm rounded-full hover:bg-[#d4ff4d] transition-all shadow-lg">
+                  Resgatar Premio
+                </button>
+              ) : (
+                <div className="px-10 py-3.5 bg-gray-200 text-gray-500 font-medium text-sm rounded-full">
+                  Faltam R$ {(currentPremio.pontosNum - faturamentoAtual).toLocaleString("pt-BR")}
+                </div>
+              )}
             </div>
 
-            {/* Card Nivel Atual */}
-            <Card className="mb-10 bg-card border-border/50">
-              <CardContent className="p-6">
+            {/* Jornada de Conquistas - Design System IndieGanhe */}
+            <div className="mt-8">
+              <div className="mb-6">
+                <h3 className="text-xl font-bold text-gray-900">Jornada de conquistas</h3>
+                <p className="text-gray-500 text-sm mt-1">Cada etapa e marcada por uma nova meta de faturamento.</p>
+              </div>
+
+              {/* Card principal escuro - igual IndieGanhe */}
+              <div className="bg-[#16181d] rounded-2xl p-6 mb-8 border border-white/5">
                 <div className="flex items-center justify-between mb-5">
                   <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-sm uppercase tracking-wide">Seu nivel:</span>
+                    <span className="text-[#888] text-sm uppercase tracking-wide">Seu nivel:</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-[#b8ff29] flex items-center justify-center">
-                        <span className="text-xs font-bold text-black">D</span>
+                      <div className="w-7 h-7 rounded-full bg-[#ccff00] flex items-center justify-center">
+                        <span className="text-[10px] font-bold text-black">D</span>
                       </div>
-                      <span className="font-bold text-foreground text-lg">{niveis[nivelAtual].nome}</span>
+                      <span className="font-semibold text-white">
+                        {nivelAtualIndex === 0 ? "Iniciante" : premiacoes[Math.max(0, nivelAtualIndex - 1)].nivel}
+                      </span>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-sm uppercase tracking-wide">Proximo:</span>
+                    <span className="text-[#888] text-sm uppercase tracking-wide">Proximo:</span>
                     <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-[#b8ff29]/20 flex items-center justify-center border border-[#b8ff29]">
-                        <span className="text-xs font-bold text-[#b8ff29]">D</span>
+                      <div className="w-7 h-7 rounded-full bg-[#ccff00]/30 flex items-center justify-center border border-[#ccff00]">
+                        <span className="text-[10px] font-bold text-[#ccff00]">D</span>
                       </div>
-                      <span className="font-bold text-foreground text-lg">{niveis[proximoNivel].nome}</span>
+                      <span className="font-semibold text-white">
+                        {premiacoes[Math.min(nivelAtualIndex, premiacoes.length - 1)].nivel}
+                      </span>
                     </div>
                   </div>
                 </div>
-                <div className="h-3 bg-secondary rounded-full overflow-hidden">
+                <div className="h-2.5 bg-white/10 rounded-full overflow-hidden">
                   <div 
-                    className="h-full bg-[#b8ff29] rounded-full transition-all duration-700"
-                    style={{ width: `${Math.max(progressoNoNivel, 0)}%` }}
+                    className="h-full bg-[#ccff00] rounded-full transition-all duration-700"
+                    style={{ width: `${progressPercent}%` }}
                   />
                 </div>
                 <div className="flex justify-between mt-2">
-                  <span className="text-xs text-muted-foreground">R$ {metaAtual.toLocaleString("pt-BR")}</span>
-                  <span className="text-xs text-[#b8ff29] font-bold">{niveis[proximoNivel].metaLabel}</span>
+                  <span className="text-xs text-[#666]">R$ 0</span>
+                  <span className="text-xs text-[#ccff00] font-semibold">{premiacoes[nivelAtualIndex]?.pontos || "1M"}</span>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Mapa Serpentina - Jornada de Conquistas */}
-            <div className="relative pb-8">
-              {niveis.slice(1).map((nivel, idx) => {
-                const isDesbloqueado = faturamentoAtual >= nivel.meta
-                const isAtual = idx + 1 === nivelAtual
-                const isProximo = idx + 1 === proximoNivel && !isDesbloqueado
-                const isEsquerda = idx % 2 === 0
-                
-                return (
-                  <div key={nivel.id} className="relative">
-                    {/* Linha conectora curva */}
-                    {idx < niveis.length - 2 && (
-                      <div className={`absolute ${isEsquerda ? 'left-1/2' : 'right-1/2'} top-full w-1/2 h-12 z-0`}>
-                        <svg 
-                          className="w-full h-full" 
-                          viewBox="0 0 200 48" 
-                          preserveAspectRatio="none"
-                        >
-                          <path
-                            d={isEsquerda 
-                              ? "M 0 0 Q 100 0 100 24 Q 100 48 200 48" 
-                              : "M 200 0 Q 100 0 100 24 Q 100 48 0 48"
-                            }
-                            fill="none"
-                            stroke={faturamentoAtual >= niveis[idx + 2]?.meta ? "#b8ff29" : "hsl(var(--border))"}
-                            strokeWidth="2"
-                            strokeDasharray={faturamentoAtual >= niveis[idx + 2]?.meta ? "0" : "6 6"}
-                          />
-                        </svg>
-                      </div>
-                    )}
-                    
-                    {/* Card do Nivel */}
-                    <div className={`flex items-start gap-4 mb-12 ${isEsquerda ? 'flex-row' : 'flex-row-reverse'}`}>
-                      {/* Node/Icone */}
-                      <div className="flex-shrink-0 relative z-10">
-                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all ${
-                          isDesbloqueado 
-                            ? 'bg-[#b8ff29] shadow-[0_0_20px_rgba(184,255,41,0.3)]' 
-                            : 'bg-card border-2 border-border'
-                        }`}>
-                          {isDesbloqueado ? (
-                            <Check className="w-7 h-7 text-black" strokeWidth={3} />
-                          ) : (
-                            <Lock className="w-6 h-6 text-muted-foreground" />
-                          )}
-                        </div>
-                        
-                        {/* Badge VOCE ESTA AQUI */}
-                        {isAtual && (
-                          <div className="absolute -top-2 left-1/2 -translate-x-1/2 bg-[#b8ff29] text-black text-[9px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-lg">
-                            VOCE ESTA AQUI
+              {/* Grid de cards escuros - igual IndieGanhe */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {premiacoes.map((premio, idx) => {
+                  const unlocked = faturamentoAtual >= premio.pontosNum
+                  const isCurrent = idx === nivelAtualIndex - 1 && unlocked
+                  const isNext = idx === nivelAtualIndex
+                  
+                  return (
+                    <button
+                      key={premio.id}
+                      onClick={() => setActiveIndex(idx)}
+                      className={`relative text-left p-5 rounded-2xl transition-all border ${
+                        activeIndex === idx 
+                          ? 'bg-[#16181d] border-[#ccff00]' 
+                          : 'bg-[#16181d] border-white/5 hover:border-white/20'
+                      }`}
+                    >
+                      {/* Header */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                            unlocked ? 'bg-[#ccff00]' : 'bg-white/10'
+                          }`}>
+                            {unlocked ? (
+                              <Check className="w-5 h-5 text-black" />
+                            ) : (
+                              <Lock className="w-4 h-4 text-[#666]" />
+                            )}
                           </div>
+                          <span className="font-semibold text-white">{premio.nivel}</span>
+                          <span className="px-2.5 py-1 bg-[#ccff00] text-black text-xs font-bold rounded-lg">
+                            {premio.pontos}
+                          </span>
+                        </div>
+                        {isCurrent && (
+                          <span className="text-[#ccff00] text-xs font-semibold">Seu nivel</span>
                         )}
-                        
-                        {/* Indicador Proximo */}
-                        {isProximo && (
-                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-[#b8ff29] rounded-full animate-pulse" />
+                        {isNext && (
+                          <span className="text-[#ccff00] text-xs font-semibold">Proximo</span>
                         )}
                       </div>
                       
-                      {/* Conteudo do Card */}
-                      <Card className={`flex-1 transition-all ${
-                        isDesbloqueado 
-                          ? 'bg-card border-[#b8ff29]/30' 
-                          : 'bg-card/50 border-border/50 opacity-70'
-                      } ${isProximo ? 'border-[#b8ff29]/50' : ''}`}>
-                        <CardContent className="p-5">
-                          {/* Header */}
-                          <div className={`flex items-center gap-3 mb-2 ${isEsquerda ? '' : 'flex-row-reverse'}`}>
-                            <h3 className={`text-lg font-bold ${isDesbloqueado ? 'text-foreground' : 'text-muted-foreground'}`}>
-                              {nivel.nome}
-                            </h3>
-                            <span className={`px-2.5 py-0.5 text-xs font-bold rounded-md ${
-                              isDesbloqueado 
-                                ? 'bg-[#b8ff29] text-black' 
-                                : 'bg-secondary text-muted-foreground'
-                            }`}>
-                              {nivel.metaLabel}
-                            </span>
-                            {isProximo && (
-                              <span className="text-[#b8ff29] text-xs font-bold">Proximo</span>
-                            )}
-                          </div>
-                          
-                          {/* Descricao */}
-                          <p className={`text-sm mb-3 ${isDesbloqueado ? 'text-muted-foreground' : 'text-muted-foreground/70'} ${isEsquerda ? 'text-left' : 'text-right'}`}>
-                            {nivel.descricao}
-                          </p>
-                          
-                          {/* Premios */}
-                          {nivel.premios.length > 0 && (
-                            <div className={`flex flex-wrap gap-2 ${isEsquerda ? '' : 'justify-end'}`}>
-                              {nivel.premios.map((premio, pIdx) => (
-                                <span 
-                                  key={pIdx}
-                                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                                    isDesbloqueado 
-                                      ? 'bg-[#b8ff29]/10 text-[#b8ff29] border border-[#b8ff29]/30' 
-                                      : 'bg-secondary/50 text-muted-foreground border border-border/50'
-                                  }`}
-                                >
-                                  <Gift className="w-3 h-3" />
-                                  {premio}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                )
-              })}
+                      {/* Descricao */}
+                      <p className="text-[#888] text-sm leading-relaxed">
+                        {premio.descricao}
+                      </p>
+
+                      {/* Indicador de selecionado */}
+                      {activeIndex === idx && (
+                        <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-[#ccff00]" />
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
             </div>
 
           </div>
