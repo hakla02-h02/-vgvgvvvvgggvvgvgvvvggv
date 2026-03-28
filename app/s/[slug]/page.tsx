@@ -5,6 +5,7 @@ import { PresellAgeVerification } from "./presell-age"
 import { PresellThankYou } from "./presell-thank-you"
 import { PresellRedirect } from "./presell-redirect"
 import { PrivacyPage } from "./privacy-page"
+import { PixCheckout } from "./pix-checkout"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -63,6 +64,12 @@ export default async function DragonBioPage({ params }: PageProps) {
     if (site.presell_type === "redirect" && pageData.redirectData) {
       return <PresellRedirect data={pageData.redirectData} />
     }
+  }
+
+  // Se for uma pagina Checkout PIX (detecta pelo slug)
+  const isCheckoutPage = site.slug?.startsWith("checkout-")
+  if (isCheckoutPage || (site.page_data && (site.page_data.accessToken || site.page_data.pixKey))) {
+    return <PixCheckout data={site.page_data || {}} />
   }
 
   // Se for uma pagina Privacy/Conversao (detecta pelo slug ou page_data)

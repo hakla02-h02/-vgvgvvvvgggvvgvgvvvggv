@@ -6,6 +6,7 @@ type PrivacyPost = {
   id: string
   type: "image" | "video"
   url: string
+  blur?: boolean
 }
 
 // Tipos que correspondem ao editor conversion-editor
@@ -271,10 +272,12 @@ export function PrivacyPage({ data }: { data: Partial<PrivacyPageData> }) {
                 ) : (
                   <img src={post.url} alt="" className="w-full h-auto" />
                 )}
-                {/* Blur overlay com cadeado */}
-                <div className="absolute inset-0 backdrop-blur-xl bg-black/30 flex items-center justify-center">
-                  <Lock className="w-10 h-10 text-white/80" />
-                </div>
+                {/* Blur overlay com cadeado - apenas se blur ativo */}
+                {(post.blur !== false) && (
+                  <div className="absolute inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center">
+                    <Lock className="w-8 h-8 text-white/70" />
+                  </div>
+                )}
               </div>
             ))}
           </div>

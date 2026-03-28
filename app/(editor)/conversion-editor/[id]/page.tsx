@@ -35,6 +35,7 @@ type PrivacyPost = {
   id: string
   type: "image" | "video"
   url: string
+  blur: boolean
 }
 export type PrivacyPageData = {
   // Profile
@@ -483,7 +484,8 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                           const newPost: PrivacyPost = {
                             id: Date.now().toString(),
                             type: url.includes("video") ? "video" : "image",
-                            url
+                            url,
+                            blur: true
                           }
                           updatePageData({ posts: [...(pageData.posts || []), newPost] })
                         }
@@ -496,25 +498,44 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                   </div>
 
                   {/* Lista de posts */}
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-3">
                     {(pageData.posts || []).map((post) => (
-                      <div key={post.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
-                        {post.type === "video" ? (
-                          <video src={post.url} className="w-full h-full object-cover" muted />
-                        ) : (
-                          <img src={post.url} alt="" className="w-full h-full object-cover" />
-                        )}
-                        {/* Overlay blur preview */}
-                        <div className="absolute inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center">
-                          <Lock className="w-6 h-6 text-white/80" />
+                      <div key={post.id} className="bg-gray-50 rounded-xl p-3">
+                        <div className="relative aspect-video rounded-lg overflow-hidden bg-gray-200 mb-2">
+                          {post.type === "video" ? (
+                            <video src={post.url} className="w-full h-full object-cover" muted />
+                          ) : (
+                            <img src={post.url} alt="" className="w-full h-full object-cover" />
+                          )}
+                          {/* Preview blur se ativo */}
+                          {(post.blur !== false) && (
+                            <div className="absolute inset-0 backdrop-blur-sm bg-black/20 flex items-center justify-center">
+                              <Lock className="w-5 h-5 text-white/80" />
+                            </div>
+                          )}
                         </div>
-                        {/* Delete button */}
-                        <button
-                          onClick={() => updatePageData({ posts: (pageData.posts || []).filter(p => p.id !== post.id) })}
-                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
+                        <div className="flex items-center justify-between">
+                          <label className="flex items-center gap-2 text-xs text-gray-600 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={post.blur !== false}
+                              onChange={(e) => {
+                                const updatedPosts = (pageData.posts || []).map(p => 
+                                  p.id === post.id ? { ...p, blur: e.target.checked } : p
+                                )
+                                updatePageData({ posts: updatedPosts })
+                              }}
+                              className="w-4 h-4 rounded"
+                            />
+                            Blur ativo
+                          </label>
+                          <button
+                            onClick={() => updatePageData({ posts: (pageData.posts || []).filter(p => p.id !== post.id) })}
+                            className="text-red-500 hover:text-red-600 p-1"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -854,10 +875,12 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                         ) : (
                           <img src={post.url} alt="" className="w-full h-auto" />
                         )}
-                        {/* Blur overlay com cadeado */}
-                        <div className="absolute inset-0 backdrop-blur-xl bg-black/30 flex items-center justify-center">
-                          <Lock className="w-6 h-6 text-white/80" />
-                        </div>
+                        {/* Blur overlay com cadeado - apenas se blur ativo */}
+                        {(post.blur !== false) && (
+                          <div className="absolute inset-0 backdrop-blur-sm bg-black/10 flex items-center justify-center">
+                            <Lock className="w-6 h-6 text-white/70" />
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
