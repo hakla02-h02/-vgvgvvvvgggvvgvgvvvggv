@@ -1,6 +1,9 @@
 import { getSupabase } from "@/lib/supabase"
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
+import { PresellAgeVerification } from "./presell-age"
+import { PresellThankYou } from "./presell-thank-you"
+import { PresellRedirect } from "./presell-redirect"
 
 interface PageProps {
   params: Promise<{ slug: string }>
@@ -12,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   
   const { data: site } = await supabase
     .from("dragon_bio_sites")
-    .select("profile_name, profile_bio")
+    .select("profile_name, profile_bio, nome")
     .eq("slug", slug)
     .single()
 
@@ -21,7 +24,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   }
 
   return {
-    title: site.profile_name,
+    title: site.nome || site.profile_name,
     description: site.profile_bio,
   }
 }
@@ -42,6 +45,23 @@ export default async function DragonBioPage({ params }: PageProps) {
 
   if (error || !site) {
     notFound()
+  }
+
+  // Se for um presell, renderiza o template correto
+  if (site.presell_type && site.page_data) {
+    const pageData = site.page_data
+
+    if (site.presell_type === "age-verification" && pageData.ageData) {
+      return <PresellAgeVerification data={pageData.ageData} />
+    }
+
+    if (site.presell_type === "thank-you" && pageData.thankYouData) {
+      return <PresellThankYou data={pageData.thankYouData} />
+    }
+
+    if (site.presell_type === "redirect" && pageData.redirectData) {
+      return <PresellRedirect data={pageData.redirectData} />
+    }
   }
 
   // Ordenar links
