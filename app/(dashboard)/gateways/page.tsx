@@ -37,6 +37,7 @@ export default function GatewaysPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
+  const [selectedGateway, setSelectedGateway] = useState<typeof AVAILABLE_GATEWAYS[number] | null>(null)
 
   if (!selectedBot) {
     return (
@@ -46,8 +47,6 @@ export default function GatewaysPage() {
       </>
     )
   }
-
-  const [selectedGateway, setSelectedGateway] = useState<typeof AVAILABLE_GATEWAYS[number] | null>(null)
   
   const getGatewayData = (gatewayId: string) => gateways.find((g) => g.gateway_name === gatewayId)
   const isGatewayConnected = (gatewayId: string) => !!getGatewayData(gatewayId)
