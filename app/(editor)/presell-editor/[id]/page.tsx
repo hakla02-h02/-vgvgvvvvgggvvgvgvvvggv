@@ -60,7 +60,8 @@ type RedirectData = {
   redirectUrl: string
   delay: number
   message: string
-}
+  fallbackText: string
+  }
 
 type PresellType = "age-verification" | "thank-you" | "redirect"
 
@@ -102,9 +103,10 @@ const defaultThankYou: ThankYouData = {
 
 const defaultRedirect: RedirectData = {
   redirectUrl: "",
-  delay: 3,
+  delay: 2,
   message: "Redirecionando...",
-}
+  fallbackText: "Clique aqui se nao for redirecionado",
+  }
 
 export default function PresellEditorPage({ params }: PageProps) {
   const { id } = use(params)
@@ -491,17 +493,29 @@ export default function PresellEditorPage({ params }: PageProps) {
                     </div>
 
                     <div>
-                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                        Mensagem
-                      </Label>
-                      <Input
-                        value={redirectData.message}
-                        onChange={(e) => { setRedirectData({ ...redirectData, message: e.target.value }); setSaved(false) }}
-                        className="h-10 text-sm"
-                        placeholder="Redirecionando..."
-                      />
-                    </div>
-                  </div>
+  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+  Mensagem
+  </Label>
+  <Input
+  value={redirectData.message}
+  onChange={(e) => { setRedirectData({ ...redirectData, message: e.target.value }); setSaved(false) }}
+  className="h-10 text-sm"
+  placeholder="Redirecionando..."
+  />
+  </div>
+
+  <div>
+  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+  Texto do Link Fallback
+  </Label>
+  <Input
+  value={redirectData.fallbackText}
+  onChange={(e) => { setRedirectData({ ...redirectData, fallbackText: e.target.value }); setSaved(false) }}
+  className="h-10 text-sm"
+  placeholder="Clique aqui se nao for redirecionado"
+  />
+  </div>
+  </div>
                 )}
               </TabsContent>
 
@@ -792,14 +806,30 @@ export default function PresellEditorPage({ params }: PageProps) {
                 )}
 
                 {presellType === "redirect" && (
-                  <div className="w-full h-full flex items-center justify-center bg-white">
+                  <div 
+                    className="w-full h-full flex items-center justify-center"
+                    style={{ backgroundColor: "#0088cc" }}
+                  >
                     <div className="text-center">
-                      <Loader2 className="w-12 h-12 animate-spin text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 text-lg">
+                      {/* Circulo com logo do Telegram */}
+                      <div 
+                        className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl"
+                        style={{ background: "linear-gradient(180deg, #24A1DE 0%, #1c82b1 100%)" }}
+                      >
+                        <img 
+                          src="/telegram-white.png" 
+                          alt="Telegram" 
+                          className="w-10 h-10 object-contain"
+                        />
+                      </div>
+                      {/* Spinner */}
+                      <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+                      {/* Texto */}
+                      <p className="text-white text-base font-medium mb-3">
                         {redirectData.message || "Redirecionando..."}
                       </p>
-                      <p className="text-gray-400 text-sm mt-2">
-                        Em {redirectData.delay} segundos
+                      <p className="text-white/80 text-xs underline">
+                        {redirectData.fallbackText || "Clique aqui se nao for redirecionado"}
                       </p>
                     </div>
                   </div>
