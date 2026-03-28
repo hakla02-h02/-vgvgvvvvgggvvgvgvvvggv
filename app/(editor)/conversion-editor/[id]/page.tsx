@@ -648,13 +648,13 @@ export default function PrivacyEditorPage({ params }: PageProps) {
 
         {/* Preview Panel */}
         <div className="flex-1 bg-gray-100 flex items-center justify-center p-8 overflow-hidden">
-          <div className="w-[375px] h-[750px] bg-gray-800 rounded-[50px] p-3 shadow-2xl relative">
+          <div className="w-[375px] h-[700px] flex-shrink-0 bg-gray-800 rounded-[50px] p-3 shadow-2xl relative overflow-hidden">
             {/* Phone notch */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-800 rounded-b-2xl z-20" />
             
             {/* Screen */}
             <div 
-              className="w-full h-full rounded-[40px] overflow-hidden overflow-y-auto"
+              className="w-full h-full rounded-[40px] overflow-y-auto overflow-x-hidden"
               style={{ backgroundColor: pageData.colors.background }}
             >
               {/* Header */}
