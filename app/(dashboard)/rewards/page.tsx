@@ -84,7 +84,7 @@ export default function RewardsPage() {
               </div>
               <div className="flex justify-between mt-2">
                 <span className="text-xs text-gray-600 font-semibold">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
-                <span className="text-xs text-gray-900 font-bold">{currentPremio.pontosNum.toLocaleString("pt-BR")} BRL</span>
+                <span className="text-xs text-gray-900 font-bold">R$ {currentPremio.pontosNum.toLocaleString("pt-BR")}</span>
               </div>
             </div>
 
