@@ -279,7 +279,7 @@ export default function FluxosPage() {
             <div className="flex items-center gap-2">
               <div className="flex -space-x-2">
                 {bots.length > 0 ? (
-                  bots.slice(0, 3).map((fb, i) => (
+                  bots.slice(0, 3).map((fb) => (
                     <div 
                       key={fb.id}
                       className="w-6 h-6 rounded-full bg-accent/20 border-2 border-card flex items-center justify-center"
@@ -298,8 +298,8 @@ export default function FluxosPage() {
                   </div>
                 )}
               </div>
-              <span className="text-xs text-muted-foreground">
-                {bots.length === 0 ? "Nenhum bot" : `${bots.length} bot${bots.length > 1 ? 's' : ''}`}
+              <span className={`text-xs ${bots.length > 0 ? "text-accent font-medium" : "text-muted-foreground"}`}>
+                {bots.length === 0 ? "Nenhum bot conectado" : `${bots.length} bot${bots.length > 1 ? 's' : ''} conectado${bots.length > 1 ? 's' : ''}`}
               </span>
             </div>
             
