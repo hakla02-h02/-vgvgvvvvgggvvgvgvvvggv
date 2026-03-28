@@ -464,7 +464,7 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                 <div className="flex flex-col gap-5">
                   <div className="flex items-center justify-between">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                      Posts Bloqueados ({pageData.posts.length})
+                      Posts Bloqueados ({(pageData.posts || []).length})
                     </Label>
                   </div>
                   <p className="text-xs text-gray-500">
@@ -485,7 +485,7 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                             type: url.includes("video") ? "video" : "image",
                             url
                           }
-                          updatePageData({ posts: [...pageData.posts, newPost] })
+                          updatePageData({ posts: [...(pageData.posts || []), newPost] })
                         }
                       }}
                       accept="image/*,video/*"
@@ -497,7 +497,7 @@ export default function PrivacyEditorPage({ params }: PageProps) {
 
                   {/* Lista de posts */}
                   <div className="grid grid-cols-2 gap-3">
-                    {pageData.posts.map((post) => (
+                    {(pageData.posts || []).map((post) => (
                       <div key={post.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
                         {post.type === "video" ? (
                           <video src={post.url} className="w-full h-full object-cover" muted />
@@ -510,7 +510,7 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                         </div>
                         {/* Delete button */}
                         <button
-                          onClick={() => updatePageData({ posts: pageData.posts.filter(p => p.id !== post.id) })}
+                          onClick={() => updatePageData({ posts: (pageData.posts || []).filter(p => p.id !== post.id) })}
                           className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
                         >
                           <Trash2 className="w-3 h-3" />
@@ -845,9 +845,9 @@ export default function PrivacyEditorPage({ params }: PageProps) {
 
               {/* Posts Grid com Blur */}
               <div className="px-4 pb-6">
-                {pageData.posts.length > 0 ? (
+                {(pageData.posts || []).length > 0 ? (
                   <div className="grid grid-cols-3 gap-1">
-                    {pageData.posts.map((post) => (
+                    {(pageData.posts || []).map((post) => (
                       <div key={post.id} className="aspect-square relative rounded-md overflow-hidden">
                         {post.type === "video" ? (
                           <video src={post.url} className="w-full h-full object-cover" muted />
