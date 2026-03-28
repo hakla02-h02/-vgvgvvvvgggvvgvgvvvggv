@@ -1,45 +1,74 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Copy, Check, QrCode, Loader2 } from "lucide-react"
+import { Copy, Check, QrCode, Loader2, Shield, ChevronRight } from "lucide-react"
 
-type PixCheckoutData = {
+type CheckoutFormFields = {
+  showName?: boolean
+  showEmail?: boolean
+  showEmailConfirm?: boolean
+  showCpf?: boolean
+  showPhone?: boolean
+}
+
+type CheckoutData = {
+  checkoutType?: "direct" | "form"
   accessToken?: string
   headline?: string
   description?: string
   price?: string
   pixKey?: string
-  backgroundType?: "color" | "image"
+  formFields?: CheckoutFormFields
+  formButtonText?: string
+  backgroundType?: "color" | "image" | "gradient"
   backgroundColor?: string
+  backgroundGradient?: string
   backgroundImage?: string
+  cardColor?: string
   textColor?: string
   accentColor?: string
   buttonColor?: string
   buttonTextColor?: string
 }
 
-export function PixCheckout({ data }: { data: Partial<PixCheckoutData> }) {
+export function PixCheckout({ data }: { data: Partial<CheckoutData> }) {
   const [pixCode, setPixCode] = useState("")
   const [qrCodeBase64, setQrCodeBase64] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [error, setError] = useState("")
+  const [showPix, setShowPix] = useState(data.checkoutType !== "form")
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    emailConfirm: "",
+    cpf: "",
+    phone: "",
+  })
 
   // Valores default
-  const headline = data.headline || "Pagamento via PIX"
+  const checkoutType = data.checkoutType || "direct"
+  const headline = data.headline || "Finalizar Pagamento"
   const description = data.description || "Escaneie o QR Code ou copie o codigo PIX"
   const price = data.price || "0,00"
   const pixKey = data.pixKey || ""
-  const bgType = data.backgroundType || "color"
+  const formFields = data.formFields || { showName: true, showEmail: true, showCpf: true }
+  const formButtonText = data.formButtonText || "Gerar PIX"
+  const bgType = data.backgroundType || "gradient"
   const bgColor = data.backgroundColor || "#0f172a"
+  const bgGradient = data.backgroundGradient || "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)"
   const bgImage = data.backgroundImage || ""
-  const textColor = data.textColor || "#ffffff"
-  const accentColor = data.accentColor || "#22c55e"
-  const buttonColor = data.buttonColor || "#22c55e"
+  const cardColor = data.cardColor || "#ffffff"
+  const textColor = data.textColor || "#1e293b"
+  const accentColor = data.accentColor || "#10b981"
+  const buttonColor = data.buttonColor || "#10b981"
   const buttonTextColor = data.buttonTextColor || "#ffffff"
 
   useEffect(() => {
-    generatePix()
+    // Se checkout direto, gera PIX automaticamente
+    if (checkoutType === "direct") {
+      generatePix()
+    }
   }, [])
 
   const generatePix = async () => {
@@ -58,6 +87,7 @@ export function PixCheckout({ data }: { data: Partial<PixCheckoutData> }) {
             accessToken: data.accessToken,
             amount: priceNumber,
             description: headline,
+            payer: checkoutType === "form" ? formData : undefined,
           }),
         })
 
@@ -66,6 +96,7 @@ export function PixCheckout({ data }: { data: Partial<PixCheckoutData> }) {
           if (result.qrCode && result.qrCodeBase64) {
             setPixCode(result.qrCode)
             setQrCodeBase64(result.qrCodeBase64)
+            setShowPix(true)
             setLoading(false)
             return
           }
@@ -75,6 +106,7 @@ export function PixCheckout({ data }: { data: Partial<PixCheckoutData> }) {
       // Fallback: usa chave PIX manual
       if (pixKey) {
         setPixCode(pixKey)
+        setShowPix(true)
         setLoading(false)
         return
       }
@@ -88,6 +120,11 @@ export function PixCheckout({ data }: { data: Partial<PixCheckoutData> }) {
     }
   }
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    generatePix()
+  }
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(pixCode)
@@ -98,112 +135,270 @@ export function PixCheckout({ data }: { data: Partial<PixCheckoutData> }) {
     }
   }
 
+  const getBackground = () => {
+    if (bgType === "gradient") return bgGradient
+    if (bgType === "image" && bgImage) return `url(${bgImage}) center/cover`
+    return bgColor
+  }
+
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 bg-cover bg-center"
-      style={{ 
-        backgroundColor: bgType === "color" ? bgColor : "#0f172a",
-        backgroundImage: bgType === "image" && bgImage ? `url(${bgImage})` : undefined
-      }}
+      className="min-h-screen flex flex-col items-center justify-center p-5"
+      style={{ background: getBackground() }}
     >
       {/* Overlay para imagem de fundo */}
       {bgType === "image" && bgImage && (
-        <div className="absolute inset-0 bg-black/50" />
+        <div className="fixed inset-0 bg-black/50 z-0" />
       )}
 
-      <div className="relative z-10 w-full max-w-sm flex flex-col items-center">
-        {/* Headline */}
-        <h1 
-          className="text-2xl font-bold text-center mb-2"
-          style={{ color: textColor }}
-        >
-          {headline}
-        </h1>
-        
-        <p 
-          className="text-sm text-center mb-6 opacity-80"
-          style={{ color: textColor }}
-        >
-          {description}
-        </p>
-
-        {/* Price */}
+      <div className="relative z-10 w-full max-w-sm">
+        {/* Card Principal */}
         <div 
-          className="text-4xl font-bold mb-8"
-          style={{ color: accentColor }}
+          className="rounded-3xl p-6 shadow-2xl"
+          style={{ backgroundColor: cardColor }}
         >
-          R$ {price}
-        </div>
+          {/* Mostra Formulario OU PIX */}
+          {!showPix && checkoutType === "form" ? (
+            /* Formulario */
+            <form onSubmit={handleFormSubmit}>
+              {/* Header */}
+              <div className="text-center mb-6">
+                <h1 
+                  className="text-xl font-bold mb-1"
+                  style={{ color: textColor }}
+                >
+                  {headline}
+                </h1>
+                <div 
+                  className="text-3xl font-bold"
+                  style={{ color: accentColor }}
+                >
+                  R$ {price}
+                </div>
+              </div>
 
-        {/* QR Code */}
-        <div className="bg-white rounded-2xl p-5 mb-6 shadow-xl">
-          {loading ? (
-            <div className="w-48 h-48 flex items-center justify-center">
-              <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
-            </div>
-          ) : error ? (
-            <div className="w-48 h-48 flex items-center justify-center">
-              <p className="text-sm text-red-500 text-center">{error}</p>
-            </div>
-          ) : qrCodeBase64 ? (
-            <img 
-              src={`data:image/png;base64,${qrCodeBase64}`} 
-              alt="QR Code PIX"
-              className="w-48 h-48"
-            />
+              {/* Form Fields */}
+              <div className="space-y-4">
+                {formFields.showName && (
+                  <div>
+                    <label 
+                      className="text-xs font-medium uppercase tracking-wide mb-1.5 block opacity-60"
+                      style={{ color: textColor }}
+                    >
+                      Nome completo
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.name}
+                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                      className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
+                      placeholder="Seu nome"
+                    />
+                  </div>
+                )}
+
+                {formFields.showEmail && (
+                  <div>
+                    <label 
+                      className="text-xs font-medium uppercase tracking-wide mb-1.5 block opacity-60"
+                      style={{ color: textColor }}
+                    >
+                      E-mail
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.email}
+                      onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                      className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
+                      placeholder="seu@email.com"
+                    />
+                  </div>
+                )}
+
+                {formFields.showEmail && formFields.showEmailConfirm && (
+                  <div>
+                    <label 
+                      className="text-xs font-medium uppercase tracking-wide mb-1.5 block opacity-60"
+                      style={{ color: textColor }}
+                    >
+                      Confirmar e-mail
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formData.emailConfirm}
+                      onChange={(e) => setFormData(prev => ({ ...prev, emailConfirm: e.target.value }))}
+                      className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
+                      placeholder="Confirme seu e-mail"
+                    />
+                  </div>
+                )}
+
+                {formFields.showCpf && (
+                  <div>
+                    <label 
+                      className="text-xs font-medium uppercase tracking-wide mb-1.5 block opacity-60"
+                      style={{ color: textColor }}
+                    >
+                      CPF
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.cpf}
+                      onChange={(e) => setFormData(prev => ({ ...prev, cpf: e.target.value }))}
+                      className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
+                      placeholder="000.000.000-00"
+                    />
+                  </div>
+                )}
+
+                {formFields.showPhone && (
+                  <div>
+                    <label 
+                      className="text-xs font-medium uppercase tracking-wide mb-1.5 block opacity-60"
+                      style={{ color: textColor }}
+                    >
+                      Telefone
+                    </label>
+                    <input
+                      type="tel"
+                      value={formData.phone}
+                      onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                      className="w-full h-12 px-4 rounded-xl border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
+                      placeholder="(00) 00000-0000"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] mt-6 disabled:opacity-50"
+                style={{ 
+                  backgroundColor: buttonColor,
+                  color: buttonTextColor
+                }}
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    {formButtonText}
+                    <ChevronRight className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
           ) : (
-            <div className="w-48 h-48 flex items-center justify-center bg-gray-100 rounded-lg">
-              <QrCode className="w-20 h-20 text-gray-400" />
-            </div>
+            /* QR Code PIX */
+            <>
+              {/* Header */}
+              <div className="text-center mb-5">
+                <h1 
+                  className="text-lg font-bold mb-1"
+                  style={{ color: textColor }}
+                >
+                  {checkoutType === "form" ? "Pague com PIX" : headline}
+                </h1>
+                <p 
+                  className="text-xs opacity-60"
+                  style={{ color: textColor }}
+                >
+                  {description}
+                </p>
+              </div>
+
+              {/* Price */}
+              <div className="text-center mb-5">
+                <span className="text-xs opacity-50" style={{ color: textColor }}>Valor</span>
+                <div 
+                  className="text-3xl font-bold"
+                  style={{ color: accentColor }}
+                >
+                  R$ {price}
+                </div>
+              </div>
+
+              {/* QR Code */}
+              <div className="bg-white rounded-2xl p-4 mx-auto w-fit mb-5 shadow-sm border border-gray-100">
+                {loading ? (
+                  <div className="w-44 h-44 flex items-center justify-center">
+                    <Loader2 className="w-10 h-10 text-gray-400 animate-spin" />
+                  </div>
+                ) : error ? (
+                  <div className="w-44 h-44 flex items-center justify-center">
+                    <p className="text-sm text-red-500 text-center px-4">{error}</p>
+                  </div>
+                ) : qrCodeBase64 ? (
+                  <img 
+                    src={`data:image/png;base64,${qrCodeBase64}`} 
+                    alt="QR Code PIX"
+                    className="w-44 h-44"
+                  />
+                ) : (
+                  <div className="w-44 h-44 flex items-center justify-center bg-gradient-to-br from-gray-100 to-gray-50 rounded-xl">
+                    <QrCode className="w-20 h-20 text-gray-300" />
+                  </div>
+                )}
+              </div>
+
+              {/* Copy Button */}
+              {pixCode && !error && (
+                <button
+                  onClick={copyToClipboard}
+                  className="w-full py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] text-sm"
+                  style={{ 
+                    backgroundColor: buttonColor,
+                    color: buttonTextColor
+                  }}
+                >
+                  {copied ? (
+                    <>
+                      <Check className="w-4 h-4" />
+                      Copiado!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4" />
+                      Copiar codigo PIX
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Timer */}
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                <span className="text-xs opacity-50" style={{ color: textColor }}>
+                  Expira em 30:00
+                </span>
+              </div>
+
+              {/* PIX Code Display */}
+              {pixCode && !error && (
+                <div 
+                  className="mt-4 p-3 rounded-xl bg-gray-100 cursor-pointer hover:bg-gray-200 transition-colors"
+                  onClick={copyToClipboard}
+                >
+                  <p className="text-[9px] font-mono text-center break-all opacity-50 line-clamp-2" style={{ color: textColor }}>
+                    {pixCode}
+                  </p>
+                </div>
+              )}
+            </>
           )}
         </div>
 
-        {/* Copy Button */}
-        {pixCode && !error && (
-          <button
-            onClick={copyToClipboard}
-            className="w-full py-4 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98]"
-            style={{ 
-              backgroundColor: buttonColor,
-              color: buttonTextColor
-            }}
-          >
-            {copied ? (
-              <>
-                <Check className="w-5 h-5" />
-                Copiado!
-              </>
-            ) : (
-              <>
-                <Copy className="w-5 h-5" />
-                Copiar codigo PIX
-              </>
-            )}
-          </button>
-        )}
-
-        {/* Status */}
-        <p 
-          className="text-xs text-center mt-6 opacity-60"
-          style={{ color: textColor }}
-        >
-          Aguardando confirmacao do pagamento...
-        </p>
-
-        {/* PIX Code Display (truncated) */}
-        {pixCode && !error && (
-          <div 
-            className="mt-4 p-3 rounded-lg bg-black/20 w-full"
-            onClick={copyToClipboard}
-          >
-            <p 
-              className="text-[10px] font-mono text-center break-all opacity-60 line-clamp-2"
-              style={{ color: textColor }}
-            >
-              {pixCode}
-            </p>
-          </div>
-        )}
+        {/* Security Badge */}
+        <div className="mt-5 flex items-center justify-center gap-1.5">
+          <Shield className="w-3.5 h-3.5 text-white/50" />
+          <span className="text-[11px] text-white/50">Pagamento 100% seguro</span>
+        </div>
       </div>
     </div>
   )
