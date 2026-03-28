@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useBots, type Bot } from "@/lib/bot-context"
 import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/lib/supabase"
 
 interface TelegramBotData {
   telegram_bot_id: number
@@ -68,6 +69,36 @@ export default function BotsPage() {
   // Cache de dados do Telegram (foto, username, etc.)
   const [telegramDataCache, setTelegramDataCache] = useState<Record<string, TelegramBotData>>({})
   const [isLoadingTelegramData, setIsLoadingTelegramData] = useState(false)
+  
+  // Cache de fluxos vinculados aos bots
+  const [botFlowsCache, setBotFlowsCache] = useState<Record<string, { id: string; name: string } | null>>({})
+  
+  // Carregar fluxos vinculados aos bots
+  const loadBotFlows = useCallback(async (botsToLoad: Bot[]) => {
+    const newCache: Record<string, { id: string; name: string } | null> = { ...botFlowsCache }
+    
+    await Promise.all(botsToLoad.map(async (bot) => {
+      const { data: flow } = await supabase
+        .from("flows")
+        .select("id, name")
+        .eq("bot_id", bot.id)
+        .eq("status", "ativo")
+        .limit(1)
+        .single()
+      
+      newCache[bot.id] = flow || null
+    }))
+    
+    setBotFlowsCache(newCache)
+  }, [botFlowsCache])
+  
+  // Carregar fluxos quando bots mudam
+  useEffect(() => {
+    if (bots.length > 0) {
+      loadBotFlows(bots)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bots])
   
   // Carregar dados do Telegram para todos os bots
   const loadTelegramData = useCallback(async (botsToLoad: Bot[]) => {
@@ -872,6 +903,24 @@ export default function BotsPage() {
                         <p className="text-lg font-bold text-foreground">0</p>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Fluxo Vinculado */}
+                  <div className="px-3 py-2 border-t border-border">
+                    {botFlowsCache[bot.id] ? (
+                      <div className="flex items-center gap-2 justify-center">
+                        <Workflow className="h-3.5 w-3.5 text-accent" />
+                        <span className="text-xs font-medium text-foreground truncate max-w-[120px]">
+                          {botFlowsCache[bot.id]?.name}
+                        </span>
+                        <CheckCircle2 className="h-3 w-3 text-accent" />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 justify-center text-muted-foreground">
+                        <Workflow className="h-3.5 w-3.5" />
+                        <span className="text-xs">Sem fluxo</span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Botao Ver Fluxos */}

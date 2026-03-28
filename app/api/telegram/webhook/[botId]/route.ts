@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server"
+import { NextRequest } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 
 // ---------------------------------------------------------------------------
@@ -14,12 +14,11 @@ async function sendTelegramMessage(
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`
   const body: Record<string, unknown> = { chat_id: chatId, text, parse_mode: "HTML" }
   if (replyMarkup) body.reply_markup = replyMarkup
-  const res = await fetch(url, {
+  await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
-  return res.json()
 }
 
 async function sendTelegramPhoto(
@@ -35,196 +34,169 @@ async function sendTelegramPhoto(
     parse_mode: "HTML",
   }
   if (caption) body.caption = caption
-  const res = await fetch(url, {
+  await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   })
-  return res.json()
+}
+
+async function sendTelegramVideo(
+  botToken: string,
+  chatId: number,
+  videoUrl: string,
+  caption?: string,
+) {
+  const url = `https://api.telegram.org/bot${botToken}/sendVideo`
+  const body: Record<string, unknown> = {
+    chat_id: chatId,
+    video: videoUrl,
+    parse_mode: "HTML",
+  }
+  if (caption) body.caption = caption
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
 }
 
 // ---------------------------------------------------------------------------
-// POST /api/telegram/webhook/[botId]
-// Receives messages from Telegram for a specific bot
+// Process message in background (non-blocking)
 // ---------------------------------------------------------------------------
 
-export async function POST(
-  req: NextRequest,
-  { params }: { params: Promise<{ botId: string }> }
-) {
-  const { botId } = await params
+async function processUpdate(botId: string, update: Record<string, unknown>) {
   const supabase = getSupabase()
 
   try {
-    const update = await req.json()
-    console.log("[webhook] Received update for bot:", botId)
-
-    // 1. Buscar o bot no banco pelo botId para obter o token
+    // 1. Get bot from database
     const { data: bot, error: botError } = await supabase
       .from("bots")
-      .select("id, token, name, user_id, is_active")
-      .eq("id", botId)
+      .select("*")
+      .like("token", `${botId}:%`)
       .single()
 
     if (botError || !bot) {
       console.error("[webhook] Bot not found:", botId)
-      return NextResponse.json({ ok: true })
+      return
     }
 
-    if (!bot.is_active) {
-      console.log("[webhook] Bot is inactive:", botId)
-      return NextResponse.json({ ok: true })
-    }
-
+    const botUuid = bot.id
     const botToken = bot.token
+    if (!botToken) return
 
-    // 2. Handle my_chat_member event - bot added/removed from group
-    if (update.my_chat_member) {
-      const chatMember = update.my_chat_member
-      const chat = chatMember.chat
-      const newStatus = chatMember.new_chat_member?.status
+    // 2. Extract message data
+    const message = update.message || (update.callback_query as Record<string, unknown>)?.message
+    if (!message || typeof message !== "object") return
 
-      console.log("[webhook] my_chat_member event:", {
-        chat_id: chat.id,
-        title: chat.title,
-        type: chat.type,
-        new_status: newStatus
-      })
+    const msg = message as Record<string, unknown>
+    const chat = msg.chat as Record<string, unknown>
+    const from = (msg.from || (update.callback_query as Record<string, unknown>)?.from) as Record<string, unknown>
+    
+    const chatId = chat?.id as number
+    const text = (msg.text as string) || ""
+    const telegramUserId = from?.id
 
-      // Bot was added or promoted to admin
-      if (newStatus === "administrator" || newStatus === "member") {
-        const isAdmin = newStatus === "administrator"
-        const canInvite = isAdmin && chatMember.new_chat_member?.can_invite_users === true
+    if (!chatId) return
 
-        await supabase
-          .from("bot_groups")
-          .upsert({
-            bot_id: botId,
-            chat_id: chat.id,
-            title: chat.title || "Grupo sem nome",
-            chat_type: chat.type,
-            is_admin: isAdmin,
-            can_invite: canInvite,
-            updated_at: new Date().toISOString()
-          }, {
-            onConflict: "bot_id,chat_id"
-          })
-      }
+    // 3. Check if /start command
+    const isStart = text.toLowerCase().startsWith("/start")
 
-      // Bot was removed or demoted
-      if (newStatus === "left" || newStatus === "kicked") {
-        await supabase
-          .from("bot_groups")
-          .delete()
-          .eq("bot_id", botId)
-          .eq("chat_id", chat.id)
-      }
-
-      return NextResponse.json({ ok: true })
-    }
-
-    // 3. Handle callback_query (button clicks)
-    if (update.callback_query) {
-      const callbackQuery = update.callback_query
-      const cbFrom = callbackQuery.from
-      const cbMessage = callbackQuery.message
-      const cbData = callbackQuery.data as string
-      const cbChatId = cbMessage?.chat?.id as number
-      const cbUserId = cbFrom?.id as number
-
-      console.log("[webhook] Callback query:", { cbData, cbChatId, cbUserId })
-
-      // Answer callback query to remove loading state
-      await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callback_query_id: callbackQuery.id })
-      })
-
-      // Process callback data (e.g., button clicks in flows)
-      // Add your callback processing logic here
-
-      return NextResponse.json({ ok: true })
-    }
-
-    // 4. Handle regular messages
-    const message = update.message
-    if (!message) {
-      return NextResponse.json({ ok: true })
-    }
-
-    const chat = message.chat
-    const from = message.from || {}
-    const chatId = chat.id as number
-    const telegramUserId = from.id || chatId
-    const messageText = (message.text || "").trim()
-    const isStart = messageText === "/start" || messageText.startsWith("/start ")
-
-    console.log("[webhook] Message received:", { chatId, telegramUserId, messageText, isStart })
-
-    // 5. Save group info if message is from a group
-    if (chat.type && chat.type !== "private") {
-      await supabase
-        .from("bot_groups")
-        .upsert({
-          bot_id: botId,
-          chat_id: chat.id,
-          title: chat.title || "Grupo sem nome",
-          chat_type: chat.type,
-          is_admin: false,
-          can_invite: false,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: "bot_id,chat_id",
-          ignoreDuplicates: true
-        })
-    }
-
-    // 6. Find or create lead
-    let lead = null
-    const { data: existingLead } = await supabase
-      .from("leads")
-      .select("*")
-      .eq("bot_id", botId)
-      .eq("telegram_id", String(telegramUserId))
-      .single()
-
-    if (existingLead) {
-      lead = existingLead
-    } else if (isStart) {
-      // Create new lead on /start
-      const { data: newLead } = await supabase
+    // 4. Get or create lead
+    if (telegramUserId && isStart) {
+      const { data: existingLead } = await supabase
         .from("leads")
-        .insert({
-          bot_id: botId,
+        .select("id")
+        .eq("bot_id", botUuid)
+        .eq("telegram_id", String(telegramUserId))
+        .single()
+
+      if (!existingLead) {
+        const { error: leadError } = await supabase.from("leads").insert({
+          bot_id: botUuid,
           telegram_id: String(telegramUserId),
           chat_id: String(chatId),
-          first_name: from.first_name || "",
-          last_name: from.last_name || "",
-          username: from.username || "",
+          first_name: (from.first_name as string) || "",
+          last_name: (from.last_name as string) || "",
+          username: (from.username as string) || "",
           status: "active",
           source: "telegram"
         })
-        .select()
-        .single()
-      lead = newLead
+        
+        if (leadError) {
+          console.error("[webhook] Erro ao inserir lead:", leadError.message, leadError.code)
+        }
+      }
     }
 
-    // 7. Process /start command - execute start flow
-    if (isStart && lead) {
-      // Find start flow for this bot
-      const { data: startFlow } = await supabase
+    // 5. Process /start - execute welcome flow
+    if (isStart) {
+      // Find flow for this bot
+      let startFlow = null
+
+      // Strategy 1: Check flows.bot_id (direct link)
+      const { data: directFlow } = await supabase
         .from("flows")
         .select("*")
-        .eq("bot_id", botId)
-        .eq("trigger_type", "start")
-        .eq("is_active", true)
+        .eq("bot_id", botUuid)
+        .eq("status", "ativo")
+        .order("is_primary", { ascending: false })
+        .limit(1)
         .single()
 
+      if (directFlow) {
+        startFlow = directFlow
+      } else {
+        // Strategy 2: Check flow_bots table (many-to-many link from /fluxos page)
+        const { data: flowBotLink } = await supabase
+          .from("flow_bots")
+          .select("flow_id")
+          .eq("bot_id", botUuid)
+          .limit(1)
+          .single()
+
+        if (flowBotLink) {
+          const { data: linkedFlow } = await supabase
+            .from("flows")
+            .select("*")
+            .eq("id", flowBotLink.flow_id)
+            .single()
+
+          if (linkedFlow) {
+            startFlow = linkedFlow
+          }
+        }
+      }
+
+      // Strategy 3: Any flow from user (last resort)
+      if (!startFlow) {
+        const { data: anyUserFlow } = await supabase
+          .from("flows")
+          .select("*")
+          .eq("user_id", bot.user_id)
+          .eq("status", "ativo")
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single()
+
+        startFlow = anyUserFlow
+      }
+
       if (startFlow) {
-        console.log("[webhook] Executing start flow:", startFlow.id)
-        
-        // Get flow nodes
+        // PRIORITY 1: Use welcome_message field from flow (set in /fluxos/[id] page)
+        const welcomeMsg = startFlow.welcome_message as string
+        if (welcomeMsg && welcomeMsg.trim()) {
+          // Replace variables
+          let finalMsg = welcomeMsg
+            .replace(/\{nome\}/gi, (from?.first_name as string) || "")
+            .replace(/\{username\}/gi, (from?.username as string) ? `@${from.username}` : "")
+            .replace(/\{bot\.username\}/gi, bot.username ? `@${bot.username}` : bot.name || "")
+          
+          await sendTelegramMessage(botToken, chatId, finalMsg)
+          return
+        }
+
+        // PRIORITY 2: Get flow nodes
         const { data: nodes } = await supabase
           .from("flow_nodes")
           .select("*")
@@ -232,23 +204,19 @@ export async function POST(
           .order("position", { ascending: true })
 
         if (nodes && nodes.length > 0) {
-          // Execute first node (usually a message)
           for (const node of nodes) {
-            await executeNode(botToken, chatId, node)
-            // Add delay between nodes
-            await new Promise(resolve => setTimeout(resolve, 500))
+            await executeNode(botToken, chatId, node, from as Record<string, unknown>)
+            await new Promise(resolve => setTimeout(resolve, 300))
           }
+        } else {
+          await sendTelegramMessage(botToken, chatId, `Ola! Bem-vindo ao ${bot.name || "bot"}.`)
         }
       } else {
-        // Default welcome message if no flow
         await sendTelegramMessage(botToken, chatId, `Ola! Bem-vindo ao ${bot.name || "bot"}.`)
       }
     }
-
-    return NextResponse.json({ ok: true })
-  } catch (error: unknown) {
-    console.error("[webhook] Error:", error)
-    return NextResponse.json({ ok: true }) // Always return 200 to Telegram
+  } catch (error) {
+    console.error("[webhook] Error processing:", error)
   }
 }
 
@@ -256,35 +224,135 @@ export async function POST(
 // Execute a flow node
 // ---------------------------------------------------------------------------
 
-async function executeNode(botToken: string, chatId: number, node: Record<string, unknown>) {
+async function executeNode(botToken: string, chatId: number, node: Record<string, unknown>, from?: Record<string, unknown>) {
   const nodeType = node.type as string
   const config = (node.config as Record<string, unknown>) || {}
+  const subVariant = (config.subVariant as string) || ""
+
+  // Helper to replace variables
+  const replaceVars = (text: string) => {
+    return text
+      .replace(/\{nome\}/gi, (from?.first_name as string) || "")
+      .replace(/\{username\}/gi, (from?.username as string) ? `@${from.username}` : "")
+  }
 
   switch (nodeType) {
+    case "trigger":
+      break
+
     case "text":
-    case "message":
-      const text = (config.text as string) || (config.content as string) || ""
+    case "message": {
+      let text = (config.text as string) || (config.content as string) || ""
+      text = replaceVars(text)
+      const mediaUrl = (config.media_url as string) || ""
+      const mediaType = (config.media_type as string) || ""
+      
+      let buttons: Array<{ text: string; url: string }> = []
+      const buttonsRaw = config.buttons
+      if (buttonsRaw) {
+        try {
+          buttons = typeof buttonsRaw === "string" ? JSON.parse(buttonsRaw) : (Array.isArray(buttonsRaw) ? buttonsRaw : [])
+        } catch { buttons = [] }
+      }
+
+      let replyMarkup = undefined
+      if (buttons.length > 0) {
+        const validButtons = buttons.filter(b => b.text && b.url)
+        if (validButtons.length > 0) {
+          replyMarkup = { inline_keyboard: validButtons.map(b => [{ text: b.text, url: b.url }]) }
+        }
+      }
+
+      if (mediaUrl && mediaType && mediaType !== "none") {
+        if (mediaType === "photo") {
+          await sendTelegramPhoto(botToken, chatId, mediaUrl, text || undefined)
+          return
+        } else if (mediaType === "video") {
+          await sendTelegramVideo(botToken, chatId, mediaUrl, text || undefined)
+          return
+        }
+      }
+
       if (text) {
-        await sendTelegramMessage(botToken, chatId, text)
+        await sendTelegramMessage(botToken, chatId, text, replyMarkup)
       }
       break
+    }
 
-    case "image":
-      const imageUrl = config.url as string
-      const caption = config.caption as string
-      if (imageUrl) {
-        await sendTelegramPhoto(botToken, chatId, imageUrl, caption)
+    case "image": {
+      const imageUrl = (config.url as string) || (config.media_url as string) || ""
+      const caption = (config.caption as string) || (config.text as string) || ""
+      if (imageUrl) await sendTelegramPhoto(botToken, chatId, imageUrl, caption || undefined)
+      break
+    }
+
+    case "video": {
+      const videoUrl = (config.url as string) || (config.media_url as string) || ""
+      const videoCaption = (config.caption as string) || (config.text as string) || ""
+      if (videoUrl) await sendTelegramVideo(botToken, chatId, videoUrl, videoCaption || undefined)
+      break
+    }
+
+    case "delay": {
+      const seconds = parseInt(String(config.seconds)) || 1
+      await new Promise(resolve => setTimeout(resolve, seconds * 1000))
+      break
+    }
+
+    case "action": {
+      if (subVariant === "add_group") {
+        const groupLink = config.action_name as string
+        if (groupLink) {
+          await sendTelegramMessage(botToken, chatId, `Entre no grupo:`, {
+            inline_keyboard: [[{ text: "Entrar no Grupo", url: groupLink }]]
+          })
+        }
       }
       break
+    }
 
-    case "delay":
-      const delayMs = ((config.seconds as number) || 1) * 1000
-      await new Promise(resolve => setTimeout(resolve, delayMs))
+    case "payment": {
+      const paymentButtonsRaw = config.payment_buttons as string
+      if (paymentButtonsRaw) {
+        try {
+          const paymentButtons = JSON.parse(paymentButtonsRaw)
+          if (paymentButtons.length > 0) {
+            const firstBtn = paymentButtons[0]
+            await sendTelegramMessage(botToken, chatId, `${firstBtn.text}\nValor: R$ ${firstBtn.amount}`, {
+              inline_keyboard: [[{ text: `Pagar R$ ${firstBtn.amount}`, callback_data: `pay_${firstBtn.id}` }]]
+            })
+          }
+        } catch { /* ignore */ }
+      }
       break
-
-    default:
-      console.log("[webhook] Unknown node type:", nodeType)
+    }
   }
+}
+
+// ---------------------------------------------------------------------------
+// POST /api/telegram/webhook/[botId]
+// RESPONDE IMEDIATAMENTE - Processa em background
+// ---------------------------------------------------------------------------
+
+export async function POST(
+  req: NextRequest,
+  { params }: { params: Promise<{ botId: string }> }
+) {
+  const { botId } = await params
+
+  // Parse body ANTES de responder
+  let update: Record<string, unknown> = {}
+  try {
+    update = await req.json()
+  } catch {
+    return new Response("ok")
+  }
+
+  // Processar em background (NAO bloqueia resposta)
+  processUpdate(botId, update).catch(console.error)
+
+  // RESPONDER IMEDIATAMENTE
+  return new Response("ok")
 }
 
 // ---------------------------------------------------------------------------
@@ -292,5 +360,5 @@ async function executeNode(botToken: string, chatId: number, node: Record<string
 // ---------------------------------------------------------------------------
 
 export async function GET() {
-  return NextResponse.json({ status: "Webhook endpoint active" })
+  return new Response("Webhook active")
 }

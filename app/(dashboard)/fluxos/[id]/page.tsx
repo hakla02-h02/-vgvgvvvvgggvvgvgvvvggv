@@ -378,9 +378,19 @@ Clique no botao abaixo para renovar com desconto especial!`)
 
   // Fetch flow
   const fetchFlow = useCallback(async () => {
-    if (!flowId || !session?.userId || isAuthLoading) return
+    console.log("[v0] ========== fetchFlow INICIADO ==========")
+    console.log("[v0] flowId:", flowId)
+    console.log("[v0] session?.userId:", session?.userId)
+    console.log("[v0] isAuthLoading:", isAuthLoading)
+    
+    if (!flowId || !session?.userId || isAuthLoading) {
+      console.log("[v0] fetchFlow ABORTADO - dados incompletos")
+      return
+    }
 
     setIsLoading(true)
+    console.log("[v0] Buscando flow no banco...")
+    
     const { data, error } = await supabase
       .from("flows")
       .select("*")
@@ -388,8 +398,12 @@ Clique no botao abaixo para renovar com desconto especial!`)
       .eq("user_id", session.userId)
       .single()
 
+    console.log("[v0] Resultado da busca:")
+    console.log("[v0]   - data:", JSON.stringify(data, null, 2))
+    console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code }, null, 2) : null)
+
     if (error || !data) {
-      console.error("[v0] Error fetching flow:", error)
+      console.error("[v0] ERRO ou dados vazios ao buscar flow")
       if (!isAuthLoading) {
         router.push("/fluxos")
       }
@@ -397,6 +411,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
     }
 
     const flowData = data as Flow
+    console.log("[v0] Flow carregado! welcome_message:", flowData.welcome_message)
+    
     setFlow(flowData)
     setEditName(flowData.name)
     setWelcomeMessage(flowData.welcome_message || "")
@@ -525,7 +541,16 @@ Clique no botao abaixo para renovar com desconto especial!`)
 
   // Save flow
   const handleSave = async () => {
-    if (!flow) return
+    console.log("[v0] ========== handleSave INICIADO ==========")
+    console.log("[v0] flow:", flow?.id, flow?.name)
+    console.log("[v0] welcomeMessage:", welcomeMessage)
+    console.log("[v0] welcomeMessage.length:", welcomeMessage.length)
+    
+    if (!flow) {
+      console.log("[v0] ABORTADO - flow nao existe")
+      alert("Erro: Flow nao carregado")
+      return
+    }
 
     setIsSaving(true)
 
@@ -555,26 +580,46 @@ Clique no botao abaixo para renovar com desconto especial!`)
       },
     }
 
-    const { error } = await supabase
+    const updatePayload = {
+      name: editName,
+      welcome_message: welcomeMessage,
+      media_cache_chat_id: mediaCacheChat && mediaCacheChat.trim() ? mediaCacheChat.trim() : null,
+      support_username: supportUsername || null,
+      config,
+      updated_at: new Date().toISOString(),
+    }
+    
+    console.log("[v0] updatePayload:", JSON.stringify(updatePayload, null, 2))
+    console.log("[v0] Executando UPDATE na tabela flows para id:", flow.id)
+
+    const { data, error } = await supabase
       .from("flows")
-      .update({
-        name: editName,
-        welcome_message: welcomeMessage,
-        media_cache_chat_id: mediaCacheChat,
-        support_username: supportUsername,
-        config,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", flow.id)
+      .select()
+
+    console.log("[v0] Resultado do UPDATE:")
+    console.log("[v0]   - data:", JSON.stringify(data, null, 2))
+    console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code, details: error.details, hint: error.hint }, null, 2) : null)
 
     if (error) {
-      console.error("[v0] Error saving flow:", error)
+      console.error("[v0] ERRO ao salvar flow:", error.message, error.code)
+      alert(`Erro ao salvar: ${error.message}`)
       toast({
         title: "Erro",
-        description: "Nao foi possivel salvar as alteracoes",
+        description: `Nao foi possivel salvar: ${error.message}`,
+        variant: "destructive",
+      })
+    } else if (!data || data.length === 0) {
+      console.error("[v0] UPDATE retornou vazio - possivel RLS bloqueando")
+      alert("Erro: UPDATE nao afetou nenhuma linha. Verifique RLS no Supabase.")
+      toast({
+        title: "Erro",
+        description: "Nenhuma linha foi atualizada",
         variant: "destructive",
       })
     } else {
+      console.log("[v0] Flow salvo com sucesso!")
       toast({
         title: "Sucesso",
         description: "Configuracoes salvas com sucesso!",
@@ -583,6 +628,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
     }
 
     setIsSaving(false)
+    console.log("[v0] ========== handleSave FINALIZADO ==========")
   }
 
   // Create bot inline and add to flow

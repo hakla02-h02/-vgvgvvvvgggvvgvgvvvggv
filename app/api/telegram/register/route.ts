@@ -2,18 +2,19 @@ import { NextRequest, NextResponse } from "next/server"
 
 // Register or unregister a Telegram webhook for a bot
 // POST /api/telegram/register
-// Body: { botToken: string, action: "register" | "unregister" }
+// Body: { botToken: string, botId: string, action: "register" | "unregister" }
+
+const BASE_URL = "https://dragonteste.onrender.com"
 
 export async function POST(req: NextRequest) {
   try {
-    const { botToken, action } = await req.json()
+    const { botToken, botId, action } = await req.json()
 
     if (!botToken) {
       return NextResponse.json({ error: "Missing botToken" }, { status: 400 })
     }
 
     if (action === "unregister") {
-      // Remove webhook
       const res = await fetch(
         `https://api.telegram.org/bot${botToken}/deleteWebhook`
       )
@@ -21,47 +22,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(data)
     }
 
-    // Register webhook - detect URL automatically
-    // Priority: NEXT_PUBLIC_APP_URL > VERCEL_PROJECT_PRODUCTION_URL > VERCEL_URL > request host
-    let baseUrl = process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "")
+    // Para registrar, precisamos do botId (ID numerico do Telegram)
+    // Se nao fornecido, extrair do token (formato: "123456789:AAxxxxxxx")
+    const telegramBotId = botId || botToken.split(":")[0]
     
-    if (!baseUrl && process.env.VERCEL_PROJECT_PRODUCTION_URL) {
-      baseUrl = `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    }
-    
-    if (!baseUrl && process.env.VERCEL_URL) {
-      baseUrl = `https://${process.env.VERCEL_URL}`
-    }
-    
-    if (!baseUrl) {
-      // Fallback: use request host header
-      const host = req.headers.get("host")
-      const proto = req.headers.get("x-forwarded-proto") || "https"
-      if (host) {
-        baseUrl = `${proto}://${host}`
-      }
+    if (!telegramBotId) {
+      return NextResponse.json({ error: "Missing botId" }, { status: 400 })
     }
 
-    if (!baseUrl) {
-      return NextResponse.json(
-        { error: "Nao foi possivel detectar a URL do app. Configure NEXT_PUBLIC_APP_URL nas variaveis de ambiente." },
-        { status: 400 }
-      )
-    }
-    
-    // Ensure we're not using preview URLs for production webhook
-    console.log("[v0] Registrando webhook com URL:", baseUrl)
+    // Usar BASE_URL hardcoded para a Render
+    const webhookUrl = `${BASE_URL}/api/telegram/webhook/${telegramBotId}`
 
-    const webhookUrl = `${baseUrl}/api/telegram/webhook?token=${encodeURIComponent(botToken)}`
+    console.log("[v0] Registrando webhook com URL:", webhookUrl)
 
-    // Check if this is a preview URL (won't work 24/7)
-    const isPreviewUrl = baseUrl.includes("vusercontent.net") || 
-                         baseUrl.includes("localhost") ||
-                         (baseUrl.includes("vercel.app") && baseUrl.includes("-"))
-
-    // Delete old webhook first to ensure clean state
+    // Delete old webhook first
     await fetch(`https://api.telegram.org/bot${botToken}/deleteWebhook?drop_pending_updates=true`)
 
+    // Set new webhook
     const res = await fetch(
       `https://api.telegram.org/bot${botToken}/setWebhook`,
       {
@@ -69,7 +46,7 @@ export async function POST(req: NextRequest) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           url: webhookUrl,
-          allowed_updates: ["message", "callback_query"],
+          allowed_updates: ["message", "callback_query", "my_chat_member"],
           drop_pending_updates: true,
         }),
       }
@@ -78,9 +55,9 @@ export async function POST(req: NextRequest) {
     const data = await res.json()
 
     return NextResponse.json({
-      ...data,
+      success: data.ok,
       webhook_url: webhookUrl,
-      warning: isPreviewUrl ? "ATENCAO: URL de preview detectada! O bot so funcionara enquanto o preview estiver ativo. Para funcionar 24/7, configure NEXT_PUBLIC_APP_URL com sua URL de producao." : null,
+      telegram_response: data,
     })
   } catch (err) {
     console.error("[register] Error:", err)

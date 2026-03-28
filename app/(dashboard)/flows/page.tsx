@@ -1345,7 +1345,12 @@ export default function FlowsPage() {
 
   // ---- Fetch flows for selected bot ----
   const fetchFlows = useCallback(async () => {
+    console.log("[v0] ========== fetchFlows INICIADO ==========")
+    console.log("[v0] selectedBot:", selectedBot?.id, selectedBot?.name)
+    console.log("[v0] session userId:", session?.userId)
+    
     if (!selectedBot || !session) {
+      console.log("[v0] fetchFlows ABORTADO - bot ou session nao definidos")
       setFlows([])
       setActiveFlow(null)
       setNodes([])
@@ -1354,6 +1359,8 @@ export default function FlowsPage() {
     }
 
     setIsLoadingFlows(true)
+    console.log("[v0] Buscando flows para bot_id:", selectedBot.id, "user_id:", session.userId)
+    
     const { data, error } = await supabase
       .from("flows")
       .select("*")
@@ -1361,13 +1368,20 @@ export default function FlowsPage() {
       .eq("user_id", session.userId)
       .order("created_at", { ascending: true })
 
+    console.log("[v0] Resultado da busca de flows:")
+    console.log("[v0]   - data count:", data?.length || 0)
+    console.log("[v0]   - data:", JSON.stringify(data, null, 2))
+    console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code }, null, 2) : null)
+
     if (error) {
-      console.error("Error fetching flows:", error)
+      console.error("[v0] ERRO ao buscar flows:", error.message, error.code)
       setIsLoadingFlows(false)
       return
     }
 
     const fetched = (data || []) as Flow[]
+    console.log("[v0] Flows encontrados:", fetched.length)
+    
     // Backwards compat: if no flow has is_primary, mark the first one
     const hasPrimary = fetched.some((f) => f.is_primary)
     const normalized = fetched.map((f, i) => ({
@@ -1377,16 +1391,20 @@ export default function FlowsPage() {
       flow_type: (f.flow_type || "complete") as "basic" | "complete",
     }))
 
+    console.log("[v0] Flows normalizados:", normalized.length)
     setFlows(normalized)
 
     if (normalized.length > 0) {
       const primary = normalized.find((f) => f.is_primary) || normalized[0]
+      console.log("[v0] Definindo activeFlow:", primary.id, primary.name)
       setActiveFlow(primary)
     } else {
+      console.log("[v0] Nenhum flow encontrado, limpando activeFlow")
       setActiveFlow(null)
       setNodes([])
     }
     setIsLoadingFlows(false)
+    console.log("[v0] ========== fetchFlows FINALIZADO ==========")
   }, [selectedBot, session])
 
   useEffect(() => {
@@ -1395,26 +1413,39 @@ export default function FlowsPage() {
 
   // ---- Fetch nodes for active flow ----
   const fetchNodes = useCallback(async () => {
+    console.log("[v0] ========== fetchNodes INICIADO ==========")
+    console.log("[v0] activeFlow:", activeFlow?.id, activeFlow?.name)
+    
     if (!activeFlow) {
+      console.log("[v0] fetchNodes ABORTADO - activeFlow nao definido")
       setNodes([])
       return
     }
 
     setIsLoadingNodes(true)
+    console.log("[v0] Buscando nodes para flow_id:", activeFlow.id)
+    
     const { data, error } = await supabase
       .from("flow_nodes")
       .select("*")
       .eq("flow_id", activeFlow.id)
       .order("position", { ascending: true })
 
+    console.log("[v0] Resultado da busca de nodes:")
+    console.log("[v0]   - data count:", data?.length || 0)
+    console.log("[v0]   - data:", JSON.stringify(data, null, 2))
+    console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code }, null, 2) : null)
+
     if (error) {
-      console.error("Error fetching nodes:", error)
+      console.error("[v0] ERRO ao buscar nodes:", error.message, error.code)
       setIsLoadingNodes(false)
       return
     }
 
+    console.log("[v0] Nodes encontrados:", data?.length || 0)
     setNodes((data || []) as FlowNode[])
     setIsLoadingNodes(false)
+    console.log("[v0] ========== fetchNodes FINALIZADO ==========")
   }, [activeFlow])
 
   useEffect(() => {
@@ -1482,13 +1513,29 @@ export default function FlowsPage() {
 
   // ---- Create BASIC flow (auto-generates nodes) ----
   const handleCreateBasicFlow = async () => {
-    if (!selectedBot || !session || !basicWelcomeMsg.trim()) return
+    console.log("[v0] ========== INICIANDO handleCreateBasicFlow ==========")
+    console.log("[v0] selectedBot:", selectedBot?.id, selectedBot?.name)
+    console.log("[v0] session userId:", session?.userId)
+    console.log("[v0] basicWelcomeMsg:", basicWelcomeMsg)
+    console.log("[v0] basicWelcomeMsg.trim():", basicWelcomeMsg.trim())
+    console.log("[v0] basicWelcomeMsg.trim().length:", basicWelcomeMsg.trim().length)
+    
+    if (!selectedBot || !session || !basicWelcomeMsg.trim()) {
+      console.log("[v0] ABORTANDO - Validacao falhou:")
+      console.log("[v0]   - selectedBot existe?", !!selectedBot)
+      console.log("[v0]   - session existe?", !!session)
+      console.log("[v0]   - basicWelcomeMsg tem conteudo?", !!basicWelcomeMsg.trim())
+      alert("Erro: Bot, sessao ou mensagem de boas-vindas nao definidos")
+      return
+    }
 
     setIsCreatingFlow(true)
+    console.log("[v0] Validacao OK, iniciando criacao do fluxo...")
 
     const isFirst = flows.length === 0
-    // Generate flow name from first words of message or default
     const flowName = basicWelcomeMsg.trim().split(" ").slice(0, 3).join(" ") || "Boas-vindas"
+    console.log("[v0] isFirst (primeiro fluxo)?:", isFirst)
+    console.log("[v0] flowName gerado:", flowName)
 
     let insertPayload: Record<string, unknown> = {
       bot_id: selectedBot.id,
@@ -1499,20 +1546,29 @@ export default function FlowsPage() {
       is_primary: isFirst,
       flow_type: "basic",
     }
+    console.log("[v0] insertPayload para flows:", JSON.stringify(insertPayload, null, 2))
 
+    console.log("[v0] Executando INSERT na tabela flows...")
     let { data, error } = await supabase
       .from("flows")
       .insert(insertPayload)
       .select()
       .single()
 
+    console.log("[v0] Resultado do INSERT flows:")
+    console.log("[v0]   - data:", JSON.stringify(data, null, 2))
+    console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code, details: error.details }, null, 2) : null)
+
     if (error && (error.message?.includes("category") || error.message?.includes("is_primary") || error.message?.includes("flow_type") || error.code === "42703")) {
+      console.log("[v0] Erro de coluna, tentando INSERT simplificado...")
       insertPayload = {
         bot_id: selectedBot.id,
         user_id: session.userId,
         name: flowName,
         status: "ativo",
       }
+      console.log("[v0] insertPayload simplificado:", JSON.stringify(insertPayload, null, 2))
+      
       const retry = await supabase
         .from("flows")
         .insert(insertPayload)
@@ -1520,14 +1576,20 @@ export default function FlowsPage() {
         .single()
       data = retry.data
       error = retry.error
+      
+      console.log("[v0] Resultado do INSERT simplificado:")
+      console.log("[v0]   - data:", JSON.stringify(data, null, 2))
+      console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code, details: error.details }, null, 2) : null)
     }
 
     if (error || !data) {
-      console.error("Error creating basic flow:", error)
+      console.error("[v0] ERRO FATAL ao criar fluxo:", error?.message, error?.code)
+      alert(`Erro ao criar fluxo: ${error?.message || "Dados nao retornados"}`)
       setIsCreatingFlow(false)
       return
     }
 
+    console.log("[v0] Fluxo criado com sucesso! ID:", data.id)
     const newFlow = { ...data, category: (isFirst ? "inicial" : "personalizado") as FlowCategory, is_primary: isFirst, flow_type: "basic" } as Flow
 
     // Auto-generate nodes for basic flow
@@ -1601,11 +1663,37 @@ export default function FlowsPage() {
     }
 
     // Insert all nodes
+    console.log("[v0] Iniciando insercao de", autoNodes.length, "nodes...")
+    console.log("[v0] autoNodes:", JSON.stringify(autoNodes, null, 2))
+    
+    let nodesCreated = 0
+    let nodesFailed = 0
+    
     for (const node of autoNodes) {
-      await supabase
+      console.log("[v0] Inserindo node:", node.type, "- label:", node.label)
+      const nodePayload = { flow_id: newFlow.id, ...node }
+      console.log("[v0] nodePayload:", JSON.stringify(nodePayload, null, 2))
+      
+      const { data: nodeData, error: nodeError } = await supabase
         .from("flow_nodes")
-        .insert({ flow_id: newFlow.id, ...node })
+        .insert(nodePayload)
+        .select()
+        .single()
+      
+      if (nodeError) {
+        console.error("[v0] ERRO ao inserir flow_node:", nodeError.message, nodeError.code, nodeError.details)
+        alert(`Erro ao salvar node ${node.type}: ${nodeError.message}`)
+        nodesFailed++
+      } else {
+        console.log("[v0] Node inserido com sucesso! ID:", nodeData?.id)
+        nodesCreated++
+      }
     }
+    
+    console.log("[v0] ========== RESUMO ==========")
+    console.log("[v0] Nodes criados:", nodesCreated)
+    console.log("[v0] Nodes com erro:", nodesFailed)
+    console.log("[v0] Flow ID:", newFlow.id)
 
     setFlows((prev) => [...prev, newFlow])
     setActiveFlow(newFlow)
@@ -1614,6 +1702,8 @@ export default function FlowsPage() {
     setNewFlowMode(null)
     setShowNewFlowDialog(false)
     setIsCreatingFlow(false)
+    
+    console.log("[v0] ========== FIM handleCreateBasicFlow ==========")
   }
 
   // ---- Delete flow ----
@@ -1621,6 +1711,18 @@ export default function FlowsPage() {
     if (!activeFlow) return
 
     setIsDeletingFlow(true)
+    
+    // First delete all nodes of this flow
+    const { error: nodesError } = await supabase
+      .from("flow_nodes")
+      .delete()
+      .eq("flow_id", activeFlow.id)
+    
+    if (nodesError) {
+      console.error("[v0] Erro ao deletar flow_nodes:", nodesError.message)
+    }
+    
+    // Then delete the flow itself
     const { error } = await supabase
       .from("flows")
       .delete()
@@ -1915,6 +2017,8 @@ export default function FlowsPage() {
 
   const handleSaveNode = async () => {
     if (!editingNode) return
+    
+    console.log("[v0] handleSaveNode - Starting save for node:", editingNode.id)
 
     setIsSavingNode(true)
 
@@ -1997,6 +2101,8 @@ if (sv === "end") {
       }
     }
 
+    console.log("[v0] handleSaveNode - Saving to database:", { id: editingNode.id, label: finalLabel, config: finalConfig })
+    
     const { error, data } = await supabase
       .from("flow_nodes")
       .update({
@@ -2006,6 +2112,8 @@ if (sv === "end") {
       })
       .eq("id", editingNode.id)
       .select()
+    
+    console.log("[v0] handleSaveNode - Result:", { error, data })
 
     if (error) {
       console.error("Error updating node:", error)
