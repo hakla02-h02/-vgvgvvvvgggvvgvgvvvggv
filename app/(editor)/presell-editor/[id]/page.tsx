@@ -668,7 +668,9 @@ export default function PresellEditorPage({ params }: PageProps) {
                   </div>
                 )}
 
-  {presellType === "redirect" && (
+  {presellType === "redirect" && (() => {
+                    const bg = redirectData.background || { type: "color", color: "#0088cc", imageDesktop: "", imageMobile: "" }
+                    return (
                   <div className="flex flex-col gap-5">
                     <div>
                       <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
@@ -676,21 +678,21 @@ export default function PresellEditorPage({ params }: PageProps) {
                       </Label>
                       <div className="flex gap-2">
                         <button
-                          onClick={() => { setRedirectData({ ...redirectData, background: { ...redirectData.background, type: "color" } }); setSaved(false) }}
-                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${redirectData.background.type === "color" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                          onClick={() => { setRedirectData({ ...redirectData, background: { ...bg, type: "color" } }); setSaved(false) }}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${bg.type === "color" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                         >
                           Cor
                         </button>
                         <button
-                          onClick={() => { setRedirectData({ ...redirectData, background: { ...redirectData.background, type: "image" } }); setSaved(false) }}
-                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${redirectData.background.type === "image" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                          onClick={() => { setRedirectData({ ...redirectData, background: { ...bg, type: "image" } }); setSaved(false) }}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${bg.type === "image" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                         >
                           Imagem
                         </button>
                       </div>
                     </div>
 
-                    {redirectData.background.type === "color" && (
+                    {bg.type === "color" && (
                       <div>
                         <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                           Cor de Fundo
@@ -698,28 +700,28 @@ export default function PresellEditorPage({ params }: PageProps) {
                         <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3">
                           <input
                             type="color"
-                            value={redirectData.background.color}
-                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...redirectData.background, color: e.target.value } }); setSaved(false) }}
+                            value={bg.color}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, color: e.target.value } }); setSaved(false) }}
                             className="w-10 h-10 rounded cursor-pointer border-0"
                           />
                           <Input
-                            value={redirectData.background.color}
-                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...redirectData.background, color: e.target.value } }); setSaved(false) }}
+                            value={bg.color}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, color: e.target.value } }); setSaved(false) }}
                             className="flex-1 h-10 bg-transparent border-0 font-mono text-sm"
                           />
                         </div>
                       </div>
                     )}
 
-                    {redirectData.background.type === "image" && (
+                    {bg.type === "image" && (
                       <div className="flex flex-col gap-4">
                         <div>
                           <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                             Imagem Desktop
                           </Label>
                           <Input
-                            value={redirectData.background.imageDesktop}
-                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...redirectData.background, imageDesktop: e.target.value } }); setSaved(false) }}
+                            value={bg.imageDesktop}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, imageDesktop: e.target.value } }); setSaved(false) }}
                             className="h-10 text-sm font-mono"
                             placeholder="https://imagem-desktop.com/bg.jpg"
                           />
@@ -729,8 +731,8 @@ export default function PresellEditorPage({ params }: PageProps) {
                             Imagem Mobile
                           </Label>
                           <Input
-                            value={redirectData.background.imageMobile}
-                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...redirectData.background, imageMobile: e.target.value } }); setSaved(false) }}
+                            value={bg.imageMobile}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, imageMobile: e.target.value } }); setSaved(false) }}
                             className="h-10 text-sm font-mono"
                             placeholder="https://imagem-mobile.com/bg.jpg"
                           />
@@ -738,7 +740,8 @@ export default function PresellEditorPage({ params }: PageProps) {
                       </div>
                     )}
                   </div>
-  )}
+                    )
+  })()}
               </TabsContent>
 
               {/* Details Tab */}
@@ -883,12 +886,14 @@ export default function PresellEditorPage({ params }: PageProps) {
                   </div>
                 )}
 
-                {presellType === "redirect" && (
+                {presellType === "redirect" && (() => {
+                  const bg = redirectData.background || { type: "color", color: "#0088cc", imageDesktop: "", imageMobile: "" }
+                  return (
                   <div 
                     className="w-full h-full flex items-center justify-center bg-cover bg-center"
                     style={{ 
-                      backgroundColor: redirectData.background.type === "color" ? redirectData.background.color : "#0088cc",
-                      backgroundImage: redirectData.background.type === "image" && redirectData.background.imageMobile ? `url(${redirectData.background.imageMobile})` : undefined
+                      backgroundColor: bg.type === "color" ? bg.color : "#0088cc",
+                      backgroundImage: bg.type === "image" && bg.imageMobile ? `url(${bg.imageMobile})` : undefined
                     }}
                   >
                     <div className="text-center">
@@ -914,7 +919,8 @@ export default function PresellEditorPage({ params }: PageProps) {
                       </p>
                     </div>
                   </div>
-                )}
+                  )
+                })()}
               </div>
             </div>
           </div>
