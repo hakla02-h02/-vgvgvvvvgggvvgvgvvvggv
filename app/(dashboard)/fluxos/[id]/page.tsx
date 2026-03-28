@@ -55,6 +55,8 @@ interface FlowConfig {
     enabled: boolean
     message: string
   }
+  welcomeMedias?: string[]
+  ctaButtonText?: string
 }
 
 interface FlowPlan {
@@ -447,6 +449,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setSubscriptionEnabled(config.subscription?.enabled || false)
     setSecondaryMessageEnabled(config.secondaryMessage?.enabled || false)
     setSecondaryMessage(config.secondaryMessage?.message || "")
+    setWelcomeMedias(config.welcomeMedias || [])
+    setCtaButtonText(config.ctaButtonText || "Ver Planos")
 
     setIsLoading(false)
   }, [flowId, session?.userId, router, isAuthLoading])
@@ -588,6 +592,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
         enabled: secondaryMessageEnabled,
         message: secondaryMessage,
       },
+      welcomeMedias: welcomeMedias,
+      ctaButtonText: ctaButtonText,
     }
 
     const updatePayload = {
@@ -1355,12 +1361,17 @@ Clique no botao abaixo para renovar com desconto especial!`)
                           type="file"
                           accept="image/*,video/*"
                           className="hidden"
-                          onChange={(e) => {
+                          onChange={async (e) => {
                             const file = e.target.files?.[0]
                             if (file) {
-                              const url = URL.createObjectURL(file)
-                              setWelcomeMedias([...welcomeMedias, url])
-                              setHasChanges(true)
+                              // Converter para base64 para persistir no banco
+                              const reader = new FileReader()
+                              reader.onloadend = () => {
+                                const base64 = reader.result as string
+                                setWelcomeMedias([...welcomeMedias, base64])
+                                setHasChanges(true)
+                              }
+                              reader.readAsDataURL(file)
                             }
                           }}
                         />
@@ -3877,134 +3888,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
             </>
           )}
 
-          {/* Welcome Tab Sidebar Options */}
-          {activeTab === "welcome" && (
-            <div className="space-y-4">
-              {/* Mensagem Secundaria */}
-              <Card className="border-border/50">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <MessageCircle className="h-4 w-4 text-purple-400" />
-                      <div>
-                        <p className="font-medium text-sm">Mensagem Secundaria</p>
-                        <p className="text-xs text-muted-foreground">Mensagem separada onde os botoes serao enviados</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={secondaryMessageEnabled}
-                      onCheckedChange={(checked) => {
-                        setSecondaryMessageEnabled(checked)
-                        setHasChanges(true)
-                      }}
-                    />
-                  </div>
-                  {secondaryMessageEnabled && (
-                    <div className="mt-4">
-                      <Textarea
-                        value={secondaryMessage}
-                        onChange={(e) => {
-                          setSecondaryMessage(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="Digite a mensagem secundaria..."
-                        rows={3}
-                        className="bg-secondary/30 border-border/50 text-sm"
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
 
-              {/* Botao CTA */}
-              <Card className="border-border/50">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <ExternalLink className="h-4 w-4 text-blue-400" />
-                      <div>
-                        <p className="font-medium text-sm">Botao CTA</p>
-                        <p className="text-xs text-muted-foreground">Botao de chamada para acao</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={ctaButtonEnabled}
-                      onCheckedChange={(checked) => {
-                        setCtaButtonEnabled(checked)
-                        setHasChanges(true)
-                      }}
-                    />
-                  </div>
-                  {ctaButtonEnabled && (
-                    <div className="mt-4 space-y-3">
-                      <Input
-                        value={ctaButtonText}
-                        onChange={(e) => {
-                          setCtaButtonText(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="Texto do botao"
-                        className="bg-secondary/30 border-border/50"
-                      />
-                      <Input
-                        value={ctaButtonUrl}
-                        onChange={(e) => {
-                          setCtaButtonUrl(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="https://..."
-                        className="bg-secondary/30 border-border/50"
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Botao Redirect */}
-              <Card className="border-border/50">
-                <CardContent className="pt-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <ExternalLink className="h-4 w-4 text-blue-400" />
-                      <div>
-                        <p className="font-medium text-sm">Botao Redirect</p>
-                        <p className="text-xs text-muted-foreground">Redireciona para canal de previas</p>
-                      </div>
-                    </div>
-                    <Switch
-                      checked={redirectButtonEnabled}
-                      onCheckedChange={(checked) => {
-                        setRedirectButtonEnabled(checked)
-                        setHasChanges(true)
-                      }}
-                    />
-                  </div>
-                  {redirectButtonEnabled && (
-                    <div className="mt-4 space-y-3">
-                      <Input
-                        value={redirectButtonText}
-                        onChange={(e) => {
-                          setRedirectButtonText(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="Texto do botao"
-                        className="bg-secondary/30 border-border/50"
-                      />
-                      <Input
-                        value={redirectButtonUrl}
-                        onChange={(e) => {
-                          setRedirectButtonUrl(e.target.value)
-                          setHasChanges(true)
-                        }}
-                        placeholder="@canal ou https://t.me/canal"
-                        className="bg-secondary/30 border-border/50"
-                      />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-          )}
 
           {/* Danger Zone - Only show on bots tab */}
           {activeTab === "bots" && (
