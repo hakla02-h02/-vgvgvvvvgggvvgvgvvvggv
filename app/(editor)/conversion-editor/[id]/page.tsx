@@ -28,8 +28,14 @@ import {
   Video,
 } from "lucide-react"
 import { toast } from "sonner"
+import { ImageUpload } from "@/components/image-upload"
 
 // Types para Privacy Page
+type PrivacyPost = {
+  id: string
+  type: "image" | "video"
+  url: string
+}
 export type PrivacyPageData = {
   // Profile
   username: string
@@ -69,6 +75,8 @@ export type PrivacyPageData = {
   // Posts preview
   postsCount: number
   mediasCount: number
+  // Posts (imagens/videos com blur)
+  posts: PrivacyPost[]
   // CTA URL
   ctaUrl: string
 }
@@ -105,6 +113,7 @@ const defaultPrivacyData: PrivacyPageData = {
   },
   postsCount: 352,
   mediasCount: 1153,
+  posts: [],
   ctaUrl: "",
 }
 
@@ -272,21 +281,21 @@ export default function PrivacyEditorPage({ params }: PageProps) {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="px-4 pt-4">
               <TabsList className="w-full bg-gray-100 rounded-lg h-10 p-1">
-                <TabsTrigger value="perfil" className="flex-1 rounded-md text-xs data-[state=active]:bg-white">
-                  <Type className="w-3.5 h-3.5 mr-1.5" />
+                <TabsTrigger value="perfil" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Type className="w-3 h-3 mr-1" />
                   Perfil
                 </TabsTrigger>
-                <TabsTrigger value="planos" className="flex-1 rounded-md text-xs data-[state=active]:bg-white">
-                  <Lock className="w-3.5 h-3.5 mr-1.5" />
+                <TabsTrigger value="posts" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <ImageIcon className="w-3 h-3 mr-1" />
+                  Posts
+                </TabsTrigger>
+                <TabsTrigger value="planos" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Lock className="w-3 h-3 mr-1" />
                   Planos
                 </TabsTrigger>
-                <TabsTrigger value="visual" className="flex-1 rounded-md text-xs data-[state=active]:bg-white">
-                  <Palette className="w-3.5 h-3.5 mr-1.5" />
+                <TabsTrigger value="visual" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Palette className="w-3 h-3 mr-1" />
                   Visual
-                </TabsTrigger>
-                <TabsTrigger value="config" className="flex-1 rounded-md text-xs data-[state=active]:bg-white">
-                  <Settings className="w-3.5 h-3.5 mr-1.5" />
-                  Config
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -343,25 +352,25 @@ export default function PrivacyEditorPage({ params }: PageProps) {
 
                   <div className="border-t pt-4">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      URL do Avatar
+                      Foto de Perfil (Avatar)
                     </Label>
-                    <Input
+                    <ImageUpload
                       value={pageData.avatar}
-                      onChange={(e) => updatePageData({ avatar: e.target.value })}
-                      className="h-10 text-sm font-mono"
-                      placeholder="https://..."
+                      onChange={(url) => updatePageData({ avatar: url })}
+                      placeholder="Fazer upload do avatar"
+                      previewClassName="w-20 h-20 rounded-full"
                     />
                   </div>
 
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      URL da Capa
+                      Foto de Capa
                     </Label>
-                    <Input
+                    <ImageUpload
                       value={pageData.coverImage}
-                      onChange={(e) => updatePageData({ coverImage: e.target.value })}
-                      className="h-10 text-sm font-mono"
-                      placeholder="https://..."
+                      onChange={(url) => updatePageData({ coverImage: url })}
+                      placeholder="Fazer upload da capa"
+                      previewClassName="w-full h-24 rounded-lg"
                     />
                   </div>
 
@@ -446,6 +455,68 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                         />
                       </div>
                     </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Posts Tab */}
+              <TabsContent value="posts" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                      Posts Bloqueados ({pageData.posts.length})
+                    </Label>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Adicione fotos ou videos que aparecerao com blur e cadeado. Perfeito para mostrar conteudo exclusivo.
+                  </p>
+
+                  {/* Upload de novo post */}
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                      Adicionar Post
+                    </Label>
+                    <ImageUpload
+                      value=""
+                      onChange={(url) => {
+                        if (url) {
+                          const newPost: PrivacyPost = {
+                            id: Date.now().toString(),
+                            type: url.includes("video") ? "video" : "image",
+                            url
+                          }
+                          updatePageData({ posts: [...pageData.posts, newPost] })
+                        }
+                      }}
+                      accept="image/*,video/*"
+                      placeholder="Clique para adicionar foto ou video"
+                      previewClassName="h-32"
+                      showPreview={false}
+                    />
+                  </div>
+
+                  {/* Lista de posts */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {pageData.posts.map((post) => (
+                      <div key={post.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
+                        {post.type === "video" ? (
+                          <video src={post.url} className="w-full h-full object-cover" muted />
+                        ) : (
+                          <img src={post.url} alt="" className="w-full h-full object-cover" />
+                        )}
+                        {/* Overlay blur preview */}
+                        <div className="absolute inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center">
+                          <Lock className="w-6 h-6 text-white/80" />
+                        </div>
+                        {/* Delete button */}
+                        <button
+                          onClick={() => updatePageData({ posts: pageData.posts.filter(p => p.id !== post.id) })}
+                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </TabsContent>
@@ -609,35 +680,33 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                       </div>
                     </div>
                   </div>
-                </div>
-              </TabsContent>
 
-              {/* Config Tab */}
-              <TabsContent value="config" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
-                <div className="flex flex-col gap-5">
-                  <div>
+                  <div className="border-t pt-4">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Nome da Pagina
+                      Configuracoes da Pagina
                     </Label>
-                    <Input
-                      value={siteName}
-                      onChange={(e) => { setSiteName(e.target.value); setSaved(false) }}
-                      placeholder="Ex: Privacy MilaHot"
-                      className="h-10 text-sm"
-                    />
-                  </div>
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Slug (URL)
-                    </Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-400">/s/</span>
-                      <Input
-                        value={siteSlug}
-                        onChange={(e) => { setSiteSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); setSaved(false) }}
-                        placeholder="milahot"
-                        className="h-10 text-sm flex-1"
-                      />
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Nome</label>
+                        <Input
+                          value={siteName}
+                          onChange={(e) => { setSiteName(e.target.value); setSaved(false) }}
+                          placeholder="Privacy MilaHot"
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Slug (URL)</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">/s/</span>
+                          <Input
+                            value={siteSlug}
+                            onChange={(e) => { setSiteSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); setSaved(false) }}
+                            placeholder="milahot"
+                            className="h-9 text-sm flex-1"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -774,17 +843,35 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                 </div>
               </div>
 
-              {/* Locked Post Preview */}
+              {/* Posts Grid com Blur */}
               <div className="px-4 pb-6">
-                <div 
-                  className="rounded-xl p-6 flex flex-col items-center justify-center"
-                  style={{ backgroundColor: `${pageData.colors.accent}10` }}
-                >
-                  <Lock className="w-8 h-8 mb-2" style={{ color: pageData.colors.subtext }} />
-                  <p className="text-[10px] text-center" style={{ color: pageData.colors.subtext }}>
-                    Assine para desbloquear o conteudo
-                  </p>
-                </div>
+                {pageData.posts.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    {pageData.posts.map((post) => (
+                      <div key={post.id} className="aspect-square relative rounded-md overflow-hidden">
+                        {post.type === "video" ? (
+                          <video src={post.url} className="w-full h-full object-cover" muted />
+                        ) : (
+                          <img src={post.url} alt="" className="w-full h-full object-cover" />
+                        )}
+                        {/* Blur overlay com cadeado */}
+                        <div className="absolute inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-white/80" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div 
+                    className="rounded-xl p-6 flex flex-col items-center justify-center"
+                    style={{ backgroundColor: `${pageData.colors.accent}10` }}
+                  >
+                    <Lock className="w-8 h-8 mb-2" style={{ color: pageData.colors.subtext }} />
+                    <p className="text-[10px] text-center" style={{ color: pageData.colors.subtext }}>
+                      Assine para desbloquear o conteudo
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
