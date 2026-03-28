@@ -201,27 +201,49 @@ export function PrivacyPage({ data }: { data: Partial<PrivacyPageData> }) {
 
       {/* Plans Section */}
       <div className="px-4 mt-6">
+        {/* Assinaturas - primeiro plano */}
         <h2 className="font-semibold mb-3" style={{ color: colors.text }}>Assinaturas</h2>
-        <div className="flex flex-col gap-2">
-          {subscriptions.map((plan, index) => (
-            <button
-              key={plan.id}
-              onClick={handlePlanClick}
-              className="w-full py-3 px-4 rounded-xl flex items-center justify-between transition-all hover:scale-[1.01]"
-              style={{ 
-                background: index === 0 
-                  ? `linear-gradient(90deg, ${colors.accent}40 0%, ${colors.accent}20 100%)`
-                  : `linear-gradient(90deg, ${colors.accent}20 0%, ${colors.accent}10 100%)`,
-                color: colors.text
-              }}
-            >
-              <span className="font-medium">
-                {plan.name} {plan.discount && `(${plan.discount})`}
-              </span>
-              <span className="font-semibold">R$ {plan.price}</span>
-            </button>
-          ))}
-        </div>
+        {subscriptions.length > 0 && (
+          <button
+            onClick={handlePlanClick}
+            className="w-full py-4 px-5 rounded-full flex items-center justify-between transition-all hover:scale-[1.01]"
+            style={{ 
+              background: `linear-gradient(90deg, #f97316 0%, #fed7aa 50%, #fef3e2 100%)`,
+              color: "#1a1a1a"
+            }}
+          >
+            <span className="font-medium">{subscriptions[0].name}</span>
+            <span className="font-semibold">{subscriptions[0].price}</span>
+          </button>
+        )}
+
+        {/* Promocoes - planos adicionais */}
+        {subscriptions.length > 1 && (
+          <div className="mt-5">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="font-semibold" style={{ color: colors.text }}>Promocoes</h2>
+              <svg className="w-4 h-4" style={{ color: colors.subtext }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 15l-6-6-6 6"/>
+              </svg>
+            </div>
+            <div className="flex flex-col gap-2">
+              {subscriptions.slice(1).map((plan) => (
+                <button
+                  key={plan.id}
+                  onClick={handlePlanClick}
+                  className="w-full py-4 px-5 rounded-full flex items-center justify-between transition-all hover:scale-[1.01]"
+                  style={{ 
+                    background: `linear-gradient(90deg, #fdba74 0%, #fed7aa 50%, #fef3e2 100%)`,
+                    color: "#1a1a1a"
+                  }}
+                >
+                  <span className="font-medium">{plan.name}</span>
+                  <span className="font-semibold">{plan.price}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats Bar */}
