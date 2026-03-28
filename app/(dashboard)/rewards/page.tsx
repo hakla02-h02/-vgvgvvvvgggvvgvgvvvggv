@@ -84,7 +84,7 @@ export default function RewardsPage() {
               </div>
               <div className="flex justify-between mt-2">
                 <span className="text-[11px] text-gray-400">R$ 0</span>
-                <span className="text-[11px] text-[#9ab300] font-semibold">{currentPremio.pontos}</span>
+                <span className="text-[11px] text-[#ccff00] font-bold">{currentPremio.pontos}</span>
               </div>
             </div>
 
@@ -124,7 +124,7 @@ export default function RewardsPage() {
                 </div>
 
                 {/* Meta */}
-                <span className="text-[#9ab300] text-xs font-bold tracking-widest mb-2">
+                <span className="text-[#ccff00] text-xs font-bold tracking-widest mb-2">
                   META {currentPremio.pontos}
                 </span>
 
@@ -160,7 +160,7 @@ export default function RewardsPage() {
                     Resgatar Premio
                   </button>
                 ) : (
-                  <div className="px-10 py-3.5 bg-gray-200 text-gray-500 font-medium text-sm rounded-full">
+                  <div className="px-10 py-3.5 bg-gray-200 text-gray-600 font-bold text-sm rounded-full">
                     Faltam R$ {(currentPremio.pontosNum - faturamentoAtual).toLocaleString("pt-BR")}
                   </div>
                 )}
