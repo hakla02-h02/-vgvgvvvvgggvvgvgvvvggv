@@ -138,35 +138,42 @@ export default function FluxosPage() {
 
     // Fetch flow_bots for each flow
     const flowIds = fetchedFlows.map(f => f.id)
-    console.log("[v0] Flow IDs:", flowIds)
     
     if (flowIds.length > 0) {
-      const { data: botsData, error: botsError } = await supabase
+      // Buscar flow_bots
+      const { data: flowBotsData } = await supabase
         .from("flow_bots")
-        .select(`
-          id,
-          flow_id,
-          bot_id,
-          bots:bot_id (
-            id,
-            username,
-            first_name
-          )
-        `)
+        .select("id, flow_id, bot_id")
         .in("flow_id", flowIds)
 
-      console.log("[v0] flow_bots data:", botsData)
-      console.log("[v0] flow_bots error:", botsError)
+      if (flowBotsData && flowBotsData.length > 0) {
+        // Buscar dados dos bots
+        const botIds = [...new Set(flowBotsData.map(fb => fb.bot_id))]
+        const { data: botsInfo } = await supabase
+          .from("bots")
+          .select("id, name, username")
+          .in("id", botIds)
 
-      if (botsData && botsData.length > 0) {
+        const botsMap: Record<string, { id: string; name: string; username?: string }> = {}
+        if (botsInfo) {
+          for (const bot of botsInfo) {
+            botsMap[bot.id] = bot
+          }
+        }
+
+        // Agrupar por flow_id
         const grouped: Record<string, FlowBot[]> = {}
         let totalLinked = 0
-        for (const fb of botsData) {
+        for (const fb of flowBotsData) {
           if (!grouped[fb.flow_id]) grouped[fb.flow_id] = []
-          grouped[fb.flow_id].push(fb as unknown as FlowBot)
+          grouped[fb.flow_id].push({
+            id: fb.id,
+            flow_id: fb.flow_id,
+            bot_id: fb.bot_id,
+            bots: botsMap[fb.bot_id] || null
+          } as FlowBot)
           totalLinked++
         }
-        console.log("[v0] Grouped flow_bots:", grouped)
         setFlowBots(grouped)
         setStats(prev => ({ ...prev, linkedBots: totalLinked }))
       }
@@ -194,7 +201,6 @@ export default function FluxosPage() {
   // Flow card - Design moderno com metricas visuais
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
-    console.log("[v0] FlowCard render - flow.id:", flow.id, "flowBots state:", flowBots, "bots for this flow:", bots)
     const isBasic = flow.flow_type !== "n8n"
     
     // Mock stats for now - these would come from real data
