@@ -1,19 +1,14 @@
 "use client"
 
 import { useState, useEffect, use } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { cn } from "@/lib/utils"
 import { 
   ChevronLeft, 
-  Plus, 
-  Trash2, 
-  Image as ImageIcon,
-  Type,
-  FileText,
   Palette,
   Save,
   Check,
@@ -22,84 +17,133 @@ import {
   ExternalLink,
   Settings,
   Link2,
+  Type,
+  Image as ImageIcon,
+  Upload,
 } from "lucide-react"
 import { toast } from "sonner"
 
-// Types
-export type PresellSection = {
-  id: string
-  type: "headline" | "text" | "image" | "cta"
-  content: string
-  settings?: {
-    buttonUrl?: string
-    buttonText?: string
-    imageUrl?: string
-    align?: "left" | "center" | "right"
-  }
-}
-
-export type PresellPageData = {
+// Types para cada tipo de presell
+type AgeVerificationData = {
   headline: string
-  subheadline: string
-  sections: PresellSection[]
-  cta_text: string
-  cta_url: string
-  colors: {
-    background: string
-    text: string
-    accent: string
-    button: string
-    buttonText: string
+  yesButtonText: string
+  noButtonText: string
+  yesButtonUrl: string
+  noButtonUrl: string
+  background: {
+    type: "color" | "image"
+    color: string
+    imageDesktop: string
+    imageMobile: string
   }
 }
 
-const defaultColors = {
-  background: "#ffffff",
-  text: "#111111",
-  accent: "#f97316",
-  button: "#f97316",
-  buttonText: "#ffffff"
+type ThankYouData = {
+  headline: string
+  description: string
+  buttonText: string
+  buttonUrl: string
+  showFooter: boolean
+  footerText: string
+  footerLinkText: string
+  footerLinkUrl: string
+  background: {
+    type: "color" | "image"
+    color: string
+    gradientFrom: string
+    gradientTo: string
+  }
+  buttonColor: string
 }
 
-const colorPresets = [
-  { bg: "#ffffff", text: "#111111", accent: "#f97316", btn: "#f97316", btnText: "#ffffff" },
-  { bg: "#0f172a", text: "#ffffff", accent: "#f97316", btn: "#f97316", btnText: "#ffffff" },
-  { bg: "#fef3c7", text: "#451a03", accent: "#d97706", btn: "#d97706", btnText: "#ffffff" },
-  { bg: "#ecfdf5", text: "#064e3b", accent: "#10b981", btn: "#10b981", btnText: "#ffffff" },
-  { bg: "#fef2f2", text: "#7f1d1d", accent: "#ef4444", btn: "#ef4444", btnText: "#ffffff" },
-  { bg: "#f5f3ff", text: "#4c1d95", accent: "#8b5cf6", btn: "#8b5cf6", btnText: "#ffffff" },
-]
+type RedirectData = {
+  redirectUrl: string
+  delay: number
+  message: string
+  fallbackText: string
+  background: {
+    type: "color" | "image"
+    color: string
+    imageDesktop: string
+    imageMobile: string
+  }
+}
+
+type PresellType = "age-verification" | "thank-you" | "redirect"
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
+const defaultAgeVerification: AgeVerificationData = {
+  headline: "Voce tem 18 anos ou mais?",
+  yesButtonText: "TENHO 18",
+  noButtonText: "NAO TENHO 18",
+  yesButtonUrl: "",
+  noButtonUrl: "",
+  background: {
+    type: "color",
+    color: "#ffffff",
+    imageDesktop: "",
+    imageMobile: "",
+  }
+}
+
+const defaultThankYou: ThankYouData = {
+  headline: "Muito Obrigado!",
+  description: "Sua acao foi concluida com sucesso. Agradecemos pela confianca e por fazer parte da nossa jornada. Estamos muito felizes em ter voce conosco!",
+  buttonText: "Voltar para o Inicio",
+  buttonUrl: "",
+  showFooter: true,
+  footerText: "Precisa de ajuda?",
+  footerLinkText: "Entre em contato",
+  footerLinkUrl: "",
+  background: {
+    type: "color",
+    color: "#f8fafc",
+    gradientFrom: "#f8fafc",
+    gradientTo: "#e2e8f0",
+  },
+  buttonColor: "#2563eb",
+}
+
+const defaultRedirect: RedirectData = {
+  redirectUrl: "",
+  delay: 2,
+  message: "Redirecionando...",
+  fallbackText: "Clique aqui se nao for redirecionado",
+  background: {
+    type: "color",
+    color: "#0088cc",
+    imageDesktop: "",
+    imageMobile: "",
+  }
+}
+
 export default function PresellEditorPage({ params }: PageProps) {
   const { id } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
   
   const [loading, setLoading] = useState(true)
   const [site, setSite] = useState<any>(null)
-  const [pageData, setPageData] = useState<PresellPageData>({
-    headline: "Sua Headline Principal",
-    subheadline: "Subheadline que complementa a headline",
-    sections: [
-      { id: "1", type: "text", content: "Comece a escrever seu conteudo aqui..." }
-    ],
-    cta_text: "Quero Saber Mais",
-    cta_url: "https://",
-    colors: defaultColors,
-  })
+  const [presellType, setPresellType] = useState<PresellType>("age-verification")
+  const [ageData, setAgeData] = useState<AgeVerificationData>(defaultAgeVerification)
+  const [thankYouData, setThankYouData] = useState<ThankYouData>(defaultThankYou)
+  const [redirectData, setRedirectData] = useState<RedirectData>(defaultRedirect)
   const [activeTab, setActiveTab] = useState("content")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [siteName, setSiteName] = useState("")
   const [siteSlug, setSiteSlug] = useState("")
 
-  // Carregar dados do site
   useEffect(() => {
+    const typeParam = searchParams.get("type") as PresellType | null
+    if (typeParam && ["age-verification", "thank-you", "redirect"].includes(typeParam)) {
+      setPresellType(typeParam)
+    }
     fetchSite()
-  }, [id])
+  }, [id, searchParams])
 
   const fetchSite = async () => {
     try {
@@ -111,9 +155,21 @@ export default function PresellEditorPage({ params }: PageProps) {
         setSite(data.site)
         setSiteName(data.site.nome || "")
         setSiteSlug(data.site.slug || "")
-        // Se houver dados salvos, carrega-los
+        
+        // Carregar dados salvos
         if (data.site.page_data) {
-          setPageData(data.site.page_data)
+          if (data.site.presell_type) {
+            setPresellType(data.site.presell_type)
+          }
+          if (data.site.page_data.ageData) {
+            setAgeData({ ...defaultAgeVerification, ...data.site.page_data.ageData })
+          }
+          if (data.site.page_data.thankYouData) {
+            setThankYouData({ ...defaultThankYou, ...data.site.page_data.thankYouData })
+          }
+          if (data.site.page_data.redirectData) {
+            setRedirectData({ ...defaultRedirect, ...data.site.page_data.redirectData })
+          }
         }
       }
     } catch (error) {
@@ -124,41 +180,15 @@ export default function PresellEditorPage({ params }: PageProps) {
     }
   }
 
-  const updatePageData = (updates: Partial<PresellPageData>) => {
-    setPageData(prev => ({ ...prev, ...updates }))
-    setSaved(false)
-  }
-
-  const addSection = (type: PresellSection["type"]) => {
-    const newSection: PresellSection = {
-      id: Date.now().toString(),
-      type,
-      content: type === "headline" ? "Nova Headline" : 
-               type === "text" ? "Novo paragrafo de texto..." :
-               type === "cta" ? "Clique Aqui" : "",
-      settings: type === "cta" ? { buttonUrl: "https://", buttonText: "Clique Aqui" } :
-                type === "image" ? { imageUrl: "" } : {}
-    }
-    updatePageData({ sections: [...pageData.sections, newSection] })
-  }
-
-  const updateSection = (sectionId: string, updates: Partial<PresellSection>) => {
-    updatePageData({
-      sections: pageData.sections.map(section => 
-        section.id === sectionId ? { ...section, ...updates } : section
-      )
-    })
-  }
-
-  const removeSection = (sectionId: string) => {
-    updatePageData({
-      sections: pageData.sections.filter(section => section.id !== sectionId)
-    })
-  }
-
   const handleSave = async () => {
     try {
       setIsSaving(true)
+      
+      const pageData = {
+        ageData,
+        thankYouData,
+        redirectData,
+      }
       
       const res = await fetch(`/api/dragon-bio/${id}`, {
         method: "PUT",
@@ -167,6 +197,7 @@ export default function PresellEditorPage({ params }: PageProps) {
           nome: siteName,
           slug: siteSlug,
           page_data: pageData,
+          presell_type: presellType,
         }),
       })
 
@@ -186,16 +217,22 @@ export default function PresellEditorPage({ params }: PageProps) {
     }
   }
 
-  const applyColorPreset = (preset: typeof colorPresets[0]) => {
-    updatePageData({
-      colors: {
-        background: preset.bg,
-        text: preset.text,
-        accent: preset.accent,
-        button: preset.btn,
-        buttonText: preset.btnText,
-      }
-    })
+  const getTypeLabel = () => {
+    switch (presellType) {
+      case "age-verification": return "Verificacao de Idade"
+      case "thank-you": return "Pagina de Obrigado"
+      case "redirect": return "Redirecionamento"
+      default: return "Presell"
+    }
+  }
+
+  const getTypeGradient = () => {
+    switch (presellType) {
+      case "age-verification": return "from-red-500 to-orange-500"
+      case "thank-you": return "from-green-500 to-emerald-500"
+      case "redirect": return "from-blue-500 to-cyan-500"
+      default: return "from-orange-500 to-amber-400"
+    }
   }
 
   if (loading) {
@@ -220,12 +257,28 @@ export default function PresellEditorPage({ params }: PageProps) {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-500 to-amber-400 flex items-center justify-center">
-              <FileText className="h-4 w-4 text-white" />
+            <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${getTypeGradient()} flex items-center justify-center`}>
+              {presellType === "age-verification" && (
+                <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              )}
+              {presellType === "thank-you" && (
+                <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 13l4 4L19 7"/>
+                </svg>
+              )}
+              {presellType === "redirect" && (
+                <svg viewBox="0 0 24 24" className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              )}
             </div>
             <div>
-              <h1 className="font-semibold text-gray-900 text-sm">{site?.nome || "Presell"}</h1>
-              <p className="text-[11px] text-gray-500">/s/{site?.slug}</p>
+              <h1 className="font-semibold text-gray-900 text-sm">{siteName || getTypeLabel()}</h1>
+              <p className="text-[11px] text-gray-500">/s/{siteSlug}</p>
             </div>
           </div>
         </div>
@@ -233,7 +286,7 @@ export default function PresellEditorPage({ params }: PageProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => window.open(`/s/${site?.slug}`, '_blank')}
+            onClick={() => window.open(`/s/${siteSlug}`, '_blank')}
             className="h-9 px-3 rounded-lg text-sm"
           >
             <Eye className="w-3.5 h-3.5 mr-1.5" />
@@ -243,7 +296,7 @@ export default function PresellEditorPage({ params }: PageProps) {
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="h-9 px-4 rounded-lg bg-orange-500 text-white hover:bg-orange-600 text-sm"
+            className={`h-9 px-4 rounded-lg text-white text-sm bg-gradient-to-r ${getTypeGradient()} hover:opacity-90`}
           >
             {isSaving ? (
               <span className="flex items-center gap-2">
@@ -290,265 +343,422 @@ export default function PresellEditorPage({ params }: PageProps) {
             <div className="flex-1 min-h-0 relative">
               {/* Content Tab */}
               <TabsContent value="content" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
-                <div className="flex flex-col gap-5">
-                  {/* Headline */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Headline Principal
-                    </Label>
-                    <Input
-                      value={pageData.headline}
-                      onChange={(e) => updatePageData({ headline: e.target.value })}
-                      className="h-10 text-sm font-semibold"
-                      placeholder="Sua headline aqui"
-                    />
-                  </div>
-
-                  {/* Subheadline */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Subheadline
-                    </Label>
-                    <Input
-                      value={pageData.subheadline}
-                      onChange={(e) => updatePageData({ subheadline: e.target.value })}
-                      className="h-10 text-sm"
-                      placeholder="Subheadline complementar"
-                    />
-                  </div>
-
-                  {/* Sections */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                        Secoes ({pageData.sections.length})
+                {presellType === "age-verification" && (
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Headline (Pergunta)
                       </Label>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      <Button variant="outline" size="sm" onClick={() => addSection("text")} className="h-8 text-xs">
-                        <Type className="w-3 h-3 mr-1" /> Texto
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => addSection("image")} className="h-8 text-xs">
-                        <ImageIcon className="w-3 h-3 mr-1" /> Imagem
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => addSection("cta")} className="h-8 text-xs">
-                        <ExternalLink className="w-3 h-3 mr-1" /> CTA
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-col gap-3">
-                      {pageData.sections.map((section) => (
-                        <div key={section.id} className="border border-gray-200 rounded-lg p-3 bg-gray-50">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className={cn(
-                              "text-[10px] font-medium px-2 py-0.5 rounded",
-                              section.type === "text" && "bg-blue-100 text-blue-700",
-                              section.type === "image" && "bg-purple-100 text-purple-700",
-                              section.type === "cta" && "bg-orange-100 text-orange-700"
-                            )}>
-                              {section.type === "text" ? "Texto" : section.type === "image" ? "Imagem" : "CTA"}
-                            </span>
-                            <button
-                              onClick={() => removeSection(section.id)}
-                              className="text-gray-400 hover:text-red-500 transition-colors"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          {section.type === "text" && (
-                            <textarea
-                              value={section.content}
-                              onChange={(e) => updateSection(section.id, { content: e.target.value })}
-                              className="w-full h-24 px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-orange-500/20"
-                              placeholder="Escreva seu texto..."
-                            />
-                          )}
-
-                          {section.type === "image" && (
-                            <Input
-                              value={section.settings?.imageUrl || ""}
-                              onChange={(e) => updateSection(section.id, { settings: { ...section.settings, imageUrl: e.target.value } })}
-                              placeholder="URL da imagem"
-                              className="h-9 text-xs"
-                            />
-                          )}
-
-                          {section.type === "cta" && (
-                            <div className="flex flex-col gap-2">
-                              <Input
-                                value={section.settings?.buttonText || ""}
-                                onChange={(e) => updateSection(section.id, { settings: { ...section.settings, buttonText: e.target.value } })}
-                                placeholder="Texto do botao"
-                                className="h-9 text-xs"
-                              />
-                              <Input
-                                value={section.settings?.buttonUrl || ""}
-                                onChange={(e) => updateSection(section.id, { settings: { ...section.settings, buttonUrl: e.target.value } })}
-                                placeholder="https://..."
-                                className="h-9 text-xs font-mono"
-                              />
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Main CTA */}
-                  <div className="border-t border-gray-200 pt-5">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
-                      CTA Principal (Rodape)
-                    </Label>
-                    <div className="flex flex-col gap-3">
                       <Input
-                        value={pageData.cta_text}
-                        onChange={(e) => updatePageData({ cta_text: e.target.value })}
-                        placeholder="Texto do botao"
+                        value={ageData.headline}
+                        onChange={(e) => { setAgeData({ ...ageData, headline: e.target.value }); setSaved(false) }}
                         className="h-10 text-sm"
-                      />
-                      <Input
-                        value={pageData.cta_url}
-                        onChange={(e) => updatePageData({ cta_url: e.target.value })}
-                        placeholder="https://..."
-                        className="h-10 text-sm font-mono"
+                        placeholder="Voce tem 18 anos ou mais?"
                       />
                     </div>
+
+                    <div className="border-t border-gray-100 pt-5">
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                        Botao SIM (+18)
+                      </Label>
+                      <div className="flex flex-col gap-3">
+                        <Input
+                          value={ageData.yesButtonText}
+                          onChange={(e) => { setAgeData({ ...ageData, yesButtonText: e.target.value }); setSaved(false) }}
+                          className="h-10 text-sm"
+                          placeholder="Texto do botao"
+                        />
+                        <Input
+                          value={ageData.yesButtonUrl}
+                          onChange={(e) => { setAgeData({ ...ageData, yesButtonUrl: e.target.value }); setSaved(false) }}
+                          className="h-10 text-sm font-mono"
+                          placeholder="https://link-de-destino.com"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-5">
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                        Botao NAO (-18)
+                      </Label>
+                      <div className="flex flex-col gap-3">
+                        <Input
+                          value={ageData.noButtonText}
+                          onChange={(e) => { setAgeData({ ...ageData, noButtonText: e.target.value }); setSaved(false) }}
+                          className="h-10 text-sm"
+                          placeholder="Texto do botao"
+                        />
+                        <Input
+                          value={ageData.noButtonUrl}
+                          onChange={(e) => { setAgeData({ ...ageData, noButtonUrl: e.target.value }); setSaved(false) }}
+                          className="h-10 text-sm font-mono"
+                          placeholder="https://link-alternativo.com"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {presellType === "thank-you" && (
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Headline
+                      </Label>
+                      <Input
+                        value={thankYouData.headline}
+                        onChange={(e) => { setThankYouData({ ...thankYouData, headline: e.target.value }); setSaved(false) }}
+                        className="h-10 text-sm"
+                        placeholder="Muito Obrigado!"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Descricao
+                      </Label>
+                      <Textarea
+                        value={thankYouData.description}
+                        onChange={(e) => { setThankYouData({ ...thankYouData, description: e.target.value }); setSaved(false) }}
+                        className="text-sm resize-none"
+                        rows={4}
+                        placeholder="Sua mensagem de agradecimento..."
+                      />
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-5">
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                        Botao Principal
+                      </Label>
+                      <div className="flex flex-col gap-3">
+                        <Input
+                          value={thankYouData.buttonText}
+                          onChange={(e) => { setThankYouData({ ...thankYouData, buttonText: e.target.value }); setSaved(false) }}
+                          className="h-10 text-sm"
+                          placeholder="Texto do botao"
+                        />
+                        <Input
+                          value={thankYouData.buttonUrl}
+                          onChange={(e) => { setThankYouData({ ...thankYouData, buttonUrl: e.target.value }); setSaved(false) }}
+                          className="h-10 text-sm font-mono"
+                          placeholder="https://..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-5">
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                        Rodape (Opcional)
+                      </Label>
+                      <div className="flex flex-col gap-3">
+                        <Input
+                          value={thankYouData.footerText}
+                          onChange={(e) => { setThankYouData({ ...thankYouData, footerText: e.target.value }); setSaved(false) }}
+                          className="h-10 text-sm"
+                          placeholder="Precisa de ajuda?"
+                        />
+                        <div className="flex gap-2">
+                          <Input
+                            value={thankYouData.footerLinkText}
+                            onChange={(e) => { setThankYouData({ ...thankYouData, footerLinkText: e.target.value }); setSaved(false) }}
+                            className="h-10 text-sm flex-1"
+                            placeholder="Texto do link"
+                          />
+                          <Input
+                            value={thankYouData.footerLinkUrl}
+                            onChange={(e) => { setThankYouData({ ...thankYouData, footerLinkUrl: e.target.value }); setSaved(false) }}
+                            className="h-10 text-sm font-mono flex-1"
+                            placeholder="https://..."
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {presellType === "redirect" && (
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        URL de Redirecionamento
+                      </Label>
+                      <Input
+                        value={redirectData.redirectUrl}
+                        onChange={(e) => { setRedirectData({ ...redirectData, redirectUrl: e.target.value }); setSaved(false) }}
+                        className="h-10 text-sm font-mono"
+                        placeholder="https://destino.com"
+                      />
+                    </div>
+
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Delay (segundos)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={redirectData.delay}
+                        onChange={(e) => { setRedirectData({ ...redirectData, delay: parseInt(e.target.value) || 0 }); setSaved(false) }}
+                        className="h-10 text-sm"
+                        min={0}
+                        max={30}
+                      />
+                    </div>
+
+                    <div>
+  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+  Mensagem
+  </Label>
+  <Input
+  value={redirectData.message}
+  onChange={(e) => { setRedirectData({ ...redirectData, message: e.target.value }); setSaved(false) }}
+  className="h-10 text-sm"
+  placeholder="Redirecionando..."
+  />
+  </div>
+
+  <div>
+  <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+  Texto do Link Fallback
+  </Label>
+  <Input
+  value={redirectData.fallbackText}
+  onChange={(e) => { setRedirectData({ ...redirectData, fallbackText: e.target.value }); setSaved(false) }}
+  className="h-10 text-sm"
+  placeholder="Clique aqui se nao for redirecionado"
+  />
+  </div>
+  </div>
+                )}
               </TabsContent>
 
               {/* Visual Tab */}
               <TabsContent value="visual" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
-                <div className="flex flex-col gap-5">
-                  {/* Color Presets */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Paleta de Cores
-                    </Label>
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {colorPresets.map((preset, index) => (
+                {presellType === "age-verification" && (
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Tipo de Fundo
+                      </Label>
+                      <div className="flex gap-2">
                         <button
-                          key={index}
-                          onClick={() => applyColorPreset(preset)}
-                          className={cn(
-                            "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
-                            pageData.colors.background === preset.bg && pageData.colors.accent === preset.accent
-                              ? "border-orange-500 ring-2 ring-orange-500/20"
-                              : "border-gray-100"
-                          )}
-                          style={{ backgroundColor: preset.bg }}
+                          onClick={() => { setAgeData({ ...ageData, background: { ...ageData.background, type: "color" } }); setSaved(false) }}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${ageData.background.type === "color" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
                         >
-                          <div className="w-full h-full flex items-end justify-center pb-1">
-                            <div 
-                              className="w-3/4 h-1 rounded-full"
-                              style={{ backgroundColor: preset.btn }}
+                          Cor
+                        </button>
+                        <button
+                          onClick={() => { setAgeData({ ...ageData, background: { ...ageData.background, type: "image" } }); setSaved(false) }}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${ageData.background.type === "image" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                        >
+                          Imagem
+                        </button>
+                      </div>
+                    </div>
+
+                    {ageData.background.type === "color" && (
+                      <div>
+                        <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                          Cor de Fundo
+                        </Label>
+                        <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3">
+                          <input
+                            type="color"
+                            value={ageData.background.color}
+                            onChange={(e) => { setAgeData({ ...ageData, background: { ...ageData.background, color: e.target.value } }); setSaved(false) }}
+                            className="w-10 h-10 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={ageData.background.color}
+                            onChange={(e) => { setAgeData({ ...ageData, background: { ...ageData.background, color: e.target.value } }); setSaved(false) }}
+                            className="flex-1 h-10 bg-transparent border-0 font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {ageData.background.type === "image" && (
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                            Imagem Desktop
+                          </Label>
+                          <Input
+                            value={ageData.background.imageDesktop}
+                            onChange={(e) => { setAgeData({ ...ageData, background: { ...ageData.background, imageDesktop: e.target.value } }); setSaved(false) }}
+                            className="h-10 text-sm font-mono"
+                            placeholder="https://imagem-desktop.com/bg.jpg"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                            Imagem Mobile
+                          </Label>
+                          <Input
+                            value={ageData.background.imageMobile}
+                            onChange={(e) => { setAgeData({ ...ageData, background: { ...ageData.background, imageMobile: e.target.value } }); setSaved(false) }}
+                            className="h-10 text-sm font-mono"
+                            placeholder="https://imagem-mobile.com/bg.jpg"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {presellType === "thank-you" && (
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Cor do Fundo (Gradiente)
+                      </Label>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="text-[10px] text-gray-400 mb-1 block">De</label>
+                          <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                            <input
+                              type="color"
+                              value={thankYouData.background.gradientFrom}
+                              onChange={(e) => { setThankYouData({ ...thankYouData, background: { ...thankYouData.background, gradientFrom: e.target.value } }); setSaved(false) }}
+                              className="w-8 h-8 rounded cursor-pointer border-0"
+                            />
+                            <Input
+                              value={thankYouData.background.gradientFrom}
+                              onChange={(e) => { setThankYouData({ ...thankYouData, background: { ...thankYouData.background, gradientFrom: e.target.value } }); setSaved(false) }}
+                              className="flex-1 h-8 bg-transparent border-0 font-mono text-[10px]"
                             />
                           </div>
-                        </button>
-                      ))}
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-gray-400 mb-1 block">Para</label>
+                          <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-2">
+                            <input
+                              type="color"
+                              value={thankYouData.background.gradientTo}
+                              onChange={(e) => { setThankYouData({ ...thankYouData, background: { ...thankYouData.background, gradientTo: e.target.value } }); setSaved(false) }}
+                              className="w-8 h-8 rounded cursor-pointer border-0"
+                            />
+                            <Input
+                              value={thankYouData.background.gradientTo}
+                              onChange={(e) => { setThankYouData({ ...thankYouData, background: { ...thankYouData.background, gradientTo: e.target.value } }); setSaved(false) }}
+                              className="flex-1 h-8 bg-transparent border-0 font-mono text-[10px]"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Custom Colors */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Cores Personalizadas
-                    </Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Fundo</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.background}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.background}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Texto</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.text}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.text}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.button}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, button: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.button}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, button: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Texto Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.buttonText}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, buttonText: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.buttonText}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, buttonText: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Cor do Botao
+                      </Label>
+                      <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3">
+                        <input
+                          type="color"
+                          value={thankYouData.buttonColor}
+                          onChange={(e) => { setThankYouData({ ...thankYouData, buttonColor: e.target.value }); setSaved(false) }}
+                          className="w-10 h-10 rounded cursor-pointer border-0"
+                        />
+                        <Input
+                          value={thankYouData.buttonColor}
+                          onChange={(e) => { setThankYouData({ ...thankYouData, buttonColor: e.target.value }); setSaved(false) }}
+                          className="flex-1 h-10 bg-transparent border-0 font-mono text-sm"
+                        />
                       </div>
                     </div>
                   </div>
-                </div>
+                )}
+
+  {presellType === "redirect" && (() => {
+                    const bg = redirectData.background || { type: "color", color: "#0088cc", imageDesktop: "", imageMobile: "" }
+                    return (
+                  <div className="flex flex-col gap-5">
+                    <div>
+                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                        Tipo de Fundo
+                      </Label>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => { setRedirectData({ ...redirectData, background: { ...bg, type: "color" } }); setSaved(false) }}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${bg.type === "color" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                        >
+                          Cor
+                        </button>
+                        <button
+                          onClick={() => { setRedirectData({ ...redirectData, background: { ...bg, type: "image" } }); setSaved(false) }}
+                          className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${bg.type === "image" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}
+                        >
+                          Imagem
+                        </button>
+                      </div>
+                    </div>
+
+                    {bg.type === "color" && (
+                      <div>
+                        <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                          Cor de Fundo
+                        </Label>
+                        <div className="flex items-center gap-2 bg-gray-50 rounded-lg p-3">
+                          <input
+                            type="color"
+                            value={bg.color}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, color: e.target.value } }); setSaved(false) }}
+                            className="w-10 h-10 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={bg.color}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, color: e.target.value } }); setSaved(false) }}
+                            className="flex-1 h-10 bg-transparent border-0 font-mono text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {bg.type === "image" && (
+                      <div className="flex flex-col gap-4">
+                        <div>
+                          <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                            Imagem Desktop
+                          </Label>
+                          <Input
+                            value={bg.imageDesktop}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, imageDesktop: e.target.value } }); setSaved(false) }}
+                            className="h-10 text-sm font-mono"
+                            placeholder="https://imagem-desktop.com/bg.jpg"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                            Imagem Mobile
+                          </Label>
+                          <Input
+                            value={bg.imageMobile}
+                            onChange={(e) => { setRedirectData({ ...redirectData, background: { ...bg, imageMobile: e.target.value } }); setSaved(false) }}
+                            className="h-10 text-sm font-mono"
+                            placeholder="https://imagem-mobile.com/bg.jpg"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                    )
+  })()}
               </TabsContent>
 
               {/* Details Tab */}
               <TabsContent value="details" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-5">
-                  {/* Page Name */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                       Nome da Pagina
                     </Label>
                     <Input
                       value={siteName}
-                      onChange={(e) => {
-                        setSiteName(e.target.value)
-                        setSaved(false)
-                      }}
-                      placeholder="Ex: Presell Produto X"
+                      onChange={(e) => { setSiteName(e.target.value); setSaved(false) }}
+                      placeholder="Ex: Verificacao Produto X"
                       className="h-10 text-sm"
                     />
-                    <p className="text-[10px] text-gray-400 mt-1.5">
-                      Nome para identificar sua pagina no painel
-                    </p>
                   </div>
 
-                  {/* Slug/URL */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                       URL da Pagina (Slug)
@@ -557,17 +767,13 @@ export default function PresellEditorPage({ params }: PageProps) {
                       <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
                       <Input
                         value={siteSlug}
-                        onChange={(e) => {
-                          setSiteSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))
-                          setSaved(false)
-                        }}
-                        placeholder="minha-presell"
+                        onChange={(e) => { setSiteSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')); setSaved(false) }}
+                        placeholder="minha-pagina"
                         className="flex-1 h-10 bg-transparent border-0 px-0 focus-visible:ring-0 text-sm"
                       />
                     </div>
                   </div>
 
-                  {/* Quick Actions */}
                   <div className="border-t border-gray-100 pt-5 mt-2">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
                       Acoes Rapidas
@@ -605,74 +811,116 @@ export default function PresellEditorPage({ params }: PageProps) {
 
         {/* Preview Area */}
         <div className="flex-1 bg-gray-100 flex items-center justify-center p-6 overflow-auto">
-          <div 
-            className="w-full max-w-2xl min-h-[600px] rounded-lg shadow-xl overflow-hidden"
-            style={{ backgroundColor: pageData.colors.background }}
-          >
-            <div className="p-8">
-              {/* Headline */}
-              <h1 
-                className="text-3xl font-bold mb-4 text-center"
-                style={{ color: pageData.colors.text }}
-              >
-                {pageData.headline || "Sua Headline Principal"}
-              </h1>
-
-              {/* Subheadline */}
-              <p 
-                className="text-lg mb-8 text-center opacity-80"
-                style={{ color: pageData.colors.text }}
-              >
-                {pageData.subheadline || "Subheadline complementar"}
-              </p>
-
-              {/* Sections */}
-              <div className="flex flex-col gap-6">
-                {pageData.sections.map((section) => (
-                  <div key={section.id}>
-                    {section.type === "text" && (
-                      <p 
-                        className="text-base leading-relaxed whitespace-pre-wrap"
-                        style={{ color: pageData.colors.text }}
-                      >
-                        {section.content}
-                      </p>
-                    )}
-                    {section.type === "image" && section.settings?.imageUrl && (
-                      <img 
-                        src={section.settings.imageUrl} 
-                        alt="" 
-                        className="w-full rounded-lg"
-                      />
-                    )}
-                    {section.type === "cta" && (
-                      <div className="text-center">
-                        <button 
-                          className="px-8 py-4 rounded-lg text-lg font-semibold transition-all hover:scale-105"
-                          style={{ 
-                            backgroundColor: pageData.colors.button,
-                            color: pageData.colors.buttonText
-                          }}
-                        >
-                          {section.settings?.buttonText || "Clique Aqui"}
+          {/* Phone Frame */}
+          <div className="relative">
+            <div className="w-[375px] h-[667px] bg-black rounded-[40px] p-2 shadow-2xl">
+              <div className="w-full h-full rounded-[32px] overflow-hidden relative">
+                {/* Preview Content */}
+                {presellType === "age-verification" && (
+                  <div 
+                    className="w-full h-full flex items-center justify-center p-6"
+                    style={{
+                      backgroundColor: ageData.background.type === "color" ? ageData.background.color : undefined,
+                      backgroundImage: ageData.background.type === "image" && ageData.background.imageMobile ? `url(${ageData.background.imageMobile})` : undefined,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }}
+                  >
+                    <div className="max-w-md w-full p-6 text-center">
+                      <div className="mb-6 flex justify-center">
+                        <svg className="w-16 h-16 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                      </div>
+                      <h1 className="text-2xl font-extrabold mb-6 text-gray-800">
+                        {ageData.headline || "Voce tem 18 anos ou mais?"}
+                      </h1>
+                      <div className="flex flex-col gap-3">
+                        <button className="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors text-base w-full">
+                          {ageData.yesButtonText || "TENHO 18"}
+                        </button>
+                        <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-colors text-base w-full">
+                          {ageData.noButtonText || "NAO TENHO 18"}
                         </button>
                       </div>
-                    )}
+                    </div>
                   </div>
-                ))}
-              </div>
+                )}
 
-              {/* Main CTA */}
-              <div className="mt-12 text-center">
-                <button 
-                  className="px-10 py-5 rounded-lg text-xl font-bold transition-all hover:scale-105 shadow-lg"
-                  style={{ 
-                    backgroundColor: pageData.colors.button,
-                    color: pageData.colors.buttonText
-                  }}
-                >
-                  {pageData.cta_text || "Quero Saber Mais"}
-                </button>
+                {presellType === "thank-you" && (
+                  <div 
+                    className="w-full h-full flex items-center justify-center p-4"
+                    style={{
+                      background: `linear-gradient(135deg, ${thankYouData.background.gradientFrom} 0%, ${thankYouData.background.gradientTo} 100%)`
+                    }}
+                  >
+                    <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-6 text-center">
+                      <div className="mb-4 flex justify-center">
+                        <div className="bg-green-100 p-3 rounded-full">
+                          <svg className="w-10 h-10 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"/>
+                          </svg>
+                        </div>
+                      </div>
+                      <h1 className="text-2xl font-bold text-gray-800 mb-3">
+                        {thankYouData.headline || "Muito Obrigado!"}
+                      </h1>
+                      <p className="text-gray-600 mb-6 leading-relaxed text-sm">
+                        {thankYouData.description || "Sua acao foi concluida com sucesso."}
+                      </p>
+                      <button 
+                        className="w-full py-3 px-4 text-white font-semibold rounded-xl transition-colors shadow-lg text-sm"
+                        style={{ backgroundColor: thankYouData.buttonColor }}
+                      >
+                        {thankYouData.buttonText || "Voltar para o Inicio"}
+                      </button>
+                      {thankYouData.footerText && (
+                        <div className="mt-6 pt-4 border-t border-gray-100">
+                          <p className="text-xs text-gray-400">
+                            {thankYouData.footerText}{" "}
+                            <span className="text-blue-500">{thankYouData.footerLinkText}</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {presellType === "redirect" && (() => {
+                  const bg = redirectData.background || { type: "color", color: "#0088cc", imageDesktop: "", imageMobile: "" }
+                  return (
+                  <div 
+                    className="w-full h-full flex items-center justify-center bg-cover bg-center"
+                    style={{ 
+                      backgroundColor: bg.type === "color" ? bg.color : "#0088cc",
+                      backgroundImage: bg.type === "image" && bg.imageMobile ? `url(${bg.imageMobile})` : undefined
+                    }}
+                  >
+                    <div className="text-center">
+                      {/* Circulo com logo do Telegram */}
+                      <div 
+                        className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-5 shadow-xl"
+                        style={{ background: "linear-gradient(180deg, #24A1DE 0%, #1c82b1 100%)" }}
+                      >
+                        <img 
+                          src="/telegram-white.png" 
+                          alt="Telegram" 
+                          className="w-10 h-10 object-contain"
+                        />
+                      </div>
+                      {/* Spinner */}
+                      <div className="w-8 h-8 border-3 border-white/30 border-t-white rounded-full animate-spin mx-auto mb-4" />
+                      {/* Texto */}
+                      <p className="text-white text-base font-medium mb-3">
+                        {redirectData.message || "Redirecionando..."}
+                      </p>
+                      <p className="text-white/80 text-xs underline">
+                        {redirectData.fallbackText || "Clique aqui se nao for redirecionado"}
+                      </p>
+                    </div>
+                  </div>
+                  )
+                })()}
               </div>
             </div>
           </div>

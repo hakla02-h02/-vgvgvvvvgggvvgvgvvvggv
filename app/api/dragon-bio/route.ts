@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { userId, nome, slug, userEmail, userName } = body
+    const { userId, nome, slug, userEmail, userName, presell_type } = body
 
     if (!userId || !nome || !slug) {
       return NextResponse.json({ error: "userId, nome e slug são obrigatórios" }, { status: 400 })
@@ -56,7 +56,6 @@ export async function POST(request: Request) {
 
     if (userError) {
       console.error("Erro ao verificar/criar usuário:", userError)
-      // Continuar mesmo se der erro - o usuário pode já existir
     }
 
     // Verificar se slug já existe
@@ -71,30 +70,38 @@ export async function POST(request: Request) {
     }
 
     // Criar site com configurações padrão
+    const siteData: any = {
+      user_id: userId,
+      nome,
+      slug,
+      template: "minimal",
+      profile_name: nome,
+      profile_bio: "Sua bio aqui",
+      profile_image: null,
+    }
+
+    // Se for presell, adicionar presell_type
+    if (presell_type) {
+      siteData.presell_type = presell_type
+    }
+
     const { data: site, error } = await supabase
       .from("dragon_bio_sites")
-      .insert({
-        user_id: userId,
-        nome,
-        slug,
-        template: "minimal",
-        profile_name: nome,
-        profile_bio: "Sua bio aqui",
-        profile_image: null
-      })
+      .insert(siteData)
       .select()
       .single()
 
     if (error) throw error
 
-    // Criar links padrão
-    const defaultLinks = [
-      { site_id: site.id, title: "Instagram", url: "https://instagram.com", order_index: 0 },
-      { site_id: site.id, title: "YouTube", url: "https://youtube.com", order_index: 1 },
-      { site_id: site.id, title: "Twitter", url: "https://twitter.com", order_index: 2 },
-    ]
-
-    await supabase.from("dragon_bio_links").insert(defaultLinks)
+    // Criar links padrão apenas se NAO for presell
+    if (!presell_type) {
+      const defaultLinks = [
+        { site_id: site.id, title: "Instagram", url: "https://instagram.com", order_index: 0 },
+        { site_id: site.id, title: "YouTube", url: "https://youtube.com", order_index: 1 },
+        { site_id: site.id, title: "Twitter", url: "https://twitter.com", order_index: 2 },
+      ]
+      await supabase.from("dragon_bio_links").insert(defaultLinks)
+    }
 
     return NextResponse.json({ site })
   } catch (error: any) {

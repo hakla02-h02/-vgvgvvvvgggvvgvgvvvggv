@@ -6,90 +6,134 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
 import { cn } from "@/lib/utils"
 import { 
   ChevronLeft, 
   Plus, 
   Trash2, 
-  Image as ImageIcon,
   Type,
-  Target,
   Palette,
   Save,
   Check,
   Loader2,
   Eye,
-  ExternalLink,
   Settings,
-  Link2,
-  CheckCircle,
+  Instagram,
+  Globe,
+  ChevronUp,
+  Lock,
+  Heart,
+  Image as ImageIcon,
+  Video,
 } from "lucide-react"
 import { toast } from "sonner"
+import { ImageUpload } from "@/components/image-upload"
 
-// Types
-export type ConversionPageData = {
-  headline: string
-  subheadline: string
-  benefits: string[]
-  cta_text: string
-  cta_url: string
-  guarantee_text: string
+// Types para Privacy Page
+type PrivacyPost = {
+  id: string
+  type: "image" | "video"
+  url: string
+}
+export type PrivacyPageData = {
+  // Profile
+  username: string
+  handle: string
+  bio: string
+  avatar: string
+  coverImage: string
+  isVerified: boolean
+  // Stats
+  stats: {
+    photos: number
+    videos: number
+    locked: number
+    likes: string
+  }
+  // Social Links
+  socialLinks: {
+    instagram?: string
+    twitter?: string
+    tiktok?: string
+  }
+  // Subscriptions
+  subscriptions: {
+    id: string
+    name: string
+    price: string
+    discount?: string
+  }[]
+  // Colors
   colors: {
     background: string
-    text: string
+    cardBg: string
     accent: string
-    button: string
-    buttonText: string
+    text: string
+    subtext: string
   }
+  // Posts preview
+  postsCount: number
+  mediasCount: number
+  // Posts (imagens/videos com blur)
+  posts: PrivacyPost[]
+  // CTA URL
+  ctaUrl: string
 }
 
-const defaultColors = {
-  background: "#ffffff",
-  text: "#111111",
-  accent: "#10b981",
-  button: "#10b981",
-  buttonText: "#ffffff"
+const defaultPrivacyData: PrivacyPageData = {
+  username: "SeuNome",
+  handle: "@seunome",
+  bio: "Oi meus amores! Bem-vindos ao meu perfil exclusivo...",
+  avatar: "",
+  coverImage: "",
+  isVerified: true,
+  stats: {
+    photos: 544,
+    videos: 609,
+    locked: 5,
+    likes: "13.3K",
+  },
+  socialLinks: {
+    instagram: "",
+    twitter: "",
+    tiktok: "",
+  },
+  subscriptions: [
+    { id: "1", name: "1 mes", price: "R$ 35,90" },
+    { id: "2", name: "3 meses (10% off)", price: "R$ 96,93", discount: "10% off" },
+    { id: "3", name: "6 meses (15% off)", price: "R$ 183,09", discount: "15% off" },
+  ],
+  colors: {
+    background: "#FFF8F0",
+    cardBg: "#FFFFFF",
+    accent: "#F97316",
+    text: "#1F2937",
+    subtext: "#6B7280",
+  },
+  postsCount: 352,
+  mediasCount: 1153,
+  posts: [],
+  ctaUrl: "",
 }
-
-const colorPresets = [
-  { bg: "#ffffff", text: "#111111", accent: "#10b981", btn: "#10b981", btnText: "#ffffff" },
-  { bg: "#0f172a", text: "#ffffff", accent: "#10b981", btn: "#10b981", btnText: "#ffffff" },
-  { bg: "#ecfdf5", text: "#064e3b", accent: "#059669", btn: "#059669", btnText: "#ffffff" },
-  { bg: "#f0fdf4", text: "#14532d", accent: "#22c55e", btn: "#22c55e", btnText: "#ffffff" },
-  { bg: "#fef3c7", text: "#451a03", accent: "#f59e0b", btn: "#f59e0b", btnText: "#ffffff" },
-  { bg: "#f5f3ff", text: "#4c1d95", accent: "#8b5cf6", btn: "#8b5cf6", btnText: "#ffffff" },
-]
 
 interface PageProps {
   params: Promise<{ id: string }>
 }
 
-export default function ConversionEditorPage({ params }: PageProps) {
+export default function PrivacyEditorPage({ params }: PageProps) {
   const { id } = use(params)
   const router = useRouter()
   
   const [loading, setLoading] = useState(true)
   const [site, setSite] = useState<any>(null)
-  const [pageData, setPageData] = useState<ConversionPageData>({
-    headline: "Transforme Sua Vida Agora",
-    subheadline: "Descubra o metodo comprovado que ja ajudou milhares de pessoas",
-    benefits: [
-      "Beneficio incrivel numero 1",
-      "Beneficio incrivel numero 2",
-      "Beneficio incrivel numero 3",
-    ],
-    cta_text: "Quero Comecar Agora",
-    cta_url: "https://",
-    guarantee_text: "Garantia de 7 dias ou seu dinheiro de volta",
-    colors: defaultColors,
-  })
-  const [activeTab, setActiveTab] = useState("content")
+  const [pageData, setPageData] = useState<PrivacyPageData>(defaultPrivacyData)
+  const [activeTab, setActiveTab] = useState("perfil")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [siteName, setSiteName] = useState("")
   const [siteSlug, setSiteSlug] = useState("")
 
-  // Carregar dados do site
   useEffect(() => {
     fetchSite()
   }, [id])
@@ -105,7 +149,7 @@ export default function ConversionEditorPage({ params }: PageProps) {
         setSiteName(data.site.nome || "")
         setSiteSlug(data.site.slug || "")
         if (data.site.page_data) {
-          setPageData(data.site.page_data)
+          setPageData({ ...defaultPrivacyData, ...data.site.page_data })
         }
       }
     } catch (error) {
@@ -116,23 +160,24 @@ export default function ConversionEditorPage({ params }: PageProps) {
     }
   }
 
-  const updatePageData = (updates: Partial<ConversionPageData>) => {
+  const updatePageData = (updates: Partial<PrivacyPageData>) => {
     setPageData(prev => ({ ...prev, ...updates }))
     setSaved(false)
   }
 
-  const addBenefit = () => {
-    updatePageData({ benefits: [...pageData.benefits, "Novo beneficio"] })
+  const addSubscription = () => {
+    const newSub = { id: Date.now().toString(), name: "Novo plano", price: "R$ 0,00" }
+    updatePageData({ subscriptions: [...pageData.subscriptions, newSub] })
   }
 
-  const updateBenefit = (index: number, value: string) => {
-    const newBenefits = [...pageData.benefits]
-    newBenefits[index] = value
-    updatePageData({ benefits: newBenefits })
+  const updateSubscription = (index: number, field: string, value: string) => {
+    const newSubs = [...pageData.subscriptions]
+    newSubs[index] = { ...newSubs[index], [field]: value }
+    updatePageData({ subscriptions: newSubs })
   }
 
-  const removeBenefit = (index: number) => {
-    updatePageData({ benefits: pageData.benefits.filter((_, i) => i !== index) })
+  const removeSubscription = (index: number) => {
+    updatePageData({ subscriptions: pageData.subscriptions.filter((_, i) => i !== index) })
   }
 
   const handleSave = async () => {
@@ -149,9 +194,7 @@ export default function ConversionEditorPage({ params }: PageProps) {
         }),
       })
 
-      if (!res.ok) {
-        throw new Error("Erro ao salvar")
-      }
+      if (!res.ok) throw new Error("Erro ao salvar")
 
       setSite((prev: any) => prev ? { ...prev, nome: siteName, slug: siteSlug } : prev)
       setSaved(true)
@@ -165,18 +208,6 @@ export default function ConversionEditorPage({ params }: PageProps) {
     }
   }
 
-  const applyColorPreset = (preset: typeof colorPresets[0]) => {
-    updatePageData({
-      colors: {
-        background: preset.bg,
-        text: preset.text,
-        accent: preset.accent,
-        button: preset.btn,
-        buttonText: preset.btnText,
-      }
-    })
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -187,7 +218,7 @@ export default function ConversionEditorPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
-      {/* Top Header */}
+      {/* Header */}
       <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white flex-shrink-0">
         <div className="flex items-center gap-3">
           <Button
@@ -199,11 +230,11 @@ export default function ConversionEditorPage({ params }: PageProps) {
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-400 flex items-center justify-center">
-              <Target className="h-4 w-4 text-white" />
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-orange-300 flex items-center justify-center">
+              <Lock className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h1 className="font-semibold text-gray-900 text-sm">{site?.nome || "Conversao"}</h1>
+              <h1 className="font-semibold text-gray-900 text-sm">{site?.nome || "Privacy"}</h1>
               <p className="text-[11px] text-gray-500">/s/{site?.slug}</p>
             </div>
           </div>
@@ -218,11 +249,10 @@ export default function ConversionEditorPage({ params }: PageProps) {
             <Eye className="w-3.5 h-3.5 mr-1.5" />
             Preview
           </Button>
-
           <Button
             onClick={handleSave}
             disabled={isSaving}
-            className="h-9 px-4 rounded-lg bg-emerald-500 text-white hover:bg-emerald-600 text-sm"
+            className="h-9 px-4 rounded-lg bg-orange-500 text-white hover:bg-orange-600 text-sm"
           >
             {isSaving ? (
               <span className="flex items-center gap-2">
@@ -244,121 +274,333 @@ export default function ConversionEditorPage({ params }: PageProps) {
         </div>
       </header>
 
-      {/* Main Content - Editor + Preview */}
+      {/* Main Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Editor Panel */}
-        <div className="w-[380px] border-r border-gray-200 flex flex-col bg-white flex-shrink-0">
+        <div className="w-[400px] border-r border-gray-200 flex flex-col bg-white flex-shrink-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="px-4 pt-4">
               <TabsList className="w-full bg-gray-100 rounded-lg h-10 p-1">
-                <TabsTrigger value="content" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Type className="w-3.5 h-3.5 mr-1.5" />
-                  Conteudo
+                <TabsTrigger value="perfil" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Type className="w-3 h-3 mr-1" />
+                  Perfil
                 </TabsTrigger>
-                <TabsTrigger value="visual" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Palette className="w-3.5 h-3.5 mr-1.5" />
+                <TabsTrigger value="posts" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <ImageIcon className="w-3 h-3 mr-1" />
+                  Posts
+                </TabsTrigger>
+                <TabsTrigger value="planos" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Lock className="w-3 h-3 mr-1" />
+                  Planos
+                </TabsTrigger>
+                <TabsTrigger value="visual" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Palette className="w-3 h-3 mr-1" />
                   Visual
-                </TabsTrigger>
-                <TabsTrigger value="details" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Settings className="w-3.5 h-3.5 mr-1.5" />
-                  Detalhes
                 </TabsTrigger>
               </TabsList>
             </div>
 
             <div className="flex-1 min-h-0 relative">
-              {/* Content Tab */}
-              <TabsContent value="content" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
+              {/* Perfil Tab */}
+              <TabsContent value="perfil" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-5">
-                  {/* Headline */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Headline Principal
+                      Nome de Usuario
                     </Label>
                     <Input
-                      value={pageData.headline}
-                      onChange={(e) => updatePageData({ headline: e.target.value })}
+                      value={pageData.username}
+                      onChange={(e) => updatePageData({ username: e.target.value })}
                       className="h-10 text-sm font-semibold"
-                      placeholder="Sua headline aqui"
+                      placeholder="MilaHot"
                     />
                   </div>
 
-                  {/* Subheadline */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Subheadline
+                      Handle (@)
                     </Label>
                     <Input
-                      value={pageData.subheadline}
-                      onChange={(e) => updatePageData({ subheadline: e.target.value })}
+                      value={pageData.handle}
+                      onChange={(e) => updatePageData({ handle: e.target.value })}
                       className="h-10 text-sm"
-                      placeholder="Subheadline complementar"
+                      placeholder="@milahot"
                     />
                   </div>
 
-                  {/* Benefits */}
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
-                        Beneficios ({pageData.benefits.length})
-                      </Label>
-                      <Button variant="outline" size="sm" onClick={addBenefit} className="h-7 text-xs">
-                        <Plus className="w-3 h-3 mr-1" /> Adicionar
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      {pageData.benefits.map((benefit, index) => (
-                        <div key={index} className="flex items-center gap-2">
-                          <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                          <Input
-                            value={benefit}
-                            onChange={(e) => updateBenefit(index, e.target.value)}
-                            className="h-9 text-sm flex-1"
-                            placeholder="Beneficio..."
-                          />
-                          <button
-                            onClick={() => removeBenefit(index)}
-                            className="text-gray-400 hover:text-red-500 transition-colors p-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Guarantee */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Texto de Garantia
+                      Bio
                     </Label>
-                    <Input
-                      value={pageData.guarantee_text}
-                      onChange={(e) => updatePageData({ guarantee_text: e.target.value })}
-                      className="h-10 text-sm"
-                      placeholder="Ex: Garantia de 7 dias"
+                    <Textarea
+                      value={pageData.bio}
+                      onChange={(e) => updatePageData({ bio: e.target.value })}
+                      className="min-h-[80px] text-sm resize-none"
+                      placeholder="Sua bio aqui..."
                     />
                   </div>
 
-                  {/* Main CTA */}
-                  <div className="border-t border-gray-200 pt-5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={pageData.isVerified}
+                      onChange={(e) => updatePageData({ isVerified: e.target.checked })}
+                      className="rounded"
+                    />
+                    <Label className="text-sm text-gray-600">Mostrar badge verificado</Label>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Foto de Perfil (Avatar)
+                    </Label>
+                    <ImageUpload
+                      value={pageData.avatar}
+                      onChange={(url) => updatePageData({ avatar: url })}
+                      placeholder="Fazer upload do avatar"
+                      previewClassName="w-20 h-20 rounded-full"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Foto de Capa
+                    </Label>
+                    <ImageUpload
+                      value={pageData.coverImage}
+                      onChange={(url) => updatePageData({ coverImage: url })}
+                      placeholder="Fazer upload da capa"
+                      previewClassName="w-full h-24 rounded-lg"
+                    />
+                  </div>
+
+                  <div className="border-t pt-4">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
-                      Botao de Acao
+                      Estatisticas
                     </Label>
-                    <div className="flex flex-col gap-3">
-                      <Input
-                        value={pageData.cta_text}
-                        onChange={(e) => updatePageData({ cta_text: e.target.value })}
-                        placeholder="Texto do botao"
-                        className="h-10 text-sm"
-                      />
-                      <Input
-                        value={pageData.cta_url}
-                        onChange={(e) => updatePageData({ cta_url: e.target.value })}
-                        placeholder="https://..."
-                        className="h-10 text-sm font-mono"
-                      />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Fotos</label>
+                        <Input
+                          type="number"
+                          value={pageData.stats.photos}
+                          onChange={(e) => updatePageData({ stats: { ...pageData.stats, photos: parseInt(e.target.value) || 0 } })}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Videos</label>
+                        <Input
+                          type="number"
+                          value={pageData.stats.videos}
+                          onChange={(e) => updatePageData({ stats: { ...pageData.stats, videos: parseInt(e.target.value) || 0 } })}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Bloqueados</label>
+                        <Input
+                          type="number"
+                          value={pageData.stats.locked}
+                          onChange={(e) => updatePageData({ stats: { ...pageData.stats, locked: parseInt(e.target.value) || 0 } })}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Likes</label>
+                        <Input
+                          value={pageData.stats.likes}
+                          onChange={(e) => updatePageData({ stats: { ...pageData.stats, likes: e.target.value } })}
+                          className="h-9 text-sm"
+                          placeholder="13.3K"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                      Redes Sociais
+                    </Label>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <Instagram className="w-4 h-4 text-gray-400" />
+                        <Input
+                          value={pageData.socialLinks.instagram || ""}
+                          onChange={(e) => updatePageData({ socialLinks: { ...pageData.socialLinks, instagram: e.target.value } })}
+                          className="h-9 text-sm flex-1"
+                          placeholder="https://instagram.com/..."
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                        </svg>
+                        <Input
+                          value={pageData.socialLinks.twitter || ""}
+                          onChange={(e) => updatePageData({ socialLinks: { ...pageData.socialLinks, twitter: e.target.value } })}
+                          className="h-9 text-sm flex-1"
+                          placeholder="https://twitter.com/..."
+                        />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                        </svg>
+                        <Input
+                          value={pageData.socialLinks.tiktok || ""}
+                          onChange={(e) => updatePageData({ socialLinks: { ...pageData.socialLinks, tiktok: e.target.value } })}
+                          className="h-9 text-sm flex-1"
+                          placeholder="https://tiktok.com/..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Posts Tab */}
+              <TabsContent value="posts" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                      Posts Bloqueados ({(pageData.posts || []).length})
+                    </Label>
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Adicione fotos ou videos que aparecerao com blur e cadeado. Perfeito para mostrar conteudo exclusivo.
+                  </p>
+
+                  {/* Upload de novo post */}
+                  <div className="border-2 border-dashed border-gray-200 rounded-xl p-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                      Adicionar Post
+                    </Label>
+                    <ImageUpload
+                      value=""
+                      onChange={(url) => {
+                        if (url) {
+                          const newPost: PrivacyPost = {
+                            id: Date.now().toString(),
+                            type: url.includes("video") ? "video" : "image",
+                            url
+                          }
+                          updatePageData({ posts: [...(pageData.posts || []), newPost] })
+                        }
+                      }}
+                      accept="image/*,video/*"
+                      placeholder="Clique para adicionar foto ou video"
+                      previewClassName="h-32"
+                      showPreview={false}
+                    />
+                  </div>
+
+                  {/* Lista de posts */}
+                  <div className="grid grid-cols-2 gap-3">
+                    {(pageData.posts || []).map((post) => (
+                      <div key={post.id} className="relative group aspect-square rounded-xl overflow-hidden bg-gray-100">
+                        {post.type === "video" ? (
+                          <video src={post.url} className="w-full h-full object-cover" muted />
+                        ) : (
+                          <img src={post.url} alt="" className="w-full h-full object-cover" />
+                        )}
+                        {/* Overlay blur preview */}
+                        <div className="absolute inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center">
+                          <Lock className="w-6 h-6 text-white/80" />
+                        </div>
+                        {/* Delete button */}
+                        <button
+                          onClick={() => updatePageData({ posts: (pageData.posts || []).filter(p => p.id !== post.id) })}
+                          className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Planos Tab */}
+              <TabsContent value="planos" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
+                <div className="flex flex-col gap-5">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide">
+                      Planos de Assinatura ({pageData.subscriptions.length})
+                    </Label>
+                    <Button variant="outline" size="sm" onClick={addSubscription} className="h-7 text-xs">
+                      <Plus className="w-3 h-3 mr-1" /> Adicionar
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    {pageData.subscriptions.map((sub, index) => (
+                      <div key={sub.id} className="bg-gray-50 rounded-xl p-4 relative">
+                        <button
+                          onClick={() => removeSubscription(index)}
+                          className="absolute top-2 right-2 text-gray-400 hover:text-red-500 p-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        <div className="flex flex-col gap-2">
+                          <div>
+                            <label className="text-[10px] text-gray-400 mb-1 block">Nome do plano</label>
+                            <Input
+                              value={sub.name}
+                              onChange={(e) => updateSubscription(index, "name", e.target.value)}
+                              className="h-9 text-sm"
+                              placeholder="1 mes"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] text-gray-400 mb-1 block">Preco</label>
+                            <Input
+                              value={sub.price}
+                              onChange={(e) => updateSubscription(index, "price", e.target.value)}
+                              className="h-9 text-sm"
+                              placeholder="R$ 35,90"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      URL de Redirecionamento (ao clicar em assinar)
+                    </Label>
+                    <Input
+                      value={pageData.ctaUrl}
+                      onChange={(e) => updatePageData({ ctaUrl: e.target.value })}
+                      className="h-10 text-sm font-mono"
+                      placeholder="https://..."
+                    />
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
+                      Contagem de Posts
+                    </Label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Postagens</label>
+                        <Input
+                          type="number"
+                          value={pageData.postsCount}
+                          onChange={(e) => updatePageData({ postsCount: parseInt(e.target.value) || 0 })}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Midias</label>
+                        <Input
+                          type="number"
+                          value={pageData.mediasCount}
+                          onChange={(e) => updatePageData({ mediasCount: parseInt(e.target.value) || 0 })}
+                          className="h-9 text-sm"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -367,36 +609,6 @@ export default function ConversionEditorPage({ params }: PageProps) {
               {/* Visual Tab */}
               <TabsContent value="visual" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-5">
-                  {/* Color Presets */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Paleta de Cores
-                    </Label>
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {colorPresets.map((preset, index) => (
-                        <button
-                          key={index}
-                          onClick={() => applyColorPreset(preset)}
-                          className={cn(
-                            "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
-                            pageData.colors.background === preset.bg && pageData.colors.accent === preset.accent
-                              ? "border-emerald-500 ring-2 ring-emerald-500/20"
-                              : "border-gray-100"
-                          )}
-                          style={{ backgroundColor: preset.bg }}
-                        >
-                          <div className="w-full h-full flex items-end justify-center pb-1">
-                            <div 
-                              className="w-3/4 h-1 rounded-full"
-                              style={{ backgroundColor: preset.btn }}
-                            />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Custom Colors */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                       Cores Personalizadas
@@ -419,6 +631,38 @@ export default function ConversionEditorPage({ params }: PageProps) {
                         </div>
                       </div>
                       <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-gray-400">Card</label>
+                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
+                          <input
+                            type="color"
+                            value={pageData.colors.cardBg}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, cardBg: e.target.value } })}
+                            className="w-6 h-6 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={pageData.colors.cardBg}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, cardBg: e.target.value } })}
+                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-gray-400">Destaque</label>
+                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
+                          <input
+                            type="color"
+                            value={pageData.colors.accent}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, accent: e.target.value } })}
+                            className="w-6 h-6 rounded cursor-pointer border-0"
+                          />
+                          <Input
+                            value={pageData.colors.accent}
+                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, accent: e.target.value } })}
+                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-col gap-1">
                         <label className="text-[10px] text-gray-400">Texto</label>
                         <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
                           <input
@@ -434,106 +678,35 @@ export default function ConversionEditorPage({ params }: PageProps) {
                           />
                         </div>
                       </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.button}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, button: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.button}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, button: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Texto Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.buttonText}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, buttonText: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.buttonText}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, buttonText: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Details Tab */}
-              <TabsContent value="details" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
-                <div className="flex flex-col gap-5">
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Nome da Pagina
-                    </Label>
-                    <Input
-                      value={siteName}
-                      onChange={(e) => {
-                        setSiteName(e.target.value)
-                        setSaved(false)
-                      }}
-                      placeholder="Ex: Pagina Conversao"
-                      className="h-10 text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      URL da Pagina (Slug)
-                    </Label>
-                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3">
-                      <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
-                      <Input
-                        value={siteSlug}
-                        onChange={(e) => {
-                          setSiteSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))
-                          setSaved(false)
-                        }}
-                        placeholder="minha-conversao"
-                        className="flex-1 h-10 bg-transparent border-0 px-0 focus-visible:ring-0 text-sm"
-                      />
                     </div>
                   </div>
 
-                  <div className="border-t border-gray-100 pt-5 mt-2">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
-                      Acoes Rapidas
+                  <div className="border-t pt-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Configuracoes da Pagina
                     </Label>
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/s/${siteSlug}`, '_blank')}
-                        className="justify-start h-10 text-sm"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Abrir Pagina
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const url = `${window.location.origin}/s/${siteSlug}`
-                          navigator.clipboard.writeText(url)
-                          toast.success("Link copiado!")
-                        }}
-                        className="justify-start h-10 text-sm"
-                      >
-                        <Link2 className="w-4 h-4 mr-2" />
-                        Copiar Link
-                      </Button>
+                    <div className="flex flex-col gap-3">
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Nome</label>
+                        <Input
+                          value={siteName}
+                          onChange={(e) => { setSiteName(e.target.value); setSaved(false) }}
+                          placeholder="Privacy MilaHot"
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-gray-400 mb-1 block">Slug (URL)</label>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-400">/s/</span>
+                          <Input
+                            value={siteSlug}
+                            onChange={(e) => { setSiteSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); setSaved(false) }}
+                            placeholder="milahot"
+                            className="h-9 text-sm flex-1"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -542,62 +715,164 @@ export default function ConversionEditorPage({ params }: PageProps) {
           </Tabs>
         </div>
 
-        {/* Preview Area */}
-        <div className="flex-1 bg-gray-100 flex items-center justify-center p-6 overflow-auto">
-          <div 
-            className="w-full max-w-2xl min-h-[600px] rounded-lg shadow-xl overflow-hidden"
-            style={{ backgroundColor: pageData.colors.background }}
-          >
-            <div className="p-8">
-              {/* Headline */}
-              <h1 
-                className="text-3xl font-bold mb-4 text-center"
-                style={{ color: pageData.colors.text }}
-              >
-                {pageData.headline}
-              </h1>
-
-              {/* Subheadline */}
-              <p 
-                className="text-lg mb-8 text-center opacity-80"
-                style={{ color: pageData.colors.text }}
-              >
-                {pageData.subheadline}
-              </p>
-
-              {/* Benefits */}
-              <div className="mb-8 max-w-md mx-auto">
-                {pageData.benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-start gap-3 mb-3">
-                    <CheckCircle 
-                      className="w-5 h-5 flex-shrink-0 mt-0.5"
-                      style={{ color: pageData.colors.accent }}
-                    />
-                    <span style={{ color: pageData.colors.text }}>{benefit}</span>
-                  </div>
-                ))}
+        {/* Preview Panel */}
+        <div className="flex-1 bg-gray-100 flex items-center justify-center p-8 overflow-hidden">
+          <div className="w-[375px] h-[700px] flex-shrink-0 bg-gray-800 rounded-[50px] p-3 shadow-2xl relative overflow-hidden">
+            {/* Phone notch */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-800 rounded-b-2xl z-20" />
+            
+            {/* Screen */}
+            <div 
+              className="w-full h-full rounded-[40px] overflow-y-auto overflow-x-hidden"
+              style={{ backgroundColor: pageData.colors.background }}
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 sticky top-0 z-10" style={{ backgroundColor: pageData.colors.background }}>
+                <h1 className="text-xl font-bold tracking-tight" style={{ color: pageData.colors.text }}>privacy.</h1>
+                <Globe className="w-5 h-5" style={{ color: pageData.colors.subtext }} />
               </div>
 
-              {/* Main CTA */}
-              <div className="text-center mb-6">
-                <button 
-                  className="px-10 py-5 rounded-lg text-xl font-bold transition-all hover:scale-105 shadow-lg"
+              {/* Cover + Avatar */}
+              <div className="relative mx-4">
+                <div 
+                  className="h-32 rounded-2xl bg-cover bg-center"
                   style={{ 
-                    backgroundColor: pageData.colors.button,
-                    color: pageData.colors.buttonText
+                    backgroundColor: pageData.coverImage ? undefined : "#E5E7EB",
+                    backgroundImage: pageData.coverImage ? `url(${pageData.coverImage})` : undefined
                   }}
-                >
-                  {pageData.cta_text}
-                </button>
+                />
+                <div className="absolute -bottom-8 left-4">
+                  <div 
+                    className="w-20 h-20 rounded-full border-4 bg-cover bg-center"
+                    style={{ 
+                      borderColor: pageData.colors.background,
+                      backgroundColor: pageData.avatar ? undefined : "#D1D5DB",
+                      backgroundImage: pageData.avatar ? `url(${pageData.avatar})` : undefined
+                    }}
+                  />
+                </div>
+                {/* Stats on cover */}
+                <div className="absolute bottom-2 right-2 flex items-center gap-3 text-[10px]" style={{ color: pageData.colors.subtext }}>
+                  <span className="flex items-center gap-1">
+                    <ImageIcon className="w-3 h-3" /> {pageData.stats.photos}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Video className="w-3 h-3" /> {pageData.stats.videos}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Lock className="w-3 h-3" /> {pageData.stats.locked}
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <Heart className="w-3 h-3" /> {pageData.stats.likes}
+                  </span>
+                </div>
               </div>
 
-              {/* Guarantee */}
-              <p 
-                className="text-center text-sm opacity-70"
-                style={{ color: pageData.colors.text }}
-              >
-                {pageData.guarantee_text}
-              </p>
+              {/* Profile Info */}
+              <div className="px-4 pt-10 pb-4">
+                <div className="flex items-center gap-1">
+                  <h2 className="text-lg font-bold" style={{ color: pageData.colors.text }}>
+                    {pageData.username}
+                  </h2>
+                  {pageData.isVerified && (
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill={pageData.colors.accent}>
+                      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>
+                    </svg>
+                  )}
+                </div>
+                <p className="text-xs" style={{ color: pageData.colors.subtext }}>{pageData.handle}</p>
+                <p className="text-xs mt-2 leading-relaxed" style={{ color: pageData.colors.text }}>
+                  {pageData.bio.slice(0, 80)}...
+                </p>
+                <button className="text-xs mt-1" style={{ color: pageData.colors.accent }}>Ler mais</button>
+
+                {/* Social Icons */}
+                <div className="flex items-center gap-3 mt-4">
+                  {pageData.socialLinks.instagram && (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <Instagram className="w-4 h-4 text-gray-600" />
+                    </div>
+                  )}
+                  {pageData.socialLinks.twitter && (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                    </div>
+                  )}
+                  {pageData.socialLinks.tiktok && (
+                    <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-600" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Subscriptions */}
+              <div className="px-4 pb-4">
+                <h3 className="text-sm font-semibold mb-3" style={{ color: pageData.colors.text }}>Assinaturas</h3>
+                <div className="flex flex-col gap-2">
+                  {pageData.subscriptions.map((sub, idx) => (
+                    <button
+                      key={sub.id}
+                      className="flex items-center justify-between py-3 px-4 rounded-xl text-sm"
+                      style={{ 
+                        background: idx === 0 
+                          ? `linear-gradient(90deg, ${pageData.colors.accent}30 0%, ${pageData.colors.accent}10 100%)`
+                          : `linear-gradient(90deg, ${pageData.colors.accent}20 0%, ${pageData.colors.accent}05 100%)`
+                      }}
+                    >
+                      <span className="font-medium" style={{ color: pageData.colors.text }}>{sub.name}</span>
+                      <span className="font-bold" style={{ color: pageData.colors.text }}>{sub.price}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Posts Section */}
+              <div className="px-4 pb-4">
+                <div className="flex items-center justify-center gap-6 py-3 rounded-xl" style={{ backgroundColor: pageData.colors.cardBg }}>
+                  <span className="text-xs" style={{ color: pageData.colors.accent }}>
+                    <span className="font-bold">{pageData.postsCount}</span> Postagens
+                  </span>
+                  <span className="text-xs" style={{ color: pageData.colors.subtext }}>
+                    <span className="font-bold">{pageData.mediasCount}</span> Midias
+                  </span>
+                </div>
+              </div>
+
+              {/* Posts Grid com Blur */}
+              <div className="px-4 pb-6">
+                {(pageData.posts || []).length > 0 ? (
+                  <div className="grid grid-cols-3 gap-1">
+                    {(pageData.posts || []).map((post) => (
+                      <div key={post.id} className="aspect-square relative rounded-md overflow-hidden">
+                        {post.type === "video" ? (
+                          <video src={post.url} className="w-full h-full object-cover" muted />
+                        ) : (
+                          <img src={post.url} alt="" className="w-full h-full object-cover" />
+                        )}
+                        {/* Blur overlay com cadeado */}
+                        <div className="absolute inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center">
+                          <Lock className="w-4 h-4 text-white/80" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div 
+                    className="rounded-xl p-6 flex flex-col items-center justify-center"
+                    style={{ backgroundColor: `${pageData.colors.accent}10` }}
+                  >
+                    <Lock className="w-8 h-8 mb-2" style={{ color: pageData.colors.subtext }} />
+                    <p className="text-[10px] text-center" style={{ color: pageData.colors.subtext }}>
+                      Assine para desbloquear o conteudo
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import {
   Plus, Search, Bot as BotIcon, MoreVertical, Trash2, Settings,
-  Loader2, CheckCircle2, LayoutGrid, List, ChevronRight, Signal, X, AtSign, Save, Camera, Users, DollarSign, Workflow
+  Loader2, CheckCircle2, LayoutGrid, List, ChevronRight, Signal, X, AtSign, Save, Camera, Users, DollarSign, Workflow, Power, RefreshCw
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useRef } from "react"
@@ -70,21 +70,47 @@ export default function BotsPage() {
   const [telegramDataCache, setTelegramDataCache] = useState<Record<string, TelegramBotData>>({})
   const [isLoadingTelegramData, setIsLoadingTelegramData] = useState(false)
   
+  // Trocar token modal
+  const [changeTokenBot, setChangeTokenBot] = useState<Bot | null>(null)
+  const [newToken, setNewToken] = useState("")
+  const [isChangingToken, setIsChangingToken] = useState(false)
+  
   // Cache de fluxos vinculados aos bots
   const [botFlowsCache, setBotFlowsCache] = useState<Record<string, { id: string; name: string } | null>>({})
   
-  // Carregar fluxos vinculados aos bots
+  // Carregar fluxos vinculados aos bots (busca em flows.bot_id E flow_bots)
   const loadBotFlows = useCallback(async (botsToLoad: Bot[]) => {
     const newCache: Record<string, { id: string; name: string } | null> = { ...botFlowsCache }
     
     await Promise.all(botsToLoad.map(async (bot) => {
-      const { data: flow } = await supabase
+      // Primeiro tenta por flows.bot_id
+      let { data: flow } = await supabase
         .from("flows")
         .select("id, name")
         .eq("bot_id", bot.id)
         .eq("status", "ativo")
         .limit(1)
         .single()
+      
+      // Se nao encontrou, tenta por flow_bots
+      if (!flow) {
+        const { data: flowBot } = await supabase
+          .from("flow_bots")
+          .select("flow_id")
+          .eq("bot_id", bot.id)
+          .limit(1)
+          .single()
+        
+        if (flowBot) {
+          const { data: linkedFlow } = await supabase
+            .from("flows")
+            .select("id, name")
+            .eq("id", flowBot.flow_id)
+            .single()
+          
+          flow = linkedFlow
+        }
+      }
       
       newCache[bot.id] = flow || null
     }))
@@ -380,6 +406,102 @@ export default function BotsPage() {
       })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  // Toggle rapido de ativar/desativar bot
+  async function handleQuickToggle(bot: Bot, e: React.MouseEvent) {
+    e.stopPropagation()
+    const newStatus = bot.status === "active" ? "inactive" : "active"
+    
+    try {
+      await updateBot(bot.id, { status: newStatus })
+      await fetch("/api/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ botToken: bot.token, action: newStatus === "active" ? "register" : "unregister" }),
+      })
+      
+      toast({
+        title: newStatus === "active" ? "Bot ativado" : "Bot desativado",
+        description: newStatus === "active" ? "O bot esta online e recebendo mensagens" : "O bot esta offline",
+      })
+    } catch {
+      toast({
+        title: "Erro",
+        description: "Nao foi possivel alterar o status do bot",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Trocar token do bot
+  async function handleChangeToken() {
+    if (!changeTokenBot || !newToken.trim()) return
+    
+    setIsChangingToken(true)
+    try {
+      // Validar novo token
+      const response = await fetch("/api/telegram/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: newToken.trim() }),
+      })
+      
+      const data = await response.json()
+      
+      if (!response.ok || data.error) {
+        toast({
+          title: "Erro",
+          description: data.error || "Token invalido",
+          variant: "destructive",
+        })
+        setIsChangingToken(false)
+        return
+      }
+      
+      // Desregistrar webhook antigo
+      await fetch("/api/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ botToken: changeTokenBot.token, action: "unregister" }),
+      })
+      
+      // Atualizar token no banco
+      await updateBot(changeTokenBot.id, { 
+        token: newToken.trim(),
+        name: data.bot.name || changeTokenBot.name,
+      })
+      
+      // Registrar novo webhook
+      await fetch("/api/telegram/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ botToken: newToken.trim(), action: "register" }),
+      })
+      
+      // Limpar cache do Telegram para este bot
+      setTelegramDataCache(prev => {
+        const next = { ...prev }
+        delete next[changeTokenBot.id]
+        return next
+      })
+      
+      toast({
+        title: "Token atualizado",
+        description: "O bot foi atualizado com o novo token",
+      })
+      
+      setChangeTokenBot(null)
+      setNewToken("")
+    } catch {
+      toast({
+        title: "Erro",
+        description: "Erro ao trocar token",
+        variant: "destructive",
+      })
+    } finally {
+      setIsChangingToken(false)
     }
   }
 
@@ -764,6 +886,66 @@ export default function BotsPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Change Token Dialog */}
+      <Dialog open={!!changeTokenBot} onOpenChange={(open) => !open && setChangeTokenBot(null)}>
+        <DialogContent className="sm:max-w-md bg-card border-border p-6">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
+              <RefreshCw className="h-6 w-6 text-accent" />
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-foreground">Trocar Token</h2>
+              <p className="text-sm text-muted-foreground">
+                {changeTokenBot?.name}
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm font-medium text-foreground mb-2 block">
+                Novo Token
+              </Label>
+              <Input
+                placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
+                value={newToken}
+                onChange={(e) => setNewToken(e.target.value)}
+                className="h-12 bg-muted border-border rounded-xl font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                Use quando seu bot for banido. Os dados serao mantidos.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setChangeTokenBot(null)}
+                className="flex-1 h-11 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleChangeToken}
+                disabled={isChangingToken || !newToken.trim()}
+                className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground h-11 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+              >
+                {isChangingToken ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Trocando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-4 w-4" />
+                    Trocar Token
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="flex-1 overflow-y-auto px-4 md:px-8 pb-8">
         {/* Search */}
         <div className="flex items-center gap-4 mb-6">
@@ -825,13 +1007,24 @@ export default function BotsPage() {
                             <MoreVertical className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-44 rounded-lg">
+                        <DropdownMenuContent align="end" className="w-48 rounded-lg">
                           <DropdownMenuItem
                             className="flex items-center gap-2 py-2 cursor-pointer text-sm"
                             onClick={(e) => { e.stopPropagation(); openConfig(bot) }}
                           >
                             <Settings className="h-3.5 w-3.5" />
                             Configurar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="flex items-center gap-2 py-2 cursor-pointer text-sm"
+                            onClick={(e) => { 
+                              e.stopPropagation()
+                              setChangeTokenBot(bot)
+                              setNewToken("")
+                            }}
+                          >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Trocar Token
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="flex items-center gap-2 py-2 cursor-pointer text-sm text-destructive"
@@ -923,15 +1116,28 @@ export default function BotsPage() {
                     )}
                   </div>
 
-                  {/* Botao Ver Fluxos */}
-                  <div className="px-3 pb-3">
+                  {/* Botoes de acao */}
+                  <div className="px-3 pb-3 flex gap-2">
+                    {/* Toggle Ativar/Desativar */}
+                    <button
+                      onClick={(e) => handleQuickToggle(bot, e)}
+                      className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg font-semibold text-xs transition-all ${
+                        isActive 
+                          ? "bg-red-500/10 hover:bg-red-500/20 text-red-500" 
+                          : "bg-accent/10 hover:bg-accent/20 text-accent"
+                      }`}
+                    >
+                      <Power className="h-3.5 w-3.5" />
+                      {isActive ? "Desativar" : "Ativar"}
+                    </button>
+                    {/* Ir para Fluxos */}
                     <button
                       onClick={(e) => { 
                         e.stopPropagation()
                         setSelectedBot(bot)
                         router.push("/fluxos")
                       }}
-                      className="w-full flex items-center justify-center gap-1.5 py-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground text-muted-foreground font-semibold text-xs transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg bg-muted hover:bg-accent hover:text-accent-foreground text-muted-foreground font-semibold text-xs transition-all"
                     >
                       <ChevronRight className="h-3.5 w-3.5" />
                       Fluxos

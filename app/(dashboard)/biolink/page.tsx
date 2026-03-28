@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner"
 
 type PageType = "presell" | "conversion" | "dragonbio" | "checkout" | null
+type PresellType = "age-verification" | "thank-you" | "redirect" | null
 
 
 
@@ -35,11 +36,11 @@ const pageTypes = [
   },
   {
     id: "conversion" as const,
-    name: "Conversao",
-    description: "Paginas focadas em conversao direta",
-    gradient: "from-emerald-500 to-green-400",
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-500",
+    name: "Privacy",
+    description: "Pagina estilo perfil para conteudo exclusivo",
+    gradient: "from-orange-400 to-orange-300",
+    iconBg: "bg-orange-400/10",
+    iconColor: "text-orange-400",
   },
   {
     id: "dragonbio" as const,
@@ -144,6 +145,7 @@ export default function BioLinkPage() {
   const { session } = useAuth()
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [presellDialogOpen, setPresellDialogOpen] = useState(false)
   const [sites, setSites] = useState<DragonBioSite[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -176,12 +178,19 @@ export default function BioLinkPage() {
   const handleSelectType = async (type: PageType) => {
     if (!session?.userId || !type) return
     
+    // Se for presell, abre o dialog de selecao de tipo
+    if (type === "presell") {
+      setDialogOpen(false)
+      setPresellDialogOpen(true)
+      return
+    }
+    
     setCreating(true)
     setDialogOpen(false)
     
     // Gerar nome e slug automaticos
     const timestamp = Date.now()
-    const autoName = `${type === "dragonbio" ? "Dragon Bio" : type === "presell" ? "Presell" : type === "conversion" ? "Conversao" : "Checkout"} ${new Date().toLocaleDateString("pt-BR")}`
+    const autoName = `${type === "dragonbio" ? "Dragon Bio" : type === "conversion" ? "Privacy" : "Checkout"} ${new Date().toLocaleDateString("pt-BR")}`
     const autoSlug = `${type}-${timestamp}`
     
     try {
@@ -209,13 +218,58 @@ export default function BioLinkPage() {
       // Redirecionar diretamente para o editor apropriado
       if (type === "dragonbio") {
         router.push(`/biolink-editor/${data.site.id}`)
-      } else if (type === "presell") {
-        router.push(`/presell-editor/${data.site.id}`)
       } else if (type === "conversion") {
         router.push(`/conversion-editor/${data.site.id}`)
       } else if (type === "checkout") {
         router.push(`/checkout-editor/${data.site.id}`)
       }
+    } catch (error) {
+      console.error("Erro ao criar site:", error)
+      toast.error("Erro ao criar site")
+      setCreating(false)
+    }
+  }
+
+  const handleSelectPresellType = async (presellType: PresellType) => {
+    if (!session?.userId || !presellType) return
+    
+    setCreating(true)
+    setPresellDialogOpen(false)
+    
+    const timestamp = Date.now()
+    const typeNames: Record<string, string> = {
+      "age-verification": "Verificacao de Idade",
+      "thank-you": "Pagina de Obrigado",
+      "redirect": "Redirecionamento"
+    }
+    const autoName = `${typeNames[presellType]} ${new Date().toLocaleDateString("pt-BR")}`
+    const autoSlug = `presell-${presellType}-${timestamp}`
+    
+    try {
+      const res = await fetch("/api/dragon-bio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: session.userId,
+          userEmail: session.email,
+          userName: session.name,
+          nome: autoName,
+          slug: autoSlug,
+          template: "buttons",
+          presell_type: presellType,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || "Erro ao criar site")
+        setCreating(false)
+        return
+      }
+
+      // Redirecionar para o editor especifico do tipo de presell
+      router.push(`/presell-editor/${data.site.id}?type=${presellType}`)
     } catch (error) {
       console.error("Erro ao criar site:", error)
       toast.error("Erro ao criar site")
@@ -613,6 +667,97 @@ export default function BioLinkPage() {
           </div>
         </div>
       </ScrollArea>
+
+      {/* Dialog de Selecao de Tipo de Presell */}
+      <Dialog open={presellDialogOpen} onOpenChange={setPresellDialogOpen}>
+        <DialogContent className="bg-card border-gray-200 sm:max-w-lg rounded-[24px]">
+          <DialogHeader>
+            <DialogTitle className="text-foreground text-center">
+              Escolha o tipo de Presell
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground text-center">
+              Selecione o modelo de pagina que deseja criar
+            </p>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-3 pt-4">
+            {/* Verificacao de Idade (+18) */}
+            <button 
+              onClick={() => handleSelectPresellType("age-verification")}
+              disabled={creating}
+              className="group bg-card rounded-[16px] p-4 border border-border hover:border-orange-300 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground mb-0.5 group-hover:text-orange-600 transition-colors">
+                  Verificacao de Idade
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Pagina +18 com botoes de confirmacao
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-orange-500 transition-colors" />
+            </button>
+
+            {/* Pagina de Obrigado */}
+            <button 
+              onClick={() => handleSelectPresellType("thank-you")}
+              disabled={creating}
+              className="group bg-card rounded-[16px] p-4 border border-border hover:border-green-300 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M5 13l4 4L19 7"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground mb-0.5 group-hover:text-green-600 transition-colors">
+                  Pagina de Obrigado
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Thank you page com mensagem de sucesso
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-green-500 transition-colors" />
+            </button>
+
+            {/* Redirecionamento */}
+            <button 
+              onClick={() => handleSelectPresellType("redirect")}
+              disabled={creating}
+              className="group bg-card rounded-[16px] p-4 border border-border hover:border-blue-300 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                  <polyline points="15 3 21 3 21 9"/>
+                  <line x1="10" y1="14" x2="21" y2="3"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground mb-0.5 group-hover:text-blue-600 transition-colors">
+                  Redirecionamento
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Pagina com redirect automatico
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+            </button>
+          </div>
+
+          {creating && (
+            <div className="flex items-center justify-center gap-2 pt-4 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Criando pagina...</span>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
