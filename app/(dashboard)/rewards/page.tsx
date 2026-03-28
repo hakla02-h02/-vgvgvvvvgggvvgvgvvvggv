@@ -52,8 +52,8 @@ export default function RewardsPage() {
   const [activeIndex, setActiveIndex] = useState(0)
   const currentPremio = premiacoes[activeIndex]
   
-  // Dados do usuario (mock)
-  const faturamentoAtual = 8500
+  // Dados do usuario (mock) - TODO: Buscar do banco de dados
+  const faturamentoAtual = 0
   const isDesbloqueado = faturamentoAtual >= currentPremio.pontosNum
   const progressPercent = Math.min((faturamentoAtual / currentPremio.pontosNum) * 100, 100)
 
