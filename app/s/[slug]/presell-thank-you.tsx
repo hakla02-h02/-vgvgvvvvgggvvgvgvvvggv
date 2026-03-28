@@ -31,58 +31,56 @@ export function PresellThankYou({ data }: { data: ThankYouData }) {
 
   return (
     <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6"
+      className="min-h-screen flex items-center justify-center p-4"
       style={{ 
         background: `linear-gradient(135deg, ${gradientFrom} 0%, ${gradientTo} 100%)`
       }}
     >
-      <div className="w-full max-w-lg text-center">
-        {/* Icone de Check */}
-        <div className="mb-8">
-          <div 
-            className="w-20 h-20 rounded-full mx-auto flex items-center justify-center shadow-lg"
-            style={{ backgroundColor: buttonColor }}
-          >
-            <svg viewBox="0 0 24 24" className="w-10 h-10 text-white" fill="none" stroke="currentColor" strokeWidth="3">
-              <path d="M5 13l4 4L19 7"/>
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-8 text-center transition-all hover:shadow-xl">
+        {/* Icone de Sucesso */}
+        <div className="mb-6 flex justify-center">
+          <div className="bg-green-100 p-4 rounded-full animate-pulse">
+            <svg className="w-12 h-12 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path>
             </svg>
           </div>
         </div>
 
-        {/* Headline */}
-        <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+        {/* Titulo */}
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">
           {data.headline || "Muito Obrigado!"}
         </h1>
 
         {/* Descricao */}
-        <p className="text-gray-600 text-lg leading-relaxed mb-8 max-w-md mx-auto">
-          {data.description || "Sua acao foi concluida com sucesso."}
+        <p className="text-gray-600 mb-8 leading-relaxed">
+          {data.description || "Sua acao foi concluida com sucesso. Agradecemos pela confianca e por fazer parte da nossa jornada."}
         </p>
 
-        {/* Botao Principal */}
+        {/* Botao de Acao */}
         {data.buttonText && (
           <button
             onClick={handleClick}
-            className="px-8 py-4 text-white font-semibold text-lg rounded-xl transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+            className="inline-block w-full py-4 px-6 text-white font-semibold rounded-xl transition-colors duration-300 shadow-lg hover:shadow-blue-200 active:scale-95"
             style={{ backgroundColor: buttonColor }}
           >
             {data.buttonText}
           </button>
         )}
 
-        {/* Rodape */}
+        {/* Rodape opcional */}
         {data.showFooter !== false && data.footerText && (
-          <div className="mt-12 text-gray-500 text-sm">
-            <span>{data.footerText} </span>
-            {data.footerLinkText && (
-              <a 
-                href={data.footerLinkUrl || "#"}
-                className="underline hover:text-gray-700 transition-colors"
-                style={{ color: buttonColor }}
-              >
-                {data.footerLinkText}
-              </a>
-            )}
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <p className="text-sm text-gray-400">
+              {data.footerText}{" "}
+              {data.footerLinkText && (
+                <a 
+                  href={data.footerLinkUrl || "#"}
+                  className="text-blue-500 hover:underline"
+                >
+                  {data.footerLinkText}
+                </a>
+              )}
+            </p>
           </div>
         )}
       </div>

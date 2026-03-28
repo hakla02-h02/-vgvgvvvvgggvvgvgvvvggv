@@ -35,7 +35,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { userId, nome, slug, userEmail, userName, presell_type, page_type } = body
+    const { userId, nome, slug, userEmail, userName, presell_type } = body
 
     if (!userId || !nome || !slug) {
       return NextResponse.json({ error: "userId, nome e slug são obrigatórios" }, { status: 400 })
@@ -56,7 +56,6 @@ export async function POST(request: Request) {
 
     if (userError) {
       console.error("Erro ao verificar/criar usuário:", userError)
-      // Continuar mesmo se der erro - o usuário pode já existir
     }
 
     // Verificar se slug já existe
@@ -70,9 +69,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Essa slug já está em uso" }, { status: 400 })
     }
 
-    // Determinar page_type baseado no presell_type
-    const finalPageType = presell_type ? "presell" : (page_type || "dragonbio")
-
     // Criar site com configurações padrão
     const siteData: any = {
       user_id: userId,
@@ -82,7 +78,6 @@ export async function POST(request: Request) {
       profile_name: nome,
       profile_bio: "Sua bio aqui",
       profile_image: null,
-      page_type: finalPageType,
     }
 
     // Se for presell, adicionar presell_type
@@ -98,8 +93,8 @@ export async function POST(request: Request) {
 
     if (error) throw error
 
-    // Criar links padrão apenas para dragonbio (biolink)
-    if (finalPageType === "dragonbio") {
+    // Criar links padrão apenas se NAO for presell
+    if (!presell_type) {
       const defaultLinks = [
         { site_id: site.id, title: "Instagram", url: "https://instagram.com", order_index: 0 },
         { site_id: site.id, title: "YouTube", url: "https://youtube.com", order_index: 1 },
