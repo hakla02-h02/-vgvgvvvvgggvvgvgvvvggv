@@ -3799,6 +3799,91 @@ Clique no botao abaixo para renovar com desconto especial!`)
         {/* Sidebar - Only show for tabs that need it */}
         {(activeTab === "bots" || activeTab === "welcome") && (
         <div className="w-80 border-l border-border/50 bg-card p-6 overflow-auto">
+          {/* Welcome Tab Sidebar Options */}
+          {activeTab === "welcome" && (
+            <div className="space-y-4">
+              {/* Mensagem Secundaria */}
+              <Card className="border-border/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <MessageCircle className="h-4 w-4 text-purple-400" />
+                      <div>
+                        <p className="font-medium text-sm">Mensagem Secundaria</p>
+                        <p className="text-xs text-muted-foreground">Mensagem separada onde os botoes serao enviados</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={secondaryMessageEnabled}
+                      onCheckedChange={(checked) => {
+                        setSecondaryMessageEnabled(checked)
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+                  {secondaryMessageEnabled && (
+                    <div className="mt-4">
+                      <Textarea
+                        value={secondaryMessage}
+                        onChange={(e) => {
+                          setSecondaryMessage(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="Digite a mensagem secundaria..."
+                        rows={3}
+                        className="bg-secondary/30 border-border/50 text-sm"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Botao Redirect */}
+              <Card className="border-border/50">
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <ExternalLink className="h-4 w-4 text-blue-400" />
+                      <div>
+                        <p className="font-medium text-sm">Botao Redirect</p>
+                        <p className="text-xs text-muted-foreground">Redireciona para canal de previas</p>
+                      </div>
+                    </div>
+                    <Switch
+                      checked={redirectButtonEnabled}
+                      onCheckedChange={(checked) => {
+                        setRedirectButtonEnabled(checked)
+                        setHasChanges(true)
+                      }}
+                    />
+                  </div>
+                  {redirectButtonEnabled && (
+                    <div className="mt-4 space-y-3">
+                      <Input
+                        value={redirectButtonText}
+                        onChange={(e) => {
+                          setRedirectButtonText(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="Texto do botao"
+                        className="bg-secondary/30 border-border/50"
+                      />
+                      <Input
+                        value={redirectButtonUrl}
+                        onChange={(e) => {
+                          setRedirectButtonUrl(e.target.value)
+                          setHasChanges(true)
+                        }}
+                        placeholder="@canal ou https://t.me/canal"
+                        className="bg-secondary/30 border-border/50"
+                      />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {/* Media Cache - Only show in bots tab */}
           {activeTab === "bots" && (
             <>
