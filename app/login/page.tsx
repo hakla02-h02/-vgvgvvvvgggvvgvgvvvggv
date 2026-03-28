@@ -165,17 +165,7 @@ export default function LoginPage() {
           <circle cx="85" cy="85" r="0.8" fill="#b8ff29" opacity="0.5" />
         </svg>
 
-        {/* Logo central com glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
-          <div className="relative">
-            {/* Glow */}
-            <div className="absolute inset-0 w-28 h-28 bg-[#b8ff29]/20 rounded-2xl blur-2xl" />
-            {/* Logo box */}
-            <div className="relative w-28 h-28 bg-[#b8ff29] rounded-2xl flex items-center justify-center">
-              <DragonIcon className="w-14 h-14 text-[#0a0a0a]" />
-            </div>
-          </div>
-        </div>
+
 
         {/* Texto inferior */}
         <div className="absolute bottom-12 left-0 right-0 text-center z-10">
