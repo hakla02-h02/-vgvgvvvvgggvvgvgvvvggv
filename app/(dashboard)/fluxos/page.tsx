@@ -194,6 +194,7 @@ export default function FluxosPage() {
   // Flow card - Design moderno com metricas visuais
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
+    console.log("[v0] FlowCard render - flow.id:", flow.id, "flowBots state:", flowBots, "bots for this flow:", bots)
     const isBasic = flow.flow_type !== "n8n"
     
     // Mock stats for now - these would come from real data
