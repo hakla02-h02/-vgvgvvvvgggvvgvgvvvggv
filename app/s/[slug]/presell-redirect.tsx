@@ -8,10 +8,21 @@ type RedirectData = {
   delay: number
   message: string
   fallbackText: string
+  background?: {
+    type: "color" | "image"
+    color: string
+    imageDesktop: string
+    imageMobile: string
+  }
 }
 
 export function PresellRedirect({ data }: { data: RedirectData }) {
   const [countdown, setCountdown] = useState(data.delay || 2)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    setIsMobile(window.innerWidth < 768)
+  }, [])
 
   useEffect(() => {
     if (countdown <= 0 && data.redirectUrl) {
@@ -26,10 +37,18 @@ export function PresellRedirect({ data }: { data: RedirectData }) {
     return () => clearTimeout(timer)
   }, [countdown, data.redirectUrl])
 
+  const bgColor = data.background?.color || "#0088cc"
+  const bgImage = isMobile 
+    ? data.background?.imageMobile 
+    : data.background?.imageDesktop
+
   return (
     <div 
-      className="min-h-screen flex items-center justify-center p-6"
-      style={{ backgroundColor: "#0088cc" }}
+      className="min-h-screen flex items-center justify-center p-6 bg-cover bg-center"
+      style={{ 
+        backgroundColor: bgColor,
+        backgroundImage: data.background?.type === "image" && bgImage ? `url(${bgImage})` : undefined
+      }}
     >
       <div className="text-center max-w-[90%]">
         {/* Circulo com logo do Telegram */}
