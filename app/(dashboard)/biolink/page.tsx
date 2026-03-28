@@ -36,11 +36,11 @@ const pageTypes = [
   },
   {
     id: "conversion" as const,
-    name: "Conversao",
-    description: "Paginas focadas em conversao direta",
-    gradient: "from-emerald-500 to-green-400",
-    iconBg: "bg-emerald-500/10",
-    iconColor: "text-emerald-500",
+    name: "Privacy",
+    description: "Pagina estilo perfil para conteudo exclusivo",
+    gradient: "from-orange-400 to-orange-300",
+    iconBg: "bg-orange-400/10",
+    iconColor: "text-orange-400",
   },
   {
     id: "dragonbio" as const,
@@ -190,7 +190,7 @@ export default function BioLinkPage() {
     
     // Gerar nome e slug automaticos
     const timestamp = Date.now()
-    const autoName = `${type === "dragonbio" ? "Dragon Bio" : type === "conversion" ? "Conversao" : "Checkout"} ${new Date().toLocaleDateString("pt-BR")}`
+    const autoName = `${type === "dragonbio" ? "Dragon Bio" : type === "conversion" ? "Privacy" : "Checkout"} ${new Date().toLocaleDateString("pt-BR")}`
     const autoSlug = `${type}-${timestamp}`
     
     try {
