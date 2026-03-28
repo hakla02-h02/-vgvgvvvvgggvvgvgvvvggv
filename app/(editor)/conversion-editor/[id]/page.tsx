@@ -848,11 +848,11 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                 {(pageData.posts || []).length > 0 ? (
                   <div className="flex flex-col gap-2">
                     {(pageData.posts || []).map((post) => (
-                      <div key={post.id} className="w-full aspect-[4/5] relative rounded-xl overflow-hidden">
+                      <div key={post.id} className="w-full relative rounded-xl overflow-hidden">
                         {post.type === "video" ? (
-                          <video src={post.url} className="w-full h-full object-cover" muted />
+                          <video src={post.url} className="w-full h-auto" muted />
                         ) : (
-                          <img src={post.url} alt="" className="w-full h-full object-cover" />
+                          <img src={post.url} alt="" className="w-full h-auto" />
                         )}
                         {/* Blur overlay com cadeado */}
                         <div className="absolute inset-0 backdrop-blur-xl bg-black/30 flex items-center justify-center">
