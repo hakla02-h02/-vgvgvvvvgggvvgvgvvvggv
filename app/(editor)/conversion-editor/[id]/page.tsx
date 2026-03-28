@@ -843,20 +843,20 @@ export default function PrivacyEditorPage({ params }: PageProps) {
                 </div>
               </div>
 
-              {/* Posts Grid com Blur */}
+              {/* Posts com Blur - Full Width */}
               <div className="px-4 pb-6">
                 {(pageData.posts || []).length > 0 ? (
-                  <div className="grid grid-cols-3 gap-1">
+                  <div className="flex flex-col gap-2">
                     {(pageData.posts || []).map((post) => (
-                      <div key={post.id} className="aspect-square relative rounded-md overflow-hidden">
+                      <div key={post.id} className="w-full aspect-[4/5] relative rounded-xl overflow-hidden">
                         {post.type === "video" ? (
                           <video src={post.url} className="w-full h-full object-cover" muted />
                         ) : (
                           <img src={post.url} alt="" className="w-full h-full object-cover" />
                         )}
                         {/* Blur overlay com cadeado */}
-                        <div className="absolute inset-0 backdrop-blur-md bg-black/20 flex items-center justify-center">
-                          <Lock className="w-4 h-4 text-white/80" />
+                        <div className="absolute inset-0 backdrop-blur-xl bg-black/30 flex items-center justify-center">
+                          <Lock className="w-6 h-6 text-white/80" />
                         </div>
                       </div>
                     ))}
