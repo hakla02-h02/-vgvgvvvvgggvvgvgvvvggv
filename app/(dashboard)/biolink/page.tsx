@@ -257,6 +257,7 @@ export default function BioLinkPage() {
           slug: autoSlug,
           template: "buttons",
           presell_type: presellType,
+          page_type: "presell",
         }),
       })
 
