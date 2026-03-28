@@ -51,6 +51,10 @@ interface FlowConfig {
   packs?: PackConfig[]
   payments?: PaymentConfig
   subscription?: SubscriptionConfig
+  secondaryMessage?: {
+    enabled: boolean
+    message: string
+  }
 }
 
 interface FlowPlan {
@@ -441,6 +445,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setPaymentGateway(config.payments?.gateway || "")
     setPixKey(config.payments?.pix_key || "")
     setSubscriptionEnabled(config.subscription?.enabled || false)
+    setSecondaryMessageEnabled(config.secondaryMessage?.enabled || false)
+    setSecondaryMessage(config.secondaryMessage?.message || "")
 
     setIsLoading(false)
   }, [flowId, session?.userId, router, isAuthLoading])
@@ -577,6 +583,10 @@ Clique no botao abaixo para renovar com desconto especial!`)
       },
       subscription: {
         enabled: subscriptionEnabled,
+      },
+      secondaryMessage: {
+        enabled: secondaryMessageEnabled,
+        message: secondaryMessage,
       },
     }
 
