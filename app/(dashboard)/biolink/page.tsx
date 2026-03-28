@@ -146,6 +146,7 @@ export default function BioLinkPage() {
   const router = useRouter()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [presellDialogOpen, setPresellDialogOpen] = useState(false)
+  const [checkoutDialogOpen, setCheckoutDialogOpen] = useState(false)
   const [sites, setSites] = useState<DragonBioSite[]>([])
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
@@ -185,12 +186,19 @@ export default function BioLinkPage() {
       return
     }
     
+    // Se for checkout, abre o dialog de selecao de tipo
+    if (type === "checkout") {
+      setDialogOpen(false)
+      setCheckoutDialogOpen(true)
+      return
+    }
+    
     setCreating(true)
     setDialogOpen(false)
     
     // Gerar nome e slug automaticos
     const timestamp = Date.now()
-    const autoName = `${type === "dragonbio" ? "Dragon Bio" : type === "conversion" ? "Privacy" : "Checkout"} ${new Date().toLocaleDateString("pt-BR")}`
+    const autoName = `${type === "dragonbio" ? "Dragon Bio" : "Privacy"} ${new Date().toLocaleDateString("pt-BR")}`
     const autoSlug = `${type}-${timestamp}`
     
     try {
@@ -220,7 +228,54 @@ export default function BioLinkPage() {
         router.push(`/biolink-editor/${data.site.id}`)
       } else if (type === "conversion") {
         router.push(`/conversion-editor/${data.site.id}`)
-      } else if (type === "checkout") {
+      }
+    } catch (error) {
+      console.error("Erro ao criar site:", error)
+      toast.error("Erro ao criar site")
+      setCreating(false)
+    }
+  }
+  
+  const handleSelectCheckoutType = async (checkoutType: "direto" | "normal") => {
+    if (!session?.userId) return
+    
+    setCreating(true)
+    setCheckoutDialogOpen(false)
+    
+    const timestamp = Date.now()
+    const typeNames = {
+      "direto": "Checkout Direto",
+      "normal": "Checkout"
+    }
+    const autoName = `${typeNames[checkoutType]} ${new Date().toLocaleDateString("pt-BR")}`
+    const autoSlug = `checkout-${checkoutType}-${timestamp}`
+    
+    try {
+      const res = await fetch("/api/dragon-bio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: session.userId,
+          userEmail: session.email,
+          userName: session.name,
+          nome: autoName,
+          slug: autoSlug,
+          template: "buttons",
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        toast.error(data.error || "Erro ao criar site")
+        setCreating(false)
+        return
+      }
+
+      // Redirecionar para o editor correto
+      if (checkoutType === "direto") {
+        router.push(`/checkout-direto-editor/${data.site.id}`)
+      } else {
         router.push(`/checkout-editor/${data.site.id}`)
       }
     } catch (error) {
@@ -288,7 +343,12 @@ export default function BioLinkPage() {
     } else if (pageType === "conversion") {
       router.push(`/conversion-editor/${site.id}`)
     } else if (pageType === "checkout") {
-      router.push(`/checkout-editor/${site.id}`)
+      // Detectar se e checkout direto ou normal pelo slug
+      if (site.slug?.includes("checkout-direto")) {
+        router.push(`/checkout-direto-editor/${site.id}`)
+      } else {
+        router.push(`/checkout-editor/${site.id}`)
+      }
     } else {
       router.push(`/biolink-editor/${site.id}`)
     }
@@ -744,6 +804,77 @@ export default function BioLinkPage() {
                 </h3>
                 <p className="text-xs text-muted-foreground">
                   Pagina com redirect automatico
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
+            </button>
+          </div>
+
+          {creating && (
+            <div className="flex items-center justify-center gap-2 pt-4 text-muted-foreground">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span className="text-sm">Criando pagina...</span>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog de Selecao de Tipo de Checkout */}
+      <Dialog open={checkoutDialogOpen} onOpenChange={setCheckoutDialogOpen}>
+        <DialogContent className="bg-card border-gray-200 sm:max-w-lg rounded-[24px]">
+          <DialogHeader>
+            <DialogTitle className="text-foreground text-center">
+              Escolha o tipo de Checkout
+            </DialogTitle>
+            <p className="text-sm text-muted-foreground text-center">
+              Selecione o modelo de pagamento que deseja criar
+            </p>
+          </DialogHeader>
+          
+          <div className="flex flex-col gap-3 pt-4">
+            {/* Checkout Direto */}
+            <button 
+              onClick={() => handleSelectCheckoutType("direto")}
+              disabled={creating}
+              className="group bg-card rounded-[16px] p-4 border border-border hover:border-emerald-300 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"/>
+                  <path d="M7 7h10v10H7z"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground mb-0.5 group-hover:text-emerald-600 transition-colors">
+                  Checkout Direto
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  QR Code PIX direto, sem formulario
+                </p>
+              </div>
+              <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-emerald-500 transition-colors" />
+            </button>
+
+            {/* Checkout Normal */}
+            <button 
+              onClick={() => handleSelectCheckoutType("normal")}
+              disabled={creating}
+              className="group bg-card rounded-[16px] p-4 border border-border hover:border-blue-300 hover:shadow-lg transition-all duration-300 text-left flex items-center gap-4 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0 shadow-lg group-hover:scale-105 transition-transform">
+                <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                  <line x1="8" y1="15" x2="8" y2="15.01"/>
+                  <line x1="12" y1="15" x2="16" y2="15"/>
+                </svg>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground mb-0.5 group-hover:text-blue-600 transition-colors">
+                  Checkout com Formulario
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Coleta dados (email, nome, CPF) antes do PIX
                 </p>
               </div>
               <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-blue-500 transition-colors" />
