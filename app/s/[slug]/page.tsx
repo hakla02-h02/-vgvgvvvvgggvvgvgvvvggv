@@ -65,9 +65,10 @@ export default async function DragonBioPage({ params }: PageProps) {
     }
   }
 
-  // Se for uma pagina Privacy/Conversao (detecta pelo page_data ou slug)
-  if (site.page_data && (site.page_data.username || site.page_data.handle || site.page_data.plans)) {
-    return <PrivacyPage data={site.page_data} />
+  // Se for uma pagina Privacy/Conversao (detecta pelo slug ou page_data)
+  const isConversionPage = site.slug?.startsWith("conversion-")
+  if (isConversionPage || (site.page_data && (site.page_data.username || site.page_data.handle || site.page_data.plans))) {
+    return <PrivacyPage data={site.page_data || {}} />
   }
 
   // Ordenar links

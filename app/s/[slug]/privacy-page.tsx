@@ -53,7 +53,8 @@ type PrivacyPageData = {
   }
 }
 
-export function PrivacyPage({ data }: { data: PrivacyPageData }) {
+export function PrivacyPage({ data }: { data: Partial<PrivacyPageData> }) {
+  // Valores default para dados vazios
   const colors = data.colors || {
     background: "#fef7f0",
     text: "#1a1a1a",
@@ -62,13 +63,27 @@ export function PrivacyPage({ data }: { data: PrivacyPageData }) {
     cardBg: "#ffffff"
   }
 
-  const stats = data.stats || { photos: 0, videos: 0, locked: 0, likes: "0" }
+  const username = data.username || "SeuNome"
+  const handle = data.handle || "@seunome"
+  const bio = data.bio || "Oi meus amores! Bem-vindos ao meu perfil exclusivo..."
+  const avatar = data.avatar || ""
+  const coverImage = data.coverImage || ""
+  const isVerified = data.isVerified !== false
+  const stats = data.stats || { photos: 544, videos: 609, locked: 5, likes: "13.3K" }
   const socialLinks = data.socialLinks || {}
-  const subscriptions = data.subscriptions || []
+  const subscriptions = data.subscriptions || [
+    { id: "1", name: "1 mes", price: "R$ 35,90" },
+    { id: "2", name: "3 meses (10% off)", price: "R$ 96,93" },
+    { id: "3", name: "6 meses (15% off)", price: "R$ 183,09" }
+  ]
+  const postsCount = data.postsCount || 352
+  const mediasCount = data.mediasCount || 1153
+  const posts = data.posts || []
+  const ctaUrl = data.ctaUrl || ""
 
   const handlePlanClick = () => {
-    if (data.ctaUrl) {
-      window.location.href = data.ctaUrl
+    if (ctaUrl) {
+      window.location.href = ctaUrl
     }
   }
 
@@ -84,10 +99,10 @@ export function PrivacyPage({ data }: { data: PrivacyPageData }) {
 
       {/* Cover Image */}
       <div className="relative">
-        {data.coverImage ? (
+        {coverImage ? (
           <div 
             className="w-full h-32 bg-cover bg-center"
-            style={{ backgroundImage: `url(${data.coverImage})` }}
+            style={{ backgroundImage: `url(${coverImage})` }}
           />
         ) : (
           <div className="w-full h-32" style={{ backgroundColor: `${colors.accent}20` }} />
@@ -95,10 +110,10 @@ export function PrivacyPage({ data }: { data: PrivacyPageData }) {
         
         {/* Avatar */}
         <div className="absolute -bottom-10 left-4">
-          {data.avatar ? (
+          {avatar ? (
             <img 
-              src={data.avatar} 
-              alt={data.username}
+              src={avatar} 
+              alt={username}
               className="w-20 h-20 rounded-full border-4 object-cover"
               style={{ borderColor: colors.background }}
             />
@@ -111,7 +126,7 @@ export function PrivacyPage({ data }: { data: PrivacyPageData }) {
                 color: colors.subtext
               }}
             >
-              {data.username?.charAt(0)?.toUpperCase() || "P"}
+              {username.charAt(0).toUpperCase()}
             </div>
           )}
         </div>
@@ -137,21 +152,21 @@ export function PrivacyPage({ data }: { data: PrivacyPageData }) {
       <div className="pt-12 px-4">
         <div className="flex items-center gap-1 mb-1">
           <h1 className="text-xl font-bold" style={{ color: colors.text }}>
-            {data.username || "SeuNome"}
+            {username}
           </h1>
-          {data.isVerified && (
+          {isVerified && (
             <CheckCircle2 className="w-5 h-5" style={{ color: colors.accent }} />
           )}
         </div>
         <p className="text-sm mb-2" style={{ color: colors.subtext }}>
-          @{data.handle || "seunome"}
+          {handle.startsWith("@") ? handle : `@${handle}`}
         </p>
-        {data.bio && (
+        {bio && (
           <p className="text-sm mb-1" style={{ color: colors.text }}>
-            {data.bio.length > 80 ? data.bio.substring(0, 80) + "..." : data.bio}
+            {bio.length > 80 ? bio.substring(0, 80) + "..." : bio}
           </p>
         )}
-        {data.bio && data.bio.length > 80 && (
+        {bio && bio.length > 80 && (
           <button className="text-sm font-medium" style={{ color: colors.accent }}>
             Ler mais
           </button>
@@ -213,11 +228,11 @@ export function PrivacyPage({ data }: { data: PrivacyPageData }) {
       <div className="mx-4 mt-6 py-3 px-4 rounded-xl" style={{ backgroundColor: colors.cardBg }}>
         <div className="flex items-center justify-center gap-6">
           <div className="flex items-center gap-2">
-            <span className="font-bold" style={{ color: colors.accent }}>{data.postsCount || 0}</span>
+            <span className="font-bold" style={{ color: colors.accent }}>{postsCount}</span>
             <span style={{ color: colors.subtext }}>Postagens</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-bold" style={{ color: colors.subtext }}>{data.mediasCount || 0}</span>
+            <span className="font-bold" style={{ color: colors.subtext }}>{mediasCount}</span>
             <span style={{ color: colors.subtext }}>Midias</span>
           </div>
         </div>
@@ -225,9 +240,9 @@ export function PrivacyPage({ data }: { data: PrivacyPageData }) {
 
       {/* Posts Grid com Blur */}
       <div className="px-4 mt-6 pb-8">
-        {(data.posts || []).length > 0 ? (
+        {posts.length > 0 ? (
           <div className="grid grid-cols-3 gap-1">
-            {(data.posts || []).map((post) => (
+            {posts.map((post) => (
               <div key={post.id} className="aspect-square relative rounded-md overflow-hidden">
                 {post.type === "video" ? (
                   <video src={post.url} className="w-full h-full object-cover" muted />
