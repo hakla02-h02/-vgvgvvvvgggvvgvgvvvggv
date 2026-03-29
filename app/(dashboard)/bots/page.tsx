@@ -867,62 +867,63 @@ export default function BotsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Change Token Dialog */}
+      {/* Change Token Dialog - Design escuro */}
       <Dialog open={!!changeTokenBot} onOpenChange={(open) => !open && setChangeTokenBot(null)}>
-        <DialogContent className="sm:max-w-md bg-card border-border p-6">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center">
-              <RefreshCw className="h-6 w-6 text-accent" />
+        <DialogContent className="sm:max-w-[400px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+          <div className="p-5">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-xl bg-[#bfff00]/10 flex items-center justify-center border border-[#bfff00]/20">
+                <RefreshCw className="h-5 w-5 text-[#bfff00]" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Trocar Token</h2>
+                <p className="text-xs text-gray-400">{changeTokenBot?.name}</p>
+              </div>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-foreground">Trocar Token</h2>
-              <p className="text-sm text-muted-foreground">
-                {changeTokenBot?.name}
-              </p>
-            </div>
-          </div>
-          
-          <div className="space-y-4">
-            <div>
-              <Label className="text-sm font-medium text-foreground mb-2 block">
+            
+            {/* Input */}
+            <div className="space-y-1.5 mb-4">
+              <Label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
                 Novo Token
               </Label>
               <Input
                 placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
                 value={newToken}
                 onChange={(e) => setNewToken(e.target.value)}
-                className="h-12 bg-muted border-border rounded-xl font-mono text-sm"
+                className="h-11 bg-[#2a2a2e] border-[#3a3a3e] rounded-lg font-mono text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00]"
               />
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-[11px] text-gray-500">
                 Use quando seu bot for banido. Os dados serao mantidos.
               </p>
             </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={() => setChangeTokenBot(null)}
-                className="flex-1 h-11 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-              >
-                Cancelar
-              </button>
-              <button
-                onClick={handleChangeToken}
-                disabled={isChangingToken || !newToken.trim()}
-                className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground h-11 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
-              >
-                {isChangingToken ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Trocando...
-                  </>
-                ) : (
-                  <>
-                    <RefreshCw className="h-4 w-4" />
-                    Trocar Token
-                  </>
-                )}
-              </button>
-            </div>
+          </div>
+          
+          {/* Footer */}
+          <div className="px-5 py-3 bg-[#18181a] border-t border-[#2a2a2e] flex items-center justify-end gap-2">
+            <button
+              onClick={() => setChangeTokenBot(null)}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={handleChangeToken}
+              disabled={isChangingToken || !newToken.trim()}
+              className="flex items-center gap-2 bg-[#bfff00] text-[#1c1c1e] px-4 py-2 rounded-lg font-semibold text-sm hover:bg-[#d4ff4d] disabled:opacity-50 transition-colors"
+            >
+              {isChangingToken ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Trocando...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4" />
+                  Trocar Token
+                </>
+              )}
+            </button>
           </div>
         </DialogContent>
       </Dialog>
