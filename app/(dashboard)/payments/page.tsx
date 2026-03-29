@@ -153,13 +153,13 @@ export default function VendasPage() {
                 />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Faturamento</span>
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Faturamento</span>
                     <div className="w-9 h-9 rounded-xl bg-[#bfff00]/20 flex items-center justify-center">
                       <DollarSign className="h-4 w-4 text-[#bfff00]" />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-[#bfff00]">{formatCurrency(stats.faturamento)}</p>
-                  <p className="text-xs text-gray-500 mt-1">vendas aprovadas</p>
+                  <p className="text-3xl font-extrabold text-[#bfff00]">{formatCurrency(stats.faturamento)}</p>
+                  <p className="text-sm font-medium text-gray-500 mt-1">vendas aprovadas</p>
                 </div>
               </div>
 
@@ -171,13 +171,13 @@ export default function VendasPage() {
                 />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Total de Vendas</span>
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Total de Vendas</span>
                     <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
                       <TrendingUp className="h-4 w-4 text-blue-400" />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-white">{stats.total}</p>
-                  <p className="text-xs text-gray-500 mt-1">vendas aprovadas</p>
+                  <p className="text-3xl font-extrabold text-white">{stats.total}</p>
+                  <p className="text-sm font-medium text-gray-500 mt-1">vendas aprovadas</p>
                 </div>
               </div>
 
@@ -189,13 +189,13 @@ export default function VendasPage() {
                 />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Pendentes</span>
+                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Pendentes</span>
                     <div className="w-9 h-9 rounded-xl bg-yellow-500/20 flex items-center justify-center">
                       <Clock className="h-4 w-4 text-yellow-400" />
                     </div>
                   </div>
-                  <p className="text-2xl font-bold text-yellow-400">{formatCurrency(stats.pendentes)}</p>
-                  <p className="text-xs text-gray-500 mt-1">{stats.pendentesCount} aguardando</p>
+                  <p className="text-3xl font-extrabold text-yellow-400">{formatCurrency(stats.pendentes)}</p>
+                  <p className="text-sm font-medium text-gray-500 mt-1">{stats.pendentesCount} aguardando</p>
                 </div>
               </div>
             </div>
