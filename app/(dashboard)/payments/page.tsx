@@ -23,7 +23,8 @@ interface Payment {
   user_id: string
   bot_id: string | null
   telegram_user_id: string | null
-  telegram_user_name: string | null
+  telegram_first_name: string | null
+  telegram_last_name: string | null
   telegram_username: string | null
   gateway: string
   external_payment_id: string
@@ -69,6 +70,16 @@ const productTypeLabels: Record<string, string> = {
 }
 
 const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((res) => res.json())
+
+// Helper para pegar nome completo do usuario Telegram
+const getTelegramUserName = (payment: Payment) => {
+  if (payment.telegram_first_name) {
+    return payment.telegram_last_name 
+      ? `${payment.telegram_first_name} ${payment.telegram_last_name}`
+      : payment.telegram_first_name
+  }
+  return "Usuario"
+}
 
 // Generate mock chart data based on real stats
 const generateChartData = (totalApproved: number) => {
@@ -385,14 +396,14 @@ export default function PaymentsPage() {
                     <div key={payment.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
                       {/* Avatar */}
                       <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-sm font-bold text-[#65a30d]">
-                        {getInitials(payment.telegram_user_name)}
+                        {payment.telegram_first_name?.charAt(0).toUpperCase() || "?"}
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-foreground truncate">
-                            {payment.telegram_user_name || "Usuario"}
+                            {getTelegramUserName(payment)}
                           </span>
                           {payment.product_type && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
@@ -465,10 +476,10 @@ export default function PaymentsPage() {
               {/* User Info */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-lg font-bold text-[#65a30d]">
-                  {getInitials(selectedPayment.telegram_user_name)}
+                  {selectedPayment.telegram_first_name?.charAt(0).toUpperCase() || "?"}
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold text-foreground">{selectedPayment.telegram_user_name || "Usuario"}</p>
+                  <p className="font-semibold text-foreground">{getTelegramUserName(selectedPayment)}</p>
                   {selectedPayment.telegram_username && (
                     <p className="text-sm text-[#22c55e]">
                       @{selectedPayment.telegram_username}
