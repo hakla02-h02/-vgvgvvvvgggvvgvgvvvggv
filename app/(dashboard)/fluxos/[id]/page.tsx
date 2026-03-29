@@ -57,6 +57,11 @@ interface FlowConfig {
   }
   welcomeMedias?: string[]
   ctaButtonText?: string
+  redirectButton?: {
+    enabled: boolean
+    text: string
+    url: string
+  }
 }
 
 interface FlowPlan {
@@ -451,6 +456,9 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setSecondaryMessage(config.secondaryMessage?.message || "")
     setWelcomeMedias(config.welcomeMedias || [])
     setCtaButtonText(config.ctaButtonText || "Ver Planos")
+    setRedirectButtonEnabled(config.redirectButton?.enabled || false)
+    setRedirectButtonText(config.redirectButton?.text || "")
+    setRedirectButtonUrl(config.redirectButton?.url || "")
 
     setIsLoading(false)
   }, [flowId, session?.userId, router, isAuthLoading])
@@ -594,6 +602,11 @@ Clique no botao abaixo para renovar com desconto especial!`)
       },
       welcomeMedias: welcomeMedias,
       ctaButtonText: ctaButtonText,
+      redirectButton: {
+        enabled: redirectButtonEnabled,
+        text: redirectButtonText,
+        url: redirectButtonUrl,
+      },
     }
 
     const updatePayload = {
