@@ -569,7 +569,7 @@ export default function BotsPage() {
         </div>
       </header>
 
-      {/* Create Bot Dialog - SIMPLIFICADO (apenas token) */}
+      {/* Create Bot Dialog - Design escuro com verde */}
       <Dialog open={createOpen} onOpenChange={(open) => {
         setCreateOpen(open)
         if (!open) {
@@ -577,16 +577,16 @@ export default function BotsPage() {
           setValidatedBot(null)
         }
       }}>
-        <DialogContent className="sm:max-w-md bg-card border-border p-0 gap-0 overflow-hidden">
-          <div className="p-6">
+        <DialogContent className="sm:max-w-[400px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+          <div className="p-5">
             {/* Header */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center">
-                <BotIcon className="h-7 w-7 text-accent" />
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-xl bg-[#bfff00]/10 flex items-center justify-center border border-[#bfff00]/20">
+                <BotIcon className="h-6 w-6 text-[#bfff00]" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-foreground">Conectar Bot</h2>
-                <p className="text-sm text-muted-foreground">Cole o token do Telegram</p>
+                <h2 className="text-lg font-bold text-white">Conectar Bot</h2>
+                <p className="text-xs text-gray-400">Cole o token do Telegram</p>
               </div>
             </div>
 
@@ -594,7 +594,7 @@ export default function BotsPage() {
             {!validatedBot ? (
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium text-foreground mb-2 block">
+                  <Label className="text-xs font-medium text-gray-400 mb-1.5 block uppercase tracking-wide">
                     Token do Bot
                   </Label>
                   <Input
@@ -602,10 +602,10 @@ export default function BotsPage() {
                     value={newBotToken}
                     onChange={(e) => setNewBotToken(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleValidateToken()}
-                    className="h-12 bg-muted border-border rounded-xl font-mono text-sm"
+                    className="h-11 bg-[#2a2a2e] border-[#3a3a3e] rounded-lg font-mono text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00]"
                     autoFocus
                   />
-                  <p className="text-xs text-muted-foreground mt-2">
+                  <p className="text-[11px] text-gray-500 mt-1.5">
                     Pegue o token com o @BotFather no Telegram
                   </p>
                 </div>
@@ -613,7 +613,7 @@ export default function BotsPage() {
                 <button
                   onClick={handleValidateToken}
                   disabled={isValidating || !newBotToken.trim()}
-                  className="w-full flex items-center justify-center gap-2 bg-accent text-accent-foreground h-12 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-2 bg-[#bfff00] text-[#1c1c1e] h-11 rounded-lg font-semibold text-sm hover:bg-[#d4ff4d] transition-colors disabled:opacity-50"
                 >
                   {isValidating ? (
                     <>
@@ -628,55 +628,55 @@ export default function BotsPage() {
             ) : (
               /* Bot validado - mostra card de confirmação */
               <div className="space-y-4">
-                <div className="bg-muted/50 rounded-2xl p-5 border border-border">
-                  <div className="flex items-center gap-4">
+                <div className="bg-[#2a2a2e] rounded-xl p-4 border border-[#3a3a3e]">
+                  <div className="flex items-center gap-3">
                     {validatedBot.photo_url ? (
                       <img
                         src={validatedBot.photo_url}
                         alt={validatedBot.name}
-                        className="w-16 h-16 rounded-2xl object-cover"
+                        className="w-14 h-14 rounded-xl object-cover border border-[#3a3a3e]"
                       />
                     ) : (
-                      <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center">
-                        <BotIcon className="h-8 w-8 text-accent" />
+                      <div className="w-14 h-14 rounded-xl bg-[#bfff00]/10 flex items-center justify-center border border-[#bfff00]/20">
+                        <BotIcon className="h-7 w-7 text-[#bfff00]" />
                       </div>
                     )}
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-foreground text-lg truncate">
+                      <h3 className="font-bold text-white text-base truncate">
                         {validatedBot.name}
                       </h3>
-                      <p className="text-sm text-muted-foreground flex items-center gap-1">
-                        <AtSign className="h-3.5 w-3.5" />
+                      <p className="text-xs text-gray-400 flex items-center gap-1">
+                        <AtSign className="h-3 w-3" />
                         {validatedBot.username}
                       </p>
                     </div>
-                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 text-green-600">
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      <span className="text-xs font-medium">Validado</span>
+                    <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-[#bfff00]/10 text-[#bfff00]">
+                      <CheckCircle2 className="h-3 w-3" />
+                      <span className="text-[10px] font-medium">OK</span>
                     </div>
                   </div>
                   
                   {validatedBot.short_description && (
-                    <p className="text-sm text-muted-foreground mt-3 line-clamp-2">
+                    <p className="text-xs text-gray-400 mt-3 line-clamp-2">
                       {validatedBot.short_description}
                     </p>
                   )}
                 </div>
 
-                <div className="flex gap-3">
+                <div className="flex gap-2">
                   <button
                     onClick={() => {
                       setValidatedBot(null)
                       setNewBotToken("")
                     }}
-                    className="flex-1 h-11 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    className="flex-1 h-10 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors"
                   >
                     Cancelar
                   </button>
                   <button
                     onClick={handleCreateBot}
                     disabled={isCreating}
-                    className="flex-1 flex items-center justify-center gap-2 bg-accent text-accent-foreground h-11 rounded-xl font-semibold text-sm hover:bg-accent/90 transition-colors disabled:opacity-50"
+                    className="flex-1 flex items-center justify-center gap-2 bg-[#bfff00] text-[#1c1c1e] h-10 rounded-lg font-semibold text-sm hover:bg-[#d4ff4d] transition-colors disabled:opacity-50"
                   >
                     {isCreating ? (
                       <>
