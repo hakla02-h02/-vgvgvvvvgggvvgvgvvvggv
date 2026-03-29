@@ -197,28 +197,28 @@ export default function VendasPage() {
               </div>
             </div>
 
-            {/* Search and Tabs - Clean Design */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-5">
-              <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {/* Search and Tabs */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Buscar por nome, ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-10 pl-11 pr-4 bg-gray-50 border-0 rounded-full text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
+                  className="w-full h-9 pl-9 pr-4 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 focus:border-gray-300 transition-all"
                 />
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
                       activeTab === tab.id
-                        ? "bg-[#1c1c1e] text-white shadow-sm"
-                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
                     }`}
                   >
                     {tab.label} ({tab.count})
@@ -227,67 +227,86 @@ export default function VendasPage() {
               </div>
             </div>
 
-            {/* Payments List - Compact Design */}
-            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
+            {/* Table Layout */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-[auto_1fr_140px_120px_100px] gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200">
+                <div className="w-10" />
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Comprador</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Produto</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Data</span>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Valor</span>
+              </div>
+
+              {/* Body */}
               {loading ? (
                 <div className="flex items-center justify-center py-16">
                   <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
                 </div>
               ) : filteredPayments.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center">
-                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
-                    <CreditCard className="h-6 w-6 text-gray-400" />
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <CreditCard className="h-5 w-5 text-gray-400" />
                   </div>
-                  <p className="text-sm font-medium text-gray-900">Nenhuma venda encontrada</p>
+                  <p className="text-sm font-semibold text-gray-900">Nenhuma venda encontrada</p>
                   <p className="text-xs text-gray-500 mt-1">As vendas aparecerao aqui</p>
                 </div>
               ) : (
-                filteredPayments.map((payment) => (
-                  <button
-                    key={payment.id}
-                    onClick={() => setSelectedPayment(payment)}
-                    className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
-                  >
-                    {/* Avatar estilo Instagram - silhueta cinza */}
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
-                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-gray-400 translate-y-0.5">
-                        <circle cx="12" cy="8" r="4" fill="currentColor"/>
-                        <path d="M20 21c0-4.418-3.582-8-8-8s-8 3.582-8 8" fill="currentColor"/>
-                      </svg>
-                    </div>
-
-                    {/* Info - Typography mais leve */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 truncate">{getUserName(payment)}</span>
-                        {payment.telegram_username && (
-                          <span className="text-xs text-gray-400">@{payment.telegram_username}</span>
-                        )}
+                <div className="divide-y divide-gray-100">
+                  {filteredPayments.map((payment) => (
+                    <button
+                      key={payment.id}
+                      onClick={() => setSelectedPayment(payment)}
+                      className="w-full grid grid-cols-[auto_1fr_140px_120px_100px] gap-4 items-center px-4 py-3.5 hover:bg-gray-50 transition-colors text-left"
+                    >
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                        <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-400">
+                          <circle cx="12" cy="8" r="4" fill="currentColor"/>
+                          <path d="M20 21c0-4.418-3.582-8-8-8s-8 3.582-8 8" fill="currentColor"/>
+                        </svg>
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5 truncate">
-                        {payment.description || "Pagamento"} &middot; {formatDate(payment.created_at)}
-                      </p>
-                    </div>
 
-                    {/* Valor e Status - Alinhado */}
-                    <div className="text-right shrink-0 flex items-center gap-3">
-                      <span className={`text-sm font-semibold ${
-                        payment.status === "approved" ? "text-emerald-600" : 
-                        payment.status === "pending" ? "text-amber-600" : 
-                        "text-gray-500"
-                      }`}>
-                        {formatCurrency(Number(payment.amount))}
-                      </span>
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
-                        payment.status === "approved" ? "bg-emerald-50 text-emerald-600" :
-                        payment.status === "pending" ? "bg-amber-50 text-amber-600" :
-                        "bg-gray-100 text-gray-500"
-                      }`}>
-                        {payment.status === "approved" ? "Aprovada" : payment.status === "pending" ? "Pendente" : "Rejeitada"}
-                      </span>
-                    </div>
-                  </button>
-                ))
+                      {/* Comprador */}
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 truncate">{getUserName(payment)}</p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {payment.telegram_username ? `@${payment.telegram_username}` : "Telegram User"}
+                        </p>
+                      </div>
+
+                      {/* Produto */}
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-gray-700 truncate">{payment.description || "Pagamento"}</p>
+                        <p className="text-xs text-gray-400">{payment.gateway || "PIX"}</p>
+                      </div>
+
+                      {/* Data */}
+                      <div>
+                        <p className="text-sm text-gray-700">{formatDate(payment.created_at).split(",")[0]}</p>
+                        <p className="text-xs text-gray-400">{formatDate(payment.created_at).split(",")[1]?.trim() || ""}</p>
+                      </div>
+
+                      {/* Valor + Status */}
+                      <div className="text-right">
+                        <p className={`text-sm font-bold ${
+                          payment.status === "approved" ? "text-emerald-600" : 
+                          payment.status === "pending" ? "text-amber-600" : 
+                          "text-gray-500"
+                        }`}>
+                          {formatCurrency(Number(payment.amount))}
+                        </p>
+                        <span className={`text-[10px] font-semibold uppercase tracking-wide ${
+                          payment.status === "approved" ? "text-emerald-500" :
+                          payment.status === "pending" ? "text-amber-500" :
+                          "text-gray-400"
+                        }`}>
+                          {payment.status === "approved" ? "Aprovada" : payment.status === "pending" ? "Pendente" : "Rejeitada"}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           </div>
