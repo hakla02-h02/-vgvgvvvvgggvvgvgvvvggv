@@ -357,10 +357,10 @@ export default function FluxosPage() {
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-20">
       <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#2a2a2e] border border-[#3a3a3e] mb-6">
-        <Workflow className="h-10 w-10 text-gray-500" />
+        <Workflow className="h-10 w-10 text-white" />
       </div>
-      <h3 className="text-xl font-semibold text-white mb-2">Nenhum fluxo configurado</h3>
-      <p className="text-gray-400 text-center max-w-md mb-6">
+      <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum fluxo configurado</h3>
+      <p className="text-muted-foreground text-center max-w-md mb-6">
         Crie seu primeiro fluxo de automacao para comecar a automatizar suas vendas e capturar leads.
       </p>
       <div className="flex items-center gap-3">
