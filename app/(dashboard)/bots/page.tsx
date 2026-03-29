@@ -697,26 +697,26 @@ export default function BotsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Config Bot Dialog - Design escuro com glow verde */}
+      {/* Config Bot Dialog - Design escuro compacto com glow */}
       <Dialog open={!!configBot} onOpenChange={(open) => !open && closeConfig()}>
-        <DialogContent className="sm:max-w-[420px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[24px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+        <DialogContent className="sm:max-w-[400px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
           {configBot && (
             <>
               {/* Loading state */}
               {isLoadingConfig ? (
-                <div className="p-12 flex flex-col items-center justify-center">
-                  <Loader2 className="h-8 w-8 text-[#bfff00] animate-spin mb-3" />
+                <div className="p-8 flex flex-col items-center justify-center">
+                  <Loader2 className="h-6 w-6 text-[#bfff00] animate-spin mb-2" />
                   <p className="text-gray-400 text-sm">Carregando...</p>
                 </div>
               ) : (
                 <>
-                  {/* Header com foto centralizada e glow */}
-                  <div className="relative pt-6 pb-5 px-6 text-center">
+                  {/* Header compacto com glow */}
+                  <div className="relative pt-5 pb-4 px-5 text-center">
                     {/* Glow verde */}
                     <div 
-                      className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+                      className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
                       style={{
-                        background: "radial-gradient(ellipse at center bottom, rgba(190, 255, 0, 0.12) 0%, transparent 70%)"
+                        background: "radial-gradient(ellipse at center bottom, rgba(190, 255, 0, 0.1) 0%, transparent 70%)"
                       }}
                     />
                     
@@ -729,34 +729,34 @@ export default function BotsPage() {
                       className="hidden"
                     />
                     <div 
-                      className="relative inline-block group cursor-pointer mb-3"
+                      className="relative inline-block group cursor-pointer mb-2"
                       onClick={() => photoInputRef.current?.click()}
                     >
                       {cfgPhotoPreview || (configBot as ExtendedBot).photo_url ? (
                         <img
                           src={cfgPhotoPreview || (configBot as ExtendedBot).photo_url!}
                           alt={configBot.name}
-                          className="w-20 h-20 rounded-2xl object-cover border-2 border-[#3a3a3e]"
+                          className="w-16 h-16 rounded-xl object-cover border-2 border-[#3a3a3e]"
                         />
                       ) : (
-                        <div className="w-20 h-20 rounded-2xl bg-[#bfff00]/10 flex items-center justify-center border-2 border-[#3a3a3e]">
-                          <BotIcon className="h-9 w-9 text-[#bfff00]" />
+                        <div className="w-16 h-16 rounded-xl bg-[#bfff00]/10 flex items-center justify-center border-2 border-[#3a3a3e]">
+                          <BotIcon className="h-7 w-7 text-[#bfff00]" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Camera className="h-5 w-5 text-white" />
+                      <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <Camera className="h-4 w-4 text-white" />
                       </div>
-                      <div className={`absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full border-[3px] border-[#1c1c1e] ${
+                      <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#1c1c1e] ${
                         configBot.status === "active" ? "bg-[#bfff00]" : "bg-gray-500"
                       }`} />
                     </div>
                     
-                    <h2 className="text-lg font-bold text-white">Configuracoes do Bot</h2>
-                    <p className="text-xs text-gray-400 mt-0.5">Clique na foto para alterar</p>
+                    <h2 className="text-base font-bold text-white">Configuracoes do Bot</h2>
+                    <p className="text-[11px] text-gray-400">Clique na foto para alterar</p>
                     
                     {/* Toggle de status */}
-                    <div className="flex items-center justify-center gap-3 mt-4 bg-[#2a2a2e] rounded-full px-5 py-2.5 mx-auto w-fit">
-                      <span className={`text-sm font-medium ${configBot.status !== "active" ? "text-white" : "text-gray-500"}`}>
+                    <div className="flex items-center justify-center gap-2.5 mt-3 bg-[#2a2a2e] rounded-full px-4 py-2 mx-auto w-fit">
+                      <span className={`text-xs font-medium ${configBot.status !== "active" ? "text-white" : "text-gray-500"}`}>
                         Offline
                       </span>
                       <Switch
@@ -772,90 +772,90 @@ export default function BotsPage() {
                         }}
                         className="data-[state=checked]:bg-[#bfff00]"
                       />
-                      <span className={`text-sm font-medium ${configBot.status === "active" ? "text-[#bfff00]" : "text-gray-500"}`}>
+                      <span className={`text-xs font-medium ${configBot.status === "active" ? "text-[#bfff00]" : "text-gray-500"}`}>
                         Online
                       </span>
                     </div>
                   </div>
 
                   {/* Campos editaveis */}
-                  <div className="px-6 pb-4 space-y-4 border-t border-[#2a2a2e] pt-5">
+                  <div className="px-5 pb-4 space-y-3 border-t border-[#2a2a2e] pt-4">
                     {/* Nome */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Nome</Label>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Nome</Label>
                       <Input 
                         value={cfgName} 
                         onChange={(e) => setCfgName(e.target.value)} 
-                        className="h-11 bg-[#2a2a2e] border-[#3a3a3e] rounded-xl text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00] focus:ring-[#bfff00]/20" 
+                        className="h-10 bg-[#2a2a2e] border-[#3a3a3e] rounded-lg text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00]" 
                         placeholder="Nome do bot"
                       />
                     </div>
 
                     {/* Username */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <AtSign className="h-3 w-3" />Username
+                    <div className="space-y-1">
+                      <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1">
+                        <AtSign className="h-2.5 w-2.5" />Username
                       </Label>
                       <Input 
                         value={(configBot as ExtendedBot).username || ""} 
                         disabled
-                        className="h-11 bg-[#232325] border-[#2a2a2e] rounded-xl text-sm text-gray-500" 
+                        className="h-10 bg-[#232325] border-[#2a2a2e] rounded-lg text-sm text-gray-500" 
                       />
                     </div>
 
                     {/* Bio */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Bio</Label>
-                        <span className="text-xs text-gray-500">{cfgShortDescription.length}/120</span>
+                        <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Bio</Label>
+                        <span className="text-[10px] text-gray-500">{cfgShortDescription.length}/120</span>
                       </div>
                       <Input 
                         value={cfgShortDescription} 
                         onChange={(e) => setCfgShortDescription(e.target.value)} 
-                        className="h-11 bg-[#2a2a2e] border-[#3a3a3e] rounded-xl text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00] focus:ring-[#bfff00]/20" 
-                        placeholder="Descricao curta visivel no perfil"
+                        className="h-10 bg-[#2a2a2e] border-[#3a3a3e] rounded-lg text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00]" 
+                        placeholder="Descricao curta"
                         maxLength={120}
                       />
                     </div>
 
                     {/* Descricao */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Descricao</Label>
-                        <span className="text-xs text-gray-500">{cfgDescription.length}/512</span>
+                        <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Descricao</Label>
+                        <span className="text-[10px] text-gray-500">{cfgDescription.length}/512</span>
                       </div>
                       <Textarea 
                         value={cfgDescription} 
                         onChange={(e) => setCfgDescription(e.target.value)} 
-                        className="min-h-[80px] bg-[#2a2a2e] border-[#3a3a3e] rounded-xl resize-none text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00] focus:ring-[#bfff00]/20" 
-                        placeholder="O que seu bot faz? (visivel ao iniciar conversa)"
+                        className="min-h-[70px] bg-[#2a2a2e] border-[#3a3a3e] rounded-lg resize-none text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00]" 
+                        placeholder="O que seu bot faz?"
                         maxLength={512}
                       />
                     </div>
                   </div>
 
-                  {/* Footer com botoes maiores */}
-                  <div className="px-6 py-4 bg-[#18181a] border-t border-[#2a2a2e] flex items-center justify-between">
+                  {/* Footer */}
+                  <div className="px-5 py-3 bg-[#18181a] border-t border-[#2a2a2e] flex items-center justify-between">
                     <button
                       onClick={() => handleDelete(configBot.id)}
-                      className="text-sm text-red-400 hover:text-red-300 flex items-center gap-2 px-4 py-2.5 rounded-xl hover:bg-red-500/10 transition-colors"
+                      className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-red-500/10 transition-colors"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-3.5 w-3.5" />
                       Excluir Bot
                     </button>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <button
                         onClick={closeConfig}
-                        className="px-5 py-2.5 rounded-xl text-sm font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors"
+                        className="px-4 py-2 rounded-lg text-xs font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors"
                       >
                         Cancelar
                       </button>
                       <button
                         onClick={handleSaveConfig}
                         disabled={isSaving}
-                        className="flex items-center gap-2 bg-[#bfff00] text-[#1c1c1e] px-6 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#d4ff4d] disabled:opacity-50 transition-colors shadow-lg shadow-[#bfff00]/20"
+                        className="flex items-center gap-1.5 bg-[#bfff00] text-[#1c1c1e] px-5 py-2 rounded-lg font-semibold text-xs hover:bg-[#d4ff4d] disabled:opacity-50 transition-colors"
                       >
-                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                         {isSaving ? "Salvando..." : "Salvar"}
                       </button>
                     </div>
