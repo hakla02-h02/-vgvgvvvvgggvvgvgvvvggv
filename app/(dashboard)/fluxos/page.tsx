@@ -240,8 +240,7 @@ export default function FluxosPage() {
 
     return (
       <div 
-        className="group bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl overflow-hidden hover:border-[#bfff00]/30 hover:shadow-lg hover:shadow-[#bfff00]/5 transition-all duration-300 cursor-pointer"
-        onClick={() => router.push(`/fluxos/${flow.id}`)}
+        className="group bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl overflow-hidden hover:border-[#bfff00]/30 hover:shadow-lg hover:shadow-[#bfff00]/5 transition-all duration-300"
       >
         {/* Header com gradiente */}
         <div className="relative px-4 py-3.5">
@@ -287,13 +286,8 @@ export default function FluxosPage() {
             
             {/* Delete button */}
             <button 
-              className="relative z-10 p-2 rounded-lg bg-[#2a2a2e] hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
-              onMouseDown={(e) => e.stopPropagation()}
-              onClick={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                handleDeleteFlow(flow.id)
-              }}
+              className="p-2 rounded-lg bg-[#2a2a2e] hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
+              onClick={() => handleDeleteFlow(flow.id)}
               title="Excluir fluxo"
             >
               <Trash2 className="h-4 w-4" />
@@ -348,9 +342,7 @@ export default function FluxosPage() {
             
             <button 
               className="flex items-center gap-1 text-xs text-[#bfff00] hover:text-[#d4ff4d] font-medium transition-colors"
-              onClick={(e) => {
-                e.stopPropagation()
-                router.push(`/fluxos/${flow.id}`)
+              onClick={() => router.push(`/fluxos/${flow.id}`)}
               }}
             >
               Editar
