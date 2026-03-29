@@ -391,21 +391,36 @@ export default function FluxosPage() {
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center gap-8 mb-6 pb-5 border-b border-[#2a2a2e]">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-[#bfff00]">{stats.linkedBots}</span>
-            <span className="text-sm text-gray-400">bots vinculados</span>
+        {/* Stats Cards */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-4 py-3">
+            <div className="w-9 h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+              <Bot className="h-4 w-4 text-[#bfff00]" />
+            </div>
+            <div>
+              <span className="text-xl font-bold text-[#bfff00]">{stats.linkedBots}</span>
+              <p className="text-xs text-gray-500">bots vinculados</p>
+            </div>
           </div>
-          <div className="w-px h-6 bg-[#2a2a2e]" />
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-white">{stats.basicFlows}</span>
-            <span className="text-sm text-gray-400">fluxos basicos</span>
+          
+          <div className="flex items-center gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-4 py-3">
+            <div className="w-9 h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+              <Zap className="h-4 w-4 text-[#bfff00]" />
+            </div>
+            <div>
+              <span className="text-xl font-bold text-white">{stats.basicFlows}</span>
+              <p className="text-xs text-gray-500">fluxos basicos</p>
+            </div>
           </div>
-          <div className="w-px h-6 bg-[#2a2a2e]" />
-          <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-white">{stats.n8nFlows}</span>
-            <span className="text-sm text-gray-400">fluxos n8n</span>
+          
+          <div className="flex items-center gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-4 py-3">
+            <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
+              <Workflow className="h-4 w-4 text-purple-400" />
+            </div>
+            <div>
+              <span className="text-xl font-bold text-white">{stats.n8nFlows}</span>
+              <p className="text-xs text-gray-500">fluxos n8n</p>
+            </div>
           </div>
         </div>
 
