@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         description: description || "Pagamento PIX",
         payment_method_id: "pix",
         payer: {
-          email: "cliente@email.com", // Email generico para geracao do QR
+          email: "luismarquesdevp@gmail.com",
         },
       }),
     })
