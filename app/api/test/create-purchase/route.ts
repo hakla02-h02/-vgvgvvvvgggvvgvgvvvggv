@@ -1,41 +1,43 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
 
+// API de teste para simular uma compra com dados do usuario Telegram
 export async function GET(request: NextRequest) {
   const supabase = getSupabase()
-  const { searchParams } = new URL(request.url)
+  const { searchParams } = request.nextUrl
   
-  // Dados do usuario do Telegram que comprou
+  // Parametros do usuario Telegram
   const telegramUserId = searchParams.get("telegramUserId") || "5099610171"
-  const telegramUsername = searchParams.get("username") || "luismarques"
-  const telegramFirstName = searchParams.get("firstName") || "Luis"
-  const telegramLastName = searchParams.get("lastName") || "Marques"
+  const username = searchParams.get("username") || "luismarques"
+  const firstName = searchParams.get("firstName") || "Luis"
+  const lastName = searchParams.get("lastName") || "Marques"
+  
+  // Parametros do pagamento
   const amount = Number(searchParams.get("amount") || "50")
-  const planName = searchParams.get("planName") || "Plano Premium"
-  const botId = searchParams.get("botId") || "900f3312-0cde-4825-a913-c2ad019b2d0b"
-
+  const planName = searchParams.get("planName") || "Plano Teste"
+  
   try {
-    // Buscar user_id do bot
+    // Buscar um bot e seu user_id
     const { data: bot } = await supabase
       .from("bots")
-      .select("user_id, name")
-      .eq("id", botId)
+      .select("id, user_id, name")
+      .limit(1)
       .single()
-
-    if (!bot?.user_id) {
-      return NextResponse.json({ error: "Bot nao encontrado" }, { status: 404 })
+    
+    if (!bot) {
+      return NextResponse.json({ error: "Nenhum bot encontrado" }, { status: 404 })
     }
-
-    // Criar pagamento com dados do usuario Telegram
+    
+    // Criar pagamento de teste com dados do usuario Telegram
     const { data: payment, error } = await supabase
       .from("payments")
       .insert({
         user_id: bot.user_id,
-        bot_id: botId,
+        bot_id: bot.id,
         telegram_user_id: telegramUserId,
-        telegram_username: telegramUsername,
-        telegram_first_name: telegramFirstName,
-        telegram_last_name: telegramLastName,
+        telegram_username: username,
+        telegram_first_name: firstName,
+        telegram_last_name: lastName,
         gateway: "mercadopago",
         external_payment_id: `TEST_${Date.now()}`,
         amount,
@@ -44,25 +46,28 @@ export async function GET(request: NextRequest) {
       })
       .select()
       .single()
-
+    
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
-
+    
     return NextResponse.json({
       success: true,
       message: "Pagamento de teste criado!",
       payment: {
         id: payment.id,
-        usuario: `${telegramFirstName} ${telegramLastName}`,
-        username: `@${telegramUsername}`,
-        telegram_id: telegramUserId,
-        valor: `R$ ${amount.toFixed(2)}`,
+        telegram_user: {
+          id: telegramUserId,
+          username: `@${username}`,
+          name: `${firstName} ${lastName}`,
+        },
+        amount: `R$ ${amount.toFixed(2)}`,
         status: payment.status,
         bot: bot.name,
       },
-      hint: "Acesse /financeiro para ver o pagamento"
+      nextStep: "Acesse /payments para ver o pagamento com os dados do usuario"
     })
+    
   } catch (err) {
     return NextResponse.json({ 
       error: err instanceof Error ? err.message : "Erro desconhecido" 
