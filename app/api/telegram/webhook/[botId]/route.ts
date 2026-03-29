@@ -61,6 +61,36 @@ async function sendTelegramVideo(
   })
 }
 
+// Send multiple medias as album (grouped)
+async function sendMediaGroup(
+  botToken: string,
+  chatId: number,
+  mediaUrls: string[],
+  caption?: string,
+) {
+  const url = `https://api.telegram.org/bot${botToken}/sendMediaGroup`
+  
+  const media = mediaUrls.map((mediaUrl, index) => {
+    const isVideo = mediaUrl.includes(".mp4") || mediaUrl.includes("video")
+    const item: Record<string, unknown> = {
+      type: isVideo ? "video" : "photo",
+      media: mediaUrl,
+    }
+    // Caption only on first item
+    if (index === 0 && caption) {
+      item.caption = caption
+      item.parse_mode = "HTML"
+    }
+    return item
+  })
+  
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, media }),
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Process message in background (non-blocking)
 // ---------------------------------------------------------------------------
@@ -222,26 +252,21 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         
         const replyMarkup = { inline_keyboard: inlineKeyboard }
         
-        // STEP 1: Send medias (if any valid URLs)
+        // STEP 1: Send medias (if any valid URLs) - grouped as album
         if (welcomeMedias.length > 0) {
-          for (let i = 0; i < welcomeMedias.length; i++) {
-            const media = welcomeMedias[i]
-            const isVideo = media.includes(".mp4") || media.includes("video")
-            try {
-              if (isVideo) {
-                await sendTelegramVideo(botToken, chatId, media)
-              } else {
-                await sendTelegramPhoto(botToken, chatId, media)
-              }
-              await new Promise(resolve => setTimeout(resolve, 200))
-            } catch {
-              // Skip failed media
-            }
+          try {
+            // Send all medias together as album with welcome message as caption
+            await sendMediaGroup(botToken, chatId, welcomeMedias, finalMsg)
+            // Send buttons separately after the album
+            await sendTelegramMessage(botToken, chatId, "Escolha uma opcao:", replyMarkup)
+          } catch {
+            // If media group fails, send message with buttons normally
+            await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
           }
+        } else {
+          // STEP 2: No medias - send welcome message with buttons
+          await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
         }
-        
-        // STEP 2: Send welcome message with buttons
-        await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
         
         // STEP 3: Send secondary message (if enabled)
         if (secondaryMsg.enabled && secondaryMsg.message) {
