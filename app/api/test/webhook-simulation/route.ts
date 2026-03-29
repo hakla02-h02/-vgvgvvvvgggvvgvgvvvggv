@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js"
+import { getSupabase } from "@/lib/supabase"
 import { NextResponse } from "next/server"
 
 export async function GET(request: Request) {
@@ -10,14 +10,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "flowId is required" }, { status: 400 })
     }
     
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 })
-    }
-    
-    const supabase = createClient(supabaseUrl, supabaseKey)
+    const supabase = getSupabase()
     
     // Buscar o flow
   const { data: flow, error: flowError } = await supabase
