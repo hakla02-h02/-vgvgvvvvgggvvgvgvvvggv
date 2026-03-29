@@ -50,10 +50,10 @@ export const AVAILABLE_GATEWAYS = [
   {
     id: "mercadopago",
     name: "Mercado Pago",
-    description: "PIX, Cartao de Credito e Debito",
+    description: "Pagamento via PIX",
     icon: "mercadopago",
     color: "#00bcff",
-    methods: ["pix", "credit_card", "debit_card"],
+    methods: ["pix"],
     helpUrl: "https://www.mercadopago.com.br/developers/pt/docs/your-integrations/credentials",
   },
   {
