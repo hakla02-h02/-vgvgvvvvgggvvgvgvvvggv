@@ -104,11 +104,14 @@ export default function VendasPage() {
     return matchesTab && matchesSearch
   })
 
+  const approvedPayments = payments.filter((p) => p.status === "approved")
+  const pendingPayments = payments.filter((p) => p.status === "pending")
+  
   const stats = {
-    faturamento: payments.filter((p) => p.status === "approved").reduce((acc, p) => acc + Number(p.amount), 0),
-    total: payments.length,
-    pendentes: payments.filter((p) => p.status === "pending").reduce((acc, p) => acc + Number(p.amount), 0),
-    pendentesCount: payments.filter((p) => p.status === "pending").length,
+    faturamento: approvedPayments.reduce((acc, p) => acc + Number(p.amount), 0),
+    total: approvedPayments.length,
+    pendentes: pendingPayments.reduce((acc, p) => acc + Number(p.amount), 0),
+    pendentesCount: pendingPayments.length,
   }
 
   const tabs = [
@@ -174,7 +177,7 @@ export default function VendasPage() {
                     </div>
                   </div>
                   <p className="text-2xl font-bold text-white">{stats.total}</p>
-                  <p className="text-xs text-gray-500 mt-1">transacoes totais</p>
+                  <p className="text-xs text-gray-500 mt-1">vendas aprovadas</p>
                 </div>
               </div>
 
