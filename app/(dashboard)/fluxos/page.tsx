@@ -198,7 +198,7 @@ export default function FluxosPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
   }, [fetchFlows])
 
-  // Flow card - Design moderno com metricas visuais
+  // Flow card - Design escuro com verde neon
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
     const isBasic = flow.flow_type !== "n8n"
@@ -210,113 +210,112 @@ export default function FluxosPage() {
 
     return (
       <div 
-        className="group bg-card border border-border rounded-2xl overflow-hidden hover:border-accent/50 hover:shadow-lg hover:shadow-accent/5 transition-all duration-300 cursor-pointer"
+        className="group bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl overflow-hidden hover:border-[#bfff00]/30 hover:shadow-lg hover:shadow-[#bfff00]/5 transition-all duration-300 cursor-pointer"
         onClick={() => router.push(`/fluxos/${flow.id}`)}
       >
-        {/* Header with gradient */}
-        <div className={`relative px-5 py-4 ${isBasic ? "bg-accent/10" : "bg-purple-500/10"}`}>
-          {/* Background pattern */}
-          <div className="absolute inset-0 opacity-30" style={{ 
-            backgroundImage: `repeating-linear-gradient(45deg, transparent, transparent 8px, ${isBasic ? "hsl(100 71% 65% / 0.2)" : "rgb(168 85 247 / 0.2)"} 8px, ${isBasic ? "hsl(100 71% 65% / 0.2)" : "rgb(168 85 247 / 0.2)"} 16px)` 
-          }} />
+        {/* Header com gradiente */}
+        <div className="relative px-4 py-3.5">
+          {/* Glow sutil */}
+          <div 
+            className="absolute top-0 left-0 right-0 h-16 pointer-events-none"
+            style={{
+              background: isBasic 
+                ? "radial-gradient(ellipse at center top, rgba(190, 255, 0, 0.08) 0%, transparent 70%)"
+                : "radial-gradient(ellipse at center top, rgba(168, 85, 247, 0.08) 0%, transparent 70%)"
+            }}
+          />
           
-          <div className="relative flex items-start justify-between">
+          <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                isBasic ? "bg-accent/20 text-accent" : "bg-purple-500/20 text-purple-400"
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${
+                isBasic 
+                  ? "bg-[#bfff00]/10 text-[#bfff00] border-[#bfff00]/20" 
+                  : "bg-purple-500/10 text-purple-400 border-purple-500/20"
               }`}>
                 {isBasic ? <Zap className="h-5 w-5" /> : <Workflow className="h-5 w-5" />}
               </div>
               <div>
-                <h3 className="font-semibold text-foreground truncate max-w-[180px]">{flow.name}</h3>
-                <div className="flex items-center gap-2 mt-0.5">
+                <h3 className="font-semibold text-white truncate max-w-[160px]">{flow.name}</h3>
+                <div className="flex items-center gap-1.5 mt-1">
                   <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                    isBasic ? "bg-accent/20 text-accent" : "bg-purple-500/20 text-purple-400"
+                    isBasic 
+                      ? "bg-[#bfff00]/10 text-[#bfff00] border border-[#bfff00]/20" 
+                      : "bg-purple-500/10 text-purple-400 border border-purple-500/20"
                   }`}>
                     {isBasic ? "BASICO" : "N8N"}
                   </span>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                    flow.status === "active" ? "bg-emerald-500/20 text-emerald-400" : "bg-muted text-muted-foreground"
+                    flow.status === "active" || flow.status === "ativo"
+                      ? "bg-[#bfff00]/10 text-[#bfff00]" 
+                      : "bg-[#2a2a2e] text-gray-400"
                   }`}>
-                    {flow.status === "active" ? "Ativo" : "Pausado"}
+                    {flow.status === "active" || flow.status === "ativo" ? "Ativo" : "Pausado"}
                   </span>
                 </div>
               </div>
             </div>
             
-            {/* Actions */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button 
-                className="p-1.5 rounded-lg hover:bg-background/50 text-muted-foreground hover:text-foreground transition-colors"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  router.push(`/fluxos/${flow.id}`)
-                }}
-                title="Configurar"
-              >
-                <Settings className="h-4 w-4" />
-              </button>
-            </div>
+            {/* Config button */}
+            <button 
+              className="p-2 rounded-lg bg-[#2a2a2e] hover:bg-[#3a3a3e] text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation()
+                router.push(`/fluxos/${flow.id}`)
+              }}
+              title="Configurar"
+            >
+              <Settings className="h-4 w-4" />
+            </button>
           </div>
         </div>
         
         {/* Stats Grid */}
-        <div className="p-5">
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            {/* Starts */}
-            <div className="bg-secondary/50 rounded-xl p-3 text-center">
-              <div className="text-lg font-bold text-foreground">{starts}</div>
-              <div className="text-[10px] text-muted-foreground font-medium">Starts</div>
+        <div className="px-4 pb-4">
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="bg-[#2a2a2e] rounded-xl py-2.5 px-2 text-center">
+              <div className="text-lg font-bold text-white">{starts}</div>
+              <div className="text-[10px] text-gray-500 font-medium">Starts</div>
             </div>
-            
-            {/* Conversions */}
-            <div className="bg-secondary/50 rounded-xl p-3 text-center">
-              <div className="text-lg font-bold text-foreground">{conversions}</div>
-              <div className="text-[10px] text-muted-foreground font-medium">Conv.</div>
+            <div className="bg-[#2a2a2e] rounded-xl py-2.5 px-2 text-center">
+              <div className="text-lg font-bold text-white">{conversions}</div>
+              <div className="text-[10px] text-gray-500 font-medium">Conv.</div>
             </div>
-            
-            {/* Conversion Rate */}
-            <div className={`rounded-xl p-3 text-center ${
-              conversionRate > 0 ? "bg-emerald-500/10" : "bg-secondary/50"
+            <div className={`rounded-xl py-2.5 px-2 text-center ${
+              conversionRate > 0 ? "bg-[#bfff00]/10" : "bg-[#2a2a2e]"
             }`}>
-              <div className={`text-lg font-bold ${
-                conversionRate > 0 ? "text-emerald-400" : "text-foreground"
-              }`}>{conversionRate}%</div>
-              <div className="text-[10px] text-muted-foreground font-medium">Taxa</div>
+              <div className={`text-lg font-bold ${conversionRate > 0 ? "text-[#bfff00]" : "text-white"}`}>
+                {conversionRate}%
+              </div>
+              <div className="text-[10px] text-gray-500 font-medium">Taxa</div>
             </div>
           </div>
           
           {/* Bots linked */}
-          <div className="flex items-center justify-between pt-3 border-t border-border">
+          <div className="flex items-center justify-between pt-3 border-t border-[#2a2a2e]">
             <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
+              <div className="flex -space-x-1.5">
                 {bots.length > 0 ? (
                   bots.slice(0, 3).map((fb) => (
                     <div 
                       key={fb.id}
-                      className="w-6 h-6 rounded-full bg-accent/20 border-2 border-card flex items-center justify-center"
+                      className="w-5 h-5 rounded-full bg-[#bfff00]/20 border-2 border-[#1c1c1e] flex items-center justify-center"
                     >
-                      <Bot className="h-3 w-3 text-accent" />
+                      <Bot className="h-2.5 w-2.5 text-[#bfff00]" />
                     </div>
                   ))
                 ) : (
-                  <div className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center">
-                    <Bot className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                )}
-                {bots.length > 3 && (
-                  <div className="w-6 h-6 rounded-full bg-muted border-2 border-card flex items-center justify-center text-[10px] font-medium text-muted-foreground">
-                    +{bots.length - 3}
+                  <div className="w-5 h-5 rounded-full bg-[#2a2a2e] border-2 border-[#1c1c1e] flex items-center justify-center">
+                    <Bot className="h-2.5 w-2.5 text-gray-500" />
                   </div>
                 )}
               </div>
-              <span className={`text-xs ${bots.length > 0 ? "text-accent font-medium" : "text-muted-foreground"}`}>
-                {bots.length === 0 ? "Nenhum bot conectado" : `${bots.length} bot${bots.length > 1 ? 's' : ''} conectado${bots.length > 1 ? 's' : ''}`}
+              <span className={`text-xs ${bots.length > 0 ? "text-[#bfff00]" : "text-gray-500"}`}>
+                {bots.length === 0 ? "Sem bot" : `${bots.length} bot conectado`}
               </span>
             </div>
             
             <button 
-              className="flex items-center gap-1 text-xs text-accent hover:text-accent/80 font-medium transition-colors"
+              className="flex items-center gap-1 text-xs text-[#bfff00] hover:text-[#d4ff4d] font-medium transition-colors"
               onClick={(e) => {
                 e.stopPropagation()
                 router.push(`/fluxos/${flow.id}`)
@@ -334,22 +333,28 @@ export default function FluxosPage() {
   // Empty state
   const EmptyState = () => (
     <div className="flex flex-col items-center justify-center py-20">
-      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-secondary/50 border border-border/50 mb-6">
-        <Workflow className="h-10 w-10 text-muted-foreground/50" />
+      <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-[#2a2a2e] border border-[#3a3a3e] mb-6">
+        <Workflow className="h-10 w-10 text-gray-500" />
       </div>
-      <h3 className="text-xl font-semibold text-foreground mb-2">Nenhum fluxo configurado</h3>
-      <p className="text-muted-foreground text-center max-w-md mb-6">
+      <h3 className="text-xl font-semibold text-white mb-2">Nenhum fluxo configurado</h3>
+      <p className="text-gray-400 text-center max-w-md mb-6">
         Crie seu primeiro fluxo de automacao para comecar a automatizar suas vendas e capturar leads.
       </p>
       <div className="flex items-center gap-3">
-        <Button variant="outline" onClick={() => setShowImportDialog(true)}>
-          <Upload className="h-4 w-4 mr-2" />
+        <button 
+          onClick={() => setShowImportDialog(true)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-[#3a3a3e] bg-[#2a2a2e] hover:bg-[#3a3a3e] text-sm font-medium text-gray-300 transition-colors"
+        >
+          <Upload className="h-4 w-4" />
           Importar Fluxo
-        </Button>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus className="h-4 w-4 mr-2" />
+        </button>
+        <button 
+          onClick={() => setShowCreateModal(true)}
+          className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#bfff00] hover:bg-[#d4ff4d] text-sm font-semibold text-[#1c1c1e] transition-colors"
+        >
+          <Plus className="h-4 w-4" />
           Criar Primeiro Fluxo
-        </Button>
+        </button>
       </div>
     </div>
   )
@@ -365,42 +370,42 @@ export default function FluxosPage() {
       />
 
       <main className="flex-1 overflow-auto p-6">
-        {/* Header simples */}
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-foreground">Fluxos</h2>
+        {/* Header */}
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-xl font-bold text-white">Fluxos</h2>
           <div className="flex items-center gap-2">
             <button 
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded border border-border bg-card hover:bg-muted text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#3a3a3e] bg-[#2a2a2e] hover:bg-[#3a3a3e] text-sm font-medium text-gray-300 hover:text-white transition-colors"
               onClick={() => setShowImportDialog(true)}
             >
-              <Upload className="h-3.5 w-3.5" />
+              <Upload className="h-4 w-4" />
               Importar
             </button>
             <button 
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded bg-foreground hover:bg-foreground/90 text-xs font-medium text-background transition-colors"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#bfff00] hover:bg-[#d4ff4d] text-sm font-semibold text-[#1c1c1e] transition-colors"
               onClick={() => setShowCreateModal(true)}
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               Novo fluxo
             </button>
           </div>
         </div>
 
-        {/* Stats - Inline simples */}
-        <div className="flex items-center gap-6 mb-6 pb-4 border-b border-border">
+        {/* Stats */}
+        <div className="flex items-center gap-8 mb-6 pb-5 border-b border-[#2a2a2e]">
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-foreground">{stats.linkedBots}</span>
-            <span className="text-sm text-muted-foreground">bots vinculados</span>
+            <span className="text-2xl font-bold text-[#bfff00]">{stats.linkedBots}</span>
+            <span className="text-sm text-gray-400">bots vinculados</span>
           </div>
-          <div className="w-px h-6 bg-border" />
+          <div className="w-px h-6 bg-[#2a2a2e]" />
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-foreground">{stats.basicFlows}</span>
-            <span className="text-sm text-muted-foreground">fluxos basicos</span>
+            <span className="text-2xl font-bold text-white">{stats.basicFlows}</span>
+            <span className="text-sm text-gray-400">fluxos basicos</span>
           </div>
-          <div className="w-px h-6 bg-border" />
+          <div className="w-px h-6 bg-[#2a2a2e]" />
           <div className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-foreground">{stats.n8nFlows}</span>
-            <span className="text-sm text-muted-foreground">fluxos n8n</span>
+            <span className="text-2xl font-bold text-white">{stats.n8nFlows}</span>
+            <span className="text-sm text-gray-400">fluxos n8n</span>
           </div>
         </div>
 
@@ -408,8 +413,8 @@ export default function FluxosPage() {
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="flex flex-col items-center gap-3">
-              <Loader2 className="h-10 w-10 animate-spin text-accent" />
-              <p className="text-sm text-muted-foreground">Carregando fluxos...</p>
+              <Loader2 className="h-10 w-10 animate-spin text-[#bfff00]" />
+              <p className="text-sm text-gray-400">Carregando fluxos...</p>
             </div>
           </div>
         ) : flows.length === 0 ? (
@@ -423,139 +428,134 @@ export default function FluxosPage() {
         )}
       </main>
 
-      {/* Create Flow Modal */}
+      {/* Create Flow Modal - Design escuro */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="sm:max-w-2xl bg-card border-border max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-accent/20 to-accent/5 border border-accent/30">
-                <Sparkles className="h-5 w-5 text-accent" />
+        <DialogContent className="sm:max-w-lg bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+          <div className="p-5">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-11 h-11 rounded-xl bg-[#bfff00]/10 flex items-center justify-center border border-[#bfff00]/20">
+                <Sparkles className="h-5 w-5 text-[#bfff00]" />
               </div>
               <div>
-                <DialogTitle className="text-lg">Criar Novo Fluxo</DialogTitle>
-                <p className="text-sm text-muted-foreground">Configure seu fluxo de automacao</p>
-              </div>
-            </div>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Nome do Fluxo */}
-            <div className="space-y-2">
-              <Label htmlFor="flow-name">
-                Nome do Fluxo <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="flow-name"
-                placeholder="Ex: Boas-vindas e Vendas"
-                value={newFlowName}
-                onChange={(e) => setNewFlowName(e.target.value.slice(0, 30))}
-                className="bg-secondary/30 border-border/50"
-              />
-              <p className="text-xs text-muted-foreground">
-                {newFlowName.length}/30 caracteres
-              </p>
-            </div>
-
-            {/* Modo do Fluxo */}
-            <div className="space-y-3">
-              <Label>
-                Modo do Fluxo <span className="text-destructive">*</span>
-              </Label>
-              <div className="grid grid-cols-2 gap-4">
-                {/* Basico */}
-                <button
-                  type="button"
-                  onClick={() => setNewFlowMode("basic")}
-                  className={`relative flex flex-col p-5 rounded-xl border-2 transition-all text-left ${
-                    newFlowMode === "basic"
-                      ? "border-accent bg-accent/5"
-                      : "border-border/50 bg-secondary/20 hover:border-border"
-                  }`}
-                >
-                  {newFlowMode === "basic" && (
-                    <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-accent" />
-                  )}
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="h-5 w-5 text-accent" />
-                    <span className="font-semibold">Basico</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Editor visual simples com blocos pre-configurados
-                  </p>
-                </button>
-
-                {/* n8n */}
-                <button
-                  type="button"
-                  onClick={() => setNewFlowMode("n8n")}
-                  className={`relative flex flex-col p-5 rounded-xl border-2 transition-all text-left ${
-                    newFlowMode === "n8n"
-                      ? "border-purple-500 bg-purple-500/5"
-                      : "border-border/50 bg-secondary/20 hover:border-border"
-                  }`}
-                >
-                  {newFlowMode === "n8n" && (
-                    <CheckCircle2 className="absolute top-3 right-3 h-5 w-5 text-purple-500" />
-                  )}
-                  <div className="flex items-center gap-2 mb-2">
-                    <Workflow className="h-5 w-5 text-purple-400" />
-                    <span className="font-semibold">Fluxo N8N</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">
-                    Editor visual estilo n8n com blocos arrastaveis
-                  </p>
-                </button>
+                <h2 className="text-lg font-bold text-white">Criar Novo Fluxo</h2>
+                <p className="text-xs text-gray-400">Configure seu fluxo de automacao</p>
               </div>
             </div>
 
-            {/* Dica */}
-            <div className="rounded-xl border border-accent/30 bg-accent/5 p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <Bot className="h-4 w-4 text-accent" />
-                <span className="text-sm font-medium text-accent">Sobre os Bots</span>
+            <div className="space-y-4">
+              {/* Nome do Fluxo */}
+              <div className="space-y-1.5">
+                <Label className="text-xs font-medium text-gray-400 uppercase tracking-wide">
+                  Nome do Fluxo
+                </Label>
+                <Input
+                  placeholder="Ex: Boas-vindas e Vendas"
+                  value={newFlowName}
+                  onChange={(e) => setNewFlowName(e.target.value.slice(0, 30))}
+                  className="h-11 bg-[#2a2a2e] border-[#3a3a3e] rounded-lg text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00]"
+                />
+                <p className="text-[10px] text-gray-500">{newFlowName.length}/30 caracteres</p>
               </div>
-              <p className="text-xs text-muted-foreground">
-                Apos criar o fluxo, voce podera adicionar bots na aba &quot;Bots&quot;. Um mesmo fluxo pode ser executado por multiplos bots.
-              </p>
+
+              {/* Modo do Fluxo */}
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-gray-400 uppercase tracking-wide">Tipo de Fluxo</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Basico */}
+                  <button
+                    type="button"
+                    onClick={() => setNewFlowMode("basic")}
+                    className={`relative flex flex-col p-4 rounded-xl border transition-all text-left ${
+                      newFlowMode === "basic"
+                        ? "border-[#bfff00] bg-[#bfff00]/5"
+                        : "border-[#3a3a3e] bg-[#2a2a2e] hover:border-[#4a4a4e]"
+                    }`}
+                  >
+                    {newFlowMode === "basic" && (
+                      <CheckCircle2 className="absolute top-3 right-3 h-4 w-4 text-[#bfff00]" />
+                    )}
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Zap className="h-4 w-4 text-[#bfff00]" />
+                      <span className="font-semibold text-white text-sm">Basico</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400">Editor visual simples</p>
+                  </button>
+
+                  {/* n8n */}
+                  <button
+                    type="button"
+                    onClick={() => setNewFlowMode("n8n")}
+                    className={`relative flex flex-col p-4 rounded-xl border transition-all text-left ${
+                      newFlowMode === "n8n"
+                        ? "border-purple-500 bg-purple-500/5"
+                        : "border-[#3a3a3e] bg-[#2a2a2e] hover:border-[#4a4a4e]"
+                    }`}
+                  >
+                    {newFlowMode === "n8n" && (
+                      <CheckCircle2 className="absolute top-3 right-3 h-4 w-4 text-purple-500" />
+                    )}
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <Workflow className="h-4 w-4 text-purple-400" />
+                      <span className="font-semibold text-white text-sm">Fluxo N8N</span>
+                    </div>
+                    <p className="text-[11px] text-gray-400">Blocos arrastaveis</p>
+                  </button>
+                </div>
+              </div>
+
+              {/* Dica */}
+              <div className="rounded-lg border border-[#bfff00]/20 bg-[#bfff00]/5 p-3">
+                <div className="flex items-center gap-2 mb-0.5">
+                  <Bot className="h-3.5 w-3.5 text-[#bfff00]" />
+                  <span className="text-xs font-medium text-[#bfff00]">Dica</span>
+                </div>
+                <p className="text-[11px] text-gray-400">
+                  Apos criar, adicione bots na aba Bots. Um fluxo pode ter multiplos bots.
+                </p>
+              </div>
             </div>
           </div>
 
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowCreateModal(false)}>
-              Cancelar
-            </Button>
-            <Button 
-              onClick={handleCreateFlow} 
-              disabled={!newFlowName.trim() || isCreating}
+          {/* Footer */}
+          <div className="px-5 py-3 bg-[#18181a] border-t border-[#2a2a2e] flex items-center justify-end gap-2">
+            <button
+              onClick={() => setShowCreateModal(false)}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors"
             >
-              {isCreating ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Workflow className="h-4 w-4 mr-2" />
-              )}
+              Cancelar
+            </button>
+            <button
+              onClick={handleCreateFlow}
+              disabled={!newFlowName.trim() || isCreating}
+              className="flex items-center gap-2 bg-[#bfff00] text-[#1c1c1e] px-5 py-2 rounded-lg font-semibold text-sm hover:bg-[#d4ff4d] disabled:opacity-50 transition-colors"
+            >
+              {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Workflow className="h-4 w-4" />}
               Criar Fluxo
-            </Button>
-          </DialogFooter>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Import Flow Dialog (placeholder) */}
+      {/* Import Flow Dialog - Design escuro */}
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-        <DialogContent className="sm:max-w-md bg-card border-border">
-          <DialogHeader>
-            <DialogTitle>Importar Fluxo</DialogTitle>
-          </DialogHeader>
-          <div className="py-8 text-center">
-            <Upload className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-sm text-muted-foreground">
-              Funcionalidade em desenvolvimento
-            </p>
+        <DialogContent className="sm:max-w-md bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+          <div className="p-5">
+            <h2 className="text-lg font-bold text-white mb-1">Importar Fluxo</h2>
+            <p className="text-xs text-gray-400">Importe um fluxo existente</p>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+          <div className="py-8 text-center border-t border-[#2a2a2e]">
+            <Upload className="h-12 w-12 mx-auto text-gray-500 mb-3" />
+            <p className="text-sm text-gray-400">Funcionalidade em desenvolvimento</p>
+          </div>
+          <div className="px-5 py-3 bg-[#18181a] border-t border-[#2a2a2e] flex justify-end">
+            <button
+              onClick={() => setShowImportDialog(false)}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors"
+            >
               Fechar
-            </Button>
-          </DialogFooter>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
