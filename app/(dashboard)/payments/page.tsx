@@ -197,28 +197,28 @@ export default function VendasPage() {
               </div>
             </div>
 
-            {/* Search and Tabs */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-6">
-              <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {/* Search and Tabs - Clean Design */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-5">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Buscar por nome, ID..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full h-11 pl-10 pr-4 bg-white border border-gray-200 rounded-xl text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#bfff00]/30 focus:border-[#bfff00]"
+                  className="w-full h-10 pl-11 pr-4 bg-gray-50 border-0 rounded-full text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-200 focus:bg-white transition-all"
                 />
               </div>
 
-              <div className="flex items-center gap-1 p-1 bg-white border border-gray-200 rounded-xl">
+              <div className="flex items-center gap-1">
                 {tabs.map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`px-3 py-2 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
                       activeTab === tab.id
-                        ? "bg-[#1c1c1e] text-white"
-                        : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                        ? "bg-[#1c1c1e] text-white shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 hover:bg-gray-100"
                     }`}
                   >
                     {tab.label} ({tab.count})
@@ -227,67 +227,61 @@ export default function VendasPage() {
               </div>
             </div>
 
-            {/* Payments List */}
-            <div className="space-y-3">
+            {/* Payments List - Compact Design */}
+            <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden divide-y divide-gray-100">
               {loading ? (
                 <div className="flex items-center justify-center py-16">
-                  <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
+                  <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
                 </div>
               ) : filteredPayments.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-gray-200">
-                  <div className="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                    <CreditCard className="h-8 w-8 text-gray-400" />
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-14 h-14 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <CreditCard className="h-6 w-6 text-gray-400" />
                   </div>
-                  <h3 className="text-base font-semibold text-gray-900">Nenhuma venda encontrada</h3>
-                  <p className="text-sm text-gray-500 mt-1">As vendas aparecerao aqui</p>
+                  <p className="text-sm font-medium text-gray-900">Nenhuma venda encontrada</p>
+                  <p className="text-xs text-gray-500 mt-1">As vendas aparecerao aqui</p>
                 </div>
               ) : (
                 filteredPayments.map((payment) => (
                   <button
                     key={payment.id}
                     onClick={() => setSelectedPayment(payment)}
-                    className="group w-full flex items-center gap-4 p-5 bg-white border border-gray-100 rounded-2xl hover:border-[#bfff00]/50 hover:shadow-lg hover:shadow-[#bfff00]/5 transition-all duration-200 text-left"
+                    className="group w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left"
                   >
-                    {/* Avatar com gradiente */}
-                    <div className="relative shrink-0">
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#bfff00] to-[#65a30d] flex items-center justify-center text-white font-bold text-base shadow-lg shadow-[#bfff00]/20">
-                        {payment.telegram_first_name?.charAt(0).toUpperCase() || payment.bots?.name?.charAt(0).toUpperCase() || "?"}
-                      </div>
-                      {payment.status === "approved" && (
-                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      )}
+                    {/* Avatar estilo Instagram - silhueta cinza */}
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0 overflow-hidden">
+                      <svg viewBox="0 0 24 24" className="w-6 h-6 text-gray-400 translate-y-0.5">
+                        <circle cx="12" cy="8" r="4" fill="currentColor"/>
+                        <path d="M20 21c0-4.418-3.582-8-8-8s-8 3.582-8 8" fill="currentColor"/>
+                      </svg>
                     </div>
 
-                    {/* Info */}
+                    {/* Info - Typography mais leve */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900 truncate group-hover:text-[#65a30d] transition-colors">{getUserName(payment)}</span>
+                        <span className="text-sm font-medium text-gray-900 truncate">{getUserName(payment)}</span>
                         {payment.telegram_username && (
-                          <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">@{payment.telegram_username}</span>
+                          <span className="text-xs text-gray-400">@{payment.telegram_username}</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                        <span className="truncate max-w-[200px]">{payment.description || "Pagamento"}</span>
-                        <span className="text-gray-300">|</span>
-                        <span className="shrink-0 text-gray-400">{formatDate(payment.created_at)}</span>
-                      </div>
+                      <p className="text-xs text-gray-500 mt-0.5 truncate">
+                        {payment.description || "Pagamento"} &middot; {formatDate(payment.created_at)}
+                      </p>
                     </div>
 
-                    {/* Valor e Status */}
-                    <div className="text-right shrink-0 flex flex-col items-end gap-2">
-                      <p className={`text-lg font-bold ${
-                        payment.status === "approved" ? "text-emerald-500" : 
-                        payment.status === "pending" ? "text-amber-500" : 
-                        "text-gray-400"
+                    {/* Valor e Status - Alinhado */}
+                    <div className="text-right shrink-0 flex items-center gap-3">
+                      <span className={`text-sm font-semibold ${
+                        payment.status === "approved" ? "text-emerald-600" : 
+                        payment.status === "pending" ? "text-amber-600" : 
+                        "text-gray-500"
                       }`}>
                         {formatCurrency(Number(payment.amount))}
-                      </p>
-                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${
-                        payment.status === "approved" ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" :
-                        payment.status === "pending" ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
-                        "bg-red-100 text-red-700 ring-1 ring-red-200"
+                      </span>
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                        payment.status === "approved" ? "bg-emerald-50 text-emerald-600" :
+                        payment.status === "pending" ? "bg-amber-50 text-amber-600" :
+                        "bg-gray-100 text-gray-500"
                       }`}>
                         {payment.status === "approved" ? "Aprovada" : payment.status === "pending" ? "Pendente" : "Rejeitada"}
                       </span>
