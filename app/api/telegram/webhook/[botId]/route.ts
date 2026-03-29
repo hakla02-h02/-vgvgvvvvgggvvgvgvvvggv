@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server"
 import { getSupabase } from "@/lib/supabase"
+import { createPixPayment } from "@/lib/payments/gateways/mercadopago"
 
 // ---------------------------------------------------------------------------
 // Telegram helpers
@@ -303,11 +304,23 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           undefined
         )
         
-        // Get gateway credentials for this bot (table is user_gateways)
+        // Get user_id from bot to find gateway (gateway is per user, not per bot)
+        const { data: botData } = await supabase
+          .from("bots")
+          .select("user_id")
+          .eq("id", botUuid)
+          .single()
+        
+        if (!botData?.user_id) {
+          await sendTelegramMessage(botToken, chatId, "Erro: Bot nao encontrado.", undefined)
+          return
+        }
+        
+        // Get gateway for this user (all bots use the same gateway)
         const { data: gateway } = await supabase
           .from("user_gateways")
           .select("*")
-          .eq("bot_id", botUuid)
+          .eq("user_id", botData.user_id)
           .eq("is_active", true)
           .limit(1)
           .single()
@@ -322,88 +335,70 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           return
         }
         
-        // Generate PIX directly via Mercado Pago API
+        // Generate PIX using existing payment gateway
         try {
-          console.log("[v0] Generating PIX - planPrice:", planPrice, "planName:", planName)
-          console.log("[v0] Gateway access_token exists:", !!gateway.access_token)
-          
-          const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${gateway.access_token}`,
-              "X-Idempotency-Key": `${Date.now()}-${Math.random().toString(36).substring(7)}`,
-            },
-            body: JSON.stringify({
-              transaction_amount: planPrice,
-              description: `Pagamento - ${planName}`,
-              payment_method_id: "pix",
-              payer: {
-                email: "luismarquesdevp@gmail.com",
-              },
-            }),
+          const pixResult = await createPixPayment({
+            accessToken: gateway.access_token,
+            amount: planPrice,
+            description: `Pagamento - ${planName}`,
+            payerEmail: "luismarquesdevp@gmail.com",
           })
           
-          if (!mpResponse.ok) {
-            const errorData = await mpResponse.json()
-            console.error("Mercado Pago error:", errorData)
+          if (!pixResult.success) {
             await sendTelegramMessage(
               botToken,
               chatId,
-              `Erro ao gerar PIX: ${errorData.message || "Tente novamente"}`,
+              `Erro ao gerar PIX: ${pixResult.error || "Tente novamente"}`,
               undefined
             )
             return
           }
           
-          const paymentData = await mpResponse.json()
-          const pixData = paymentData.point_of_interaction?.transaction_data
-          
-          if (!pixData) {
-            await sendTelegramMessage(
-              botToken,
-              chatId,
-              "Erro: Dados do PIX nao retornados",
-              undefined
-            )
-            return
-          }
-          
-          // Send QR Code image via ticket_url
-          if (pixData.ticket_url) {
+          // Send QR Code image
+          if (pixResult.qrCodeUrl) {
             await sendTelegramPhoto(
               botToken,
               chatId,
-              pixData.ticket_url,
+              pixResult.qrCodeUrl,
               `Escaneie o QR Code para pagar\n\nValor: R$ ${planPrice.toFixed(2).replace(".", ",")}\nPlano: ${planName}`
             )
           }
           
           // Send PIX copy-paste code
-          if (pixData.qr_code) {
+          if (pixResult.copyPaste) {
             await sendTelegramMessage(
               botToken,
               chatId,
-              `Ou copie o codigo PIX abaixo:\n\n\`${pixData.qr_code}\``,
+              `Ou copie o codigo PIX abaixo:\n\n\`${pixResult.copyPaste}\``,
               undefined
             )
           }
           
-          // Save payment record
+          // Get user_id from bot
+          const { data: botData } = await supabase
+            .from("bots")
+            .select("user_id")
+            .eq("id", botUuid)
+            .single()
+          
+          // Save payment record with correct fields
           await supabase.from("payments").insert({
+            user_id: botData?.user_id,
             bot_id: botUuid,
-            flow_id: flowIdForGateway || null,
             telegram_user_id: String(telegramUserId),
-            plan_name: planName,
+            gateway: gateway.gateway_name || "mercadopago",
+            external_payment_id: pixResult.paymentId,
             amount: planPrice,
-            payment_id: String(paymentData.id),
-            status: paymentData.status,
-            gateway: gateway.gateway_name,
+            description: `Pagamento - ${planName}`,
+            qr_code: pixResult.qrCode,
+            qr_code_url: pixResult.qrCodeUrl,
+            copy_paste: pixResult.copyPaste,
+            status: "pending",
           })
           
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err)
-          console.error("[v0] PIX generation error:", errorMsg)
+          console.error("PIX generation error:", errorMsg)
           await sendTelegramMessage(
             botToken,
             chatId,
