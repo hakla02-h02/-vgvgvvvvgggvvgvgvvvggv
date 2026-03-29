@@ -230,12 +230,12 @@ export default function VendasPage() {
             {/* Table Layout */}
             <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
               {/* Header */}
-              <div className="grid grid-cols-[auto_1fr_140px_120px_100px] gap-4 px-4 py-3 bg-gray-50 border-b border-gray-200">
-                <div className="w-10" />
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Comprador</span>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Produto</span>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Data</span>
-                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide text-right">Valor</span>
+              <div className="grid grid-cols-[48px_200px_180px_100px_1fr] gap-6 px-5 py-3 bg-gray-50 border-b border-gray-200">
+                <div />
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Comprador</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Produto</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Data</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide text-right">Valor</span>
               </div>
 
               {/* Body */}
@@ -248,7 +248,7 @@ export default function VendasPage() {
                   <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
                     <CreditCard className="h-5 w-5 text-gray-400" />
                   </div>
-                  <p className="text-sm font-semibold text-gray-900">Nenhuma venda encontrada</p>
+                  <p className="text-sm font-bold text-gray-900">Nenhuma venda encontrada</p>
                   <p className="text-xs text-gray-500 mt-1">As vendas aparecerao aqui</p>
                 </div>
               ) : (
@@ -257,10 +257,10 @@ export default function VendasPage() {
                     <button
                       key={payment.id}
                       onClick={() => setSelectedPayment(payment)}
-                      className="w-full grid grid-cols-[auto_1fr_140px_120px_100px] gap-4 items-center px-4 py-3.5 hover:bg-gray-50 transition-colors text-left"
+                      className="w-full grid grid-cols-[48px_200px_180px_100px_1fr] gap-6 items-center px-5 py-4 hover:bg-gray-50 transition-colors text-left"
                     >
                       {/* Avatar */}
-                      <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
                         <svg viewBox="0 0 24 24" className="w-5 h-5 text-gray-400">
                           <circle cx="12" cy="8" r="4" fill="currentColor"/>
                           <path d="M20 21c0-4.418-3.582-8-8-8s-8 3.582-8 8" fill="currentColor"/>
@@ -269,37 +269,37 @@ export default function VendasPage() {
 
                       {/* Comprador */}
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 truncate">{getUserName(payment)}</p>
-                        <p className="text-xs text-gray-500 truncate">
+                        <p className="text-sm font-bold text-gray-900 truncate">{getUserName(payment)}</p>
+                        <p className="text-sm font-medium text-gray-500 truncate">
                           {payment.telegram_username ? `@${payment.telegram_username}` : "Telegram User"}
                         </p>
                       </div>
 
                       {/* Produto */}
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-gray-700 truncate">{payment.description || "Pagamento"}</p>
-                        <p className="text-xs text-gray-400">{payment.gateway || "PIX"}</p>
+                        <p className="text-sm font-semibold text-gray-800 truncate">{payment.description || "Pagamento"}</p>
+                        <p className="text-sm font-medium text-gray-500">{payment.gateway || "PIX"}</p>
                       </div>
 
                       {/* Data */}
                       <div>
-                        <p className="text-sm text-gray-700">{formatDate(payment.created_at).split(",")[0]}</p>
-                        <p className="text-xs text-gray-400">{formatDate(payment.created_at).split(",")[1]?.trim() || ""}</p>
+                        <p className="text-sm font-semibold text-gray-800">{formatDate(payment.created_at).split(",")[0]}</p>
+                        <p className="text-sm font-medium text-gray-500">{formatDate(payment.created_at).split(",")[1]?.trim() || ""}</p>
                       </div>
 
                       {/* Valor + Status */}
                       <div className="text-right">
-                        <p className={`text-sm font-bold ${
+                        <p className={`text-base font-bold ${
                           payment.status === "approved" ? "text-emerald-600" : 
-                          payment.status === "pending" ? "text-amber-600" : 
+                          payment.status === "pending" ? "text-amber-500" : 
                           "text-gray-500"
                         }`}>
                           {formatCurrency(Number(payment.amount))}
                         </p>
-                        <span className={`text-[10px] font-semibold uppercase tracking-wide ${
-                          payment.status === "approved" ? "text-emerald-500" :
-                          payment.status === "pending" ? "text-amber-500" :
-                          "text-gray-400"
+                        <span className={`inline-block mt-1 text-xs font-bold px-2 py-0.5 rounded ${
+                          payment.status === "approved" ? "bg-emerald-100 text-emerald-700" :
+                          payment.status === "pending" ? "bg-amber-100 text-amber-700" :
+                          "bg-gray-100 text-gray-600"
                         }`}>
                           {payment.status === "approved" ? "Aprovada" : payment.status === "pending" ? "Pendente" : "Rejeitada"}
                         </span>
