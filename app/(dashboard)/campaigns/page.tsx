@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -118,7 +118,7 @@ export default function CampaignsPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Remarketing" />
+        
         <NoBotSelected />
       </>
     )
@@ -132,7 +132,7 @@ export default function CampaignsPage() {
 
   return (
     <>
-      <DashboardHeader title="Remarketing" />
+      
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-6 p-4 md:p-6">
           

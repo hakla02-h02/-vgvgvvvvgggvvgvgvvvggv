@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -40,7 +40,7 @@ export default function SubscriptionsPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Assinaturas" />
+        
         <NoBotSelected />
       </>
     )
@@ -48,7 +48,7 @@ export default function SubscriptionsPage() {
 
   return (
     <>
-      <DashboardHeader title="Assinaturas" />
+      
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           {/* Stats */}

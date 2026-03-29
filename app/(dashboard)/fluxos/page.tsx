@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -387,11 +387,6 @@ export default function FluxosPage() {
 
   return (
     <div className="flex h-full flex-col bg-background">
-      <DashboardHeader
-        title="Meus Fluxos"
-        description="Gerencie seus fluxos de automacao e chatbots"
-      />
-
       <main className="flex-1 overflow-auto p-4 md:p-6">
         {/* Header - responsivo */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">

@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -23,7 +23,7 @@ export default function ToolsPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Ferramentas" />
+        
         <NoBotSelected />
       </>
     )
@@ -31,7 +31,7 @@ export default function ToolsPage() {
 
   return (
     <>
-      <DashboardHeader title="Ferramentas" />
+      
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           <p className="text-sm text-muted-foreground">Utilitarios de midia e produtividade</p>

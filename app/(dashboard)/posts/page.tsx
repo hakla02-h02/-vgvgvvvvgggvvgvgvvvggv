@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -41,7 +41,7 @@ export default function PostsPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Postagens" />
+        
         <NoBotSelected />
       </>
     )
@@ -49,7 +49,7 @@ export default function PostsPage() {
 
   return (
     <>
-      <DashboardHeader title="Postagens" />
+      
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-4 md:gap-6 p-4 md:p-6">
           <div className="grid gap-3 md:gap-4 grid-cols-3">

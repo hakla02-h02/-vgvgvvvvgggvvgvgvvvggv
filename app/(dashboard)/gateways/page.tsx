@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
@@ -110,7 +110,6 @@ export default function GatewaysPage() {
 
   return (
     <>
-      <DashboardHeader title="Gateways" />
       <ScrollArea className="flex-1">
         <div className="p-4 md:p-8 bg-[#f5f5f7] min-h-[calc(100vh-60px)]">
           <div className="max-w-5xl mx-auto">

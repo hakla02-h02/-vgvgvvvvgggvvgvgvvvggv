@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { 
@@ -120,7 +120,7 @@ export default function VendasPage() {
 
   return (
     <>
-      <DashboardHeader title="Vendas" />
+
       <ScrollArea className="flex-1">
         <div className="p-4 md:p-8 bg-[#f5f5f7] min-h-[calc(100vh-60px)]">
           <div className="max-w-5xl mx-auto">

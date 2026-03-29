@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -183,7 +183,6 @@ export default function ReferralPage() {
 
   return (
     <>
-      <DashboardHeader title="Indique e Ganhe" />
       <ScrollArea className="flex-1">
         <div className="min-h-full bg-[#f3f4f6] text-[#1A1A1A] pb-8">
           <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-5xl space-y-6 pt-6">
