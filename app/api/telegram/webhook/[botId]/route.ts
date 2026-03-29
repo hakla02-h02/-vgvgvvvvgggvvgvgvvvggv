@@ -129,10 +129,131 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
 
     if (!chatId) return
 
-    // 3. Check if /start command
+    // 3. Check if callback query (button click)
+    const callbackQuery = update.callback_query as Record<string, unknown> | null
+    const callbackData = callbackQuery?.data as string | null
+    
+    // 3.1 Handle callback queries
+    if (callbackQuery && callbackData) {
+      // Answer callback to remove loading state
+      await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_query_id: callbackQuery.id })
+      })
+      
+      // Handle "ver_planos" - show plans as buttons
+      if (callbackData === "ver_planos") {
+        // Find flow for this bot
+        const { data: directFlow } = await supabase
+          .from("flows")
+          .select("*")
+          .eq("bot_id", botUuid)
+          .eq("status", "ativo")
+          .limit(1)
+          .single()
+        
+        let flowId = directFlow?.id
+        
+        if (!flowId) {
+          const { data: flowBot } = await supabase
+            .from("flow_bots")
+            .select("flow_id")
+            .eq("bot_id", botUuid)
+            .limit(1)
+            .single()
+          flowId = flowBot?.flow_id
+        }
+        
+        if (flowId) {
+          // Get plans from flow_plans table
+          const { data: plans } = await supabase
+            .from("flow_plans")
+            .select("*")
+            .eq("flow_id", flowId)
+            .eq("is_active", true)
+            .order("position", { ascending: true })
+          
+          if (plans && plans.length > 0) {
+            // Build buttons for each plan
+            const planButtons = plans.map(plan => [{
+              text: `${plan.name} - R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+              callback_data: `plan_${plan.id}`
+            }])
+            
+            await sendTelegramMessage(
+              botToken, 
+              chatId, 
+              "Escolha seu plano:",
+              { inline_keyboard: planButtons }
+            )
+          } else {
+            // Fallback: get plans from flow config
+            const flowConfig = (directFlow?.config as Record<string, unknown>) || {}
+            const configPlans = (flowConfig.plans as Array<{ id: string; name: string; price: number }>) || []
+            
+            if (configPlans.length > 0) {
+              const planButtons = configPlans.map(plan => [{
+                text: `${plan.name} - R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+                callback_data: `plan_${plan.id}`
+              }])
+              
+              await sendTelegramMessage(
+                botToken, 
+                chatId, 
+                "Escolha seu plano:",
+                { inline_keyboard: planButtons }
+              )
+            } else {
+              await sendTelegramMessage(botToken, chatId, "Nenhum plano disponivel no momento.")
+            }
+          }
+        }
+        return
+      }
+      
+      // Handle plan selection - generate PIX
+      if (callbackData.startsWith("plan_")) {
+        const planId = callbackData.replace("plan_", "")
+        
+        // Get plan details
+        const { data: plan } = await supabase
+          .from("flow_plans")
+          .select("*, flows!inner(config)")
+          .eq("id", planId)
+          .single()
+        
+        if (plan) {
+          const flowConfig = (plan.flows?.config as Record<string, unknown>) || {}
+          const pixKey = (flowConfig.payments as Record<string, unknown>)?.pix_key as string || ""
+          
+          // Send PIX info (for now just text, later integrate with payment gateway)
+          await sendTelegramMessage(
+            botToken,
+            chatId,
+            `Voce selecionou: *${plan.name}*\n\nValor: R$ ${Number(plan.price).toFixed(2).replace(".", ",")}\n\nGerando pagamento...`,
+            undefined
+          )
+          
+          // TODO: Integrate with payment gateway to generate QR code
+          // For now, just show PIX key if available
+          if (pixKey) {
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              `Chave PIX: \`${pixKey}\`\n\nValor: R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+              undefined
+            )
+          }
+        }
+        return
+      }
+    }
+    
+    // 4. Check if /start command
     const isStart = text.toLowerCase().startsWith("/start")
 
-    // 4. Get or create lead
+    // 5. Get or create lead
     if (telegramUserId && isStart) {
       const { data: existingLead } = await supabase
         .from("leads")
@@ -159,7 +280,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       }
     }
 
-    // 5. Process /start - execute welcome flow
+    // 6. Process /start - execute welcome flow
     if (isStart) {
       // Find flow for this bot
       let startFlow = null
