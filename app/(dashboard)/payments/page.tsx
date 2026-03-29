@@ -13,8 +13,7 @@ import {
   Check,
   CreditCard
 } from "lucide-react"
-import { getSupabase } from "@/lib/supabase"
-import { useAuth } from "@/lib/auth-context"
+
 
 interface Payment {
   id: string
@@ -37,38 +36,26 @@ interface Payment {
 }
 
 export default function VendasPage() {
-  const { session } = useAuth()
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
   const [copied, setCopied] = useState(false)
-  const supabase = getSupabase()
 
   useEffect(() => {
-    if (session?.userId) {
-      fetchPayments()
-    }
-  }, [session])
+    fetchPayments()
+  }, [])
 
   const fetchPayments = async () => {
-    if (!session?.userId) {
-      setLoading(false)
-      return
-    }
-    
     setLoading(true)
     
     try {
-      const { data, error } = await supabase
-        .from("payments")
-        .select("id, bot_id, telegram_user_id, telegram_username, telegram_first_name, telegram_last_name, gateway, external_payment_id, amount, description, status, created_at, updated_at, bots(name, username)")
-        .eq("user_id", session.userId)
-        .order("created_at", { ascending: false })
+      const res = await fetch("/api/payments/list", { credentials: "include" })
+      const data = await res.json()
       
-      if (!error && data) {
-        setPayments(data)
+      if (data.payments) {
+        setPayments(data.payments)
       }
     } catch (err) {
       console.error("Error fetching payments:", err)
