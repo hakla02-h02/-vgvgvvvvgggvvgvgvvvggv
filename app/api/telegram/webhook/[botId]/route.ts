@@ -154,6 +154,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           .single()
         
         let flowId = directFlow?.id
+        let flowForConfig = directFlow
         
         if (!flowId) {
           const { data: flowBot } = await supabase
@@ -163,10 +164,20 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             .limit(1)
             .single()
           flowId = flowBot?.flow_id
+          
+          // Fetch full flow to get config
+          if (flowId) {
+            const { data: fullFlow } = await supabase
+              .from("flows")
+              .select("*")
+              .eq("id", flowId)
+              .single()
+            flowForConfig = fullFlow
+          }
         }
         
-        if (flowId) {
-          // Get plans from flow_plans table
+        if (flowId && flowForConfig) {
+          // Get plans from flow_plans table first
           const { data: plans } = await supabase
             .from("flow_plans")
             .select("*")
@@ -188,8 +199,8 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
               { inline_keyboard: planButtons }
             )
           } else {
-            // Fallback: get plans from flow config
-            const flowConfig = (directFlow?.config as Record<string, unknown>) || {}
+            // Fallback: get plans from flow config JSON
+            const flowConfig = (flowForConfig.config as Record<string, unknown>) || {}
             const configPlans = (flowConfig.plans as Array<{ id: string; name: string; price: number }>) || []
             
             if (configPlans.length > 0) {
@@ -208,6 +219,8 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
               await sendTelegramMessage(botToken, chatId, "Nenhum plano disponivel no momento.")
             }
           }
+        } else {
+          await sendTelegramMessage(botToken, chatId, "Fluxo nao encontrado.")
         }
         return
       }
