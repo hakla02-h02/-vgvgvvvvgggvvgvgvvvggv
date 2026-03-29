@@ -1,588 +1,400 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Input } from "@/components/ui/input"
-
-import { useBots } from "@/lib/bot-context"
-import { useAuth } from "@/lib/auth-context"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
+import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
-import useSWR from "swr"
-import {
-  CheckCircle, Clock, XCircle, Search, Download, ArrowUpRight, ArrowDownRight, MoreHorizontal,
-  Wallet, Receipt, TrendingUp, ArrowRight, Calendar, CreditCard, RefreshCw, Eye, Banknote, PiggyBank,
-  ChevronRight, Sparkles, Filter, BarChart3, Loader2, AlertCircle, Copy, ExternalLink, User, Package,
+import { Dialog, DialogContent } from "@/components/ui/dialog"
+import { 
+  DollarSign, 
+  Clock, 
+  TrendingUp,
+  RefreshCw,
+  Search,
+  Copy,
+  Check,
+  CreditCard
 } from "lucide-react"
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from "recharts"
+import { getSupabase } from "@/lib/supabase"
+import { useAuth } from "@/lib/auth-context"
 
 interface Payment {
   id: string
-  user_id: string
-  bot_id: string | null
-  telegram_user_id: string | null
+  bot_id: string
+  telegram_user_id: string
+  telegram_username: string | null
   telegram_first_name: string | null
   telegram_last_name: string | null
-  telegram_username: string | null
   gateway: string
   external_payment_id: string
   amount: number
   description: string
-  product_name: string | null
-  product_type: "main_product" | "upsell" | "downsell" | "order_bump" | null
-  payment_method: string | null
-  qr_code: string | null
-  qr_code_url: string | null
-  copy_paste: string | null
-  status: "pending" | "approved" | "rejected" | "cancelled"
+  status: string
   created_at: string
   updated_at: string
   bots?: {
-    id: string
     name: string
-  } | null
-}
-
-interface PaymentStats {
-  total: number
-  approved: number
-  pending: number
-  rejected: number
-  cancelled: number
-  totalApproved: number
-  totalPending: number
-}
-
-const statusConfig: Record<string, { bg: string; text: string; icon: React.ElementType; label: string }> = {
-  approved: { bg: "bg-[#22c55e]/10", text: "text-[#22c55e]", icon: CheckCircle, label: "Aprovada" },
-  pending: { bg: "bg-amber-500/10", text: "text-amber-500", icon: Clock, label: "Pendente" },
-  rejected: { bg: "bg-red-500/10", text: "text-red-500", icon: XCircle, label: "Rejeitada" },
-  cancelled: { bg: "bg-muted", text: "text-muted-foreground", icon: XCircle, label: "Cancelada" },
-}
-
-const productTypeLabels: Record<string, string> = {
-  main_product: "Produto Principal",
-  upsell: "Upsell",
-  downsell: "Downsell",
-  order_bump: "Order Bump",
-}
-
-const fetcher = (url: string) => fetch(url, { credentials: 'include' }).then((res) => res.json())
-
-// Helper para pegar nome completo do usuario Telegram
-const getTelegramUserName = (payment: Payment) => {
-  if (payment.telegram_first_name) {
-    return payment.telegram_last_name 
-      ? `${payment.telegram_first_name} ${payment.telegram_last_name}`
-      : payment.telegram_first_name
+    username: string
   }
-  return "Usuario"
 }
 
-// Generate mock chart data based on real stats
-const generateChartData = (totalApproved: number) => {
-  const days = ["Seg", "Ter", "Qua", "Qui", "Sex", "Sab", "Dom"]
-  const baseValue = totalApproved / 7
-  return days.map((dia) => ({
-    dia,
-    valor: Math.round(baseValue * (0.5 + Math.random())),
-  }))
-}
-
-export default function PaymentsPage() {
-  const { selectedBot } = useBots()
-  const { session } = useAuth()
-  const [filtro, setFiltro] = useState("todos")
-  const [busca, setBusca] = useState("")
+export default function VendasPage() {
+  const { user } = useAuth()
+  const [payments, setPayments] = useState<Payment[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeTab, setActiveTab] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null)
-  const [showDetails, setShowDetails] = useState(false)
+  const [copied, setCopied] = useState(false)
+  const supabase = getSupabase()
 
-  // Fetch payments from API - fetch all if no bot selected, or filter by bot
-  const { data, error, isLoading, mutate } = useSWR<{
-    payments: Payment[]
-    stats: PaymentStats
-    total: number
-  }>(
-    session?.userId ? `/api/payments/list?status=${filtro}&userId=${session.userId}${selectedBot ? `&botId=${selectedBot.id}` : ""}` : null,
-    fetcher,
-    {
-      refreshInterval: 30000, // Refresh every 30 seconds
+  useEffect(() => {
+    if (user) {
+      fetchPayments()
     }
-  )
+  }, [user])
 
-  console.log("[v0] API Response:", { data, error, isLoading, userId: session?.userId })
-  
-  const payments = data?.payments || []
-  const stats = data?.stats || {
-    total: 0,
-    approved: 0,
-    pending: 0,
-    rejected: 0,
-    cancelled: 0,
-    totalApproved: 0,
-    totalPending: 0,
-  }
+  const fetchPayments = async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase
+        .from("payments")
+        .select("id, bot_id, telegram_user_id, telegram_username, telegram_first_name, telegram_last_name, gateway, external_payment_id, amount, description, status, created_at, updated_at, bots(name, username)")
+        .eq("user_id", user?.id)
+        .order("created_at", { ascending: false })
 
-  const receitaData = generateChartData(stats.totalApproved)
-  const ticketMedio = stats.approved > 0 ? Math.round(stats.totalApproved / stats.approved) : 0
-
-  // Filter by search
-  const filtradas = payments.filter((p) => {
-    const searchLower = busca.toLowerCase()
-    return (
-      (p.telegram_user_name?.toLowerCase().includes(searchLower) || false) ||
-      (p.description?.toLowerCase().includes(searchLower) || false) ||
-      (p.product_name?.toLowerCase().includes(searchLower) || false) ||
-      (p.external_payment_id?.toLowerCase().includes(searchLower) || false)
-    )
-  })
-
-  // Get user initials from name
-  const getInitials = (name: string | null) => {
-    if (!name) return "?"
-    const parts = name.split(" ")
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase()
+      if (!error) {
+        setPayments(data || [])
+      }
+    } catch (err) {
+      console.error("Error:", err)
+    } finally {
+      setLoading(false)
     }
-    return name.substring(0, 2).toUpperCase()
-  }
-
-  // Format date
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-  }
-
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
   }
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value)
+    return new Intl.NumberFormat("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    }).format(value)
   }
 
-  // Copy to clipboard
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+  }
+
+  const getUserName = (payment: Payment) => {
+    if (payment.telegram_first_name) {
+      return payment.telegram_last_name 
+        ? `${payment.telegram_first_name} ${payment.telegram_last_name}`
+        : payment.telegram_first_name
+    }
+    return "Usuario"
+  }
+
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
+  // Filter payments
+  const filteredPayments = payments.filter((p) => {
+    const matchesTab = activeTab === "all" || p.status === activeTab
+    const matchesSearch = searchQuery === "" || 
+      getUserName(p).toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.telegram_username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      p.external_payment_id?.includes(searchQuery)
+    return matchesTab && matchesSearch
+  })
+
+  // Stats
+  const stats = {
+    faturamento: payments.filter((p) => p.status === "approved").reduce((acc, p) => acc + Number(p.amount), 0),
+    total: payments.length,
+    pendentes: payments.filter((p) => p.status === "pending").reduce((acc, p) => acc + Number(p.amount), 0),
+    pendentesCount: payments.filter((p) => p.status === "pending").length,
+  }
+
+  const tabs = [
+    { id: "all", label: "Todas", count: payments.length },
+    { id: "approved", label: "Aprovadas", count: payments.filter(p => p.status === "approved").length },
+    { id: "pending", label: "Pendentes", count: stats.pendentesCount },
+    { id: "rejected", label: "Rejeitadas", count: payments.filter(p => p.status === "rejected").length },
+  ]
+
   return (
-    <>
-      <DashboardHeader title={selectedBot ? `Financeiro - ${selectedBot.name}` : "Financeiro - Todos os Bots"} />
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-6 p-4 md:p-6">
-          
-          {/* Hero Finance Card */}
-          <div className="bg-foreground dark:bg-card rounded-[28px] p-6 md:p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-[#a3e635] opacity-[0.08] blur-[100px] rounded-full" />
-            <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-[#22c55e] opacity-[0.05] blur-[80px] rounded-full" />
-            
-            <div className="relative z-10">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-8">
-                <div>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-8 h-8 rounded-lg bg-[#a3e635]/20 flex items-center justify-center">
-                      <Wallet className="h-4 w-4 text-[#a3e635]" />
-                    </div>
-                    <span className="text-sm text-muted-foreground">Saldo Disponivel</span>
-                  </div>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-4xl md:text-5xl font-bold text-background dark:text-foreground tracking-tight">
-                      {formatCurrency(stats.totalApproved)}
-                    </span>
-                    {stats.totalApproved > 0 && (
-                      <span className="flex items-center gap-1 text-[#22c55e] text-sm font-medium bg-[#22c55e]/10 px-2 py-1 rounded-full">
-                        <ArrowUpRight className="h-3 w-3" />
-                        +{stats.approved}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <button className="flex items-center gap-2 bg-[#a3e635] text-[#111] px-5 py-2.5 rounded-xl font-semibold text-sm hover:bg-[#bef264] transition-colors">
-                  <Banknote className="h-4 w-4" />
-                  Sacar
-                </button>
-              </div>
+    <div className="flex-1 flex flex-col min-h-0">
+      {/* Header */}
+      <header className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 py-4 border-b border-[#2a2a2e]">
+        <div>
+          <h1 className="text-xl font-bold text-white">Vendas</h1>
+          <p className="text-sm text-gray-400">Acompanhe suas vendas e transacoes</p>
+        </div>
+        <button 
+          onClick={fetchPayments}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#2a2a2e] text-gray-300 text-sm font-medium hover:bg-[#3a3a3e] transition-colors"
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          Atualizar
+        </button>
+      </header>
 
-              {/* Mini Chart */}
-              <div className="h-[100px] -mx-2">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={receitaData}>
-                    <defs>
-                      <linearGradient id="financeGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#a3e635" stopOpacity={0.3} />
-                        <stop offset="100%" stopColor="#a3e635" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <Area
-                      type="monotone"
-                      dataKey="valor"
-                      stroke="#a3e635"
-                      strokeWidth={2}
-                      fill="url(#financeGradient)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-
-              {/* Quick Stats */}
-              <div className="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-white/10">
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Pendente</p>
-                  <p className="text-lg font-bold text-amber-400">{formatCurrency(stats.totalPending)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Ticket Medio</p>
-                  <p className="text-lg font-bold text-background dark:text-foreground">{formatCurrency(ticketMedio)}</p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground mb-1">Taxa Conv.</p>
-                  <p className="text-lg font-bold text-[#a3e635]">
-                    {stats.total > 0 ? ((stats.approved / stats.total) * 100).toFixed(1) : 0}%
-                  </p>
-                </div>
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+        {/* Stats Cards - 3 blocks */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Faturamento */}
+          <div className="bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-400">Faturamento</span>
+              <div className="w-8 h-8 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+                <DollarSign className="h-4 w-4 text-[#bfff00]" />
               </div>
             </div>
+            <p className="text-2xl font-bold text-[#bfff00]">{formatCurrency(stats.faturamento)}</p>
+            <p className="text-xs text-gray-500 mt-1">vendas aprovadas</p>
           </div>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Receita Hoje */}
-            <div className="bg-card rounded-[24px] p-5 border border-border relative overflow-hidden group hover:border-[#a3e635]/30 transition-colors">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-[#a3e635] opacity-0 group-hover:opacity-5 blur-[40px] rounded-full transition-opacity" />
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-[#a3e635]/10 flex items-center justify-center">
-                  <Receipt className="h-5 w-5 text-[#65a30d]" />
-                </div>
-                <span className="flex items-center gap-1 text-xs font-medium text-[#22c55e]">
-                  <CheckCircle className="h-3 w-3" />
-                  {stats.approved}
-                </span>
+          {/* Total de Vendas */}
+          <div className="bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-400">Total de Vendas</span>
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                <TrendingUp className="h-4 w-4 text-blue-400" />
               </div>
-              <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalApproved)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Receita Total</p>
             </div>
-
-            {/* Transacoes */}
-            <div className="bg-card rounded-[24px] p-5 border border-border">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-                  <CreditCard className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <span className="text-xs text-muted-foreground">Total</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
-              <p className="text-xs text-muted-foreground mt-1">Transacoes</p>
-            </div>
-
-            {/* Pendentes */}
-            <div className="bg-card rounded-[24px] p-5 border border-border">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-500" />
-                </div>
-                <span className="flex items-center gap-1 text-xs font-medium text-amber-500">
-                  {stats.pending}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{formatCurrency(stats.totalPending)}</p>
-              <p className="text-xs text-muted-foreground mt-1">Pendentes</p>
-            </div>
-
-            {/* Rejeitadas/Canceladas */}
-            <div className="bg-card rounded-[24px] p-5 border border-border">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-11 h-11 rounded-2xl bg-red-50 dark:bg-red-500/10 flex items-center justify-center">
-                  <XCircle className="h-5 w-5 text-red-500" />
-                </div>
-                <span className="flex items-center gap-1 text-xs font-medium text-red-500">
-                  {stats.rejected + stats.cancelled}
-                </span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">{stats.rejected + stats.cancelled}</p>
-              <p className="text-xs text-muted-foreground mt-1">Rejeitadas</p>
-            </div>
+            <p className="text-2xl font-bold text-white">{stats.total}</p>
+            <p className="text-xs text-gray-500 mt-1">transacoes totais</p>
           </div>
 
-          {/* Filter Tabs */}
-          <div className="flex flex-wrap items-center gap-2">
-            {[
-              { key: "todos", label: "Todas", count: stats.total },
-              { key: "approved", label: "Aprovadas", count: stats.approved },
-              { key: "pending", label: "Pendentes", count: stats.pending },
-            ].map((tab) => (
+          {/* Pendentes */}
+          <div className="bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl p-5">
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-gray-400">Pendentes</span>
+              <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+                <Clock className="h-4 w-4 text-yellow-400" />
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-yellow-400">{formatCurrency(stats.pendentes)}</p>
+            <p className="text-xs text-gray-500 mt-1">{stats.pendentesCount} aguardando</p>
+          </div>
+        </div>
+
+        {/* Search and Tabs */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {/* Search */}
+          <div className="relative flex-1 w-full sm:max-w-xs">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <input
+              type="text"
+              placeholder="Buscar por nome, ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-10 pr-4 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-[#bfff00]/50"
+            />
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center gap-1 p-1 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl">
+            {tabs.map((tab) => (
               <button
-                key={tab.key}
-                onClick={() => setFiltro(tab.key)}
-                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                  filtro === tab.key 
-                    ? "bg-foreground dark:bg-card text-background dark:text-foreground shadow-lg shadow-black/10" 
-                    : "bg-card text-gray-600 hover:bg-muted border border-border"
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                  activeTab === tab.id
+                    ? "bg-[#bfff00] text-[#1c1c1e]"
+                    : "text-gray-400 hover:text-white"
                 }`}
               >
-                {tab.label}
-                <span className={`text-xs px-1.5 py-0.5 rounded-md ${
-                  filtro === tab.key ? "bg-card/20 text-background dark:text-foreground" : "bg-muted text-muted-foreground"
-                }`}>
-                  {tab.count}
-                </span>
+                {tab.label} ({tab.count})
               </button>
             ))}
           </div>
-
-          {/* Transactions List */}
-          <div className="bg-card rounded-[24px] border border-border overflow-hidden">
-            {/* Header */}
-            <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
-                  <Receipt className="h-5 w-5 text-gray-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground">Transacoes Recentes</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {isLoading ? "Carregando..." : `${filtradas.length} transacoes`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="relative flex-1 sm:w-56">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar..."
-                    value={busca}
-                    onChange={(e) => setBusca(e.target.value)}
-                    className="bg-muted pl-9 border-0 rounded-xl text-sm"
-                  />
-                </div>
-                <button 
-                  onClick={() => mutate()}
-                  className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:bg-muted/80 transition-colors"
-                >
-                  <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-                </button>
-                <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-foreground dark:bg-muted text-background dark:text-foreground text-sm font-medium hover:bg-gray-800 dark:hover:bg-muted/80 transition-colors">
-                  <Download className="h-4 w-4" />
-                  Exportar
-                </button>
-              </div>
-            </div>
-
-            {/* Transaction Items */}
-            <div className="divide-y divide-border">
-              {isLoading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-2">
-                  <AlertCircle className="h-6 w-6 text-red-500" />
-                  <p className="text-sm text-muted-foreground">Erro ao carregar transacoes</p>
-                </div>
-              ) : filtradas.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-2">
-                  <Receipt className="h-8 w-8 text-muted-foreground/40" />
-                  <p className="text-sm text-muted-foreground">Nenhuma transacao encontrada</p>
-                </div>
-              ) : (
-                filtradas.map((payment) => {
-                  const status = statusConfig[payment.status] || statusConfig.pending
-                  const Icon = status.icon
-                  return (
-                    <div key={payment.id} className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors">
-                      {/* Avatar */}
-                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-sm font-bold text-[#65a30d]">
-                        {payment.telegram_first_name?.charAt(0).toUpperCase() || "?"}
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-foreground truncate">
-                            {getTelegramUserName(payment)}
-                          </span>
-                          {payment.product_type && (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                              {productTypeLabels[payment.product_type] || payment.product_type}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-0.5">
-                          <span className="text-xs text-muted-foreground truncate">
-                            {payment.product_name || payment.description || "Pagamento"}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
-                          <span className="text-xs text-muted-foreground uppercase">
-                            {payment.payment_method || payment.gateway || "PIX"}
-                          </span>
-                          <span className="w-1 h-1 rounded-full bg-gray-300 shrink-0" />
-                          <span className="text-xs text-muted-foreground">{formatTime(payment.created_at)}</span>
-                        </div>
-                      </div>
-
-                      {/* Amount */}
-                      <div className="text-right">
-                        <p className="font-bold text-foreground">{formatCurrency(payment.amount)}</p>
-                        <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${status.bg} mt-1`}>
-                          <Icon className={`h-3 w-3 ${status.text}`} />
-                          <span className={`text-xs font-medium ${status.text}`}>{status.label}</span>
-                        </div>
-                      </div>
-
-                      {/* Action */}
-                      <button 
-                        onClick={() => {
-                          setSelectedPayment(payment)
-                          setShowDetails(true)
-                        }}
-                        className="w-9 h-9 rounded-xl hover:bg-muted flex items-center justify-center transition-colors"
-                      >
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      </button>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-
-            {/* Footer */}
-            <div className="flex items-center justify-between px-5 py-4 border-t border-border bg-muted/50">
-              <p className="text-sm text-muted-foreground">Mostrando {filtradas.length} de {stats.total}</p>
-              <button className="flex items-center gap-2 text-sm font-medium text-[#65a30d] hover:text-[#4d7c0f] transition-colors">
-                Ver todas
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
         </div>
-      </ScrollArea>
 
-      {/* Payment Details Dialog */}
-      <Dialog open={showDetails} onOpenChange={setShowDetails}>
-        <DialogContent className="sm:max-w-[500px] bg-background border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Receipt className="h-5 w-5" />
-              Detalhes da Transacao
-            </DialogTitle>
-          </DialogHeader>
-          
+        {/* Payments List */}
+        <div className="space-y-2">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <RefreshCw className="h-6 w-6 animate-spin text-gray-500" />
+            </div>
+          ) : filteredPayments.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="w-16 h-16 rounded-2xl bg-[#2a2a2e] flex items-center justify-center mb-4">
+                <CreditCard className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="text-base font-medium text-white">Nenhuma venda encontrada</h3>
+              <p className="text-sm text-gray-500 mt-1">As vendas aparecerao aqui</p>
+            </div>
+          ) : (
+            filteredPayments.map((payment) => (
+              <button
+                key={payment.id}
+                onClick={() => setSelectedPayment(payment)}
+                className="w-full flex items-center gap-4 p-4 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl hover:border-[#3a3a3e] transition-colors text-left"
+              >
+                {/* Avatar */}
+                <div className="w-10 h-10 rounded-xl bg-[#bfff00]/10 flex items-center justify-center text-[#bfff00] font-semibold text-sm shrink-0">
+                  {payment.telegram_first_name?.charAt(0).toUpperCase() || "?"}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-white truncate">{getUserName(payment)}</span>
+                    {payment.telegram_username && (
+                      <span className="text-xs text-gray-500">@{payment.telegram_username}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
+                    <span>{payment.description || "Pagamento"}</span>
+                    <span>•</span>
+                    <span>{formatDate(payment.created_at)}</span>
+                  </div>
+                </div>
+
+                {/* Amount and Status */}
+                <div className="text-right shrink-0">
+                  <p className={`font-bold ${
+                    payment.status === "approved" ? "text-[#bfff00]" : 
+                    payment.status === "pending" ? "text-yellow-400" : 
+                    "text-gray-400"
+                  }`}>
+                    {formatCurrency(Number(payment.amount))}
+                  </p>
+                  <Badge className={`text-[10px] px-1.5 py-0.5 ${
+                    payment.status === "approved" ? "bg-[#bfff00]/10 text-[#bfff00] border-[#bfff00]/20" :
+                    payment.status === "pending" ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
+                    "bg-red-500/10 text-red-400 border-red-500/20"
+                  }`}>
+                    {payment.status === "approved" ? "Aprovada" : payment.status === "pending" ? "Pendente" : "Rejeitada"}
+                  </Badge>
+                </div>
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Payment Details Dialog - Dark theme */}
+      <Dialog open={!!selectedPayment} onOpenChange={(open) => !open && setSelectedPayment(null)}>
+        <DialogContent className="sm:max-w-[380px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
           {selectedPayment && (
-            <div className="flex flex-col gap-4 py-4">
-              {/* User Info */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#a3e635]/20 to-[#22c55e]/20 flex items-center justify-center text-lg font-bold text-[#65a30d]">
+            <div className="p-5">
+              {/* Header with user info */}
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-12 h-12 rounded-xl bg-[#bfff00]/10 flex items-center justify-center text-[#bfff00] font-bold text-lg">
                   {selectedPayment.telegram_first_name?.charAt(0).toUpperCase() || "?"}
                 </div>
-                <div className="flex-1">
-                  <p className="font-semibold text-foreground">{getTelegramUserName(selectedPayment)}</p>
-                  {selectedPayment.telegram_username && (
-                    <p className="text-sm text-[#22c55e]">
-                      @{selectedPayment.telegram_username}
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    ID: {selectedPayment.telegram_user_id || "N/A"}
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-white truncate">{getUserName(selectedPayment)}</h3>
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    {selectedPayment.telegram_username && (
+                      <span>@{selectedPayment.telegram_username}</span>
+                    )}
+                    <span>•</span>
+                    <span>ID: {selectedPayment.telegram_user_id}</span>
+                  </div>
                 </div>
-                {selectedPayment.telegram_user_id && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => copyToClipboard(selectedPayment.telegram_user_id || "")}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                )}
+                <button
+                  onClick={() => copyToClipboard(selectedPayment.telegram_user_id || "")}
+                  className="w-8 h-8 rounded-lg bg-[#2a2a2e] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                >
+                  {copied ? <Check className="h-4 w-4 text-[#bfff00]" /> : <Copy className="h-4 w-4" />}
+                </button>
               </div>
 
-              {/* Status */}
-              <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-                <span className="text-sm text-muted-foreground">Status</span>
-                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full ${statusConfig[selectedPayment.status].bg}`}>
-                  {(() => {
-                    const StatusIcon = statusConfig[selectedPayment.status].icon
-                    return <StatusIcon className={`h-3.5 w-3.5 ${statusConfig[selectedPayment.status].text}`} />
-                  })()}
-                  <span className={`text-sm font-medium ${statusConfig[selectedPayment.status].text}`}>
-                    {statusConfig[selectedPayment.status].label}
-                  </span>
+              {/* Status Badge */}
+              <div className={`flex items-center justify-center gap-2 py-2.5 rounded-xl mb-4 ${
+                selectedPayment.status === "approved" ? "bg-[#bfff00]/10" :
+                selectedPayment.status === "pending" ? "bg-yellow-500/10" :
+                "bg-red-500/10"
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  selectedPayment.status === "approved" ? "bg-[#bfff00]" :
+                  selectedPayment.status === "pending" ? "bg-yellow-400" :
+                  "bg-red-400"
+                }`} />
+                <span className={`text-sm font-medium ${
+                  selectedPayment.status === "approved" ? "text-[#bfff00]" :
+                  selectedPayment.status === "pending" ? "text-yellow-400" :
+                  "text-red-400"
+                }`}>
+                  {selectedPayment.status === "approved" ? "Pagamento Aprovado" : 
+                   selectedPayment.status === "pending" ? "Aguardando Pagamento" : "Pagamento Rejeitado"}
+                </span>
+              </div>
+
+              {/* Amount */}
+              <div className="bg-[#2a2a2e] rounded-xl p-4 mb-4 text-center">
+                <p className="text-xs text-gray-400 mb-1">Valor</p>
+                <p className={`text-3xl font-bold ${
+                  selectedPayment.status === "approved" ? "text-[#bfff00]" : "text-white"
+                }`}>
+                  {formatCurrency(Number(selectedPayment.amount))}
+                </p>
+              </div>
+
+              {/* Details Grid */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-[#2a2a2e] rounded-xl p-3">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Metodo</p>
+                  <p className="text-sm font-medium text-white">PIX</p>
+                </div>
+                <div className="bg-[#2a2a2e] rounded-xl p-3">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Gateway</p>
+                  <p className="text-sm font-medium text-white capitalize">{selectedPayment.gateway}</p>
                 </div>
               </div>
 
-              {/* Payment Details Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Valor</p>
-                  <p className="text-lg font-bold text-foreground">{formatCurrency(selectedPayment.amount)}</p>
-                </div>
-                <div className="p-3 rounded-lg border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Metodo</p>
-                  <p className="text-lg font-semibold text-foreground uppercase">
-                    {selectedPayment.payment_method || selectedPayment.gateway || "PIX"}
-                  </p>
-                </div>
-              </div>
-
-              {/* Product Info */}
-              <div className="p-3 rounded-lg border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Package className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">Produto</span>
-                </div>
-                <p className="font-medium text-foreground">{selectedPayment.product_name || selectedPayment.description || "Pagamento"}</p>
-                {selectedPayment.product_type && (
-                  <Badge variant="outline" className="mt-2">
-                    {productTypeLabels[selectedPayment.product_type] || selectedPayment.product_type}
-                  </Badge>
-                )}
+              {/* Product */}
+              <div className="bg-[#2a2a2e] rounded-xl p-3 mb-4">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Produto</p>
+                <p className="text-sm font-medium text-white">{selectedPayment.description || "Pagamento"}</p>
               </div>
 
               {/* Payment ID */}
-              <div className="p-3 rounded-lg border border-border">
-                <p className="text-xs text-muted-foreground mb-1">ID do Pagamento (Gateway)</p>
+              <div className="bg-[#2a2a2e] rounded-xl p-3 mb-4">
                 <div className="flex items-center justify-between">
-                  <code className="text-sm font-mono text-foreground">{selectedPayment.external_payment_id}</code>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
+                  <div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">ID do Pagamento</p>
+                    <p className="text-sm font-mono text-white">{selectedPayment.external_payment_id}</p>
+                  </div>
+                  <button
                     onClick={() => copyToClipboard(selectedPayment.external_payment_id)}
+                    className="w-8 h-8 rounded-lg bg-[#3a3a3e] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
                   >
                     <Copy className="h-3.5 w-3.5" />
-                  </Button>
+                  </button>
                 </div>
               </div>
 
               {/* Dates */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Criado em</p>
-                  <p className="text-sm font-medium text-foreground">{formatDate(selectedPayment.created_at)}</p>
-                  <p className="text-xs text-muted-foreground">{formatTime(selectedPayment.created_at)}</p>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="bg-[#2a2a2e] rounded-xl p-3">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Criado</p>
+                  <p className="text-xs text-white">{formatDate(selectedPayment.created_at)}</p>
                 </div>
-                <div className="p-3 rounded-lg border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Atualizado em</p>
-                  <p className="text-sm font-medium text-foreground">{formatDate(selectedPayment.updated_at)}</p>
-                  <p className="text-xs text-muted-foreground">{formatTime(selectedPayment.updated_at)}</p>
+                <div className="bg-[#2a2a2e] rounded-xl p-3">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Atualizado</p>
+                  <p className="text-xs text-white">{formatDate(selectedPayment.updated_at)}</p>
                 </div>
               </div>
 
-              {/* Bot Info */}
-              {selectedPayment.bots && (
-                <div className="p-3 rounded-lg border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Bot</p>
-                  <p className="text-sm font-medium text-foreground">{selectedPayment.bots.name}</p>
-                </div>
-              )}
+              {/* Bot */}
+              <div className="bg-[#2a2a2e] rounded-xl p-3">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Bot</p>
+                <p className="text-sm font-medium text-white">{selectedPayment.bots?.name || "Bot"}</p>
+              </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   )
 }

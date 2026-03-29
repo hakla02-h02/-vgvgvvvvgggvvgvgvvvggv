@@ -47,7 +47,7 @@ const navSections: NavSection[] = [
     items: [
       { label: "Dashboard", description: "Visao geral", href: "/", icon: LayoutDashboard },
       { label: "Analises", description: "Metricas e relatorios", href: "/analytics", icon: BarChart3 },
-      { label: "Vendas", description: "Vendas e transacoes", href: "/financeiro", icon: DollarSign },
+      { label: "Vendas", description: "Vendas e transacoes", href: "/payments", icon: DollarSign },
       { label: "Clientes", description: "Base de leads", href: "/users", icon: Users },
     ],
   },
