@@ -22,6 +22,9 @@ interface Payment {
   id: string
   bot_id: string
   telegram_user_id: string
+  telegram_username: string | null
+  telegram_first_name: string | null
+  telegram_last_name: string | null
   gateway: string
   external_payment_id: string
   amount: number
@@ -227,45 +230,56 @@ export default function FinanceiroPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {filteredPayments.map((payment) => (
-                    <div
-                      key={payment.id}
-                      className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-secondary/10 hover:bg-secondary/20 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                          <Users className="h-5 w-5 text-primary" />
+                  {filteredPayments.map((payment) => {
+                    const userName = payment.telegram_first_name 
+                      ? `${payment.telegram_first_name}${payment.telegram_last_name ? ` ${payment.telegram_last_name}` : ''}`
+                      : 'Usuario'
+                    
+                    return (
+                      <div
+                        key={payment.id}
+                        className="flex items-center justify-between p-4 rounded-lg border border-border/50 bg-secondary/10 hover:bg-secondary/20 transition-colors"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold">
+                            {payment.telegram_first_name?.charAt(0).toUpperCase() || '?'}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-foreground">
+                                {userName}
+                              </p>
+                              {payment.telegram_username && (
+                                <span className="text-sm text-muted-foreground">
+                                  @{payment.telegram_username}
+                                </span>
+                              )}
+                              {getStatusBadge(payment.status)}
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>{payment.description || "Pagamento"}</span>
+                              <span>•</span>
+                              <span>{payment.bots?.name || "Bot"}</span>
+                              <span>•</span>
+                              <span>{formatDate(payment.created_at)}</span>
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-foreground">
-                              {payment.description || "Pagamento"}
-                            </p>
-                            {getStatusBadge(payment.status)}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <span>ID: {payment.telegram_user_id}</span>
-                            <span>•</span>
-                            <span>{payment.bots?.name || "Bot"}</span>
-                            <span>•</span>
-                            <span>{formatDate(payment.created_at)}</span>
-                          </div>
+                        <div className="text-right">
+                          <p className={`text-lg font-bold ${
+                            payment.status === "approved" ? "text-emerald-500" : 
+                            payment.status === "pending" ? "text-yellow-500" : 
+                            "text-foreground"
+                          }`}>
+                            {formatCurrency(Number(payment.amount))}
+                          </p>
+                          <p className="text-xs text-muted-foreground uppercase">
+                            {payment.gateway}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`text-lg font-bold ${
-                          payment.status === "approved" ? "text-emerald-500" : 
-                          payment.status === "pending" ? "text-yellow-500" : 
-                          "text-foreground"
-                        }`}>
-                          {formatCurrency(Number(payment.amount))}
-                        </p>
-                        <p className="text-xs text-muted-foreground uppercase">
-                          {payment.gateway}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
             </TabsContent>
