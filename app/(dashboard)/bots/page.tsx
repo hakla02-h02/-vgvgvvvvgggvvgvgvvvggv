@@ -697,195 +697,158 @@ export default function BotsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Config Bot Dialog - Design escuro com glow verde */}
+      {/* Config Bot Dialog - Design escuro compacto com blur */}
       <Dialog open={!!configBot} onOpenChange={(open) => !open && closeConfig()}>
-        <DialogContent className="sm:max-w-md bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[24px]">
+        <DialogContent className="sm:max-w-[380px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] backdrop-blur-xl [&>button]:text-gray-400 [&>button]:hover:text-white">
           {configBot && (
             <>
               {/* Loading state */}
               {isLoadingConfig ? (
-                <div className="p-12 flex flex-col items-center justify-center">
-                  <Loader2 className="h-8 w-8 text-[#bfff00] animate-spin mb-3" />
-                  <p className="text-gray-400 text-sm">Carregando...</p>
+                <div className="p-8 flex flex-col items-center justify-center">
+                  <Loader2 className="h-6 w-6 text-[#bfff00] animate-spin mb-2" />
+                  <p className="text-gray-400 text-xs">Carregando...</p>
                 </div>
               ) : (
                 <>
-                  {/* Header com foto centralizada */}
-                  <div className="relative pt-8 pb-6 px-6 text-center">
-                    {/* Glow verde */}
-                    <div 
-                      className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-                      style={{
-                        background: "radial-gradient(ellipse at center bottom, rgba(190, 255, 0, 0.1) 0%, transparent 70%)"
-                      }}
-                    />
-                    
-                    {/* Foto clicavel para upload */}
-                    <input
-                      type="file"
-                      ref={photoInputRef}
-                      onChange={handlePhotoSelect}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                    <div 
-                      className="relative inline-block group cursor-pointer mb-4"
-                      onClick={() => photoInputRef.current?.click()}
-                    >
-                      {cfgPhotoPreview || (configBot as ExtendedBot).photo_url ? (
-                        <img
-                          src={cfgPhotoPreview || (configBot as ExtendedBot).photo_url!}
-                          alt={configBot.name}
-                          className="w-24 h-24 rounded-2xl object-cover border-2 border-[#3a3a3e]"
-                        />
-                      ) : (
-                        <div className="w-24 h-24 rounded-2xl bg-[#bfff00]/10 flex items-center justify-center border-2 border-[#3a3a3e]">
-                          <BotIcon className="h-10 w-10 text-[#bfff00]" />
-                        </div>
-                      )}
-                      {/* Overlay para trocar foto */}
-                      <div className="absolute inset-0 bg-black/60 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Camera className="h-6 w-6 text-white" />
-                      </div>
-                      {/* Badge de status */}
-                      <div className={`absolute -bottom-1.5 -right-1.5 w-6 h-6 rounded-full border-3 border-[#1c1c1e] flex items-center justify-center ${
-                        configBot.status === "active" ? "bg-[#bfff00]" : "bg-gray-500"
-                      }`}>
-                        {configBot.status === "active" && (
-                          <span className="w-2 h-2 rounded-full bg-[#1c1c1e]" />
-                        )}
-                      </div>
-                    </div>
-                    
-                    <h2 className="text-xl font-bold text-white">Configuracoes do Bot</h2>
-                    <p className="text-xs text-gray-400 mt-1">Clique na foto para alterar</p>
-                    
-                    {/* Toggle de status */}
-                    <div className="flex items-center justify-center gap-3 mt-5 bg-[#2a2a2e] rounded-full px-4 py-2 mx-auto w-fit">
-                      <span className={`text-xs font-medium ${configBot.status !== "active" ? "text-white" : "text-gray-500"}`}>
-                        Offline
-                      </span>
-                      <Switch
-                        checked={configBot.status === "active"}
-                        onCheckedChange={async (checked) => {
-                          await updateBot(configBot.id, { status: checked ? "active" : "inactive" })
-                          setConfigBot({ ...configBot, status: checked ? "active" : "inactive" })
-                          await fetch("/api/telegram/register", {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ botToken: configBot.token, action: checked ? "register" : "unregister" }),
-                          })
-                        }}
-                        className="data-[state=checked]:bg-[#bfff00]"
+                  {/* Header compacto com foto e toggle lado a lado */}
+                  <div className="relative px-4 pt-4 pb-3">
+                    <div className="flex items-center gap-3">
+                      {/* Foto clicavel */}
+                      <input
+                        type="file"
+                        ref={photoInputRef}
+                        onChange={handlePhotoSelect}
+                        accept="image/*"
+                        className="hidden"
                       />
-                      <span className={`text-xs font-medium ${configBot.status === "active" ? "text-[#bfff00]" : "text-gray-500"}`}>
-                        Online
-                      </span>
+                      <div 
+                        className="relative group cursor-pointer flex-shrink-0"
+                        onClick={() => photoInputRef.current?.click()}
+                      >
+                        {cfgPhotoPreview || (configBot as ExtendedBot).photo_url ? (
+                          <img
+                            src={cfgPhotoPreview || (configBot as ExtendedBot).photo_url!}
+                            alt={configBot.name}
+                            className="w-14 h-14 rounded-xl object-cover border border-[#3a3a3e]"
+                          />
+                        ) : (
+                          <div className="w-14 h-14 rounded-xl bg-[#bfff00]/10 flex items-center justify-center border border-[#3a3a3e]">
+                            <BotIcon className="h-6 w-6 text-[#bfff00]" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/60 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <Camera className="h-4 w-4 text-white" />
+                        </div>
+                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-[#1c1c1e] ${
+                          configBot.status === "active" ? "bg-[#bfff00]" : "bg-gray-500"
+                        }`} />
+                      </div>
+                      
+                      {/* Info e Toggle */}
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-sm font-bold text-white truncate">{configBot.name}</h2>
+                        <p className="text-[10px] text-gray-500">Clique na foto para alterar</p>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <span className={`text-[10px] font-medium ${configBot.status !== "active" ? "text-white" : "text-gray-500"}`}>Off</span>
+                          <Switch
+                            checked={configBot.status === "active"}
+                            onCheckedChange={async (checked) => {
+                              await updateBot(configBot.id, { status: checked ? "active" : "inactive" })
+                              setConfigBot({ ...configBot, status: checked ? "active" : "inactive" })
+                              await fetch("/api/telegram/register", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ botToken: configBot.token, action: checked ? "register" : "unregister" }),
+                              })
+                            }}
+                            className="data-[state=checked]:bg-[#bfff00] h-4 w-8"
+                          />
+                          <span className={`text-[10px] font-medium ${configBot.status === "active" ? "text-[#bfff00]" : "text-gray-500"}`}>On</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Campos editaveis */}
-                  <div className="p-6 space-y-4 border-t border-[#2a2a2e]">
-                    {/* Nome */}
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                        Nome
-                      </Label>
-                      <Input 
-                        value={cfgName} 
-                        onChange={(e) => setCfgName(e.target.value)} 
-                        className="h-11 bg-[#2a2a2e] border-[#3a3a3e] rounded-xl text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00] focus:ring-[#bfff00]/20" 
-                        placeholder="Nome do bot"
-                      />
-                    </div>
-
-                    {/* Username (somente leitura) */}
-                    <div className="space-y-2">
-                      <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide flex items-center gap-1.5">
-                        <AtSign className="h-3 w-3" />
-                        Username
-                      </Label>
-                      <Input 
-                        value={(configBot as ExtendedBot).username || ""} 
-                        disabled
-                        className="h-11 bg-[#232325] border-[#2a2a2e] rounded-xl text-sm text-gray-500" 
-                      />
-                    </div>
-
-                    {/* Descricao curta */}
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                          Bio
+                  {/* Campos editaveis - mais compacto */}
+                  <div className="px-4 pb-3 space-y-2.5 border-t border-[#2a2a2e] pt-3">
+                    {/* Nome e Username em grid */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-semibold text-gray-500 uppercase">Nome</Label>
+                        <Input 
+                          value={cfgName} 
+                          onChange={(e) => setCfgName(e.target.value)} 
+                          className="h-9 bg-[#2a2a2e] border-[#3a3a3e] rounded-lg text-xs text-white placeholder:text-gray-500 focus:border-[#bfff00]" 
+                          placeholder="Nome"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] font-semibold text-gray-500 uppercase flex items-center gap-1">
+                          <AtSign className="h-2.5 w-2.5" />Username
                         </Label>
-                        <span className="text-[10px] text-gray-500">
-                          {cfgShortDescription.length}/120
-                        </span>
+                        <Input 
+                          value={(configBot as ExtendedBot).username || ""} 
+                          disabled
+                          className="h-9 bg-[#232325] border-[#2a2a2e] rounded-lg text-xs text-gray-500" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* Bio */}
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-semibold text-gray-500 uppercase">Bio</Label>
+                        <span className="text-[9px] text-gray-600">{cfgShortDescription.length}/120</span>
                       </div>
                       <Input 
                         value={cfgShortDescription} 
                         onChange={(e) => setCfgShortDescription(e.target.value)} 
-                        className="h-11 bg-[#2a2a2e] border-[#3a3a3e] rounded-xl text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00] focus:ring-[#bfff00]/20" 
-                        placeholder="Descricao curta visivel no perfil"
+                        className="h-9 bg-[#2a2a2e] border-[#3a3a3e] rounded-lg text-xs text-white placeholder:text-gray-500 focus:border-[#bfff00]" 
+                        placeholder="Descricao curta"
                         maxLength={120}
                       />
                     </div>
 
-                    {/* Descricao longa */}
-                    <div className="space-y-2">
+                    {/* Descricao */}
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <Label className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
-                          Descricao
-                        </Label>
-                        <span className="text-[10px] text-gray-500">
-                          {cfgDescription.length}/512
-                        </span>
+                        <Label className="text-[10px] font-semibold text-gray-500 uppercase">Descricao</Label>
+                        <span className="text-[9px] text-gray-600">{cfgDescription.length}/512</span>
                       </div>
                       <Textarea 
                         value={cfgDescription} 
                         onChange={(e) => setCfgDescription(e.target.value)} 
-                        className="min-h-[80px] bg-[#2a2a2e] border-[#3a3a3e] rounded-xl resize-none text-sm text-white placeholder:text-gray-500 focus:border-[#bfff00] focus:ring-[#bfff00]/20" 
-                        placeholder="O que seu bot faz? (visivel ao iniciar conversa)"
+                        className="min-h-[60px] bg-[#2a2a2e] border-[#3a3a3e] rounded-lg resize-none text-xs text-white placeholder:text-gray-500 focus:border-[#bfff00]" 
+                        placeholder="O que seu bot faz?"
                         maxLength={512}
                       />
                     </div>
                   </div>
 
-                  {/* Footer com acoes */}
-                  <div className="px-6 py-4 bg-[#232325] border-t border-[#2a2a2e]">
-                    <div className="flex items-center justify-between">
+                  {/* Footer compacto */}
+                  <div className="px-4 py-3 bg-[#18181a] border-t border-[#2a2a2e] flex items-center justify-between">
+                    <button
+                      onClick={() => handleDelete(configBot.id)}
+                      className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-red-500/10"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Excluir
+                    </button>
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => handleDelete(configBot.id)}
-                        className="text-xs text-red-400 hover:text-red-300 transition-colors flex items-center gap-1.5 px-3 py-2 rounded-lg hover:bg-red-500/10"
+                        onClick={closeConfig}
+                        className="px-3 py-1.5 rounded-lg text-[10px] font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e]"
                       >
-                        <Trash2 className="h-3.5 w-3.5" />
-                        Excluir Bot
+                        Cancelar
                       </button>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={closeConfig}
-                          className="px-4 py-2.5 rounded-xl text-xs font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          onClick={handleSaveConfig}
-                          disabled={isSaving}
-                          className="flex items-center gap-2 bg-[#bfff00] text-[#1c1c1e] px-5 py-2.5 rounded-xl font-semibold text-xs hover:bg-[#d4ff4d] transition-colors disabled:opacity-50 shadow-lg shadow-[#bfff00]/20"
-                        >
-                          {isSaving ? (
-                            <>
-                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              Salvando...
-                            </>
-                          ) : (
-                            <>
-                              <Save className="h-3.5 w-3.5" />
-                              Salvar
-                            </>
-                          )}
-                        </button>
-                      </div>
+                      <button
+                        onClick={handleSaveConfig}
+                        disabled={isSaving}
+                        className="flex items-center gap-1.5 bg-[#bfff00] text-[#1c1c1e] px-4 py-1.5 rounded-lg font-semibold text-[10px] hover:bg-[#d4ff4d] disabled:opacity-50"
+                      >
+                        {isSaving ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                        {isSaving ? "Salvando..." : "Salvar"}
+                      </button>
                     </div>
                   </div>
                 </>
