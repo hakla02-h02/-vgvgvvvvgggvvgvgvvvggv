@@ -246,38 +246,48 @@ export default function VendasPage() {
                   <button
                     key={payment.id}
                     onClick={() => setSelectedPayment(payment)}
-                    className="w-full flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-2xl hover:border-gray-300 hover:shadow-sm transition-all text-left"
+                    className="group w-full flex items-center gap-4 p-5 bg-white border border-gray-100 rounded-2xl hover:border-[#bfff00]/50 hover:shadow-lg hover:shadow-[#bfff00]/5 transition-all duration-200 text-left"
                   >
-                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-[#bfff00]/20 to-[#22c55e]/20 flex items-center justify-center text-[#65a30d] font-bold text-sm shrink-0">
-                      {payment.telegram_first_name?.charAt(0).toUpperCase() || payment.bots?.name?.charAt(0).toUpperCase() || "?"}
+                    {/* Avatar com gradiente */}
+                    <div className="relative shrink-0">
+                      <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#bfff00] to-[#65a30d] flex items-center justify-center text-white font-bold text-base shadow-lg shadow-[#bfff00]/20">
+                        {payment.telegram_first_name?.charAt(0).toUpperCase() || payment.bots?.name?.charAt(0).toUpperCase() || "?"}
+                      </div>
+                      {payment.status === "approved" && (
+                        <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </div>
+                      )}
                     </div>
 
+                    {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-gray-900 truncate">{getUserName(payment)}</span>
+                        <span className="font-semibold text-gray-900 truncate group-hover:text-[#65a30d] transition-colors">{getUserName(payment)}</span>
                         {payment.telegram_username && (
-                          <span className="text-xs text-gray-400">@{payment.telegram_username}</span>
+                          <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full">@{payment.telegram_username}</span>
                         )}
                       </div>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
-                        <span className="truncate">{payment.description || "Pagamento"}</span>
-                        <span>•</span>
-                        <span className="shrink-0">{formatDate(payment.created_at)}</span>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                        <span className="truncate max-w-[200px]">{payment.description || "Pagamento"}</span>
+                        <span className="text-gray-300">|</span>
+                        <span className="shrink-0 text-gray-400">{formatDate(payment.created_at)}</span>
                       </div>
                     </div>
 
-                    <div className="text-right shrink-0 flex flex-col items-end gap-1">
-                      <p className={`text-base font-bold ${
+                    {/* Valor e Status */}
+                    <div className="text-right shrink-0 flex flex-col items-end gap-2">
+                      <p className={`text-lg font-bold ${
                         payment.status === "approved" ? "text-emerald-500" : 
-                        payment.status === "pending" ? "text-yellow-500" : 
+                        payment.status === "pending" ? "text-amber-500" : 
                         "text-gray-400"
                       }`}>
                         {formatCurrency(Number(payment.amount))}
                       </p>
-                      <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
-                        payment.status === "approved" ? "bg-emerald-50 text-emerald-600" :
-                        payment.status === "pending" ? "bg-yellow-50 text-yellow-600" :
-                        "bg-gray-100 text-gray-500"
+                      <span className={`text-xs font-medium px-3 py-1 rounded-full ${
+                        payment.status === "approved" ? "bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200" :
+                        payment.status === "pending" ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
+                        "bg-red-100 text-red-700 ring-1 ring-red-200"
                       }`}>
                         {payment.status === "approved" ? "Aprovada" : payment.status === "pending" ? "Pendente" : "Rejeitada"}
                       </span>
