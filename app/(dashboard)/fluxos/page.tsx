@@ -200,21 +200,30 @@ export default function FluxosPage() {
 
   // Delete flow
   const handleDeleteFlow = async (flowId: string) => {
-    if (!confirm("Tem certeza que deseja excluir este fluxo?")) return
+    console.log("[v0] handleDeleteFlow chamado com flowId:", flowId)
     
-    const supabase = createClient()
-    
-    // Delete flow_bots first
-    await supabase.from("flow_bots").delete().eq("flow_id", flowId)
-    
-    // Delete flow
-    const { error } = await supabase.from("flows").delete().eq("id", flowId)
-    
-    if (error) {
-      console.error("Erro ao excluir fluxo:", error)
+    if (!confirm("Tem certeza que deseja excluir este fluxo?")) {
+      console.log("[v0] Exclusao cancelada pelo usuario")
       return
     }
     
+    console.log("[v0] Usuario confirmou exclusao")
+    const supabase = createClient()
+    
+    // Delete flow_bots first
+    const { error: flowBotsError } = await supabase.from("flow_bots").delete().eq("flow_id", flowId)
+    console.log("[v0] flow_bots delete result:", flowBotsError || "OK")
+    
+    // Delete flow
+    const { error } = await supabase.from("flows").delete().eq("id", flowId)
+    console.log("[v0] flows delete result:", error || "OK")
+    
+    if (error) {
+      console.error("[v0] Erro ao excluir fluxo:", error)
+      return
+    }
+    
+    console.log("[v0] Fluxo excluido com sucesso, atualizando lista...")
     // Refresh list
     fetchFlows()
   }
