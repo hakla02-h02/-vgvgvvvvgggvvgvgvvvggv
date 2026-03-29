@@ -13,8 +13,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import {
-  Plus, Zap, Link2, Workflow, Settings, RotateCcw, 
-  Loader2, Bot, Upload, CheckCircle2, Sparkles
+  Plus, Zap, Link2, Workflow, RotateCcw, 
+  Loader2, Bot, Upload, CheckCircle2, Sparkles, Trash2
 } from "lucide-react"
 
 // Types
