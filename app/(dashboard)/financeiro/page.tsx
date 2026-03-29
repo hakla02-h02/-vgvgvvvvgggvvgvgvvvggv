@@ -15,8 +15,8 @@ import {
   Users,
   CreditCard
 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
-import { useAuth } from "@/contexts/auth-context"
+import { getSupabase } from "@/lib/supabase"
+import { useAuth } from "@/lib/auth-context"
 
 interface Payment {
   id: string
@@ -40,7 +40,7 @@ export default function FinanceiroPage() {
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
-  const supabase = createClient()
+  const supabase = getSupabase()
 
   useEffect(() => {
     if (user) {
