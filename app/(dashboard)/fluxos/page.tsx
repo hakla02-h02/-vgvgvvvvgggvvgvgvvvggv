@@ -372,7 +372,7 @@ export default function FluxosPage() {
       <main className="flex-1 overflow-auto p-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-bold text-white">Fluxos</h2>
+          <h2 className="text-xl font-bold text-foreground">Fluxos</h2>
           <div className="flex items-center gap-2">
             <button 
               className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#3a3a3e] bg-[#2a2a2e] hover:bg-[#3a3a3e] text-sm font-medium text-gray-300 hover:text-white transition-colors"
