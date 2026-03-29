@@ -56,9 +56,11 @@ export default function FinanceiroPage() {
     try {
       const { data, error } = await supabase
         .from("payments")
-        .select("*, bots(name, username)")
+        .select("id, bot_id, telegram_user_id, telegram_username, telegram_first_name, telegram_last_name, gateway, external_payment_id, amount, description, status, created_at, updated_at, bots(name, username)")
         .eq("user_id", user?.id)
         .order("created_at", { ascending: false })
+      
+      console.log("[v0] Payments data:", data)
 
       if (error) {
         console.error("Error fetching payments:", error)
