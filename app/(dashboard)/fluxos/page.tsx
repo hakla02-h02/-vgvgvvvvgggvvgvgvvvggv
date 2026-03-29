@@ -390,57 +390,57 @@ export default function FluxosPage() {
         description="Gerencie seus fluxos de automacao e chatbots"
       />
 
-      <main className="flex-1 overflow-auto p-6">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+      <main className="flex-1 overflow-auto p-4 md:p-6">
+        {/* Header - responsivo */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
           <h2 className="text-xl font-bold text-foreground">Fluxos</h2>
           <div className="flex items-center gap-2">
             <button 
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[#3a3a3e] bg-[#2a2a2e] hover:bg-[#3a3a3e] text-sm font-medium text-gray-300 hover:text-white transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border border-[#3a3a3e] bg-[#2a2a2e] hover:bg-[#3a3a3e] text-sm font-medium text-gray-300 hover:text-white transition-colors"
               onClick={() => setShowImportDialog(true)}
             >
               <Upload className="h-4 w-4" />
-              Importar
+              <span className="hidden sm:inline">Importar</span>
             </button>
             <button 
-              className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[#bfff00] hover:bg-[#d4ff4d] text-sm font-semibold text-[#1c1c1e] transition-colors"
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-[#bfff00] hover:bg-[#d4ff4d] text-sm font-semibold text-[#1c1c1e] transition-colors"
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="h-4 w-4" />
-              Novo fluxo
+              <span className="hidden sm:inline">Novo fluxo</span>
             </button>
           </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex items-center gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-4 py-3">
-            <div className="w-9 h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+        {/* Stats Cards - grid responsivo */}
+        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl p-3 sm:px-4 sm:py-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
               <Bot className="h-4 w-4 text-[#bfff00]" />
             </div>
-            <div>
-              <span className="text-xl font-bold text-[#bfff00]">{stats.linkedBots}</span>
-              <p className="text-xs text-gray-500">bots vinculados</p>
+            <div className="text-center sm:text-left">
+              <span className="text-lg sm:text-xl font-bold text-[#bfff00]">{stats.linkedBots}</span>
+              <p className="text-[10px] sm:text-xs text-gray-500">bots</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-4 py-3">
-            <div className="w-9 h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl p-3 sm:px-4 sm:py-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
               <Zap className="h-4 w-4 text-[#bfff00]" />
             </div>
-            <div>
-              <span className="text-xl font-bold text-white">{stats.basicFlows}</span>
-              <p className="text-xs text-gray-500">fluxos basicos</p>
+            <div className="text-center sm:text-left">
+              <span className="text-lg sm:text-xl font-bold text-white">{stats.basicFlows}</span>
+              <p className="text-[10px] sm:text-xs text-gray-500">basicos</p>
             </div>
           </div>
           
-          <div className="flex items-center gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-4 py-3">
-            <div className="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
+          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl p-3 sm:px-4 sm:py-3">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
               <Workflow className="h-4 w-4 text-purple-400" />
             </div>
-            <div>
-              <span className="text-xl font-bold text-white">{stats.n8nFlows}</span>
-              <p className="text-xs text-gray-500">fluxos n8n</p>
+            <div className="text-center sm:text-left">
+              <span className="text-lg sm:text-xl font-bold text-white">{stats.n8nFlows}</span>
+              <p className="text-[10px] sm:text-xs text-gray-500">n8n</p>
             </div>
           </div>
         </div>
