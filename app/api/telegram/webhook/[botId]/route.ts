@@ -217,36 +217,48 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           
           const replyMarkup = inlineKeyboard.length > 0 ? { inline_keyboard: inlineKeyboard } : undefined
           
+          // Track if we successfully sent medias
+          let mediasSent = false
+          
           // Send medias first (if any)
           if (welcomeMedias.length > 0) {
-            // Send first media with caption (welcome message)
-            const firstMedia = welcomeMedias[0]
-            const isVideo = firstMedia.includes(".mp4") || firstMedia.includes("video")
-            
-            if (isVideo) {
-              await sendTelegramVideo(botToken, chatId, firstMedia, finalMsg)
-            } else {
-              await sendTelegramPhoto(botToken, chatId, firstMedia, finalMsg)
-            }
-            
-            // Send remaining medias without caption
-            for (let i = 1; i < welcomeMedias.length; i++) {
-              const media = welcomeMedias[i]
-              const isVid = media.includes(".mp4") || media.includes("video")
-              if (isVid) {
-                await sendTelegramVideo(botToken, chatId, media)
+            try {
+              // Send first media with caption (welcome message)
+              const firstMedia = welcomeMedias[0]
+              const isVideo = firstMedia.includes(".mp4") || firstMedia.includes("video")
+              
+              if (isVideo) {
+                await sendTelegramVideo(botToken, chatId, firstMedia, finalMsg)
               } else {
-                await sendTelegramPhoto(botToken, chatId, media)
+                await sendTelegramPhoto(botToken, chatId, firstMedia, finalMsg)
               }
-              await new Promise(resolve => setTimeout(resolve, 200))
+              mediasSent = true
+              
+              // Send remaining medias without caption
+              for (let i = 1; i < welcomeMedias.length; i++) {
+                const media = welcomeMedias[i]
+                const isVid = media.includes(".mp4") || media.includes("video")
+                if (isVid) {
+                  await sendTelegramVideo(botToken, chatId, media)
+                } else {
+                  await sendTelegramPhoto(botToken, chatId, media)
+                }
+                await new Promise(resolve => setTimeout(resolve, 200))
+              }
+            } catch {
+              // If media fails, we'll send message normally below
+              mediasSent = false
             }
-            
-            // Send buttons separately after medias
+          }
+          
+          // Send message with buttons
+          if (mediasSent) {
+            // Medias were sent with caption, just send buttons
             if (replyMarkup) {
               await sendTelegramMessage(botToken, chatId, "Escolha uma opcao:", replyMarkup)
             }
           } else {
-            // No medias - send message with buttons
+            // No medias or media failed - send full message with buttons
             await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
           }
           
