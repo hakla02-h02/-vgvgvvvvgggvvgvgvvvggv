@@ -186,6 +186,8 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         // Get flow config (contains all settings from /fluxos/[id] page)
         const flowConfig = (startFlow.config as Record<string, unknown>) || {}
         
+        console.log("[webhook] flowConfig:", JSON.stringify(flowConfig))
+        
         // Helper to replace variables
         const replaceVars = (text: string) => {
           return text
@@ -200,6 +202,12 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         const ctaButtonText = (flowConfig.ctaButtonText as string) || "Ver Planos"
         const redirectButton = flowConfig.redirectButton as { enabled?: boolean; text?: string; url?: string } || {}
         const secondaryMsg = flowConfig.secondaryMessage as { enabled?: boolean; message?: string } || {}
+        
+        console.log("[webhook] welcomeMsg:", welcomeMsg)
+        console.log("[webhook] welcomeMedias:", welcomeMedias)
+        console.log("[webhook] ctaButtonText:", ctaButtonText)
+        console.log("[webhook] redirectButton:", redirectButton)
+        console.log("[webhook] secondaryMsg:", secondaryMsg)
         
         if (welcomeMsg && welcomeMsg.trim()) {
           const finalMsg = replaceVars(welcomeMsg)
@@ -219,26 +227,35 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           
           // Send medias first (if any)
           if (welcomeMedias.length > 0) {
-            // Send first media with caption (welcome message)
-            const firstMedia = welcomeMedias[0]
-            const isVideo = firstMedia.includes(".mp4") || firstMedia.includes("video")
+            console.log("[webhook] Sending medias, count:", welcomeMedias.length)
             
-            if (isVideo) {
-              await sendTelegramVideo(botToken, chatId, firstMedia, finalMsg)
-            } else {
-              await sendTelegramPhoto(botToken, chatId, firstMedia, finalMsg)
-            }
-            
-            // Send remaining medias without caption
-            for (let i = 1; i < welcomeMedias.length; i++) {
-              const media = welcomeMedias[i]
-              const isVid = media.includes(".mp4") || media.includes("video")
-              if (isVid) {
-                await sendTelegramVideo(botToken, chatId, media)
+            try {
+              // Send first media with caption (welcome message)
+              const firstMedia = welcomeMedias[0]
+              const isVideo = firstMedia.includes(".mp4") || firstMedia.includes("video")
+              
+              console.log("[webhook] First media:", firstMedia, "isVideo:", isVideo)
+              
+              if (isVideo) {
+                await sendTelegramVideo(botToken, chatId, firstMedia, finalMsg)
               } else {
-                await sendTelegramPhoto(botToken, chatId, media)
+                await sendTelegramPhoto(botToken, chatId, firstMedia, finalMsg)
               }
-              await new Promise(resolve => setTimeout(resolve, 200))
+              
+              // Send remaining medias without caption
+              for (let i = 1; i < welcomeMedias.length; i++) {
+                const media = welcomeMedias[i]
+                const isVid = media.includes(".mp4") || media.includes("video")
+                console.log("[webhook] Sending media", i, ":", media)
+                if (isVid) {
+                  await sendTelegramVideo(botToken, chatId, media)
+                } else {
+                  await sendTelegramPhoto(botToken, chatId, media)
+                }
+                await new Promise(resolve => setTimeout(resolve, 200))
+              }
+            } catch (mediaError) {
+              console.error("[webhook] Error sending media:", mediaError)
             }
             
             // Send buttons separately after medias
@@ -247,6 +264,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             }
           } else {
             // No medias - send message with buttons
+            console.log("[webhook] No medias, sending message with buttons")
             await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
           }
           
