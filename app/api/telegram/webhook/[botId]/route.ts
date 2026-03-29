@@ -317,13 +317,15 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         }
         
         // Get gateway for this user (all bots use the same gateway)
-        const { data: gateway } = await supabase
+        const { data: gateway, error: gwError } = await supabase
           .from("user_gateways")
           .select("*")
           .eq("user_id", botData.user_id)
           .eq("is_active", true)
           .limit(1)
           .single()
+        
+        console.log("[v0] Gateway lookup - user_id:", botData.user_id, "found:", !!gateway, "has_token:", !!gateway?.access_token, "error:", gwError?.message)
         
         if (!gateway || !gateway.access_token) {
           await sendTelegramMessage(
