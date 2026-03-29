@@ -195,61 +195,61 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             .replace(/\{bot\.username\}/gi, bot.username ? `@${bot.username}` : bot.name || "")
         }
         
-        // Get welcome message - try multiple sources
+        // Get welcome message - try config first, then table field
         const welcomeMsg = (flowConfig.welcomeMessage as string) || (startFlow.welcome_message as string) || ""
-        const welcomeMedias = (flowConfig.welcomeMedias as string[]) || []
+        
+        // Get medias - filter out base64 (Telegram only accepts URLs)
+        const allMedias = (flowConfig.welcomeMedias as string[]) || []
+        const welcomeMedias = allMedias.filter(m => m && !m.startsWith("data:") && (m.startsWith("http") || m.startsWith("/")))
+        
         const ctaButtonText = (flowConfig.ctaButtonText as string) || "Ver Planos"
         const redirectButton = flowConfig.redirectButton as { enabled?: boolean; text?: string; url?: string } || {}
         const secondaryMsg = flowConfig.secondaryMessage as { enabled?: boolean; message?: string } || {}
         
-        // Check if we have ANY content to send (message, medias, or secondary)
-        const hasContent = welcomeMsg.trim() || welcomeMedias.length > 0 || (secondaryMsg.enabled && secondaryMsg.message)
+        // Always send welcome flow (we have at least a default message)
+        const finalMsg = replaceVars(welcomeMsg) || `Ola! Bem-vindo ao ${bot.name || "bot"}.`
         
-        if (hasContent) {
-          const finalMsg = replaceVars(welcomeMsg) || `Ola! Bem-vindo ao ${bot.name || "bot"}.`
-          
-          // Build inline keyboard with buttons
-          const inlineKeyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> = []
-          
-          // CTA Button (Ver Planos) - callback button
-          inlineKeyboard.push([{ text: ctaButtonText, callback_data: "ver_planos" }])
-          
-          // Redirect Button - URL button (if enabled)
-          if (redirectButton.enabled && redirectButton.text && redirectButton.url) {
-            inlineKeyboard.push([{ text: redirectButton.text, url: redirectButton.url }])
-          }
-          
-          const replyMarkup = { inline_keyboard: inlineKeyboard }
-          
-          // STEP 1: Send medias (if any)
-          if (welcomeMedias.length > 0) {
-            for (let i = 0; i < welcomeMedias.length; i++) {
-              const media = welcomeMedias[i]
-              const isVideo = media.includes(".mp4") || media.includes("video")
-              try {
-                if (isVideo) {
-                  await sendTelegramVideo(botToken, chatId, media)
-                } else {
-                  await sendTelegramPhoto(botToken, chatId, media)
-                }
-                await new Promise(resolve => setTimeout(resolve, 200))
-              } catch {
-                // Skip failed media
+        // Build inline keyboard with buttons
+        const inlineKeyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> = []
+        
+        // CTA Button (Ver Planos) - callback button
+        inlineKeyboard.push([{ text: ctaButtonText, callback_data: "ver_planos" }])
+        
+        // Redirect Button - URL button (if enabled)
+        if (redirectButton.enabled && redirectButton.text && redirectButton.url) {
+          inlineKeyboard.push([{ text: redirectButton.text, url: redirectButton.url }])
+        }
+        
+        const replyMarkup = { inline_keyboard: inlineKeyboard }
+        
+        // STEP 1: Send medias (if any valid URLs)
+        if (welcomeMedias.length > 0) {
+          for (let i = 0; i < welcomeMedias.length; i++) {
+            const media = welcomeMedias[i]
+            const isVideo = media.includes(".mp4") || media.includes("video")
+            try {
+              if (isVideo) {
+                await sendTelegramVideo(botToken, chatId, media)
+              } else {
+                await sendTelegramPhoto(botToken, chatId, media)
               }
+              await new Promise(resolve => setTimeout(resolve, 200))
+            } catch {
+              // Skip failed media
             }
           }
-          
-          // STEP 2: Send welcome message with buttons
-          await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
-          
-          // STEP 3: Send secondary message (if enabled)
-          if (secondaryMsg.enabled && secondaryMsg.message) {
-            await new Promise(resolve => setTimeout(resolve, 500))
-            await sendTelegramMessage(botToken, chatId, replaceVars(secondaryMsg.message))
-          }
-          
-          return
         }
+        
+        // STEP 2: Send welcome message with buttons
+        await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
+        
+        // STEP 3: Send secondary message (if enabled)
+        if (secondaryMsg.enabled && secondaryMsg.message) {
+          await new Promise(resolve => setTimeout(resolve, 500))
+          await sendTelegramMessage(botToken, chatId, replaceVars(secondaryMsg.message))
+        }
+        
+        return
 
         // Fallback: Get flow nodes
         const { data: nodes } = await supabase
