@@ -133,10 +133,28 @@ export async function GET(request: Request) {
         }, { status: 404 })
       }
       
-      // Pegar configuracoes de pagamento
-      const payments = flowConfig.payments as Record<string, unknown> || {}
-      const gateway = payments.gateway as string || "mercadopago"
-      const pixKey = payments.pix_key as string || ""
+      // Get bot_id from flow to find gateway
+      const botId = flow.bot_id
+      
+      // Check if gateway is configured for this bot
+      let gatewayInfo = null
+      if (botId) {
+        const { data: gateway } = await supabase
+          .from("payment_gateways")
+          .select("*")
+          .eq("bot_id", botId)
+          .eq("is_active", true)
+          .limit(1)
+          .single()
+        
+        if (gateway) {
+          gatewayInfo = {
+            name: gateway.gateway_name,
+            hasAccessToken: !!gateway.access_token,
+            isActive: gateway.is_active
+          }
+        }
+      }
       
       // Simular geracao de pagamento
       const paymentSimulation = {
@@ -146,26 +164,33 @@ export async function GET(request: Request) {
           price: plan.price,
           description: plan.description || null
         },
-        paymentGateway: gateway,
-        pixKey: pixKey || "(nao configurada)",
-        simulatedMessages: [
+        gateway: gatewayInfo || { name: "nenhum", hasAccessToken: false, isActive: false },
+        simulatedMessages: gatewayInfo?.hasAccessToken ? [
           {
             step: 1,
             type: "MESSAGE",
-            content: `Voce selecionou: *${plan.name}*\n\nValor: R$ ${Number(plan.price).toFixed(2).replace(".", ",")}\n\nGerando pagamento...`
+            content: `Voce selecionou: *${plan.name}*\n\nValor: R$ ${Number(plan.price).toFixed(2).replace(".", ",")}\n\nGerando pagamento PIX...`
           },
           {
             step: 2,
             type: "PIX_QR_CODE",
-            content: pixKey 
-              ? `QR Code PIX seria gerado aqui via ${gateway}\n\nChave PIX: ${pixKey}\nValor: R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`
-              : "ERRO: Chave PIX nao configurada no fluxo",
-            qrCodeData: {
-              gateway,
-              pixKey,
+            content: `QR Code PIX seria gerado via ${gatewayInfo.name}`,
+            details: {
+              gateway: gatewayInfo.name,
               amount: plan.price,
               description: `Pagamento - ${plan.name}`
             }
+          },
+          {
+            step: 3,
+            type: "PIX_COPY_PASTE",
+            content: "Codigo PIX copia-cola seria enviado aqui"
+          }
+        ] : [
+          {
+            step: 1,
+            type: "ERROR",
+            content: "Gateway de pagamento nao configurado!"
           }
         ]
       }
@@ -175,9 +200,13 @@ export async function GET(request: Request) {
         action: "select_plan",
         flowId: flow.id,
         flowName: flow.name,
+        botId: botId || "nenhum bot vinculado",
         planSource,
         paymentSimulation,
-        warnings: !pixKey ? ["Chave PIX nao configurada! Configure em Configuracoes > Pagamentos"] : []
+        warnings: !gatewayInfo?.hasAccessToken ? [
+          "Gateway de pagamento nao configurado!",
+          "Va em Gateways e conecte seu Mercado Pago"
+        ] : []
       })
     }
     
