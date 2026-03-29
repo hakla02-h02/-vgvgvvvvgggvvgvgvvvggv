@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       // Busca o pagamento no banco pelo external_payment_id
       const { data: payment, error } = await supabase
         .from("payments")
-        .select("*, user_gateways!inner(access_token)")
+        .select("*")
         .eq("external_payment_id", String(paymentId))
         .single()
 
@@ -103,8 +103,15 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ received: true })
       }
 
-      // Busca o status atualizado no Mercado Pago
-      const accessToken = payment.user_gateways?.access_token
+      // Busca o gateway para pegar o access_token
+      const { data: gateway } = await supabase
+        .from("user_gateways")
+        .select("access_token")
+        .eq("bot_id", payment.bot_id)
+        .eq("is_active", true)
+        .single()
+      
+      const accessToken = gateway?.access_token
       if (accessToken) {
         const mpResponse = await fetch(
           `https://api.mercadopago.com/v1/payments/${paymentId}`,
