@@ -324,6 +324,9 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         
         // Generate PIX directly via Mercado Pago API
         try {
+          console.log("[v0] Generating PIX - planPrice:", planPrice, "planName:", planName)
+          console.log("[v0] Gateway access_token exists:", !!gateway.access_token)
+          
           const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
             method: "POST",
             headers: {
@@ -399,11 +402,12 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           })
           
         } catch (err) {
-          console.error("PIX generation error:", err)
+          const errorMsg = err instanceof Error ? err.message : String(err)
+          console.error("[v0] PIX generation error:", errorMsg)
           await sendTelegramMessage(
             botToken,
             chatId,
-            "Erro ao processar pagamento. Tente novamente.",
+            `Erro ao processar pagamento: ${errorMsg}`,
             undefined
           )
         }
