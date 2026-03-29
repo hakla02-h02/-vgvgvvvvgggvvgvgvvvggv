@@ -322,51 +322,69 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           return
         }
         
-        // Generate PIX using existing API route
+        // Generate PIX directly via Mercado Pago API
         try {
-          // Get the base URL for internal API calls
-          const baseUrl = process.env.NEXT_PUBLIC_APP_URL || process.env.VERCEL_URL 
-            ? `https://${process.env.VERCEL_URL}` 
-            : "http://localhost:3000"
+          console.log("[v0] Generating PIX - planPrice:", planPrice, "planName:", planName)
+          console.log("[v0] Gateway access_token exists:", !!gateway.access_token)
           
-          const pixResponse = await fetch(`${baseUrl}/api/mercadopago/pix`, {
+          const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${gateway.access_token}`,
+              "X-Idempotency-Key": `${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            },
             body: JSON.stringify({
-              accessToken: gateway.access_token,
-              amount: planPrice,
+              transaction_amount: planPrice,
               description: `Pagamento - ${planName}`,
+              payment_method_id: "pix",
+              payer: {
+                email: "luismarquesdevp@gmail.com",
+              },
             }),
           })
           
-          const pixData = await pixResponse.json()
-          
-          if (!pixResponse.ok || pixData.error) {
+          if (!mpResponse.ok) {
+            const errorData = await mpResponse.json()
+            console.error("Mercado Pago error:", errorData)
             await sendTelegramMessage(
               botToken,
               chatId,
-              `Erro ao gerar PIX: ${pixData.error || "Tente novamente"}`,
+              `Erro ao gerar PIX: ${errorData.message || "Tente novamente"}`,
+              undefined
+            )
+            return
+          }
+          
+          const paymentData = await mpResponse.json()
+          const pixData = paymentData.point_of_interaction?.transaction_data
+          
+          if (!pixData) {
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              "Erro: Dados do PIX nao retornados",
               undefined
             )
             return
           }
           
           // Send QR Code image via ticket_url
-          if (pixData.ticketUrl) {
+          if (pixData.ticket_url) {
             await sendTelegramPhoto(
               botToken,
               chatId,
-              pixData.ticketUrl,
+              pixData.ticket_url,
               `Escaneie o QR Code para pagar\n\nValor: R$ ${planPrice.toFixed(2).replace(".", ",")}\nPlano: ${planName}`
             )
           }
           
           // Send PIX copy-paste code
-          if (pixData.qrCode) {
+          if (pixData.qr_code) {
             await sendTelegramMessage(
               botToken,
               chatId,
-              `Ou copie o codigo PIX abaixo:\n\n\`${pixData.qrCode}\``,
+              `Ou copie o codigo PIX abaixo:\n\n\`${pixData.qr_code}\``,
               undefined
             )
           }
@@ -378,17 +396,18 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             telegram_user_id: String(telegramUserId),
             plan_name: planName,
             amount: planPrice,
-            payment_id: String(pixData.paymentId),
-            status: pixData.status,
+            payment_id: String(paymentData.id),
+            status: paymentData.status,
             gateway: gateway.gateway_name,
           })
           
         } catch (err) {
-          console.error("PIX generation error:", err)
+          const errorMsg = err instanceof Error ? err.message : String(err)
+          console.error("[v0] PIX generation error:", errorMsg)
           await sendTelegramMessage(
             botToken,
             chatId,
-            "Erro ao processar pagamento. Tente novamente.",
+            `Erro ao processar pagamento: ${errorMsg}`,
             undefined
           )
         }
