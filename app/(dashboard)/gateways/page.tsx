@@ -26,6 +26,7 @@ import {
   Plus,
   Info,
   Globe,
+  CreditCard,
 } from "lucide-react"
 
 export default function GatewaysPage() {
@@ -135,50 +136,82 @@ export default function GatewaysPage() {
               </p>
             </div>
 
-            {/* Gateway Conectado - Card Escuro com Glow */}
-            {connectedGateways.length > 0 && (
-              <div className="relative rounded-[20px] p-5 mb-6 overflow-hidden bg-[#1c1c1e]">
-                {/* Glow verde na parte inferior */}
-                <div 
-                  className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-                  style={{
-                    background: "radial-gradient(ellipse at center bottom, rgba(190, 255, 0, 0.15) 0%, transparent 70%)"
-                  }}
-                />
-                
-                <div className="relative flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#bfff00]/20 flex items-center justify-center">
-                      <CheckCircle2 className="w-6 h-6 text-[#bfff00]" />
+            {/* Seletor de Gateway - Card Escuro com Glow */}
+            <div className="relative rounded-[20px] p-5 mb-6 overflow-hidden bg-[#1c1c1e]">
+              {/* Glow verde na parte inferior */}
+              <div 
+                className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+                style={{
+                  background: "radial-gradient(ellipse at center bottom, rgba(190, 255, 0, 0.15) 0%, transparent 70%)"
+                }}
+              />
+              
+              <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#bfff00]/20 flex items-center justify-center">
+                      <CreditCard className="w-5 h-5 text-[#bfff00]" />
                     </div>
                     <div>
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-white">
-                          {connectedGateways[0].gateway_name === "mercadopago" ? "Mercado Pago" : 
-                           connectedGateways[0].gateway_name === "pagseguro" ? "PagSeguro" : "Stripe"}
-                        </h3>
-                        <span className="px-2 py-0.5 bg-[#bfff00] text-[#1c1c1e] text-xs font-bold rounded-full">
-                          ATIVO
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-400">
-                        Recebendo pagamentos via PIX
-                      </p>
+                      <h3 className="font-semibold text-white">Gateway Ativo</h3>
+                      <p className="text-xs text-gray-400">Selecione qual gateway usar para pagamentos</p>
                     </div>
                   </div>
-                  <button 
-                    onClick={() => {
-                      const gateway = AVAILABLE_GATEWAYS.find(g => g.id === connectedGateways[0].gateway_name)
-                      if (gateway) handleOpenConnect(gateway)
-                    }}
-                    className="text-sm text-[#bfff00] hover:text-[#d4ff4d] font-medium flex items-center gap-1 transition-colors"
-                  >
-                    Configurar
-                    <Settings className="w-4 h-4" />
-                  </button>
+                  {connectedGateways.length > 0 && (
+                    <span className="px-2 py-0.5 bg-[#bfff00] text-[#1c1c1e] text-xs font-bold rounded-full">
+                      ATIVO
+                    </span>
+                  )}
                 </div>
+                
+                {/* Dropdown de Gateways Conectados */}
+                {connectedGateways.length > 0 ? (
+                  <div className="flex flex-col gap-2">
+                    {connectedGateways.map((gw) => {
+                      const gatewayInfo = AVAILABLE_GATEWAYS.find(g => g.id === gw.gateway_name)
+                      if (!gatewayInfo) return null
+                      
+                      return (
+                        <div 
+                          key={gw.id}
+                          className="flex items-center justify-between bg-[#2a2a2e] rounded-xl p-3 border border-[#3a3a3e]"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg overflow-hidden">
+                              {gw.gateway_name === "mercadopago" ? (
+                                <img src="/images/mercadopago-logo.png" alt="Mercado Pago" className="w-full h-full object-cover" />
+                              ) : gw.gateway_name === "pushinpay" ? (
+                                <img src="/images/pushinpay-logo.jpg" alt="Pushin Pay" className="w-full h-full object-cover" />
+                              ) : (
+                                <div className="w-full h-full bg-gray-600 flex items-center justify-center">
+                                  <CreditCard className="w-5 h-5 text-white" />
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-white">{gatewayInfo.name}</p>
+                              <p className="text-xs text-gray-400">Recebendo pagamentos via PIX</p>
+                            </div>
+                          </div>
+                          <button 
+                            onClick={() => handleOpenConnect(gatewayInfo)}
+                            className="text-sm text-[#bfff00] hover:text-[#d4ff4d] font-medium flex items-center gap-1 transition-colors"
+                          >
+                            Configurar
+                            <Settings className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="bg-[#2a2a2e] rounded-xl p-4 border border-dashed border-[#3a3a3e] text-center">
+                    <p className="text-sm text-gray-400">Nenhum gateway conectado</p>
+                    <p className="text-xs text-gray-500 mt-1">Conecte um gateway abaixo para comecar a receber pagamentos</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Info Box - Sistema de Fallback - Card Escuro */}
             <div className="relative rounded-[20px] p-5 mb-8 overflow-hidden bg-[#1c1c1e]">
@@ -265,7 +298,7 @@ export default function GatewaysPage() {
                           <img 
                             src="/images/mercadopago-logo.png" 
                             alt="Mercado Pago"
-                            className="w-12 h-12 object-contain"
+                            className="w-full h-full object-cover"
                           />
                         ) : gateway.id === "pushinpay" ? (
                           <img 
