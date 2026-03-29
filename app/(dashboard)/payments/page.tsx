@@ -37,7 +37,7 @@ interface Payment {
 }
 
 export default function VendasPage() {
-  const { user } = useAuth()
+  const { session } = useAuth()
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("all")
@@ -47,25 +47,31 @@ export default function VendasPage() {
   const supabase = getSupabase()
 
   useEffect(() => {
-    if (user) {
+    if (session?.userId) {
       fetchPayments()
     }
-  }, [user])
+  }, [session])
 
   const fetchPayments = async () => {
+    if (!session?.userId) {
+      setLoading(false)
+      return
+    }
+    
     setLoading(true)
+    
     try {
       const { data, error } = await supabase
         .from("payments")
         .select("id, bot_id, telegram_user_id, telegram_username, telegram_first_name, telegram_last_name, gateway, external_payment_id, amount, description, status, created_at, updated_at, bots(name, username)")
-        .eq("user_id", user?.id)
+        .eq("user_id", session.userId)
         .order("created_at", { ascending: false })
-
-      if (!error) {
-        setPayments(data || [])
+      
+      if (!error && data) {
+        setPayments(data)
       }
     } catch (err) {
-      console.error("Error:", err)
+      console.error("Error fetching payments:", err)
     } finally {
       setLoading(false)
     }
