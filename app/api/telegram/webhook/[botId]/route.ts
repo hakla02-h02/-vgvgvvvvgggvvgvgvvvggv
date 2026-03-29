@@ -343,11 +343,20 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           
           if (!mpResponse.ok) {
             const errorData = await mpResponse.json()
-            console.error("Mercado Pago error:", errorData)
+            console.error("Mercado Pago error:", JSON.stringify(errorData))
+            
+            // Extract error message
+            let errorMsg = "Erro ao gerar pagamento."
+            if (errorData.message) {
+              errorMsg = `Erro MP: ${errorData.message}`
+            } else if (errorData.cause && errorData.cause[0]) {
+              errorMsg = `Erro MP: ${errorData.cause[0].description || errorData.cause[0].code}`
+            }
+            
             await sendTelegramMessage(
               botToken,
               chatId,
-              "Erro ao gerar pagamento. Tente novamente.",
+              errorMsg,
               undefined
             )
             return
