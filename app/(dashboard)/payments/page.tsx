@@ -11,9 +11,9 @@ import {
   Search,
   Copy,
   Check,
-  CreditCard
+  CreditCard,
+  X
 } from "lucide-react"
-
 
 interface Payment {
   id: string
@@ -49,16 +49,14 @@ export default function VendasPage() {
 
   const fetchPayments = async () => {
     setLoading(true)
-    
     try {
       const res = await fetch("/api/payments/list", { credentials: "include" })
       const data = await res.json()
-      
       if (data.payments) {
         setPayments(data.payments)
       }
     } catch (err) {
-      console.error("Error fetching payments:", err)
+      console.error("Error:", err)
     } finally {
       setLoading(false)
     }
@@ -87,7 +85,7 @@ export default function VendasPage() {
         ? `${payment.telegram_first_name} ${payment.telegram_last_name}`
         : payment.telegram_first_name
     }
-    return "Usuario"
+    return payment.bots?.name || "Usuario"
   }
 
   const copyToClipboard = (text: string) => {
@@ -96,7 +94,6 @@ export default function VendasPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Filter payments
   const filteredPayments = payments.filter((p) => {
     const matchesTab = activeTab === "all" || p.status === activeTab
     const matchesSearch = searchQuery === "" || 
@@ -106,7 +103,6 @@ export default function VendasPage() {
     return matchesTab && matchesSearch
   })
 
-  // Stats
   const stats = {
     faturamento: payments.filter((p) => p.status === "approved").reduce((acc, p) => acc + Number(p.amount), 0),
     total: payments.length,
@@ -124,10 +120,10 @@ export default function VendasPage() {
   return (
     <div className="flex-1 flex flex-col min-h-0">
       {/* Header */}
-      <header className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 py-4 border-b border-[#2a2a2e]">
+      <header className="flex-shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-4 sm:px-6 py-4">
         <div>
-          <h1 className="text-xl font-bold text-white">Vendas</h1>
-          <p className="text-sm text-gray-400">Acompanhe suas vendas e transacoes</p>
+          <h1 className="text-xl font-bold text-foreground">Vendas</h1>
+          <p className="text-sm text-muted-foreground">Acompanhe suas vendas e transacoes</p>
         </div>
         <button 
           onClick={fetchPayments}
@@ -138,14 +134,13 @@ export default function VendasPage() {
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
-        {/* Stats Cards - 3 blocks */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 pb-6 space-y-5">
+        {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* Faturamento */}
           <div className="bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-400">Faturamento</span>
-              <div className="w-8 h-8 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Faturamento</span>
+              <div className="w-8 h-8 rounded-xl bg-[#bfff00]/10 flex items-center justify-center">
                 <DollarSign className="h-4 w-4 text-[#bfff00]" />
               </div>
             </div>
@@ -153,11 +148,10 @@ export default function VendasPage() {
             <p className="text-xs text-gray-500 mt-1">vendas aprovadas</p>
           </div>
 
-          {/* Total de Vendas */}
           <div className="bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-400">Total de Vendas</span>
-              <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Total de Vendas</span>
+              <div className="w-8 h-8 rounded-xl bg-blue-500/10 flex items-center justify-center">
                 <TrendingUp className="h-4 w-4 text-blue-400" />
               </div>
             </div>
@@ -165,11 +159,10 @@ export default function VendasPage() {
             <p className="text-xs text-gray-500 mt-1">transacoes totais</p>
           </div>
 
-          {/* Pendentes */}
           <div className="bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl p-5">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-400">Pendentes</span>
-              <div className="w-8 h-8 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+              <span className="text-xs font-medium text-gray-400 uppercase tracking-wide">Pendentes</span>
+              <div className="w-8 h-8 rounded-xl bg-yellow-500/10 flex items-center justify-center">
                 <Clock className="h-4 w-4 text-yellow-400" />
               </div>
             </div>
@@ -179,9 +172,8 @@ export default function VendasPage() {
         </div>
 
         {/* Search and Tabs */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          {/* Search */}
-          <div className="relative flex-1 w-full sm:max-w-xs">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
             <input
               type="text"
@@ -192,13 +184,12 @@ export default function VendasPage() {
             />
           </div>
 
-          {/* Tabs */}
-          <div className="flex items-center gap-1 p-1 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl">
+          <div className="flex items-center gap-1 p-1 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? "bg-[#bfff00] text-[#1c1c1e]"
                     : "text-gray-400 hover:text-white"
@@ -213,15 +204,15 @@ export default function VendasPage() {
         {/* Payments List */}
         <div className="space-y-2">
           {loading ? (
-            <div className="flex items-center justify-center py-12">
+            <div className="flex items-center justify-center py-16">
               <RefreshCw className="h-6 w-6 animate-spin text-gray-500" />
             </div>
           ) : filteredPayments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
+            <div className="flex flex-col items-center justify-center py-20 text-center">
               <div className="w-16 h-16 rounded-2xl bg-[#2a2a2e] flex items-center justify-center mb-4">
                 <CreditCard className="h-8 w-8 text-gray-500" />
               </div>
-              <h3 className="text-base font-medium text-white">Nenhuma venda encontrada</h3>
+              <h3 className="text-base font-semibold text-white">Nenhuma venda encontrada</h3>
               <p className="text-sm text-gray-500 mt-1">As vendas aparecerao aqui</p>
             </div>
           ) : (
@@ -229,44 +220,41 @@ export default function VendasPage() {
               <button
                 key={payment.id}
                 onClick={() => setSelectedPayment(payment)}
-                className="w-full flex items-center gap-4 p-4 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl hover:border-[#3a3a3e] transition-colors text-left"
+                className="w-full flex items-center gap-4 p-4 bg-[#1c1c1e] border border-[#2a2a2e] rounded-2xl hover:border-[#3a3a3e] transition-all text-left group"
               >
-                {/* Avatar */}
-                <div className="w-10 h-10 rounded-xl bg-[#bfff00]/10 flex items-center justify-center text-[#bfff00] font-semibold text-sm shrink-0">
-                  {payment.telegram_first_name?.charAt(0).toUpperCase() || "?"}
+                <div className="w-11 h-11 rounded-xl bg-[#bfff00]/10 flex items-center justify-center text-[#bfff00] font-bold text-sm shrink-0 border border-[#bfff00]/20">
+                  {payment.telegram_first_name?.charAt(0).toUpperCase() || payment.bots?.name?.charAt(0).toUpperCase() || "?"}
                 </div>
 
-                {/* Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="font-medium text-white truncate">{getUserName(payment)}</span>
+                    <span className="font-semibold text-white truncate">{getUserName(payment)}</span>
                     {payment.telegram_username && (
                       <span className="text-xs text-gray-500">@{payment.telegram_username}</span>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5">
-                    <span>{payment.description || "Pagamento"}</span>
+                  <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                    <span className="truncate">{payment.description || "Pagamento"}</span>
                     <span>•</span>
-                    <span>{formatDate(payment.created_at)}</span>
+                    <span className="shrink-0">{formatDate(payment.created_at)}</span>
                   </div>
                 </div>
 
-                {/* Amount and Status */}
-                <div className="text-right shrink-0">
-                  <p className={`font-bold ${
+                <div className="text-right shrink-0 flex flex-col items-end gap-1">
+                  <p className={`text-base font-bold ${
                     payment.status === "approved" ? "text-[#bfff00]" : 
                     payment.status === "pending" ? "text-yellow-400" : 
                     "text-gray-400"
                   }`}>
                     {formatCurrency(Number(payment.amount))}
                   </p>
-                  <Badge className={`text-[10px] px-1.5 py-0.5 ${
-                    payment.status === "approved" ? "bg-[#bfff00]/10 text-[#bfff00] border-[#bfff00]/20" :
-                    payment.status === "pending" ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
-                    "bg-red-500/10 text-red-400 border-red-500/20"
+                  <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${
+                    payment.status === "approved" ? "bg-[#bfff00]/10 text-[#bfff00]" :
+                    payment.status === "pending" ? "bg-yellow-500/10 text-yellow-400" :
+                    "bg-red-500/10 text-red-400"
                   }`}>
                     {payment.status === "approved" ? "Aprovada" : payment.status === "pending" ? "Pendente" : "Rejeitada"}
-                  </Badge>
+                  </span>
                 </div>
               </button>
             ))
@@ -274,115 +262,116 @@ export default function VendasPage() {
         </div>
       </div>
 
-      {/* Payment Details Dialog - Dark theme */}
+      {/* Payment Details Dialog - Compact Dark Design */}
       <Dialog open={!!selectedPayment} onOpenChange={(open) => !open && setSelectedPayment(null)}>
-        <DialogContent className="sm:max-w-[380px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+        <DialogContent className="sm:max-w-[360px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-2xl [&>button]:hidden">
           {selectedPayment && (
-            <div className="p-5">
-              {/* Header with user info */}
-              <div className="flex items-center gap-3 mb-5">
-                <div className="w-12 h-12 rounded-xl bg-[#bfff00]/10 flex items-center justify-center text-[#bfff00] font-bold text-lg">
-                  {selectedPayment.telegram_first_name?.charAt(0).toUpperCase() || "?"}
+            <div className="p-4">
+              {/* Close button */}
+              <button
+                onClick={() => setSelectedPayment(null)}
+                className="absolute top-3 right-3 w-7 h-7 rounded-lg bg-[#2a2a2e] flex items-center justify-center text-gray-400 hover:text-white transition-colors z-10"
+              >
+                <X className="h-4 w-4" />
+              </button>
+
+              {/* User Header */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-11 h-11 rounded-xl bg-[#bfff00]/10 flex items-center justify-center text-[#bfff00] font-bold border border-[#bfff00]/20">
+                  {selectedPayment.telegram_first_name?.charAt(0).toUpperCase() || selectedPayment.bots?.name?.charAt(0).toUpperCase() || "?"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-white truncate">{getUserName(selectedPayment)}</h3>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
-                    {selectedPayment.telegram_username && (
-                      <span>@{selectedPayment.telegram_username}</span>
-                    )}
-                    <span>•</span>
-                    <span>ID: {selectedPayment.telegram_user_id}</span>
-                  </div>
+                  <h3 className="font-bold text-white truncate text-sm">{getUserName(selectedPayment)}</h3>
+                  <p className="text-xs text-gray-500">
+                    {selectedPayment.telegram_username ? `@${selectedPayment.telegram_username} • ` : ""}
+                    ID: {selectedPayment.telegram_user_id}
+                  </p>
                 </div>
                 <button
                   onClick={() => copyToClipboard(selectedPayment.telegram_user_id || "")}
-                  className="w-8 h-8 rounded-lg bg-[#2a2a2e] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                  className="w-8 h-8 rounded-lg bg-[#2a2a2e] flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0"
                 >
-                  {copied ? <Check className="h-4 w-4 text-[#bfff00]" /> : <Copy className="h-4 w-4" />}
+                  {copied ? <Check className="h-3.5 w-3.5 text-[#bfff00]" /> : <Copy className="h-3.5 w-3.5" />}
                 </button>
               </div>
 
-              {/* Status Badge */}
-              <div className={`flex items-center justify-center gap-2 py-2.5 rounded-xl mb-4 ${
+              {/* Status */}
+              <div className={`flex items-center justify-center gap-2 py-2 rounded-xl mb-4 ${
                 selectedPayment.status === "approved" ? "bg-[#bfff00]/10" :
                 selectedPayment.status === "pending" ? "bg-yellow-500/10" :
                 "bg-red-500/10"
               }`}>
-                <div className={`w-2 h-2 rounded-full ${
+                <div className={`w-1.5 h-1.5 rounded-full ${
                   selectedPayment.status === "approved" ? "bg-[#bfff00]" :
                   selectedPayment.status === "pending" ? "bg-yellow-400" :
                   "bg-red-400"
                 }`} />
-                <span className={`text-sm font-medium ${
+                <span className={`text-xs font-semibold ${
                   selectedPayment.status === "approved" ? "text-[#bfff00]" :
                   selectedPayment.status === "pending" ? "text-yellow-400" :
                   "text-red-400"
                 }`}>
                   {selectedPayment.status === "approved" ? "Pagamento Aprovado" : 
-                   selectedPayment.status === "pending" ? "Aguardando Pagamento" : "Pagamento Rejeitado"}
+                   selectedPayment.status === "pending" ? "Aguardando Pagamento" : "Rejeitado"}
                 </span>
               </div>
 
               {/* Amount */}
-              <div className="bg-[#2a2a2e] rounded-xl p-4 mb-4 text-center">
-                <p className="text-xs text-gray-400 mb-1">Valor</p>
-                <p className={`text-3xl font-bold ${
+              <div className="bg-[#2a2a2e] rounded-xl p-4 mb-3 text-center">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Valor</p>
+                <p className={`text-2xl font-bold ${
                   selectedPayment.status === "approved" ? "text-[#bfff00]" : "text-white"
                 }`}>
                   {formatCurrency(Number(selectedPayment.amount))}
                 </p>
               </div>
 
-              {/* Details Grid */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              {/* Info Grid */}
+              <div className="grid grid-cols-2 gap-2 mb-3">
                 <div className="bg-[#2a2a2e] rounded-xl p-3">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Metodo</p>
-                  <p className="text-sm font-medium text-white">PIX</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">Metodo</p>
+                  <p className="text-sm font-medium text-white mt-0.5">PIX</p>
                 </div>
                 <div className="bg-[#2a2a2e] rounded-xl p-3">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Gateway</p>
-                  <p className="text-sm font-medium text-white capitalize">{selectedPayment.gateway}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">Gateway</p>
+                  <p className="text-sm font-medium text-white mt-0.5 capitalize">{selectedPayment.gateway}</p>
                 </div>
               </div>
 
               {/* Product */}
-              <div className="bg-[#2a2a2e] rounded-xl p-3 mb-4">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Produto</p>
-                <p className="text-sm font-medium text-white">{selectedPayment.description || "Pagamento"}</p>
+              <div className="bg-[#2a2a2e] rounded-xl p-3 mb-3">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">Produto</p>
+                <p className="text-sm font-medium text-white mt-0.5">{selectedPayment.description || "Pagamento"}</p>
               </div>
 
               {/* Payment ID */}
-              <div className="bg-[#2a2a2e] rounded-xl p-3 mb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">ID do Pagamento</p>
-                    <p className="text-sm font-mono text-white">{selectedPayment.external_payment_id}</p>
-                  </div>
-                  <button
-                    onClick={() => copyToClipboard(selectedPayment.external_payment_id)}
-                    className="w-8 h-8 rounded-lg bg-[#3a3a3e] flex items-center justify-center text-gray-400 hover:text-white transition-colors"
-                  >
-                    <Copy className="h-3.5 w-3.5" />
-                  </button>
+              <div className="bg-[#2a2a2e] rounded-xl p-3 mb-3 flex items-center justify-between">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">ID Pagamento</p>
+                  <p className="text-xs font-mono text-white mt-0.5 truncate">{selectedPayment.external_payment_id}</p>
                 </div>
+                <button
+                  onClick={() => copyToClipboard(selectedPayment.external_payment_id)}
+                  className="w-7 h-7 rounded-lg bg-[#3a3a3e] flex items-center justify-center text-gray-400 hover:text-white transition-colors shrink-0 ml-2"
+                >
+                  <Copy className="h-3 w-3" />
+                </button>
               </div>
 
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
+              {/* Dates + Bot */}
+              <div className="grid grid-cols-3 gap-2">
                 <div className="bg-[#2a2a2e] rounded-xl p-3">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Criado</p>
-                  <p className="text-xs text-white">{formatDate(selectedPayment.created_at)}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">Criado</p>
+                  <p className="text-[11px] text-white mt-0.5">{new Date(selectedPayment.created_at).toLocaleDateString("pt-BR")}</p>
                 </div>
                 <div className="bg-[#2a2a2e] rounded-xl p-3">
-                  <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Atualizado</p>
-                  <p className="text-xs text-white">{formatDate(selectedPayment.updated_at)}</p>
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">Atualizado</p>
+                  <p className="text-[11px] text-white mt-0.5">{new Date(selectedPayment.updated_at).toLocaleDateString("pt-BR")}</p>
                 </div>
-              </div>
-
-              {/* Bot */}
-              <div className="bg-[#2a2a2e] rounded-xl p-3">
-                <p className="text-[10px] text-gray-500 uppercase tracking-wide mb-1">Bot</p>
-                <p className="text-sm font-medium text-white">{selectedPayment.bots?.name || "Bot"}</p>
+                <div className="bg-[#2a2a2e] rounded-xl p-3">
+                  <p className="text-[10px] text-gray-500 uppercase tracking-wide">Bot</p>
+                  <p className="text-[11px] text-white mt-0.5 truncate">{selectedPayment.bots?.name || "Bot"}</p>
+                </div>
               </div>
             </div>
           )}
