@@ -113,18 +113,12 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
       return
     }
 
-    let query = supabase
+    // Gateway e por usuario, nao por bot - todos os bots usam o mesmo gateway
+    const { data, error } = await supabase
       .from("user_gateways")
       .select("*")
       .eq("user_id", session.userId)
       .order("created_at", { ascending: false })
-
-    // Se tiver bot selecionado, filtra por ele
-    if (selectedBot) {
-      query = query.or(`bot_id.eq.${selectedBot.id},bot_id.is.null`)
-    }
-
-    const { data, error } = await query
 
     if (error) {
       console.error("Error fetching gateways:", error)
@@ -206,10 +200,8 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
         throw new Error("Nao autenticado")
       }
 
-      // Verifica se ja existe gateway com esse nome para o usuario/bot
-      const existing = gateways.find(
-        (g) => g.gateway_name === gatewayName && (g.bot_id === selectedBot?.id || g.bot_id === null)
-      )
+      // Verifica se ja existe gateway com esse nome para o usuario (gateway e global por usuario)
+      const existing = gateways.find((g) => g.gateway_name === gatewayName)
       console.log("[v0] Gateway existente encontrado:", existing ? { id: existing.id, gateway_name: existing.gateway_name } : null)
 
       if (existing) {
@@ -235,20 +227,12 @@ export function GatewayProvider({ children }: { children: ReactNode }) {
         return updated
       }
 
-      // Cria novo gateway
-      console.log("[v0] Criando novo gateway com dados:", {
-        user_id: session.userId,
-        bot_id: selectedBot?.id || null,
-        gateway_name: gatewayName,
-        has_access_token: !!accessToken,
-        is_active: true,
-      })
-      
+      // Cria novo gateway (global por usuario, sem bot_id)
       const { data, error } = await supabase
         .from("user_gateways")
         .insert({
           user_id: session.userId,
-          bot_id: selectedBot?.id || null,
+          bot_id: null, // Gateway e global para todos os bots do usuario
           gateway_name: gatewayName,
           access_token: accessToken,
           is_active: true,

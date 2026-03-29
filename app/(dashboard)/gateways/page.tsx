@@ -6,8 +6,6 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Switch } from "@/components/ui/switch"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { NoBotSelected } from "@/components/no-bot-selected"
-import { useBots } from "@/lib/bot-context"
 import { useGateways, AVAILABLE_GATEWAYS } from "@/lib/gateway-context"
 import {
   Dialog,
@@ -30,7 +28,7 @@ import {
 } from "lucide-react"
 
 export default function GatewaysPage() {
-  const { selectedBot } = useBots()
+  // Gateway e global por usuario - nao depende de bot selecionado
   const { gateways, isLoading, connectGateway, disconnectGateway, updateGateway } = useGateways()
 
   const [connectDialogOpen, setConnectDialogOpen] = useState(false)
@@ -40,15 +38,6 @@ export default function GatewaysPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [selectedGateway, setSelectedGateway] = useState<typeof AVAILABLE_GATEWAYS[number] | null>(null)
-
-  if (!selectedBot) {
-    return (
-      <>
-        <DashboardHeader title="Gateways" />
-        <NoBotSelected />
-      </>
-    )
-  }
   
   const getGatewayData = (gatewayId: string) => gateways.find((g) => g.gateway_name === gatewayId)
   const isGatewayConnected = (gatewayId: string) => !!getGatewayData(gatewayId)

@@ -17,43 +17,45 @@ export async function GET(request: NextRequest) {
   }
   
   try {
-    // Buscar gateway do bot
+    // Buscar user_id do bot primeiro
+    const { data: bot, error: botError } = await supabase
+      .from("bots")
+      .select("user_id, name")
+      .eq("id", botId)
+      .single()
+    
+    if (botError || !bot?.user_id) {
+      return NextResponse.json({ 
+        error: "Bot nao encontrado",
+        botId,
+        details: botError?.message
+      }, { status: 404 })
+    }
+    
+    // Buscar gateway do USUARIO (gateway e global para todos os bots)
     const { data: gateways, error: gwError } = await supabase
       .from("user_gateways")
       .select("*")
-      .eq("bot_id", botId)
+      .eq("user_id", bot.user_id)
       .eq("is_active", true)
     
     if (gwError) {
       return NextResponse.json({ 
         error: "Erro ao buscar gateway",
-        botId,
+        userId: bot.user_id,
         details: gwError.message
       }, { status: 500 })
     }
     
     if (!gateways || gateways.length === 0) {
-      // Listar todos os gateways para debug
-      const { data: allGateways } = await supabase
-        .from("user_gateways")
-        .select("id, bot_id, gateway_name, is_active")
-      
       return NextResponse.json({ 
-        error: "Nenhum gateway ativo encontrado para este bot",
-        botId,
-        allGatewaysInDb: allGateways || [],
-        hint: "Verifique se o gateway esta vinculado a este bot_id e esta ativo"
+        error: "Nenhum gateway ativo encontrado para este usuario",
+        userId: bot.user_id,
+        hint: "Va em Gateways e conecte seu Mercado Pago"
       }, { status: 404 })
     }
     
     const gateway = gateways[0]
-    
-    // Buscar user_id do bot
-    const { data: bot } = await supabase
-      .from("bots")
-      .select("user_id, name")
-      .eq("id", botId)
-      .single()
     
     // Gerar PIX
     const pixResult = await createPixPayment({

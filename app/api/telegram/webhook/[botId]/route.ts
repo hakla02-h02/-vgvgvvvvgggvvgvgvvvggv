@@ -304,11 +304,23 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           undefined
         )
         
-        // Get gateway credentials for this bot (table is user_gateways)
+        // Get user_id from bot to find gateway (gateway is per user, not per bot)
+        const { data: botData } = await supabase
+          .from("bots")
+          .select("user_id")
+          .eq("id", botUuid)
+          .single()
+        
+        if (!botData?.user_id) {
+          await sendTelegramMessage(botToken, chatId, "Erro: Bot nao encontrado.", undefined)
+          return
+        }
+        
+        // Get gateway for this user (all bots use the same gateway)
         const { data: gateway } = await supabase
           .from("user_gateways")
           .select("*")
-          .eq("bot_id", botUuid)
+          .eq("user_id", botData.user_id)
           .eq("is_active", true)
           .limit(1)
           .single()
