@@ -343,7 +343,6 @@ export default function FluxosPage() {
             <button 
               className="flex items-center gap-1 text-xs text-[#bfff00] hover:text-[#d4ff4d] font-medium transition-colors"
               onClick={() => router.push(`/fluxos/${flow.id}`)}
-              }}
             >
               Editar
               <Link2 className="h-3 w-3" />
