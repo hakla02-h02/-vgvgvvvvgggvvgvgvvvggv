@@ -1339,15 +1339,44 @@ Clique no botao abaixo para renovar com desconto especial!`)
                           className="hidden"
                           onChange={async (e) => {
                             const file = e.target.files?.[0]
-                            if (file) {
-                              // Converter para base64 para persistir no banco
-                              const reader = new FileReader()
-                              reader.onloadend = () => {
-                                const base64 = reader.result as string
-                                setWelcomeMedias([...welcomeMedias, base64])
+                            if (file && flow) {
+                              try {
+                                // Upload para Supabase Storage
+                                const fileExt = file.name.split('.').pop()
+                                const fileName = `${flow.id}/${Date.now()}.${fileExt}`
+                                
+                                const { data, error } = await supabase.storage
+                                  .from('flow-medias')
+                                  .upload(fileName, file, {
+                                    cacheControl: '3600',
+                                    upsert: false
+                                  })
+                                
+                                if (error) {
+                                  console.error('Upload error:', error)
+                                  toast({
+                                    title: "Erro no upload",
+                                    description: error.message,
+                                    variant: "destructive",
+                                  })
+                                  return
+                                }
+                                
+                                // Pegar URL publica
+                                const { data: urlData } = supabase.storage
+                                  .from('flow-medias')
+                                  .getPublicUrl(fileName)
+                                
+                                setWelcomeMedias([...welcomeMedias, urlData.publicUrl])
                                 setHasChanges(true)
+                              } catch (err) {
+                                console.error('Upload failed:', err)
+                                toast({
+                                  title: "Erro",
+                                  description: "Falha ao fazer upload da midia",
+                                  variant: "destructive",
+                                })
                               }
-                              reader.readAsDataURL(file)
                             }
                           }}
                         />
