@@ -287,9 +287,10 @@ export default function FluxosPage() {
             
             {/* Delete button */}
             <button 
-              className="p-2 rounded-lg bg-[#2a2a2e] hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+              className="p-2 rounded-lg bg-[#2a2a2e] hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors"
               onClick={(e) => {
                 e.stopPropagation()
+                console.log("[v0] Delete button clicked for flow:", flow.id)
                 handleDeleteFlow(flow.id)
               }}
               title="Excluir fluxo"
