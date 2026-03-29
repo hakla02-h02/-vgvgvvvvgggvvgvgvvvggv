@@ -198,6 +198,27 @@ export default function FluxosPage() {
     return () => document.removeEventListener("visibilitychange", handleVisibilityChange)
   }, [fetchFlows])
 
+  // Delete flow
+  const handleDeleteFlow = async (flowId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este fluxo?")) return
+    
+    const supabase = createClient()
+    
+    // Delete flow_bots first
+    await supabase.from("flow_bots").delete().eq("flow_id", flowId)
+    
+    // Delete flow
+    const { error } = await supabase.from("flows").delete().eq("id", flowId)
+    
+    if (error) {
+      console.error("Erro ao excluir fluxo:", error)
+      return
+    }
+    
+    // Refresh list
+    fetchFlows()
+  }
+
   // Flow card - Design escuro com verde neon
   const FlowCard = ({ flow }: { flow: Flow }) => {
     const bots = flowBots[flow.id] || []
@@ -255,16 +276,16 @@ export default function FluxosPage() {
               </div>
             </div>
             
-            {/* Config button */}
+            {/* Delete button */}
             <button 
-              className="p-2 rounded-lg bg-[#2a2a2e] hover:bg-[#3a3a3e] text-gray-400 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+              className="p-2 rounded-lg bg-[#2a2a2e] hover:bg-red-500/20 text-gray-400 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
               onClick={(e) => {
                 e.stopPropagation()
-                router.push(`/fluxos/${flow.id}`)
+                handleDeleteFlow(flow.id)
               }}
-              title="Configurar"
+              title="Excluir fluxo"
             >
-              <Settings className="h-4 w-4" />
+              <Trash2 className="h-4 w-4" />
             </button>
           </div>
         </div>
