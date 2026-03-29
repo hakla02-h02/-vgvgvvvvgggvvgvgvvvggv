@@ -97,7 +97,7 @@ export async function GET(request: Request) {
   simulatedMessages.push({
     step: step++,
     type: "MESSAGE_WITH_BUTTONS",
-    content: finalMsgToSend,
+    content: finalMsg,
     buttons
   })
   
