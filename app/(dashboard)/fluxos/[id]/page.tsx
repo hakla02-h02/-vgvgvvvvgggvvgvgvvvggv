@@ -44,17 +44,7 @@ interface Flow {
 }
 
 interface FlowConfig {
-  plans?: FlowPlan[]
-  upsell?: UpsellConfig
-  downsell?: DownsellConfig
-  orderBump?: OrderBumpConfig
-  packs?: PackConfig[]
-  payments?: PaymentConfig
-  subscription?: SubscriptionConfig
-  secondaryMessage?: {
-    enabled: boolean
-    message: string
-  }
+  welcomeMessage?: string
   welcomeMedias?: string[]
   ctaButtonText?: string
   redirectButton?: {
@@ -62,6 +52,17 @@ interface FlowConfig {
     text: string
     url: string
   }
+  secondaryMessage?: {
+    enabled: boolean
+    message: string
+  }
+  plans?: FlowPlan[]
+  upsell?: UpsellConfig
+  downsell?: DownsellConfig
+  orderBump?: OrderBumpConfig
+  packs?: PackConfig[]
+  payments?: PaymentConfig
+  subscription?: SubscriptionConfig
 }
 
 interface FlowPlan {
@@ -389,18 +390,11 @@ Clique no botao abaixo para renovar com desconto especial!`)
 
   // Fetch flow
   const fetchFlow = useCallback(async () => {
-    console.log("[v0] ========== fetchFlow INICIADO ==========")
-    console.log("[v0] flowId:", flowId)
-    console.log("[v0] session?.userId:", session?.userId)
-    console.log("[v0] isAuthLoading:", isAuthLoading)
-    
     if (!flowId || !session?.userId || isAuthLoading) {
-      console.log("[v0] fetchFlow ABORTADO - dados incompletos")
       return
     }
 
     setIsLoading(true)
-    console.log("[v0] Buscando flow no banco...")
     
     const { data, error } = await supabase
       .from("flows")
@@ -409,12 +403,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
       .eq("user_id", session.userId)
       .single()
 
-    console.log("[v0] Resultado da busca:")
-    console.log("[v0]   - data:", JSON.stringify(data, null, 2))
-    console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code }, null, 2) : null)
-
     if (error || !data) {
-      console.error("[v0] ERRO ou dados vazios ao buscar flow")
       if (!isAuthLoading) {
         router.push("/fluxos")
       }
@@ -422,7 +411,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
     }
 
     const flowData = data as Flow
-    console.log("[v0] Flow carregado! welcome_message:", flowData.welcome_message)
     
     setFlow(flowData)
     setEditName(flowData.name)
@@ -482,8 +470,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
       `)
       .eq("flow_id", flowId)
 
-    console.log("[v0] fetchFlowBots result:", data, "Error:", error)
-
     if (data) {
       // Map to expected FlowBot format
       const mapped = data.map((fb: any) => ({
@@ -513,8 +499,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
       .select("id, name, token, status")
       .eq("user_id", session.userId)
 
-    console.log("[v0] User bots from DB:", userBotsData, "Error:", botsError)
-
     if (!userBotsData || userBotsData.length === 0) {
       setAvailableBots([])
       setIsLoadingBots(false)
@@ -523,7 +507,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
     
     // Get bots linked to THIS flow only
     const linkedBotIds = flowBots.map(fb => fb.bot_id)
-    console.log("[v0] Bots linked to THIS flow:", linkedBotIds)
     
     // Filter: exclude only bots already in THIS flow (allow bots to be in multiple flows)
     // Map to AvailableBot format
@@ -535,8 +518,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
         first_name: b.name,
         photo_url: null
       }))
-    
-    console.log("[v0] Available bots mapped:", available)
     
     setAvailableBots(available)
     setIsLoadingBots(false)
@@ -559,13 +540,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
 
   // Save flow
   const handleSave = async () => {
-    console.log("[v0] ========== handleSave INICIADO ==========")
-    console.log("[v0] flow:", flow?.id, flow?.name)
-    console.log("[v0] welcomeMessage:", welcomeMessage)
-    console.log("[v0] welcomeMessage.length:", welcomeMessage.length)
-    
     if (!flow) {
-      console.log("[v0] ABORTADO - flow nao existe")
       alert("Erro: Flow nao carregado")
       return
     }
@@ -573,6 +548,18 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setIsSaving(true)
 
     const config: FlowConfig = {
+      welcomeMessage: welcomeMessage,
+      welcomeMedias: welcomeMedias,
+      ctaButtonText: ctaButtonText,
+      redirectButton: {
+        enabled: redirectButtonEnabled,
+        text: redirectButtonText,
+        url: redirectButtonUrl,
+      },
+      secondaryMessage: {
+        enabled: secondaryMessageEnabled,
+        message: secondaryMessage,
+      },
       plans,
       upsell: {
         enabled: upsellEnabled,
@@ -596,17 +583,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
       subscription: {
         enabled: subscriptionEnabled,
       },
-      secondaryMessage: {
-        enabled: secondaryMessageEnabled,
-        message: secondaryMessage,
-      },
-      welcomeMedias: welcomeMedias,
-      ctaButtonText: ctaButtonText,
-      redirectButton: {
-        enabled: redirectButtonEnabled,
-        text: redirectButtonText,
-        url: redirectButtonUrl,
-      },
     }
 
     const updatePayload = {
@@ -617,9 +593,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
       config,
       updated_at: new Date().toISOString(),
     }
-    
-    console.log("[v0] updatePayload:", JSON.stringify(updatePayload, null, 2))
-    console.log("[v0] Executando UPDATE na tabela flows para id:", flow.id)
 
     const { data, error } = await supabase
       .from("flows")
@@ -627,28 +600,19 @@ Clique no botao abaixo para renovar com desconto especial!`)
       .eq("id", flow.id)
       .select()
 
-    console.log("[v0] Resultado do UPDATE:")
-    console.log("[v0]   - data:", JSON.stringify(data, null, 2))
-    console.log("[v0]   - error:", error ? JSON.stringify({ message: error.message, code: error.code, details: error.details, hint: error.hint }, null, 2) : null)
-
     if (error) {
-      console.error("[v0] ERRO ao salvar flow:", error.message, error.code)
-      alert(`Erro ao salvar: ${error.message}`)
       toast({
         title: "Erro",
         description: `Nao foi possivel salvar: ${error.message}`,
         variant: "destructive",
       })
     } else if (!data || data.length === 0) {
-      console.error("[v0] UPDATE retornou vazio - possivel RLS bloqueando")
-      alert("Erro: UPDATE nao afetou nenhuma linha. Verifique RLS no Supabase.")
       toast({
         title: "Erro",
         description: "Nenhuma linha foi atualizada",
         variant: "destructive",
       })
     } else {
-      console.log("[v0] Flow salvo com sucesso!")
       toast({
         title: "Sucesso",
         description: "Configuracoes salvas com sucesso!",
@@ -657,7 +621,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
     }
 
     setIsSaving(false)
-    console.log("[v0] ========== handleSave FINALIZADO ==========")
   }
 
   // Create bot inline and add to flow
