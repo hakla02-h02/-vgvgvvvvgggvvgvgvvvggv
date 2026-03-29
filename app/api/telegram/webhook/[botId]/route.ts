@@ -183,20 +183,83 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       }
 
       if (startFlow) {
-        // PRIORITY 1: Use welcome_message field from flow (set in /fluxos/[id] page)
-        const welcomeMsg = startFlow.welcome_message as string
-        if (welcomeMsg && welcomeMsg.trim()) {
-          // Replace variables
-          let finalMsg = welcomeMsg
+        // Get flow config (contains all settings from /fluxos/[id] page)
+        const flowConfig = (startFlow.config as Record<string, unknown>) || {}
+        
+        // Helper to replace variables
+        const replaceVars = (text: string) => {
+          return text
             .replace(/\{nome\}/gi, (from?.first_name as string) || "")
             .replace(/\{username\}/gi, (from?.username as string) ? `@${from.username}` : "")
             .replace(/\{bot\.username\}/gi, bot.username ? `@${bot.username}` : bot.name || "")
+        }
+        
+        // Get welcome message from config or flow field
+        const welcomeMsg = (flowConfig.welcomeMessage as string) || (startFlow.welcome_message as string) || ""
+        const welcomeMedias = (flowConfig.welcomeMedias as string[]) || []
+        const ctaButtonText = (flowConfig.ctaButtonText as string) || "Ver Planos"
+        const redirectButton = flowConfig.redirectButton as { enabled?: boolean; text?: string; url?: string } || {}
+        const secondaryMsg = flowConfig.secondaryMessage as { enabled?: boolean; message?: string } || {}
+        
+        if (welcomeMsg && welcomeMsg.trim()) {
+          const finalMsg = replaceVars(welcomeMsg)
           
-          await sendTelegramMessage(botToken, chatId, finalMsg)
+          // Build inline keyboard with buttons
+          const inlineKeyboard: Array<Array<{ text: string; callback_data?: string; url?: string }>> = []
+          
+          // CTA Button (Ver Planos) - callback button
+          inlineKeyboard.push([{ text: ctaButtonText, callback_data: "ver_planos" }])
+          
+          // Redirect Button - URL button (if enabled)
+          if (redirectButton.enabled && redirectButton.text && redirectButton.url) {
+            inlineKeyboard.push([{ text: redirectButton.text, url: redirectButton.url }])
+          }
+          
+          const replyMarkup = inlineKeyboard.length > 0 ? { inline_keyboard: inlineKeyboard } : undefined
+          
+          // Send medias first (if any)
+          if (welcomeMedias.length > 0) {
+            // Send first media with caption (welcome message)
+            const firstMedia = welcomeMedias[0]
+            const isVideo = firstMedia.includes(".mp4") || firstMedia.includes("video")
+            
+            if (isVideo) {
+              await sendTelegramVideo(botToken, chatId, firstMedia, finalMsg)
+            } else {
+              await sendTelegramPhoto(botToken, chatId, firstMedia, finalMsg)
+            }
+            
+            // Send remaining medias without caption
+            for (let i = 1; i < welcomeMedias.length; i++) {
+              const media = welcomeMedias[i]
+              const isVid = media.includes(".mp4") || media.includes("video")
+              if (isVid) {
+                await sendTelegramVideo(botToken, chatId, media)
+              } else {
+                await sendTelegramPhoto(botToken, chatId, media)
+              }
+              await new Promise(resolve => setTimeout(resolve, 200))
+            }
+            
+            // Send buttons separately after medias
+            if (replyMarkup) {
+              await sendTelegramMessage(botToken, chatId, "Escolha uma opcao:", replyMarkup)
+            }
+          } else {
+            // No medias - send message with buttons
+            await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
+          }
+          
+          // Send secondary message (if enabled)
+          if (secondaryMsg.enabled && secondaryMsg.message) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+            await sendTelegramMessage(botToken, chatId, replaceVars(secondaryMsg.message))
+          }
+          
           return
         }
 
-        // PRIORITY 2: Get flow nodes
+        // Fallback: Get flow nodes
         const { data: nodes } = await supabase
           .from("flow_nodes")
           .select("*")
