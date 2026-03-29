@@ -5,62 +5,80 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
-import { cn } from "@/lib/utils"
+import { ImageUpload } from "@/components/image-upload"
 import { 
   ChevronLeft, 
-  ShoppingCart,
-  Package,
   Type,
   Palette,
   Save,
   Check,
   Loader2,
   Eye,
-  ExternalLink,
   Settings,
-  Link2,
-  Shield,
-  CreditCard,
+  ShieldCheck,
 } from "lucide-react"
 import { toast } from "sonner"
 
-// Types
-export type CheckoutPageData = {
-  product_name: string
-  product_description: string
-  product_image: string
+export type CheckoutData = {
+  // Produto
+  productName: string
+  productDescription: string
+  productImage: string
   price: string
-  original_price: string
-  cta_text: string
-  payment_url: string
-  guarantee_text: string
-  urgency_text: string
-  colors: {
-    background: string
-    text: string
-    accent: string
-    button: string
-    buttonText: string
+  originalPrice: string
+  planLabel: string
+  // Campos do formulario
+  fields: {
+    email: boolean
+    confirmEmail: boolean
+    name: boolean
+    cpf: boolean
+    phone: boolean
   }
+  // PIX
+  pixKey: string
+  accessToken: string
+  // Visual
+  backgroundColor: string
+  cardColor: string
+  textColor: string
+  accentColor: string
+  buttonColor: string
+  buttonTextColor: string
+  backgroundImage: string
+  // Textos
+  buttonText: string
+  securityText: string
 }
 
-const defaultColors = {
-  background: "#ffffff",
-  text: "#111111",
-  accent: "#3b82f6",
-  button: "#3b82f6",
-  buttonText: "#ffffff"
+const defaultData: CheckoutData = {
+  productName: "Meu Produto",
+  productDescription: "Descricao do seu produto incrivel que vai ajudar o cliente a resolver seu problema.",
+  productImage: "",
+  price: "247,90",
+  originalPrice: "",
+  planLabel: "Plano Mensal",
+  fields: {
+    email: true,
+    confirmEmail: true,
+    name: true,
+    cpf: true,
+    phone: false
+  },
+  pixKey: "",
+  accessToken: "",
+  backgroundColor: "#f5f5f5",
+  cardColor: "#ffffff",
+  textColor: "#1a1a1a",
+  accentColor: "#10b981",
+  buttonColor: "#1a1a1a",
+  buttonTextColor: "#ffffff",
+  backgroundImage: "",
+  buttonText: "Continuar para pagamento",
+  securityText: "Ambiente seguro"
 }
-
-const colorPresets = [
-  { bg: "#ffffff", text: "#111111", accent: "#3b82f6", btn: "#3b82f6", btnText: "#ffffff" },
-  { bg: "#0f172a", text: "#ffffff", accent: "#3b82f6", btn: "#3b82f6", btnText: "#ffffff" },
-  { bg: "#f0f9ff", text: "#0c4a6e", accent: "#0ea5e9", btn: "#0ea5e9", btnText: "#ffffff" },
-  { bg: "#fefce8", text: "#713f12", accent: "#eab308", btn: "#eab308", btnText: "#ffffff" },
-  { bg: "#fef2f2", text: "#7f1d1d", accent: "#ef4444", btn: "#ef4444", btnText: "#ffffff" },
-  { bg: "#ecfdf5", text: "#064e3b", accent: "#10b981", btn: "#10b981", btnText: "#ffffff" },
-]
 
 interface PageProps {
   params: Promise<{ id: string }>
@@ -72,19 +90,8 @@ export default function CheckoutEditorPage({ params }: PageProps) {
   
   const [loading, setLoading] = useState(true)
   const [site, setSite] = useState<any>(null)
-  const [pageData, setPageData] = useState<CheckoutPageData>({
-    product_name: "Nome do Produto",
-    product_description: "Descricao breve do produto que voce esta vendendo",
-    product_image: "",
-    price: "97,00",
-    original_price: "197,00",
-    cta_text: "Finalizar Compra",
-    payment_url: "https://",
-    guarantee_text: "Compra 100% segura",
-    urgency_text: "Oferta por tempo limitado!",
-    colors: defaultColors,
-  })
-  const [activeTab, setActiveTab] = useState("content")
+  const [pageData, setPageData] = useState<CheckoutData>(defaultData)
+  const [activeTab, setActiveTab] = useState("produto")
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [siteName, setSiteName] = useState("")
@@ -105,7 +112,7 @@ export default function CheckoutEditorPage({ params }: PageProps) {
         setSiteName(data.site.nome || "")
         setSiteSlug(data.site.slug || "")
         if (data.site.page_data) {
-          setPageData(data.site.page_data)
+          setPageData({ ...defaultData, ...data.site.page_data })
         }
       }
     } catch (error) {
@@ -116,7 +123,7 @@ export default function CheckoutEditorPage({ params }: PageProps) {
     }
   }
 
-  const updatePageData = (updates: Partial<CheckoutPageData>) => {
+  const updatePageData = (updates: Partial<CheckoutData>) => {
     setPageData(prev => ({ ...prev, ...updates }))
     setSaved(false)
   }
@@ -135,9 +142,7 @@ export default function CheckoutEditorPage({ params }: PageProps) {
         }),
       })
 
-      if (!res.ok) {
-        throw new Error("Erro ao salvar")
-      }
+      if (!res.ok) throw new Error("Erro ao salvar")
 
       setSite((prev: any) => prev ? { ...prev, nome: siteName, slug: siteSlug } : prev)
       setSaved(true)
@@ -151,18 +156,6 @@ export default function CheckoutEditorPage({ params }: PageProps) {
     }
   }
 
-  const applyColorPreset = (preset: typeof colorPresets[0]) => {
-    updatePageData({
-      colors: {
-        background: preset.bg,
-        text: preset.text,
-        accent: preset.accent,
-        button: preset.btn,
-        buttonText: preset.btnText,
-      }
-    })
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -173,25 +166,20 @@ export default function CheckoutEditorPage({ params }: PageProps) {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-white">
-      {/* Top Header */}
+      {/* Header */}
       <header className="h-14 border-b border-gray-200 flex items-center justify-between px-4 bg-white flex-shrink-0">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => router.push("/biolink")}
-            className="h-8 w-8 rounded-lg text-gray-500 hover:text-gray-900"
+            className="h-8 w-8 rounded-lg"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center">
-              <ShoppingCart className="h-4 w-4 text-white" />
-            </div>
-            <div>
-              <h1 className="font-semibold text-gray-900 text-sm">{site?.nome || "Checkout"}</h1>
-              <p className="text-[11px] text-gray-500">/s/{site?.slug}</p>
-            </div>
+          <div>
+            <h1 className="font-semibold text-gray-900 text-sm">{site?.nome || "Checkout"}</h1>
+            <p className="text-[11px] text-gray-500">/s/{site?.slug}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -204,174 +192,232 @@ export default function CheckoutEditorPage({ params }: PageProps) {
             <Eye className="w-3.5 h-3.5 mr-1.5" />
             Preview
           </Button>
-
           <Button
             onClick={handleSave}
             disabled={isSaving}
             className="h-9 px-4 rounded-lg bg-blue-500 text-white hover:bg-blue-600 text-sm"
           >
             {isSaving ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                Salvando
-              </span>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
             ) : saved ? (
-              <span className="flex items-center gap-2">
-                <Check className="w-3.5 h-3.5" />
-                Salvo
-              </span>
+              <><Check className="w-3.5 h-3.5 mr-1" /> Salvo</>
             ) : (
-              <span className="flex items-center gap-2">
-                <Save className="w-3.5 h-3.5" />
-                Salvar
-              </span>
+              <><Save className="w-3.5 h-3.5 mr-1" /> Salvar</>
             )}
           </Button>
         </div>
       </header>
 
-      {/* Main Content - Editor + Preview */}
       <div className="flex-1 flex overflow-hidden">
         {/* Editor Panel */}
-        <div className="w-[380px] border-r border-gray-200 flex flex-col bg-white flex-shrink-0">
+        <div className="w-[400px] border-r border-gray-200 flex flex-col bg-white flex-shrink-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
             <div className="px-4 pt-4">
               <TabsList className="w-full bg-gray-100 rounded-lg h-10 p-1">
-                <TabsTrigger value="content" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Package className="w-3.5 h-3.5 mr-1.5" />
+                <TabsTrigger value="produto" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Type className="w-3 h-3 mr-1" />
                   Produto
                 </TabsTrigger>
-                <TabsTrigger value="visual" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Palette className="w-3.5 h-3.5 mr-1.5" />
-                  Visual
+                <TabsTrigger value="campos" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Settings className="w-3 h-3 mr-1" />
+                  Campos
                 </TabsTrigger>
-                <TabsTrigger value="details" className="flex-1 rounded-md text-xs data-[state=active]:bg-white data-[state=active]:shadow-sm">
-                  <Settings className="w-3.5 h-3.5 mr-1.5" />
-                  Detalhes
+                <TabsTrigger value="visual" className="flex-1 rounded-md text-[10px] data-[state=active]:bg-white">
+                  <Palette className="w-3 h-3 mr-1" />
+                  Visual
                 </TabsTrigger>
               </TabsList>
             </div>
 
             <div className="flex-1 min-h-0 relative">
-              {/* Content Tab */}
-              <TabsContent value="content" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
+              {/* Produto Tab */}
+              <TabsContent value="produto" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-5">
-                  {/* Product Name */}
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Imagem do Produto
+                    </Label>
+                    <ImageUpload
+                      value={pageData.productImage}
+                      onChange={(url) => updatePageData({ productImage: url })}
+                      placeholder="Upload da imagem"
+                      previewClassName="w-20 h-20 rounded-xl"
+                    />
+                  </div>
+
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                       Nome do Produto
                     </Label>
                     <Input
-                      value={pageData.product_name}
-                      onChange={(e) => updatePageData({ product_name: e.target.value })}
-                      className="h-10 text-sm font-semibold"
-                      placeholder="Nome do produto"
+                      value={pageData.productName}
+                      onChange={(e) => updatePageData({ productName: e.target.value })}
+                      className="h-10 text-sm"
+                      placeholder="Meu Produto"
                     />
                   </div>
 
-                  {/* Product Description */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                       Descricao
                     </Label>
-                    <textarea
-                      value={pageData.product_description}
-                      onChange={(e) => updatePageData({ product_description: e.target.value })}
-                      className="w-full h-20 px-3 py-2 text-sm border border-gray-200 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                      placeholder="Descricao do produto"
+                    <Textarea
+                      value={pageData.productDescription}
+                      onChange={(e) => updatePageData({ productDescription: e.target.value })}
+                      className="text-sm resize-none"
+                      rows={3}
+                      placeholder="Descricao do produto..."
                     />
                   </div>
 
-                  {/* Product Image */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Imagem do Produto
+                      Tipo de Plano
                     </Label>
                     <Input
-                      value={pageData.product_image}
-                      onChange={(e) => updatePageData({ product_image: e.target.value })}
+                      value={pageData.planLabel}
+                      onChange={(e) => updatePageData({ planLabel: e.target.value })}
                       className="h-10 text-sm"
-                      placeholder="URL da imagem"
+                      placeholder="Plano Mensal"
                     />
                   </div>
 
-                  {/* Prices */}
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                        Preco
+                        Preco (R$)
                       </Label>
-                      <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-3">
-                        <span className="text-sm text-gray-400">R$</span>
-                        <Input
-                          value={pageData.price}
-                          onChange={(e) => updatePageData({ price: e.target.value })}
-                          className="h-10 bg-transparent border-0 px-1 text-sm font-semibold"
-                          placeholder="97,00"
-                        />
-                      </div>
+                      <Input
+                        value={pageData.price}
+                        onChange={(e) => updatePageData({ price: e.target.value })}
+                        className="h-10 text-sm"
+                        placeholder="247,90"
+                      />
                     </div>
                     <div>
                       <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                         Preco Original
                       </Label>
-                      <div className="flex items-center gap-1 bg-gray-50 border border-gray-200 rounded-lg px-3">
-                        <span className="text-sm text-gray-400">R$</span>
-                        <Input
-                          value={pageData.original_price}
-                          onChange={(e) => updatePageData({ original_price: e.target.value })}
-                          className="h-10 bg-transparent border-0 px-1 text-sm"
-                          placeholder="197,00"
-                        />
-                      </div>
+                      <Input
+                        value={pageData.originalPrice}
+                        onChange={(e) => updatePageData({ originalPrice: e.target.value })}
+                        className="h-10 text-sm"
+                        placeholder="297,90"
+                      />
                     </div>
                   </div>
 
-                  {/* Urgency */}
-                  <div>
+                  <div className="border-t pt-4">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Texto de Urgencia
+                      Chave PIX
                     </Label>
-                    <Input
-                      value={pageData.urgency_text}
-                      onChange={(e) => updatePageData({ urgency_text: e.target.value })}
-                      className="h-10 text-sm"
-                      placeholder="Ex: Oferta por tempo limitado!"
+                    <Textarea
+                      value={pageData.pixKey}
+                      onChange={(e) => updatePageData({ pixKey: e.target.value })}
+                      className="text-sm resize-none font-mono text-xs"
+                      rows={3}
+                      placeholder="Cole o codigo PIX copia e cola..."
                     />
                   </div>
 
-                  {/* CTA */}
-                  <div className="border-t border-gray-200 pt-5">
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
-                      Botao de Compra
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Access Token Mercado Pago
                     </Label>
-                    <div className="flex flex-col gap-3">
-                      <Input
-                        value={pageData.cta_text}
-                        onChange={(e) => updatePageData({ cta_text: e.target.value })}
-                        placeholder="Texto do botao"
-                        className="h-10 text-sm"
-                      />
-                      <Input
-                        value={pageData.payment_url}
-                        onChange={(e) => updatePageData({ payment_url: e.target.value })}
-                        placeholder="https://checkout..."
-                        className="h-10 text-sm font-mono"
-                      />
-                    </div>
+                    <Input
+                      type="password"
+                      value={pageData.accessToken}
+                      onChange={(e) => updatePageData({ accessToken: e.target.value })}
+                      className="h-10 text-sm font-mono"
+                      placeholder="APP_USR-..."
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* Campos Tab */}
+              <TabsContent value="campos" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
+                <div className="flex flex-col gap-4">
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2 block">
+                      Campos do Formulario
+                    </Label>
+                    <p className="text-xs text-gray-400 mb-4">Escolha quais campos o cliente deve preencher</p>
                   </div>
 
-                  {/* Guarantee */}
+                  <div className="flex flex-col gap-2">
+                    {[
+                      { key: "email", label: "E-mail", desc: "Campo obrigatorio" },
+                      { key: "confirmEmail", label: "Confirmar E-mail", desc: "Pede para digitar novamente" },
+                      { key: "name", label: "Nome Completo", desc: "Nome do comprador" },
+                      { key: "cpf", label: "CPF/CNPJ", desc: "Documento do comprador" },
+                      { key: "phone", label: "Telefone", desc: "Celular do comprador" },
+                    ].map((field) => (
+                      <label key={field.key} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 hover:border-gray-300 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={pageData.fields[field.key as keyof typeof pageData.fields]}
+                          onChange={(e) => updatePageData({ 
+                            fields: { ...pageData.fields, [field.key]: e.target.checked } 
+                          })}
+                          className="w-4 h-4 rounded border-gray-300 text-blue-500"
+                        />
+                        <div>
+                          <p className="text-sm font-medium text-gray-700">{field.label}</p>
+                          <p className="text-xs text-gray-400">{field.desc}</p>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+
+                  <div className="border-t pt-4 mt-2">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Texto do Botao
+                    </Label>
+                    <Input
+                      value={pageData.buttonText}
+                      onChange={(e) => updatePageData({ buttonText: e.target.value })}
+                      className="h-10 text-sm"
+                      placeholder="Continuar para pagamento"
+                    />
+                  </div>
+
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
                       Texto de Seguranca
                     </Label>
                     <Input
-                      value={pageData.guarantee_text}
-                      onChange={(e) => updatePageData({ guarantee_text: e.target.value })}
+                      value={pageData.securityText}
+                      onChange={(e) => updatePageData({ securityText: e.target.value })}
                       className="h-10 text-sm"
-                      placeholder="Ex: Compra 100% segura"
+                      placeholder="Ambiente seguro"
                     />
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Nome da Pagina
+                    </Label>
+                    <Input
+                      value={siteName}
+                      onChange={(e) => { setSiteName(e.target.value); setSaved(false) }}
+                      placeholder="Checkout"
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
+                      Slug (URL)
+                    </Label>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-400">/s/</span>
+                      <Input
+                        value={siteSlug}
+                        onChange={(e) => { setSiteSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "")); setSaved(false) }}
+                        placeholder="checkout"
+                        className="h-9 text-sm flex-1"
+                      />
+                    </div>
                   </div>
                 </div>
               </TabsContent>
@@ -379,173 +425,48 @@ export default function CheckoutEditorPage({ params }: PageProps) {
               {/* Visual Tab */}
               <TabsContent value="visual" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
                 <div className="flex flex-col gap-5">
-                  {/* Color Presets */}
                   <div>
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Paleta de Cores
+                      Imagem de Fundo
                     </Label>
-                    <div className="grid grid-cols-6 gap-1.5">
-                      {colorPresets.map((preset, index) => (
-                        <button
-                          key={index}
-                          onClick={() => applyColorPreset(preset)}
-                          className={cn(
-                            "aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105",
-                            pageData.colors.background === preset.bg && pageData.colors.accent === preset.accent
-                              ? "border-blue-500 ring-2 ring-blue-500/20"
-                              : "border-gray-100"
-                          )}
-                          style={{ backgroundColor: preset.bg }}
-                        >
-                          <div className="w-full h-full flex items-end justify-center pb-1">
-                            <div 
-                              className="w-3/4 h-1 rounded-full"
-                              style={{ backgroundColor: preset.btn }}
-                            />
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Custom Colors */}
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Cores Personalizadas
-                    </Label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Fundo</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.background}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.background}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, background: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Texto</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.text}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.text}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, text: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.button}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, button: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.button}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, button: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-gray-400">Texto Botao</label>
-                        <div className="flex items-center gap-1.5 bg-gray-50 rounded-lg p-2">
-                          <input
-                            type="color"
-                            value={pageData.colors.buttonText}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, buttonText: e.target.value } })}
-                            className="w-6 h-6 rounded cursor-pointer border-0"
-                          />
-                          <Input
-                            value={pageData.colors.buttonText}
-                            onChange={(e) => updatePageData({ colors: { ...pageData.colors, buttonText: e.target.value } })}
-                            className="flex-1 h-6 bg-transparent border-0 text-[10px] font-mono px-1"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Details Tab */}
-              <TabsContent value="details" className="absolute inset-0 p-4 m-0 overflow-y-auto data-[state=inactive]:hidden">
-                <div className="flex flex-col gap-5">
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      Nome da Pagina
-                    </Label>
-                    <Input
-                      value={siteName}
-                      onChange={(e) => {
-                        setSiteName(e.target.value)
-                        setSaved(false)
-                      }}
-                      placeholder="Ex: Checkout Produto X"
-                      className="h-10 text-sm"
+                    <ImageUpload
+                      value={pageData.backgroundImage}
+                      onChange={(url) => updatePageData({ backgroundImage: url })}
+                      placeholder="Upload do fundo"
+                      previewClassName="w-full h-24 rounded-lg"
                     />
                   </div>
 
-                  <div>
-                    <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-2.5 block">
-                      URL da Pagina (Slug)
-                    </Label>
-                    <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3">
-                      <span className="text-sm text-gray-400 whitespace-nowrap">/s/</span>
-                      <Input
-                        value={siteSlug}
-                        onChange={(e) => {
-                          setSiteSlug(e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''))
-                          setSaved(false)
-                        }}
-                        placeholder="meu-checkout"
-                        className="flex-1 h-10 bg-transparent border-0 px-0 focus-visible:ring-0 text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-gray-100 pt-5 mt-2">
+                  <div className="border-t pt-4">
                     <Label className="text-[11px] font-medium text-gray-500 uppercase tracking-wide mb-3 block">
-                      Acoes Rapidas
+                      Cores
                     </Label>
-                    <div className="flex flex-col gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => window.open(`/s/${siteSlug}`, '_blank')}
-                        className="justify-start h-10 text-sm"
-                      >
-                        <ExternalLink className="w-4 h-4 mr-2" />
-                        Abrir Pagina
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          const url = `${window.location.origin}/s/${siteSlug}`
-                          navigator.clipboard.writeText(url)
-                          toast.success("Link copiado!")
-                        }}
-                        className="justify-start h-10 text-sm"
-                      >
-                        <Link2 className="w-4 h-4 mr-2" />
-                        Copiar Link
-                      </Button>
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        { key: "backgroundColor", label: "Fundo" },
+                        { key: "cardColor", label: "Card" },
+                        { key: "textColor", label: "Texto" },
+                        { key: "accentColor", label: "Destaque" },
+                        { key: "buttonColor", label: "Botao" },
+                        { key: "buttonTextColor", label: "Texto Botao" },
+                      ].map((color) => (
+                        <div key={color.key}>
+                          <label className="text-[10px] text-gray-400 mb-1 block">{color.label}</label>
+                          <div className="flex gap-2">
+                            <input
+                              type="color"
+                              value={pageData[color.key as keyof CheckoutData] as string}
+                              onChange={(e) => updatePageData({ [color.key]: e.target.value })}
+                              className="w-10 h-9 rounded cursor-pointer border-0"
+                            />
+                            <Input
+                              value={pageData[color.key as keyof CheckoutData] as string}
+                              onChange={(e) => updatePageData({ [color.key]: e.target.value })}
+                              className="h-9 text-xs font-mono flex-1"
+                            />
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 </div>
@@ -554,88 +475,192 @@ export default function CheckoutEditorPage({ params }: PageProps) {
           </Tabs>
         </div>
 
-        {/* Preview Area */}
-        <div className="flex-1 bg-gray-100 flex items-center justify-center p-6 overflow-auto">
-          <div 
-            className="w-full max-w-md min-h-[600px] rounded-lg shadow-xl overflow-hidden"
-            style={{ backgroundColor: pageData.colors.background }}
-          >
-            <div className="p-6">
-              {/* Urgency Badge */}
-              {pageData.urgency_text && (
+        {/* Preview Panel */}
+        <div className="flex-1 bg-gray-100 flex items-center justify-center p-8 overflow-hidden">
+          <div className="w-[375px] h-[700px] flex-shrink-0 bg-gray-800 rounded-[50px] p-3 shadow-2xl relative">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-gray-800 rounded-b-2xl z-20" />
+            
+            <div 
+              className="w-full h-full rounded-[40px] overflow-y-auto"
+              style={{ 
+                backgroundColor: pageData.backgroundColor,
+                backgroundImage: pageData.backgroundImage ? `url(${pageData.backgroundImage})` : undefined,
+                backgroundSize: "cover"
+              }}
+            >
+              <div className="p-4 pt-10">
+                {/* Header do Produto */}
                 <div 
-                  className="text-center text-sm font-medium py-2 px-4 rounded-full mb-6 inline-block w-full"
-                  style={{ backgroundColor: pageData.colors.accent + "20", color: pageData.colors.accent }}
+                  className="flex items-start gap-3 mb-4 rounded-2xl p-3"
+                  style={{ backgroundColor: pageData.cardColor }}
                 >
-                  {pageData.urgency_text}
+                  {pageData.productImage ? (
+                    <img src={pageData.productImage} alt="" className="w-14 h-14 rounded-xl object-cover flex-shrink-0" />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <h2 className="font-bold text-sm mb-0.5" style={{ color: pageData.textColor }}>
+                      {pageData.productName}
+                    </h2>
+                    <p className="text-[10px] line-clamp-2" style={{ color: `${pageData.textColor}99` }}>
+                      {pageData.productDescription}
+                    </p>
+                  </div>
                 </div>
-              )}
 
-              {/* Product Image */}
-              {pageData.product_image && (
-                <div className="mb-6 rounded-lg overflow-hidden">
-                  <img 
-                    src={pageData.product_image} 
-                    alt={pageData.product_name}
-                    className="w-full h-48 object-cover"
-                  />
-                </div>
-              )}
-
-              {/* Product Info */}
-              <h1 
-                className="text-2xl font-bold mb-2"
-                style={{ color: pageData.colors.text }}
-              >
-                {pageData.product_name}
-              </h1>
-
-              <p 
-                className="text-sm mb-6 opacity-80"
-                style={{ color: pageData.colors.text }}
-              >
-                {pageData.product_description}
-              </p>
-
-              {/* Prices */}
-              <div className="mb-6">
-                <div className="flex items-baseline gap-2">
-                  <span 
-                    className="text-3xl font-bold"
-                    style={{ color: pageData.colors.accent }}
-                  >
-                    R$ {pageData.price}
-                  </span>
-                  {pageData.original_price && (
+                {/* Plano Card */}
+                <div 
+                  className="rounded-2xl p-3 mb-4 border-2"
+                  style={{ backgroundColor: pageData.cardColor, borderColor: pageData.accentColor }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-4 h-4 rounded-full border-2 flex items-center justify-center"
+                        style={{ borderColor: pageData.accentColor }}
+                      >
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: pageData.accentColor }} />
+                      </div>
+                      <span className="font-semibold text-sm" style={{ color: pageData.textColor }}>
+                        {pageData.planLabel}
+                      </span>
+                    </div>
                     <span 
-                      className="text-lg line-through opacity-50"
-                      style={{ color: pageData.colors.text }}
+                      className="text-[9px] px-2 py-0.5 rounded-full font-medium"
+                      style={{ backgroundColor: `${pageData.accentColor}20`, color: pageData.accentColor }}
                     >
-                      R$ {pageData.original_price}
+                      Recomendado
                     </span>
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    {pageData.originalPrice && (
+                      <span className="text-xs line-through" style={{ color: `${pageData.textColor}50` }}>
+                        R$ {pageData.originalPrice}
+                      </span>
+                    )}
+                    <span className="font-bold text-lg" style={{ color: pageData.textColor }}>
+                      R$ {pageData.price}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Formulario */}
+                <div 
+                  className="flex flex-col gap-3 mb-4 rounded-2xl p-4"
+                  style={{ backgroundColor: pageData.cardColor }}
+                >
+                  {pageData.fields.email && (
+                    <div>
+                      <label className="text-[10px] font-medium mb-1.5 block" style={{ color: pageData.textColor }}>
+                        Seu e-mail
+                      </label>
+                      <div 
+                        className="h-10 rounded-xl border px-3 flex items-center text-xs"
+                        style={{ borderColor: `${pageData.textColor}20`, color: `${pageData.textColor}50` }}
+                      >
+                        Insira seu e-mail
+                      </div>
+                    </div>
+                  )}
+                  {pageData.fields.confirmEmail && (
+                    <div>
+                      <label className="text-[10px] font-medium mb-1.5 block" style={{ color: pageData.textColor }}>
+                        Confirme seu e-mail
+                      </label>
+                      <div 
+                        className="h-10 rounded-xl border px-3 flex items-center text-xs"
+                        style={{ borderColor: `${pageData.textColor}20`, color: `${pageData.textColor}50` }}
+                      >
+                        Insira novamente
+                      </div>
+                    </div>
+                  )}
+                  {pageData.fields.name && (
+                    <div>
+                      <label className="text-[10px] font-medium mb-1.5 block" style={{ color: pageData.textColor }}>
+                        Nome completo
+                      </label>
+                      <div 
+                        className="h-10 rounded-xl border px-3 flex items-center text-xs"
+                        style={{ borderColor: `${pageData.textColor}20`, color: `${pageData.textColor}50` }}
+                      >
+                        Insira seu nome
+                      </div>
+                    </div>
+                  )}
+                  {pageData.fields.cpf && (
+                    <div>
+                      <label className="text-[10px] font-medium mb-1.5 block" style={{ color: pageData.textColor }}>
+                        CPF/CNPJ
+                      </label>
+                      <div 
+                        className="h-10 rounded-xl border px-3 flex items-center text-xs"
+                        style={{ borderColor: `${pageData.textColor}20`, color: `${pageData.textColor}50` }}
+                      >
+                        000.000.000-00
+                      </div>
+                    </div>
+                  )}
+                  {pageData.fields.phone && (
+                    <div>
+                      <label className="text-[10px] font-medium mb-1.5 block" style={{ color: pageData.textColor }}>
+                        Celular
+                      </label>
+                      <div 
+                        className="h-10 rounded-xl border px-3 flex items-center gap-2 text-xs"
+                        style={{ borderColor: `${pageData.textColor}20`, color: `${pageData.textColor}50` }}
+                      >
+                        <span className="font-medium">+55</span>
+                        <span className="opacity-50">|</span>
+                        <span>(00) 00000-0000</span>
+                      </div>
+                    </div>
                   )}
                 </div>
-              </div>
 
-              {/* CTA Button */}
-              <button 
-                className="w-full py-4 rounded-lg text-lg font-bold transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2"
-                style={{ 
-                  backgroundColor: pageData.colors.button,
-                  color: pageData.colors.buttonText
-                }}
-              >
-                <CreditCard className="w-5 h-5" />
-                {pageData.cta_text}
-              </button>
+                {/* Resumo */}
+                <div 
+                  className="mb-4 rounded-2xl p-4"
+                  style={{ backgroundColor: pageData.cardColor }}
+                >
+                  <p className="text-[10px] font-semibold mb-2 uppercase tracking-wide" style={{ color: `${pageData.textColor}60` }}>
+                    Resumo
+                  </p>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs" style={{ color: `${pageData.textColor}80` }}>
+                      {pageData.productName}
+                    </span>
+                    <span className="text-xs font-medium" style={{ color: pageData.textColor }}>
+                      R$ {pageData.price}
+                    </span>
+                  </div>
+                  <div 
+                    className="flex justify-between items-center pt-2 border-t"
+                    style={{ borderColor: `${pageData.textColor}10` }}
+                  >
+                    <span className="text-xs font-semibold" style={{ color: pageData.textColor }}>Total</span>
+                    <span className="text-base font-bold" style={{ color: pageData.textColor }}>
+                      R$ {pageData.price}
+                    </span>
+                  </div>
+                </div>
 
-              {/* Security Badge */}
-              <div 
-                className="flex items-center justify-center gap-2 mt-4 text-sm opacity-70"
-                style={{ color: pageData.colors.text }}
-              >
-                <Shield className="w-4 h-4" />
-                {pageData.guarantee_text}
+                {/* Botao */}
+                <button
+                  className="w-full py-3.5 rounded-xl font-semibold text-sm transition-all"
+                  style={{ backgroundColor: pageData.buttonColor, color: pageData.buttonTextColor }}
+                >
+                  {pageData.buttonText}
+                </button>
+
+                {/* Seguranca */}
+                <div className="flex items-center justify-center gap-2 mt-4">
+                  <ShieldCheck className="w-3.5 h-3.5" style={{ color: `${pageData.textColor}40` }} />
+                  <span className="text-[10px]" style={{ color: `${pageData.textColor}40` }}>
+                    {pageData.securityText}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
