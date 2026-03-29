@@ -6,10 +6,15 @@ const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
 const supabase = createClient(supabaseUrl, supabaseKey)
 
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const flowId = searchParams.get("flowId")
-  
-  // Buscar o flow
+  try {
+    const { searchParams } = new URL(request.url)
+    const flowId = searchParams.get("flowId")
+    
+    if (!flowId) {
+      return NextResponse.json({ error: "flowId is required" }, { status: 400 })
+    }
+    
+    // Buscar o flow
   const { data: flow, error: flowError } = await supabase
     .from("flows")
     .select("*")
@@ -129,4 +134,10 @@ export async function GET(request: Request) {
       hasSecondaryMessage: secondaryMsg.enabled
     }
   }, { status: 200 })
+  } catch (error) {
+    return NextResponse.json({ 
+      error: "Internal error", 
+      details: error instanceof Error ? error.message : String(error) 
+    }, { status: 500 })
+  }
 }
