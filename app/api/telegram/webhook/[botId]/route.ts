@@ -245,13 +245,37 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           planPrice = Number(dbPlan.price)
           flowIdForGateway = dbPlan.flows?.id || ""
         } else {
-          // Try to find plan in flow config
-          const { data: flowWithPlan } = await supabase
+          // Try to find plan in flow config - check direct flow first
+          let flowWithPlan = null
+          
+          const { data: directFlow } = await supabase
             .from("flows")
             .select("id, config, bot_id")
-            .or(`bot_id.eq.${botUuid}`)
+            .eq("bot_id", botUuid)
+            .eq("status", "ativo")
             .limit(1)
             .single()
+          
+          if (directFlow) {
+            flowWithPlan = directFlow
+          } else {
+            // Check via flow_bots table
+            const { data: flowBot } = await supabase
+              .from("flow_bots")
+              .select("flow_id")
+              .eq("bot_id", botUuid)
+              .limit(1)
+              .single()
+            
+            if (flowBot?.flow_id) {
+              const { data: linkedFlow } = await supabase
+                .from("flows")
+                .select("id, config, bot_id")
+                .eq("id", flowBot.flow_id)
+                .single()
+              flowWithPlan = linkedFlow
+            }
+          }
           
           if (flowWithPlan) {
             const flowConfig = (flowWithPlan.config as Record<string, unknown>) || {}
