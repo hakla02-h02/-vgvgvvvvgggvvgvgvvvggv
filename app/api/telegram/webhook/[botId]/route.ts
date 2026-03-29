@@ -122,7 +122,9 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
 
     const msg = message as Record<string, unknown>
     const chat = msg.chat as Record<string, unknown>
-    const from = (msg.from || (update.callback_query as Record<string, unknown>)?.from) as Record<string, unknown>
+    // Para callback_query, o from do USUARIO que clicou vem de callback_query.from, nao de message.from
+    const callbackFrom = (update.callback_query as Record<string, unknown>)?.from as Record<string, unknown> | undefined
+    const from = callbackFrom || (msg.from as Record<string, unknown>)
     
     const chatId = chat?.id as number
     const text = (msg.text as string) || ""
