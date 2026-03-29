@@ -4004,57 +4004,70 @@ Clique no botao abaixo para renovar com desconto especial!`)
         )}
       </div>
 
-      {/* Delete Flow Dialog */}
+      {/* Delete Flow Dialog - Design escuro */}
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="sm:max-w-md bg-card border-border">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle className="h-5 w-5" />
-              Excluir Fluxo
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <p className="text-sm text-muted-foreground mb-4">
-              Tem certeza que deseja excluir o fluxo <strong className="text-foreground">{flow.name}</strong>?
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Esta acao ira:
-            </p>
-            <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-              <li>- Remover todos os bots vinculados a este fluxo</li>
-              <li>- Desvincular o grupo VIP configurado</li>
-              <li>- Excluir todas as configuracoes do fluxo</li>
-            </ul>
-            <p className="text-sm text-destructive font-medium mt-4">
-              Esta acao nao pode ser desfeita.
-            </p>
+        <DialogContent className="sm:max-w-[400px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+          <div className="p-5">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-11 h-11 rounded-xl bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                <AlertTriangle className="h-5 w-5 text-red-400" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-white">Excluir Fluxo</h2>
+                <p className="text-xs text-gray-400">Esta acao e irreversivel</p>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="bg-[#2a2a2e] rounded-xl p-4 mb-4">
+              <p className="text-sm text-gray-300 mb-3">
+                Tem certeza que deseja excluir <span className="text-white font-semibold">{flow.name}</span>?
+              </p>
+              <ul className="text-xs text-gray-400 space-y-1.5">
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-gray-500" />
+                  Remover todos os bots vinculados
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-gray-500" />
+                  Desvincular o grupo VIP
+                </li>
+                <li className="flex items-center gap-2">
+                  <span className="w-1 h-1 rounded-full bg-gray-500" />
+                  Excluir todas as configuracoes
+                </li>
+              </ul>
+            </div>
           </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
+
+          {/* Footer */}
+          <div className="px-5 py-3 bg-[#18181a] border-t border-[#2a2a2e] flex items-center justify-end gap-2">
+            <button
               onClick={() => setShowDeleteDialog(false)}
               disabled={isDeleting}
+              className="px-4 py-2 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-[#2a2a2e] transition-colors disabled:opacity-50"
             >
               Cancelar
-            </Button>
-            <Button
-              variant="destructive"
+            </button>
+            <button
               onClick={handleDeleteFlow}
               disabled={isDeleting}
+              className="flex items-center gap-2 bg-red-500 text-white px-4 py-2 rounded-lg font-semibold text-sm hover:bg-red-600 disabled:opacity-50 transition-colors"
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Excluindo...
                 </>
               ) : (
                 <>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Excluir Fluxo
+                  <Trash2 className="h-4 w-4" />
+                  Excluir
                 </>
               )}
-            </Button>
-          </DialogFooter>
+            </button>
+          </div>
         </DialogContent>
       </Dialog>
 
