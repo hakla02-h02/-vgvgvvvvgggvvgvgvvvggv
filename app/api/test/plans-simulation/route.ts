@@ -66,9 +66,9 @@ export async function GET(request: Request) {
         })
       }
       
-      // Simular os botoes que seriam mostrados
+      // Simular os botoes que seriam mostrados (only name, no price)
       const planButtons = plans.map(plan => ({
-        text: `${plan.name} - R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+        text: plan.name,
         callback_data: `plan_${plan.id}`,
         planDetails: {
           id: plan.id,

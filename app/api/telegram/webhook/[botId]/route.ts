@@ -186,9 +186,9 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             .order("position", { ascending: true })
           
           if (plans && plans.length > 0) {
-            // Build buttons for each plan
+            // Build buttons for each plan (only name, no price)
             const planButtons = plans.map(plan => [{
-              text: `${plan.name} - R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+              text: plan.name,
               callback_data: `plan_${plan.id}`
             }])
             
@@ -205,7 +205,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             
             if (configPlans.length > 0) {
               const planButtons = configPlans.map(plan => [{
-                text: `${plan.name} - R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+                text: plan.name,
                 callback_data: `plan_${plan.id}`
               }])
               
