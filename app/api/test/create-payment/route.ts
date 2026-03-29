@@ -72,13 +72,16 @@ export async function GET(request: NextRequest) {
       }, { status: 500 })
     }
     
-    // Salvar pagamento no banco
+    // Salvar pagamento no banco com dados do usuario Telegram
     const { data: payment, error: insertError } = await supabase
       .from("payments")
       .insert({
         user_id: bot?.user_id,
         bot_id: botId,
-        telegram_user_id: "teste_123456",
+        telegram_user_id: "123456789",
+        telegram_username: "usuario_teste",
+        telegram_first_name: "Joao",
+        telegram_last_name: "Silva",
         gateway: gateway.gateway_name || "mercadopago",
         external_payment_id: pixResult.paymentId,
         amount,
