@@ -61,6 +61,36 @@ async function sendTelegramVideo(
   })
 }
 
+// Send multiple medias as album (grouped)
+async function sendMediaGroup(
+  botToken: string,
+  chatId: number,
+  mediaUrls: string[],
+  caption?: string,
+) {
+  const url = `https://api.telegram.org/bot${botToken}/sendMediaGroup`
+  
+  const media = mediaUrls.map((mediaUrl, index) => {
+    const isVideo = mediaUrl.includes(".mp4") || mediaUrl.includes("video")
+    const item: Record<string, unknown> = {
+      type: isVideo ? "video" : "photo",
+      media: mediaUrl,
+    }
+    // Caption only on first item
+    if (index === 0 && caption) {
+      item.caption = caption
+      item.parse_mode = "HTML"
+    }
+    return item
+  })
+  
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: chatId, media }),
+  })
+}
+
 // ---------------------------------------------------------------------------
 // Process message in background (non-blocking)
 // ---------------------------------------------------------------------------
@@ -99,10 +129,260 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
 
     if (!chatId) return
 
-    // 3. Check if /start command
+    // 3. Check if callback query (button click)
+    const callbackQuery = update.callback_query as Record<string, unknown> | null
+    const callbackData = callbackQuery?.data as string | null
+    
+    // 3.1 Handle callback queries
+    if (callbackQuery && callbackData) {
+      // Answer callback to remove loading state
+      await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ callback_query_id: callbackQuery.id })
+      })
+      
+      // Handle "ver_planos" - show plans as buttons
+      if (callbackData === "ver_planos") {
+        // Find flow for this bot
+        const { data: directFlow } = await supabase
+          .from("flows")
+          .select("*")
+          .eq("bot_id", botUuid)
+          .eq("status", "ativo")
+          .limit(1)
+          .single()
+        
+        let flowId = directFlow?.id
+        
+        if (!flowId) {
+          const { data: flowBot } = await supabase
+            .from("flow_bots")
+            .select("flow_id")
+            .eq("bot_id", botUuid)
+            .limit(1)
+            .single()
+          flowId = flowBot?.flow_id
+        }
+        
+        if (flowId) {
+          // Get plans from flow_plans table
+          const { data: plans } = await supabase
+            .from("flow_plans")
+            .select("*")
+            .eq("flow_id", flowId)
+            .eq("is_active", true)
+            .order("position", { ascending: true })
+          
+          if (plans && plans.length > 0) {
+            // Build buttons for each plan
+            const planButtons = plans.map(plan => [{
+              text: `${plan.name} - R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+              callback_data: `plan_${plan.id}`
+            }])
+            
+            await sendTelegramMessage(
+              botToken, 
+              chatId, 
+              "Escolha seu plano:",
+              { inline_keyboard: planButtons }
+            )
+          } else {
+            // Fallback: get plans from flow config
+            const flowConfig = (directFlow?.config as Record<string, unknown>) || {}
+            const configPlans = (flowConfig.plans as Array<{ id: string; name: string; price: number }>) || []
+            
+            if (configPlans.length > 0) {
+              const planButtons = configPlans.map(plan => [{
+                text: `${plan.name} - R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`,
+                callback_data: `plan_${plan.id}`
+              }])
+              
+              await sendTelegramMessage(
+                botToken, 
+                chatId, 
+                "Escolha seu plano:",
+                { inline_keyboard: planButtons }
+              )
+            } else {
+              await sendTelegramMessage(botToken, chatId, "Nenhum plano disponivel no momento.")
+            }
+          }
+        }
+        return
+      }
+      
+      // Handle plan selection - generate PIX
+      if (callbackData.startsWith("plan_")) {
+        const planId = callbackData.replace("plan_", "")
+        
+        // First try to get plan from flow_plans table
+        let planName = ""
+        let planPrice = 0
+        let flowIdForGateway = ""
+        
+        const { data: dbPlan } = await supabase
+          .from("flow_plans")
+          .select("*, flows!inner(id, config, bot_id)")
+          .eq("id", planId)
+          .single()
+        
+        if (dbPlan) {
+          planName = dbPlan.name
+          planPrice = Number(dbPlan.price)
+          flowIdForGateway = dbPlan.flows?.id || ""
+        } else {
+          // Try to find plan in flow config
+          const { data: flowWithPlan } = await supabase
+            .from("flows")
+            .select("id, config, bot_id")
+            .or(`bot_id.eq.${botUuid}`)
+            .limit(1)
+            .single()
+          
+          if (flowWithPlan) {
+            const flowConfig = (flowWithPlan.config as Record<string, unknown>) || {}
+            const configPlans = (flowConfig.plans as Array<{ id: string; name: string; price: number }>) || []
+            const foundPlan = configPlans.find(p => p.id === planId)
+            
+            if (foundPlan) {
+              planName = foundPlan.name
+              planPrice = Number(foundPlan.price)
+              flowIdForGateway = flowWithPlan.id
+            }
+          }
+        }
+        
+        if (!planName || planPrice <= 0) {
+          await sendTelegramMessage(botToken, chatId, "Plano nao encontrado.")
+          return
+        }
+        
+        // Send processing message
+        await sendTelegramMessage(
+          botToken,
+          chatId,
+          `Voce selecionou: *${planName}*\n\nValor: R$ ${planPrice.toFixed(2).replace(".", ",")}\n\nGerando pagamento PIX...`,
+          undefined
+        )
+        
+        // Get gateway credentials for this bot (table is user_gateways)
+        const { data: gateway } = await supabase
+          .from("user_gateways")
+          .select("*")
+          .eq("bot_id", botUuid)
+          .eq("is_active", true)
+          .limit(1)
+          .single()
+        
+        if (!gateway || !gateway.access_token) {
+          await sendTelegramMessage(
+            botToken,
+            chatId,
+            "Gateway de pagamento nao configurado. Entre em contato com o suporte.",
+            undefined
+          )
+          return
+        }
+        
+        // Generate PIX via Mercado Pago
+        try {
+          const mpResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${gateway.access_token}`,
+              "X-Idempotency-Key": `${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            },
+            body: JSON.stringify({
+              transaction_amount: planPrice,
+              description: `Pagamento - ${planName}`,
+              payment_method_id: "pix",
+              payer: {
+                email: `telegram_${telegramUserId}@pix.payment`,
+              },
+            }),
+          })
+          
+          if (!mpResponse.ok) {
+            const errorData = await mpResponse.json()
+            console.error("Mercado Pago error:", errorData)
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              "Erro ao gerar pagamento. Tente novamente.",
+              undefined
+            )
+            return
+          }
+          
+          const paymentData = await mpResponse.json()
+          const pixData = paymentData.point_of_interaction?.transaction_data
+          
+          if (pixData?.qr_code_base64) {
+            // Send QR Code image
+            const qrImageUrl = `data:image/png;base64,${pixData.qr_code_base64}`
+            
+            // For Telegram, we need to send the base64 as a file or use the ticket_url
+            // Using ticket_url which is a direct link to the QR code
+            if (pixData.ticket_url) {
+              await sendTelegramPhoto(
+                botToken,
+                chatId,
+                pixData.ticket_url,
+                `Escaneie o QR Code para pagar\n\nValor: R$ ${planPrice.toFixed(2).replace(".", ",")}\nPlano: ${planName}`
+              )
+            }
+            
+            // Also send PIX copy-paste code
+            if (pixData.qr_code) {
+              await sendTelegramMessage(
+                botToken,
+                chatId,
+                `Ou copie o codigo PIX abaixo:\n\n\`${pixData.qr_code}\``,
+                undefined
+              )
+            }
+            
+            // Save payment record
+            await supabase.from("payments").insert({
+              bot_id: botUuid,
+              flow_id: flowIdForGateway || null,
+              telegram_user_id: String(telegramUserId),
+              plan_name: planName,
+              amount: planPrice,
+              payment_id: String(paymentData.id),
+              status: paymentData.status,
+              gateway: gateway.gateway_name,
+            })
+            
+          } else {
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              "Erro ao gerar QR Code. Tente novamente.",
+              undefined
+            )
+          }
+          
+        } catch (err) {
+          console.error("PIX generation error:", err)
+          await sendTelegramMessage(
+            botToken,
+            chatId,
+            "Erro ao processar pagamento. Tente novamente.",
+            undefined
+          )
+        }
+        
+        return
+      }
+    }
+    
+    // 4. Check if /start command
     const isStart = text.toLowerCase().startsWith("/start")
 
-    // 4. Get or create lead
+    // 5. Get or create lead
     if (telegramUserId && isStart) {
       const { data: existingLead } = await supabase
         .from("leads")
@@ -129,7 +409,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       }
     }
 
-    // 5. Process /start - execute welcome flow
+    // 6. Process /start - execute welcome flow
     if (isStart) {
       // Find flow for this bot
       let startFlow = null
@@ -222,26 +502,21 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         
         const replyMarkup = { inline_keyboard: inlineKeyboard }
         
-        // STEP 1: Send medias (if any valid URLs)
+        // STEP 1: Send medias (if any valid URLs) - grouped as album
         if (welcomeMedias.length > 0) {
-          for (let i = 0; i < welcomeMedias.length; i++) {
-            const media = welcomeMedias[i]
-            const isVideo = media.includes(".mp4") || media.includes("video")
-            try {
-              if (isVideo) {
-                await sendTelegramVideo(botToken, chatId, media)
-              } else {
-                await sendTelegramPhoto(botToken, chatId, media)
-              }
-              await new Promise(resolve => setTimeout(resolve, 200))
-            } catch {
-              // Skip failed media
-            }
+          try {
+            // Send all medias together as album with welcome message as caption
+            await sendMediaGroup(botToken, chatId, welcomeMedias, finalMsg)
+            // Send buttons separately after the album
+            await sendTelegramMessage(botToken, chatId, "Escolha uma opcao:", replyMarkup)
+          } catch {
+            // If media group fails, send message with buttons normally
+            await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
           }
+        } else {
+          // STEP 2: No medias - send welcome message with buttons
+          await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
         }
-        
-        // STEP 2: Send welcome message with buttons
-        await sendTelegramMessage(botToken, chatId, finalMsg, replyMarkup)
         
         // STEP 3: Send secondary message (if enabled)
         if (secondaryMsg.enabled && secondaryMsg.message) {
