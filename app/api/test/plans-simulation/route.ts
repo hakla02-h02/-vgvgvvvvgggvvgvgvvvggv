@@ -133,8 +133,20 @@ export async function GET(request: Request) {
         }, { status: 404 })
       }
       
-      // Get bot_id from flow to find gateway
-      const botId = flow.bot_id
+      // Get bot_id from flow or flow_bots table
+      let botId = flow.bot_id
+      
+      // If no direct bot_id, check flow_bots table
+      if (!botId) {
+        const { data: flowBot } = await supabase
+          .from("flow_bots")
+          .select("bot_id")
+          .eq("flow_id", flow.id)
+          .limit(1)
+          .single()
+        
+        botId = flowBot?.bot_id || null
+      }
       
       // Check if gateway is configured for this bot
       let gatewayInfo = null
