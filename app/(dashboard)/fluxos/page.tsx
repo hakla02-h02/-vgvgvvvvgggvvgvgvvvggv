@@ -453,7 +453,7 @@ export default function FluxosPage() {
         ) : flows.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 [&>*]:max-w-[320px]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 [&>*]:min-w-[280px] [&>*]:max-w-[380px]">
             {flows.map(flow => (
               <FlowCard key={flow.id} flow={flow} />
             ))}
