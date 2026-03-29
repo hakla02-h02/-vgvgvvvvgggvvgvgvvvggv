@@ -381,11 +381,14 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             .eq("id", botUuid)
             .single()
           
-          // Save payment record with correct fields
+          // Save payment record with correct fields including Telegram user info
           await supabase.from("payments").insert({
             user_id: botData?.user_id,
             bot_id: botUuid,
             telegram_user_id: String(telegramUserId),
+            telegram_username: from?.username || null,
+            telegram_first_name: from?.first_name || null,
+            telegram_last_name: from?.last_name || null,
             gateway: gateway.gateway_name || "mercadopago",
             external_payment_id: pixResult.paymentId,
             amount: planPrice,
