@@ -148,11 +148,11 @@ export async function GET(request: Request) {
         botId = flowBot?.bot_id || null
       }
       
-      // Check if gateway is configured for this bot
+      // Check if gateway is configured for this bot (table is user_gateways, not payment_gateways)
       let gatewayInfo = null
       if (botId) {
         const { data: gateway } = await supabase
-          .from("payment_gateways")
+          .from("user_gateways")
           .select("*")
           .eq("bot_id", botId)
           .eq("is_active", true)

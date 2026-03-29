@@ -266,9 +266,9 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           undefined
         )
         
-        // Get gateway credentials for this bot
+        // Get gateway credentials for this bot (table is user_gateways)
         const { data: gateway } = await supabase
-          .from("payment_gateways")
+          .from("user_gateways")
           .select("*")
           .eq("bot_id", botUuid)
           .eq("is_active", true)
