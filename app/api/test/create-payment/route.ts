@@ -18,20 +18,35 @@ export async function GET(request: NextRequest) {
   
   try {
     // Buscar gateway do bot
-    const { data: gateway, error: gwError } = await supabase
+    const { data: gateways, error: gwError } = await supabase
       .from("user_gateways")
       .select("*")
       .eq("bot_id", botId)
       .eq("is_active", true)
-      .single()
     
-    if (gwError || !gateway) {
+    if (gwError) {
       return NextResponse.json({ 
-        error: "Gateway nao encontrado para este bot",
+        error: "Erro ao buscar gateway",
         botId,
-        details: gwError?.message
+        details: gwError.message
+      }, { status: 500 })
+    }
+    
+    if (!gateways || gateways.length === 0) {
+      // Listar todos os gateways para debug
+      const { data: allGateways } = await supabase
+        .from("user_gateways")
+        .select("id, bot_id, gateway_name, is_active")
+      
+      return NextResponse.json({ 
+        error: "Nenhum gateway ativo encontrado para este bot",
+        botId,
+        allGatewaysInDb: allGateways || [],
+        hint: "Verifique se o gateway esta vinculado a este bot_id e esta ativo"
       }, { status: 404 })
     }
+    
+    const gateway = gateways[0]
     
     // Buscar user_id do bot
     const { data: bot } = await supabase
