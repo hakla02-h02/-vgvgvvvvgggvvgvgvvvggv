@@ -1011,17 +1011,17 @@ async function processCallbackQuery({
 
     // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
     // Buscar o estado atual do usuario e a config do fluxo
-    const { data: state } = await supabase
+    // Buscar QUALQUER estado recente do usuario (nao filtrar por status)
+    const { data: state, error: stateError } = await supabase
       .from("user_flow_state")
-      .select("flow_id, current_node_position")
+      .select("flow_id, current_node_position, status")
       .eq("bot_id", bot.id)
       .eq("telegram_user_id", telegramUserId)
-      .in("status", ["waiting_payment", "in_progress"])
       .order("updated_at", { ascending: false })
       .limit(1)
       .single()
 
-    console.log("[v0] Order Bump Check - State encontrado:", state ? "SIM" : "NAO", state?.flow_id)
+    console.log("[v0] Order Bump Check - State encontrado:", state ? "SIM" : "NAO", "flow_id:", state?.flow_id, "status:", state?.status, "error:", stateError?.message)
 
     if (state) {
       // Buscar a config do fluxo (nao do payment node)
@@ -1040,6 +1040,7 @@ async function processCallbackQuery({
       console.log("[v0] Order Bump Inicial enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
 
       // Verificar se o Order Bump Inicial esta habilitado
+      console.log("[v0] Order Bump - Verificando: enabled=", orderBumpInicial?.enabled, "price=", orderBumpInicial?.price)
       if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
         console.log("[v0] Order Bump ATIVADO! Enviando oferta...")
         const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
@@ -1083,6 +1084,7 @@ async function processCallbackQuery({
     }
 
     // Sem Order Bump - gerar pagamento diretamente
+    console.log("[v0] Order Bump NAO ativado ou NAO encontrado - gerando pagamento diretamente")
     await generatePayment(
       supabase, botToken, chatId, telegramUserId, bot,
       amount, description, "main_product"
