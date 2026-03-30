@@ -292,24 +292,36 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              {/* Stats row - Clean badges */}
-              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#22c55e]/10 border border-[#22c55e]/20">
-                  <CalendarDays className="h-3.5 w-3.5 text-[#22c55e]" />
-                  <span className="text-xs text-gray-400">Desde</span>
-                  <span className="text-xs font-semibold text-white">{memberSince}</span>
+              {/* Stats row - Premium badges */}
+              <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+                <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#22c55e]/10 border border-[#22c55e]/30">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#22c55e]/20">
+                    <CalendarDays className="h-4 w-4 text-[#22c55e]" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Desde</span>
+                    <span className="text-sm font-bold text-white">{memberSince}</span>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/20">
-                  <Clock className="h-3.5 w-3.5 text-[#3b82f6]" />
-                  <span className="text-xs text-gray-400">Acesso</span>
-                  <span className="text-xs font-semibold text-white">{lastAccess}</span>
+                <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/30">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#3b82f6]/20">
+                    <Clock className="h-4 w-4 text-[#3b82f6]" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Acesso</span>
+                    <span className="text-sm font-bold text-white">{lastAccess}</span>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#bfff00]/10 border border-[#bfff00]/20">
-                  <DollarSign className="h-3.5 w-3.5 text-[#bfff00]" />
-                  <span className="text-xs text-gray-400">Taxa</span>
-                  <span className="text-xs font-bold text-[#bfff00]">R$ 0,50</span>
+                <div className="flex items-center gap-3 px-5 py-3 rounded-full bg-[#bfff00]/15 border border-[#bfff00]/40">
+                  <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#bfff00]/25">
+                    <DollarSign className="h-4 w-4 text-[#bfff00]" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-400">Taxa</span>
+                    <span className="text-sm font-extrabold text-[#bfff00]">R$ 0,50</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -343,15 +355,15 @@ export default function SettingsPage() {
               PERSONAL INFO SECTION
           ══════════════════════════════════════════════════════════════════ */}
           {activeSection === "perfil" && (
-            <section className="rounded-[24px] bg-gradient-to-b from-[#1a1a1c] to-[#141416] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
+            <section className="rounded-[24px] bg-white border border-gray-200 shadow-sm overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-[#2a2a2e]/80">
-                <h2 className="text-base font-semibold text-white">Informacoes Pessoais</h2>
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-100">
+                <h2 className="text-base font-semibold text-gray-900">Informacoes Pessoais</h2>
                 <button
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     editMode
                       ? "bg-[#bfff00] text-black hover:bg-[#d4ff4d] shadow-lg shadow-[#bfff00]/20"
-                      : "bg-[#2a2a2e] text-gray-300 hover:text-white hover:bg-[#3a3a3e] border border-[#3a3a3e]"
+                      : "bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200 border border-gray-200"
                   }`}
                   onClick={() => {
                     if (editMode) {
@@ -377,8 +389,8 @@ export default function SettingsPage() {
                 {saveMsg && (
                   <div className={`mb-5 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${
                     saveMsg.type === "success"
-                      ? "bg-[#bfff00]/10 text-[#bfff00] border border-[#bfff00]/20"
-                      : "bg-red-500/10 text-red-400 border border-red-500/20"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-red-50 text-red-600 border border-red-200"
                   }`}>
                     {saveMsg.type === "success" && <Check className="h-4 w-4 shrink-0" />}
                     {saveMsg.text}
@@ -386,7 +398,7 @@ export default function SettingsPage() {
                 )}
 
                 {/* Info list - clean and simple */}
-                <div className="divide-y divide-[#2a2a2e]">
+                <div className="divide-y divide-gray-100">
                   {/* Nome */}
                   <div className="py-4 first:pt-0">
                     <div className="flex items-center justify-between">
@@ -396,10 +408,10 @@ export default function SettingsPage() {
                           <Input
                             value={nome}
                             onChange={(e) => setNome(e.target.value)}
-                            className="bg-[#2a2a2e] border-[#3a3a3e] rounded-lg h-10 text-sm text-white placeholder:text-gray-600 focus:border-[#bfff00]/50 focus:ring-[#bfff00]/20 max-w-sm"
+                            className="bg-gray-50 border-gray-200 rounded-lg h-10 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#bfff00] focus:ring-[#bfff00]/20 max-w-sm"
                           />
                         ) : (
-                          <p className="text-sm font-medium text-white">{profile?.name || "Nao informado"}</p>
+                          <p className="text-sm font-medium text-gray-900">{profile?.name || "Nao informado"}</p>
                         )}
                       </div>
                     </div>
@@ -410,9 +422,9 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-xs text-gray-500 mb-1">Email</p>
-                        <p className="text-sm font-medium text-white">{profile?.email || session?.email || "Nao informado"}</p>
+                        <p className="text-sm font-medium text-gray-900">{profile?.email || session?.email || "Nao informado"}</p>
                       </div>
-                      <Lock className="h-4 w-4 text-gray-600" />
+                      <Lock className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
 
@@ -421,9 +433,9 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-xs text-gray-500 mb-1">Telefone</p>
-                        <p className="text-sm font-medium text-white">{profile?.phone || "Nao informado"}</p>
+                        <p className="text-sm font-medium text-gray-900">{profile?.phone || "Nao informado"}</p>
                       </div>
-                      <Lock className="h-4 w-4 text-gray-600" />
+                      <Lock className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
 
@@ -432,7 +444,7 @@ export default function SettingsPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-xs text-gray-500 mb-1">Conta criada em</p>
-                        <p className="text-sm font-medium text-white">
+                        <p className="text-sm font-medium text-gray-900">
                           {profile?.created_at
                             ? new Date(profile.created_at).toLocaleDateString("pt-BR", {
                                 day: "2-digit",
@@ -453,18 +465,18 @@ export default function SettingsPage() {
               SECURITY SECTION
           ══════════════════════════════════════════════════════════════════ */}
           {activeSection === "seguranca" && (
-            <section className="rounded-[24px] bg-gradient-to-b from-[#1a1a1c] to-[#141416] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
+            <section className="rounded-[24px] bg-white border border-gray-200 shadow-sm overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="px-6 py-5 border-b border-[#2a2a2e]/80">
-                <h2 className="text-base font-semibold text-white">Alterar Senha</h2>
+              <div className="px-6 py-5 border-b border-gray-100">
+                <h2 className="text-base font-semibold text-gray-900">Alterar Senha</h2>
               </div>
 
               <div className="p-6">
                 {passMsg && (
                   <div className={`mb-5 flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${
                     passMsg.type === "success"
-                      ? "bg-[#bfff00]/10 text-[#bfff00] border border-[#bfff00]/20"
-                      : "bg-red-500/10 text-red-400 border border-red-500/20"
+                      ? "bg-green-50 text-green-700 border border-green-200"
+                      : "bg-red-50 text-red-600 border border-red-200"
                   }`}>
                     {passMsg.type === "success" && <Check className="h-4 w-4 shrink-0" />}
                     {passMsg.text}
@@ -474,19 +486,19 @@ export default function SettingsPage() {
                 <div className="space-y-5">
                   {/* Current password */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Senha atual</label>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Senha atual</label>
                     <div className="relative">
                       <Input
                         type={showOldPass ? "text" : "password"}
                         placeholder="Digite sua senha atual"
                         value={oldPass}
                         onChange={(e) => setOldPass(e.target.value)}
-                        className="bg-[#1f1f21] border-[#2a2a2e] rounded-xl h-14 pr-14 text-sm text-white placeholder:text-gray-600 focus:border-[#bfff00]/50 focus:ring-[#bfff00]/20"
+                        className="bg-gray-50 border-gray-200 rounded-xl h-14 pr-14 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#bfff00] focus:ring-[#bfff00]/20"
                       />
                       <button
                         type="button"
                         onClick={() => setShowOldPass(!showOldPass)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-500 hover:text-white hover:bg-[#2a2a2e] transition-all"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
                       >
                         {showOldPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -495,19 +507,19 @@ export default function SettingsPage() {
 
                   {/* New password */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wider">Nova senha</label>
+                    <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Nova senha</label>
                     <div className="relative">
                       <Input
                         type={showNewPass ? "text" : "password"}
                         placeholder="Minimo 6 caracteres"
                         value={newPass}
                         onChange={(e) => setNewPass(e.target.value)}
-                        className="bg-[#1f1f21] border-[#2a2a2e] rounded-xl h-14 pr-14 text-sm text-white placeholder:text-gray-600 focus:border-[#bfff00]/50 focus:ring-[#bfff00]/20"
+                        className="bg-gray-50 border-gray-200 rounded-xl h-14 pr-14 text-sm text-gray-900 placeholder:text-gray-400 focus:border-[#bfff00] focus:ring-[#bfff00]/20"
                       />
                       <button
                         type="button"
                         onClick={() => setShowNewPass(!showNewPass)}
-                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-500 hover:text-white hover:bg-[#2a2a2e] transition-all"
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-all"
                       >
                         {showNewPass ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                       </button>
@@ -522,17 +534,17 @@ export default function SettingsPage() {
                               className={`h-1.5 flex-1 rounded-full transition-colors duration-300 ${
                                 newPass.length >= i * 3
                                   ? newPass.length >= 9
-                                    ? "bg-[#bfff00]"
+                                    ? "bg-[#22c55e]"
                                     : newPass.length >= 6
                                       ? "bg-amber-400"
                                       : "bg-red-400"
-                                  : "bg-[#2a2a2e]"
+                                  : "bg-gray-200"
                               }`}
                             />
                           ))}
                         </div>
                         <span className={`text-[10px] font-semibold uppercase tracking-wider ${
-                          newPass.length >= 9 ? "text-[#bfff00]" : newPass.length >= 6 ? "text-amber-400" : "text-red-400"
+                          newPass.length >= 9 ? "text-[#22c55e]" : newPass.length >= 6 ? "text-amber-500" : "text-red-500"
                         }`}>
                           {newPass.length < 6 ? "Fraca" : newPass.length < 9 ? "Media" : "Forte"}
                         </span>
@@ -552,10 +564,10 @@ export default function SettingsPage() {
               </div>
 
               {/* Logout */}
-              <div className="border-t border-[#2a2a2e] p-6">
+              <div className="border-t border-gray-100 p-6">
                 <button
                   onClick={logout}
-                  className="flex items-center gap-3 text-red-400 hover:text-red-300 transition-colors"
+                  className="flex items-center gap-3 text-red-500 hover:text-red-600 transition-colors"
                 >
                   <LogOut className="h-4 w-4" />
                   <span className="text-sm font-medium">Sair da conta</span>
@@ -568,10 +580,10 @@ export default function SettingsPage() {
               REWARDS / PREMIACOES SECTION
           ══════════════════════════════════════════════════════════════════ */}
           {activeSection === "premiacoes" && (
-            <section className="rounded-[24px] bg-[#1c1c1e] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
+            <section className="rounded-[24px] bg-white border border-gray-200 shadow-sm overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="px-6 py-5 border-b border-[#2a2a2e]/80">
-                <h2 className="text-base font-semibold text-white">Premiacoes</h2>
+              <div className="px-6 py-5 border-b border-gray-100">
+                <h2 className="text-base font-semibold text-gray-900">Premiacoes</h2>
               </div>
 
               <div className="p-6">
@@ -585,20 +597,20 @@ export default function SettingsPage() {
                       <div key={m.label} className="flex items-center gap-4">
                         <div className={`flex items-center justify-center h-10 w-10 rounded-xl border-2 ${
                           unlocked 
-                            ? "border-[#bfff00] bg-[#bfff00]/10" 
+                            ? "border-[#22c55e] bg-[#22c55e]/10" 
                             : isNext
                               ? "border-[#bfff00]/50 bg-[#bfff00]/5"
-                              : "border-[#3a3a3e] bg-[#2a2a2e]"
+                              : "border-gray-200 bg-gray-50"
                         }`}>
                           {unlocked ? (
-                            <Trophy className="h-4 w-4 text-[#bfff00]" />
+                            <Trophy className="h-4 w-4 text-[#22c55e]" />
                           ) : (
-                            <Lock className={`h-4 w-4 ${isNext ? "text-gray-400" : "text-gray-600"}`} />
+                            <Lock className={`h-4 w-4 ${isNext ? "text-gray-400" : "text-gray-300"}`} />
                           )}
                         </div>
                         <div className="flex-1">
                           <p className={`text-sm font-bold ${
-                            unlocked ? "text-[#bfff00]" : isNext ? "text-white" : "text-gray-600"
+                            unlocked ? "text-[#22c55e]" : isNext ? "text-gray-900" : "text-gray-400"
                           }`}>
                             {m.label}
                           </p>
@@ -612,25 +624,25 @@ export default function SettingsPage() {
                 </div>
 
                 {/* Progress bar */}
-                <div className="rounded-xl bg-[#2a2a2e] p-4">
+                <div className="rounded-xl bg-gray-50 border border-gray-100 p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm text-white font-medium">Progresso atual</span>
-                    <span className="text-sm font-bold text-[#bfff00]">{progressPercent.toFixed(0)}%</span>
+                    <span className="text-sm text-gray-900 font-medium">Progresso atual</span>
+                    <span className="text-sm font-bold text-[#22c55e]">{progressPercent.toFixed(0)}%</span>
                   </div>
                   
-                  <div className="relative h-2 bg-[#3a3a3e] rounded-full overflow-hidden mb-4">
+                  <div className="relative h-2 bg-gray-200 rounded-full overflow-hidden mb-4">
                     <div 
-                      className="absolute inset-y-0 left-0 bg-[#bfff00] rounded-full"
+                      className="absolute inset-y-0 left-0 bg-[#22c55e] rounded-full"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
                   
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">
-                      Faturamento: <span className="text-white font-medium">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
+                      Faturamento: <span className="text-gray-900 font-medium">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
                     </span>
                     <span className="text-gray-500">
-                      Meta: <span className="text-[#bfff00] font-bold">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
+                      Meta: <span className="text-[#22c55e] font-bold">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
                     </span>
                   </div>
                 </div>
