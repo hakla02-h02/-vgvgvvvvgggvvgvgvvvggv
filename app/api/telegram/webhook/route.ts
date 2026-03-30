@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getSupabase } from "@/lib/supabase"
+import { orderBumpLog, paymentLog, webhookLog } from "@/lib/logger"
 
 // ---------------------------------------------------------------------------
 // Types
@@ -803,21 +804,36 @@ async function processCallbackQuery({
   // ========== ORDER BUMP CALLBACKS ==========
   // Formato: ob_accept_{mainAmount}_{bumpAmount} ou ob_decline_{mainAmount}
   if (callbackData.startsWith("ob_accept_") || callbackData.startsWith("ob_decline_")) {
-    console.log("[v0] Order Bump Callback recebido:", callbackData)
+    await orderBumpLog.info("CALLBACK RECEBIDO - Usuario respondeu ao Order Bump", {
+      callback_data: callbackData,
+      bot_id: bot.id,
+    }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+
     const isAccept = callbackData.startsWith("ob_accept_")
     const parts = callbackData.replace("ob_accept_", "").replace("ob_decline_", "").split("_")
-    console.log("[v0] Order Bump - Aceito:", isAccept, "Parts:", parts)
+    
+    await orderBumpLog.debug("Parsing do callback", {
+      is_accept: isAccept,
+      parts: parts,
+    }, { telegram_user_id: telegramUserId, bot_id: bot.id })
     
     // Buscar metadata do order bump salvo no estado
-    const { data: userState } = await supabase
+    const { data: userState, error: stateError } = await supabase
       .from("user_flow_state")
-      .select("metadata")
+      .select("metadata, flow_id")
       .eq("bot_id", bot.id)
       .eq("telegram_user_id", telegramUserId)
       .eq("status", "waiting_order_bump")
       .order("updated_at", { ascending: false })
       .limit(1)
       .single()
+
+    await orderBumpLog.debug("Metadata buscado do estado", {
+      encontrou_state: !!userState,
+      state_error: stateError?.message,
+      metadata: userState?.metadata,
+      flow_id: userState?.flow_id,
+    }, { telegram_user_id: telegramUserId, bot_id: bot.id })
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const metadata = userState?.metadata as Record<string, any> | null
@@ -835,18 +851,40 @@ async function processCallbackQuery({
       totalAmount = mainAmount + bumpAmount
       productType = "order_bump"
       description = `${mainDescription} + ${orderBumpName}`
-      console.log("[v0] Order Bump ACEITO - mainAmount:", mainAmount, "bumpAmount:", bumpAmount, "TOTAL:", totalAmount)
+      
+      await orderBumpLog.info("ORDER BUMP ACEITO pelo usuario", {
+        main_amount: mainAmount,
+        bump_amount: bumpAmount,
+        total_amount: totalAmount,
+        description: description,
+        product_type: productType,
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id })
     } else {
       // Recusado: cobrar apenas produto principal
       totalAmount = parseFloat(parts[0]) || 0
       description = mainDescription
-      console.log("[v0] Order Bump RECUSADO - Total (só produto):", totalAmount)
+      
+      await orderBumpLog.info("ORDER BUMP RECUSADO pelo usuario", {
+        total_amount: totalAmount,
+        description: description,
+        product_type: productType,
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id })
     }
 
     if (totalAmount <= 0) {
+      await orderBumpLog.error("ERRO - Valor total invalido", {
+        total_amount: totalAmount,
+        parts: parts,
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id })
       await sendTelegramMessage(botToken, chatId, "Erro ao processar. Tente novamente.")
       return
     }
+
+    await orderBumpLog.info("Gerando pagamento PIX", {
+      total_amount: totalAmount,
+      description: description,
+      product_type: productType,
+    }, { telegram_user_id: telegramUserId, bot_id: bot.id })
 
     // Gerar o pagamento com o valor correto
     await generatePayment(
@@ -1010,8 +1048,15 @@ async function processCallbackQuery({
     }
 
     // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
+    await orderBumpLog.info("INICIO - Verificando Order Bump antes de gerar pagamento", {
+      callback_data: callbackData,
+      amount,
+      description,
+      bot_id: bot.id,
+    }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+
     // Primeiro tentar buscar o estado do usuario
-    const { data: state } = await supabase
+    const { data: state, error: stateError } = await supabase
       .from("user_flow_state")
       .select("flow_id, current_node_position, status")
       .eq("bot_id", bot.id)
@@ -1020,38 +1065,88 @@ async function processCallbackQuery({
       .limit(1)
       .single()
 
+    await orderBumpLog.debug("Estado do usuario buscado", {
+      encontrou_estado: !!state,
+      state_flow_id: state?.flow_id,
+      state_status: state?.status,
+      state_error: stateError?.message,
+    }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+
     // Se nao tiver estado, buscar o fluxo diretamente pelo bot_id
     let flowId = state?.flow_id
     if (!flowId) {
-      const { data: flowByBot } = await supabase
+      await orderBumpLog.warn("Estado nao encontrado, buscando fluxo pelo bot_id", {
+        bot_id: bot.id,
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+
+      const { data: flowByBot, error: flowByBotError } = await supabase
         .from("flows")
-        .select("id")
+        .select("id, name, config")
         .eq("bot_id", bot.id)
         .limit(1)
         .single()
+      
       flowId = flowByBot?.id
+      
+      await orderBumpLog.debug("Fluxo buscado pelo bot_id", {
+        encontrou_fluxo: !!flowByBot,
+        flow_id: flowByBot?.id,
+        flow_name: flowByBot?.name,
+        flow_error: flowByBotError?.message,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        flow_config_keys: flowByBot?.config ? Object.keys(flowByBot.config as Record<string, any>) : [],
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id })
     }
 
-    console.log("[v0] Order Bump Check - State:", state ? "SIM" : "NAO", "flow_id:", flowId)
+    if (!flowId) {
+      await orderBumpLog.error("ERRO CRITICO - Nenhum fluxo encontrado para o bot", {
+        bot_id: bot.id,
+        state: state,
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+    }
 
     if (flowId) {
       // Buscar a config do fluxo
-      const { data: flowData } = await supabase
+      const { data: flowData, error: flowDataError } = await supabase
         .from("flows")
-        .select("config")
+        .select("id, name, config")
         .eq("id", flowId)
         .single()
+
+      await orderBumpLog.debug("Config do fluxo carregada", {
+        flow_id: flowId,
+        flow_name: flowData?.name,
+        flow_error: flowDataError?.message,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        config_keys: flowData?.config ? Object.keys(flowData.config as Record<string, any>) : [],
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        has_order_bump_key: flowData?.config ? "orderBump" in (flowData.config as Record<string, any>) : false,
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const flowConfig = flowData?.config as Record<string, any> | null
       const orderBumpConfig = flowConfig?.orderBump
       const orderBumpInicial = orderBumpConfig?.inicial
 
-      console.log("[v0] Order Bump Config encontrado:", orderBumpInicial?.enabled ? "ATIVO" : "INATIVO", "price:", orderBumpInicial?.price)
+      await orderBumpLog.info("Verificando config do Order Bump", {
+        has_flow_config: !!flowConfig,
+        has_order_bump_config: !!orderBumpConfig,
+        has_order_bump_inicial: !!orderBumpInicial,
+        order_bump_enabled: orderBumpInicial?.enabled,
+        order_bump_price: orderBumpInicial?.price,
+        order_bump_name: orderBumpInicial?.name,
+        order_bump_description: orderBumpInicial?.description,
+        full_order_bump_config: orderBumpConfig,
+      }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
 
       // Verificar se o Order Bump Inicial esta habilitado
       if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
-        console.log("[v0] Order Bump ATIVADO! Enviando oferta ao usuario...")
+        await orderBumpLog.info("ORDER BUMP ATIVADO - Enviando oferta ao usuario", {
+          main_amount: amount,
+          bump_amount: orderBumpInicial.price,
+          bump_name: orderBumpInicial.name,
+        }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
+
         const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
         const orderBumpAmount = orderBumpInicial.price
         const orderBumpAcceptText = orderBumpInicial.acceptText || "ADICIONAR"
@@ -1069,12 +1164,21 @@ async function processCallbackQuery({
           ]
         }
 
-        await sendTelegramMessage(botToken, chatId, orderBumpDesc, orderBumpKeyboard)
+        await orderBumpLog.debug("Enviando mensagem do Order Bump", {
+          message: orderBumpDesc,
+          keyboard: orderBumpKeyboard,
+        }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
+
+        const sendResult = await sendTelegramMessage(botToken, chatId, orderBumpDesc, orderBumpKeyboard)
+        
+        await orderBumpLog.info("Resultado do envio da mensagem Order Bump", {
+          telegram_response: sendResult,
+        }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
 
         // Atualizar ou criar estado para aguardar decisao do Order Bump
         // Salvar informacoes do order bump no estado
         if (state) {
-          await supabase
+          const { error: updateError } = await supabase
             .from("user_flow_state")
             .update({
               status: "waiting_order_bump",
@@ -1088,9 +1192,13 @@ async function processCallbackQuery({
             })
             .eq("bot_id", bot.id)
             .eq("telegram_user_id", telegramUserId)
+
+          await orderBumpLog.debug("Estado atualizado para waiting_order_bump", {
+            update_error: updateError?.message,
+          }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
         } else {
           // Criar novo estado se nao existir
-          await supabase
+          const { error: insertError } = await supabase
             .from("user_flow_state")
             .insert({
               bot_id: bot.id,
@@ -1105,14 +1213,34 @@ async function processCallbackQuery({
                 main_description: description
               }
             })
+
+          await orderBumpLog.debug("Novo estado criado para waiting_order_bump", {
+            insert_error: insertError?.message,
+          }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
         }
 
+        await orderBumpLog.info("ORDER BUMP - Aguardando decisao do usuario", {
+          accept_callback: `ob_accept_${mainAmount}_${bumpAmount}`,
+          decline_callback: `ob_decline_${mainAmount}`,
+        }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
+
         return // STOP - aguardar decisao do Order Bump
+      } else {
+        await orderBumpLog.warn("Order Bump NAO esta ativado ou preco invalido", {
+          enabled: orderBumpInicial?.enabled,
+          price: orderBumpInicial?.price,
+          reason: !orderBumpInicial ? "orderBump.inicial nao existe" : 
+                  !orderBumpInicial.enabled ? "enabled = false" :
+                  orderBumpInicial.price <= 0 ? "price <= 0" : "desconhecido",
+        }, { telegram_user_id: telegramUserId, bot_id: bot.id, flow_id: flowId })
       }
     }
 
     // Sem Order Bump - gerar pagamento diretamente
-    console.log("[v0] Order Bump NAO ativado ou NAO encontrado - gerando pagamento diretamente")
+    await orderBumpLog.info("Order Bump NAO ativado - gerando pagamento diretamente", {
+      amount,
+      description,
+    }, { telegram_user_id: telegramUserId, bot_id: bot.id })
     await generatePayment(
       supabase, botToken, chatId, telegramUserId, bot,
       amount, description, "main_product"
