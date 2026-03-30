@@ -1072,13 +1072,14 @@ async function processCallbackQuery({
       state_error: stateError?.message,
     }, { telegram_user_id: telegramUserId, bot_id: bot.id })
 
-    // Se nao tiver estado, buscar o fluxo diretamente pelo bot_id
+    // Se nao tiver estado, buscar o fluxo diretamente pelo bot_id ou pela tabela flow_bots
     let flowId = state?.flow_id
     if (!flowId) {
       await orderBumpLog.warn("Estado nao encontrado, buscando fluxo pelo bot_id", {
         bot_id: bot.id,
       }, { telegram_user_id: telegramUserId, bot_id: bot.id })
 
+      // Primeiro tenta buscar pelo bot_id direto na tabela flows
       const { data: flowByBot, error: flowByBotError } = await supabase
         .from("flows")
         .select("id, name, config")
@@ -1088,7 +1089,7 @@ async function processCallbackQuery({
       
       flowId = flowByBot?.id
       
-      await orderBumpLog.debug("Fluxo buscado pelo bot_id", {
+      await orderBumpLog.debug("Fluxo buscado pelo bot_id direto", {
         encontrou_fluxo: !!flowByBot,
         flow_id: flowByBot?.id,
         flow_name: flowByBot?.name,
@@ -1096,10 +1097,39 @@ async function processCallbackQuery({
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         flow_config_keys: flowByBot?.config ? Object.keys(flowByBot.config as Record<string, any>) : [],
       }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+
+      // Se nao encontrou, tenta buscar pela tabela flow_bots (vinculo indireto)
+      if (!flowId) {
+        await orderBumpLog.info("Buscando fluxo pela tabela flow_bots", {
+          bot_id: bot.id,
+        }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+
+        const { data: flowBotLink, error: flowBotLinkError } = await supabase
+          .from("flow_bots")
+          .select("flow_id, flow:flows(id, name, config)")
+          .eq("bot_id", bot.id)
+          .limit(1)
+          .single()
+
+        await orderBumpLog.debug("Resultado da busca em flow_bots", {
+          encontrou_link: !!flowBotLink,
+          flow_bot_link: flowBotLink,
+          link_error: flowBotLinkError?.message,
+        }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+
+        if (flowBotLink) {
+          flowId = flowBotLink.flow_id
+          await orderBumpLog.info("Fluxo encontrado via flow_bots!", {
+            flow_id: flowId,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            flow_name: (flowBotLink.flow as any)?.name,
+          }, { telegram_user_id: telegramUserId, bot_id: bot.id })
+        }
+      }
     }
 
     if (!flowId) {
-      await orderBumpLog.error("ERRO CRITICO - Nenhum fluxo encontrado para o bot", {
+      await orderBumpLog.error("ERRO CRITICO - Nenhum fluxo encontrado para o bot (nem direto nem via flow_bots)", {
         bot_id: bot.id,
         state: state,
       }, { telegram_user_id: telegramUserId, bot_id: bot.id })
