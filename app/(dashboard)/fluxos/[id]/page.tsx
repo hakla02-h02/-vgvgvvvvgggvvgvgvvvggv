@@ -590,6 +590,8 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
 
     setIsSaving(true)
 
+    console.log("[v0] SALVANDO Order Bump Inicial:", JSON.stringify(orderBumpInicial, null, 2))
+
     const config: FlowConfig = {
       welcomeMessage: welcomeMessage,
       welcomeMedias: welcomeMedias,
@@ -652,25 +654,32 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
       updated_at: new Date().toISOString(),
     }
 
+    console.log("[v0] Update payload orderBump:", JSON.stringify(updatePayload.config.orderBump, null, 2))
+
     const { data, error } = await supabase
       .from("flows")
       .update(updatePayload)
       .eq("id", flow.id)
       .select()
 
+    console.log("[v0] Supabase update result - data:", data, "error:", error)
+
     if (error) {
+      console.log("[v0] ERRO ao salvar:", error.message)
       toast({
         title: "Erro",
         description: `Nao foi possivel salvar: ${error.message}`,
         variant: "destructive",
       })
     } else if (!data || data.length === 0) {
+      console.log("[v0] ERRO: Nenhuma linha atualizada")
       toast({
         title: "Erro",
         description: "Nenhuma linha foi atualizada",
         variant: "destructive",
       })
     } else {
+      console.log("[v0] SUCESSO! Dados salvos:", JSON.stringify(data[0]?.config?.orderBump, null, 2))
       toast({
         title: "Sucesso",
         description: "Configuracoes salvas com sucesso!",
