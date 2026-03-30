@@ -444,13 +444,50 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         }
         
         // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
-        if (flowWithPlan) {
-          const flowConfig = (flowWithPlan.config as Record<string, unknown>) || {}
+        // Buscar o fluxo vinculado ao bot para verificar Order Bump
+        let flowForOrderBump: { id: string; config: unknown } | null = null
+        
+        // Primeiro tenta pelo bot_id direto
+        const { data: directFlowOB } = await supabase
+          .from("flows")
+          .select("id, config")
+          .eq("bot_id", botUuid)
+          .limit(1)
+          .single()
+        
+        if (directFlowOB) {
+          flowForOrderBump = directFlowOB
+        } else {
+          // Se nao encontrou, busca via flow_bots
+          const { data: flowBotLink } = await supabase
+            .from("flow_bots")
+            .select("flow_id")
+            .eq("bot_id", botUuid)
+            .limit(1)
+            .single()
+          
+          if (flowBotLink) {
+            const { data: linkedFlow } = await supabase
+              .from("flows")
+              .select("id, config")
+              .eq("id", flowBotLink.flow_id)
+              .single()
+            
+            if (linkedFlow) {
+              flowForOrderBump = linkedFlow
+            }
+          }
+        }
+        
+        console.log("[v0] Order Bump - flowForOrderBump encontrado:", !!flowForOrderBump)
+        
+        if (flowForOrderBump) {
+          const flowConfig = (flowForOrderBump.config as Record<string, unknown>) || {}
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const orderBumpConfig = flowConfig.orderBump as Record<string, any> | undefined
           const orderBumpInicial = orderBumpConfig?.inicial
           
-          console.log("[v0] Order Bump Check - enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
+          console.log("[v0] Order Bump Check - config:", !!orderBumpConfig, "inicial:", !!orderBumpInicial, "enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
           
           if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
             console.log("[v0] Order Bump ATIVADO! Enviando oferta ao usuario...")
@@ -482,7 +519,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             await supabase.from("user_flow_state").upsert({
               bot_id: botUuid,
               telegram_user_id: String(telegramUserId),
-              flow_id: flowWithPlan.id,
+              flow_id: flowForOrderBump.id,
               status: "waiting_order_bump",
               current_node_position: 0,
               metadata: {
