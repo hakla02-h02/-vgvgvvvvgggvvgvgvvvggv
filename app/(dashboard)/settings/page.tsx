@@ -291,33 +291,48 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              {/* Stats row - Compact badges */}
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-[#22c55e]/10 border border-[#22c55e]/30">
-                  <CalendarDays className="h-3.5 w-3.5 text-[#22c55e]" />
-                  <span className="text-[11px] text-gray-400">Desde</span>
-                  <span className="text-xs font-semibold text-white">{memberSince}</span>
+              {/* Stats row - Original card design */}
+              <div className="mt-8 grid grid-cols-3 gap-3">
+                {/* Membro Desde */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1f1f21] border border-[#2a2a2e]">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#bfff00]">
+                    <CalendarDays className="h-5 w-5 text-black" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Membro desde</p>
+                    <p className="text-sm font-semibold text-white">{memberSince}</p>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/30">
-                  <Clock className="h-3.5 w-3.5 text-[#3b82f6]" />
-                  <span className="text-[11px] text-gray-400">Acesso</span>
-                  <span className="text-xs font-semibold text-white">{lastAccess}</span>
+                {/* Ultimo Acesso */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1f1f21] border border-[#2a2a2e]">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#3b82f6]">
+                    <Clock className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Ultimo acesso</p>
+                    <p className="text-sm font-semibold text-white">{lastAccess}</p>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-[#bfff00]/15 border border-[#bfff00]/40">
-                  <DollarSign className="h-3.5 w-3.5 text-[#bfff00]" />
-                  <span className="text-[11px] text-gray-400">Taxa</span>
-                  <span className="text-xs font-bold text-[#bfff00]">R$ 0,50</span>
+                {/* Taxa por Venda */}
+                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1f1f21] border border-[#bfff00]/30">
+                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#bfff00]">
+                    <DollarSign className="h-5 w-5 text-black" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Taxa por venda</p>
+                    <p className="text-sm font-bold text-[#bfff00]">R$ 0,50</p>
+                  </div>
                 </div>
               </div>
             </div>
           </section>
 
           {/* ══════════════════════════════════════════════════════════════════
-              NAVIGATION TABS
+              NAVIGATION TABS - Transparent background
           ══════════════════════════════════════════════════════════════════ */}
-          <div className="flex items-center gap-1 p-1 rounded-xl bg-[#141416] border border-[#2a2a2e] mb-5">
+          <div className="flex items-center gap-3 mb-6">
             {[
               { id: "perfil" as const, label: "Dados Pessoais", icon: User },
               { id: "seguranca" as const, label: "Seguranca", icon: Shield },
@@ -326,14 +341,14 @@ export default function SettingsPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveSection(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                   activeSection === tab.id
-                    ? "bg-[#bfff00] text-black"
-                    : "text-gray-500 hover:text-white hover:bg-[#1a1a1c]"
+                    ? "bg-[#bfff00] text-black shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-white/60"
                 }`}
               >
-                <tab.icon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{tab.label}</span>
+                <tab.icon className="h-4 w-4" />
+                <span>{tab.label}</span>
               </button>
             ))}
           </div>
