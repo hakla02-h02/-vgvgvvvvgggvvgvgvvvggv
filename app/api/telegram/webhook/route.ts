@@ -803,8 +803,10 @@ async function processCallbackQuery({
   // ========== ORDER BUMP CALLBACKS ==========
   // Formato: ob_accept_{mainAmount}_{bumpAmount} ou ob_decline_{mainAmount}
   if (callbackData.startsWith("ob_accept_") || callbackData.startsWith("ob_decline_")) {
+    console.log("[v0] Order Bump Callback recebido:", callbackData)
     const isAccept = callbackData.startsWith("ob_accept_")
     const parts = callbackData.replace("ob_accept_", "").replace("ob_decline_", "").split("_")
+    console.log("[v0] Order Bump - Aceito:", isAccept, "Parts:", parts)
     
     // Buscar metadata do order bump salvo no estado
     const { data: userState } = await supabase
@@ -833,10 +835,12 @@ async function processCallbackQuery({
       totalAmount = mainAmount + bumpAmount
       productType = "order_bump"
       description = `${mainDescription} + ${orderBumpName}`
+      console.log("[v0] Order Bump ACEITO - mainAmount:", mainAmount, "bumpAmount:", bumpAmount, "TOTAL:", totalAmount)
     } else {
       // Recusado: cobrar apenas produto principal
       totalAmount = parseFloat(parts[0]) || 0
       description = mainDescription
+      console.log("[v0] Order Bump RECUSADO - Total (só produto):", totalAmount)
     }
 
     if (totalAmount <= 0) {
@@ -1017,6 +1021,8 @@ async function processCallbackQuery({
       .limit(1)
       .single()
 
+    console.log("[v0] Order Bump Check - State encontrado:", state ? "SIM" : "NAO", state?.flow_id)
+
     if (state) {
       // Buscar a config do fluxo (nao do payment node)
       const { data: flowData } = await supabase
@@ -1030,8 +1036,12 @@ async function processCallbackQuery({
       const orderBumpConfig = flowConfig?.orderBump
       const orderBumpInicial = orderBumpConfig?.inicial
 
+      console.log("[v0] Order Bump Config:", JSON.stringify(orderBumpConfig, null, 2))
+      console.log("[v0] Order Bump Inicial enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
+
       // Verificar se o Order Bump Inicial esta habilitado
       if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
+        console.log("[v0] Order Bump ATIVADO! Enviando oferta...")
         const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
         const orderBumpAmount = orderBumpInicial.price
         const orderBumpAcceptText = orderBumpInicial.acceptText || "ADICIONAR"
