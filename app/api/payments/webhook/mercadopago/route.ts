@@ -71,6 +71,124 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+function calculateDelayMs(value: number, unit: "minutes" | "hours" | "days"): number {
+  switch (unit) {
+    case "minutes": return value * 60 * 1000
+    case "hours": return value * 60 * 60 * 1000
+    case "days": return value * 24 * 60 * 60 * 1000
+    default: return value * 60 * 1000
+  }
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function sendUpsellOffer(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  botToken: string,
+  chatId: number,
+  botId: string,
+  flowId: string,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  upsell: any,
+  upsellIndex: number
+) {
+  console.log(`[UPSELL] Sending upsell ${upsellIndex} to user ${chatId}`)
+
+  // Enviar midias se existirem
+  if (upsell.medias && upsell.medias.length > 0) {
+    for (const mediaUrl of upsell.medias) {
+      if (mediaUrl.includes(".mp4") || mediaUrl.includes("video")) {
+        await sendTelegramVideo(botToken, chatId, mediaUrl, "")
+      } else {
+        await sendTelegramPhoto(botToken, chatId, mediaUrl, "")
+      }
+      await sleep(500)
+    }
+  }
+
+  // Montar botoes
+  const inlineKeyboard: { inline_keyboard: { text: string; callback_data: string }[][] } = {
+    inline_keyboard: [
+      [{ text: upsell.acceptButtonText || "Quero essa oferta!", callback_data: `up_accept_${upsell.price}_${upsellIndex}` }]
+    ]
+  }
+
+  // Adicionar botao de recusar se nao estiver escondido
+  if (!upsell.hideRejectButton) {
+    inlineKeyboard.inline_keyboard.push([
+      { text: upsell.rejectButtonText || "Nao tenho interesse", callback_data: `up_decline_${upsellIndex}` }
+    ])
+  }
+
+  // Enviar mensagem
+  const message = upsell.message || `Oferta especial: ${upsell.name || "Produto exclusivo"}\n\nValor: R$ ${(upsell.price || 0).toFixed(2).replace(".", ",")}`
+  await sendTelegramMessage(botToken, chatId, message, inlineKeyboard)
+
+  // Atualizar estado
+  await supabase
+    .from("user_flow_state")
+    .upsert({
+      bot_id: botId,
+      telegram_user_id: String(chatId),
+      flow_id: flowId,
+      status: "waiting_upsell",
+      metadata: {
+        upsell_index: upsellIndex,
+        upsell_name: upsell.name,
+        upsell_price: upsell.price,
+      },
+      updated_at: new Date().toISOString()
+    }, { onConflict: "bot_id,telegram_user_id" })
+
+  console.log(`[UPSELL] Upsell ${upsellIndex} sent successfully`)
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function sendDelivery(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  supabase: any,
+  botToken: string,
+  chatId: number,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  flowConfig: Record<string, any> | null
+) {
+  console.log(`[DELIVERY] Sending delivery to user ${chatId}`)
+
+  if (!flowConfig?.delivery) {
+    await sendTelegramMessage(botToken, chatId, "Obrigado pela compra! Seu acesso foi liberado.")
+    return
+  }
+
+  const delivery = flowConfig.delivery
+
+  // Enviar midias de entrega
+  if (delivery.medias && delivery.medias.length > 0) {
+    for (const mediaUrl of delivery.medias) {
+      if (mediaUrl.includes(".mp4") || mediaUrl.includes("video")) {
+        await sendTelegramVideo(botToken, chatId, mediaUrl, "")
+      } else {
+        await sendTelegramPhoto(botToken, chatId, mediaUrl, "")
+      }
+      await sleep(500)
+    }
+  }
+
+  // Enviar link de acesso
+  if (delivery.link) {
+    const buttonText = delivery.linkText || "Acessar conteudo"
+    const keyboard = {
+      inline_keyboard: [
+        [{ text: buttonText, url: delivery.link }]
+      ]
+    }
+    await sendTelegramMessage(botToken, chatId, "Seu acesso foi liberado! Clique no botao abaixo:", keyboard)
+  } else {
+    await sendTelegramMessage(botToken, chatId, "Obrigado pela compra! Seu acesso foi liberado.")
+  }
+
+  console.log(`[DELIVERY] Delivery sent successfully`)
+}
+
 // ---------------------------------------------------------------------------
 // Webhook handler
 // ---------------------------------------------------------------------------
@@ -158,85 +276,138 @@ export async function POST(request: NextRequest) {
                 `<b>Pagamento Aprovado!</b>\n\nSeu pagamento de R$ ${payment.amount.toFixed(2).replace(".", ",")} foi confirmado.\nObrigado pela sua compra!`
               )
 
-              // Se for pagamento do produto principal ou order bump, disparar upsell
+              // Se for pagamento do produto principal ou order bump, verificar se tem upsell
               if (payment.product_type === "main_product" || payment.product_type === "order_bump") {
-                // Buscar estado do usuario e fluxo
+                // Buscar fluxo vinculado ao bot
+                let flowId: string | null = null
+                
+                // Primeiro tenta pelo bot_id direto
+                const { data: directFlow } = await supabase
+                  .from("flows")
+                  .select("id, config")
+                  .eq("bot_id", bot.id)
+                  .limit(1)
+                  .single()
+                
+                if (directFlow) {
+                  flowId = directFlow.id
+                } else {
+                  // Busca via flow_bots
+                  const { data: flowBotLink } = await supabase
+                    .from("flow_bots")
+                    .select("flow_id")
+                    .eq("bot_id", bot.id)
+                    .limit(1)
+                    .single()
+                  
+                  if (flowBotLink) {
+                    flowId = flowBotLink.flow_id
+                  }
+                }
+
+                if (flowId) {
+                  // Buscar config do fluxo
+                  const { data: flowData } = await supabase
+                    .from("flows")
+                    .select("config")
+                    .eq("id", flowId)
+                    .single()
+
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const flowConfig = flowData?.config as Record<string, any> | null
+                  const upsellConfig = flowConfig?.upsell
+                  const upsellSequences = upsellConfig?.sequences || []
+
+                  console.log(`[UPSELL] Flow ${flowId} has ${upsellSequences.length} upsell sequences, enabled: ${upsellConfig?.enabled}`)
+
+                  if (upsellConfig?.enabled && upsellSequences.length > 0) {
+                    // Pegar a primeira sequencia (indice 0)
+                    const firstUpsell = upsellSequences[0]
+                    
+                    // Verificar timing
+                    if (firstUpsell.sendTiming === "immediate") {
+                      // Enviar imediatamente
+                      await sendUpsellOffer(supabase, bot.token, chatId, bot.id, flowId, firstUpsell, 0)
+                    } else {
+                      // Agendar para enviar depois
+                      const delayMs = calculateDelayMs(firstUpsell.sendDelayValue || 30, firstUpsell.sendDelayUnit || "minutes")
+                      
+                      // Salvar no estado para ser processado depois
+                      await supabase
+                        .from("user_flow_state")
+                        .upsert({
+                          bot_id: bot.id,
+                          telegram_user_id: String(chatId),
+                          flow_id: flowId,
+                          status: "upsell_scheduled",
+                          metadata: {
+                            upsell_index: 0,
+                            upsell_scheduled_at: new Date().toISOString(),
+                            upsell_send_at: new Date(Date.now() + delayMs).toISOString(),
+                          },
+                          updated_at: new Date().toISOString()
+                        }, { onConflict: "bot_id,telegram_user_id" })
+                      
+                      console.log(`[UPSELL] Scheduled upsell 0 for user ${chatId} in ${delayMs}ms`)
+                      
+                      // Por agora, envia com delay simples (em producao usar job queue)
+                      if (delayMs <= 60000) { // Max 1 minuto de delay inline
+                        await sleep(delayMs)
+                        await sendUpsellOffer(supabase, bot.token, chatId, bot.id, flowId, firstUpsell, 0)
+                      }
+                    }
+                  } else {
+                    // Sem upsell - enviar entrega diretamente
+                    console.log(`[UPSELL] No upsell configured, sending delivery directly`)
+                    await sendDelivery(supabase, bot.token, chatId, flowConfig)
+                  }
+                }
+              } else if (payment.product_type === "upsell") {
+                // Pagamento de upsell aprovado - verificar se tem proximo upsell
+                console.log(`[UPSELL] Upsell payment approved for user ${chatId}`)
+                
+                // Buscar estado para ver qual upsell foi pago
                 const { data: state } = await supabase
                   .from("user_flow_state")
-                  .select("flow_id, current_node_position")
+                  .select("flow_id, metadata")
                   .eq("bot_id", bot.id)
-                  .eq("telegram_user_id", chatId)
-                  .order("updated_at", { ascending: false })
-                  .limit(1)
+                  .eq("telegram_user_id", String(chatId))
                   .single()
 
                 if (state) {
-                  // Buscar nodes do fluxo para pegar configuracoes de upsell
-                  const { data: nodes } = await supabase
-                    .from("flow_nodes")
-                    .select("id, type, config")
-                    .eq("flow_id", state.flow_id)
-                    .eq("type", "payment")
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const metadata = state.metadata as Record<string, any> | null
+                  const currentIndex = metadata?.upsell_index || 0
+                  const nextIndex = currentIndex + 1
 
-                  const paymentNode = nodes?.[0]
-                  if (paymentNode?.config) {
-                    let upsells: { enabled: boolean; description: string; buttons: { text: string; amount: string }[]; media_url?: string; media_type?: string; delay_seconds?: string }[] = []
-                    try {
-                      const upsellsStr = paymentNode.config?.upsells as string
-                      if (upsellsStr) upsells = JSON.parse(upsellsStr)
-                    } catch { /* ignore */ }
+                  // Buscar config do fluxo
+                  const { data: flowData } = await supabase
+                    .from("flows")
+                    .select("config")
+                    .eq("id", state.flow_id)
+                    .single()
 
-                    // Encontrar primeiro upsell habilitado
-                    const firstEnabledUpsell = upsells.findIndex(u => u.enabled && u.buttons?.length > 0)
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const flowConfig = flowData?.config as Record<string, any> | null
+                  const upsellSequences = flowConfig?.upsell?.sequences || []
+
+                  if (nextIndex < upsellSequences.length) {
+                    // Tem mais upsell - enviar proximo
+                    const nextUpsell = upsellSequences[nextIndex]
                     
-                    if (firstEnabledUpsell >= 0) {
-                      const upsell = upsells[firstEnabledUpsell]
-                      
-                      // Delay opcional antes de enviar
-                      const delaySeconds = parseInt(upsell.delay_seconds || "3")
-                      if (delaySeconds > 0 && delaySeconds <= 30) {
-                        await sleep(delaySeconds * 1000)
-                      }
-
-                      // Enviar midia se configurada
-                      if (upsell.media_url) {
-                        if (upsell.media_type === "video") {
-                          await sendTelegramVideo(bot.token, chatId, upsell.media_url, "")
-                        } else if (upsell.media_type === "photo") {
-                          await sendTelegramPhoto(bot.token, chatId, upsell.media_url, "")
-                        }
-                      }
-
-                      // Montar botoes do upsell
-                      const validButtons = upsell.buttons?.filter(b => b.text?.trim() && b.amount?.trim()) || []
-                      
-                      if (validButtons.length > 0) {
-                        const amount = validButtons[0].amount.replace(",", ".")
-                        const inlineKeyboard = {
-                          inline_keyboard: [
-                            [{ text: validButtons[0].text, callback_data: `up_accept_${amount}_${firstEnabledUpsell}` }],
-                            [{ text: "Nao, obrigado", callback_data: `up_decline_${firstEnabledUpsell}` }]
-                          ]
-                        }
-
-                        const message = upsell.description || "Seu acesso foi liberado! Deseja aproveitar esta oferta especial?"
-                        await sendTelegramMessage(bot.token, chatId, message, inlineKeyboard)
-
-                        // Atualizar estado para aguardar decisao do upsell
-                        await supabase
-                          .from("user_flow_state")
-                          .update({
-                            status: "waiting_upsell",
-                            updated_at: new Date().toISOString(),
-                          })
-                          .eq("bot_id", bot.id)
-                          .eq("telegram_user_id", chatId)
-
-                        console.log(`Upsell ${firstEnabledUpsell} sent to user ${chatId}`)
-                      }
+                    if (nextUpsell.sendTiming === "immediate") {
+                      await sendUpsellOffer(supabase, bot.token, chatId, bot.id, state.flow_id, nextUpsell, nextIndex)
                     } else {
-                      console.log(`No upsells configured for payment ${paymentId}`)
+                      const delayMs = calculateDelayMs(nextUpsell.sendDelayValue || 30, nextUpsell.sendDelayUnit || "minutes")
+                      if (delayMs <= 60000) {
+                        await sleep(delayMs)
+                        await sendUpsellOffer(supabase, bot.token, chatId, bot.id, state.flow_id, nextUpsell, nextIndex)
+                      }
                     }
+                  } else {
+                    // Acabou os upsells - enviar entrega
+                    console.log(`[UPSELL] All upsells processed, sending delivery`)
+                    await sendDelivery(supabase, bot.token, chatId, flowConfig)
                   }
                 }
               }

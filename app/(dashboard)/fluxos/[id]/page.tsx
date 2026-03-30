@@ -100,18 +100,20 @@ interface FlowPlan {
 
 interface UpsellSequence {
   id: string
+  name: string
   message: string
   medias: string[]
   sendTiming: "immediate" | "custom"
-  sendDelay?: number
-  discountType: "percent" | "fixed"
-  discountValue: number
+  sendDelayValue?: number
+  sendDelayUnit?: "minutes" | "hours" | "days"
+  price: number
   acceptButtonText: string
   rejectButtonText: string
   hideRejectButton: boolean
   deliveryType: "global" | "custom"
-  customDelivery?: string
-  createPlans: boolean
+  customDeliveryMedias?: string[]
+  customDeliveryLink?: string
+  customDeliveryLinkText?: string
 }
 
 interface UpsellConfig {
@@ -451,8 +453,9 @@ Clique no botao abaixo para renovar com desconto especial!`)
     // Parse config
     const config = flowData.config || {}
     setPlans(config.plans || [])
-    setUpsellEnabled(config.upsell?.enabled || false)
-    setUpsellMessage(config.upsell?.message || "")
+  setUpsellEnabled(config.upsell?.enabled || false)
+  setUpsellMessage(config.upsell?.message || "")
+  setUpsellSequences(config.upsell?.sequences || [])
     setDownsellEnabled(config.downsell?.enabled || false)
     setDownsellMessage(config.downsell?.message || "")
     setDownsellDiscount(config.downsell?.discount_percent || 10)
@@ -609,6 +612,7 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
       upsell: {
         enabled: upsellEnabled,
         message: upsellMessage,
+        sequences: upsellSequences,
       },
       downsell: {
         enabled: downsellEnabled,
@@ -848,16 +852,20 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
     if (upsellSequences.length >= 20) return
     const newSequence: UpsellSequence = {
       id: `seq-${Date.now()}`,
+      name: `Upsell ${upsellSequences.length + 1}`,
       message: "",
       medias: [],
       sendTiming: "immediate",
-      discountType: "percent",
-      discountValue: 5,
+      sendDelayValue: 30,
+      sendDelayUnit: "minutes",
+      price: 0,
       acceptButtonText: "Quero essa oferta!",
       rejectButtonText: "Nao tenho interesse",
       hideRejectButton: false,
       deliveryType: "global",
-      createPlans: false,
+      customDeliveryMedias: [],
+      customDeliveryLink: "",
+      customDeliveryLinkText: "",
     }
     setUpsellSequences([...upsellSequences, newSequence])
     setExpandedSequence(newSequence.id)
@@ -1961,13 +1969,18 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                           className="flex items-center justify-between p-4 cursor-pointer"
                           onClick={() => setExpandedSequence(expandedSequence === seq.id ? null : seq.id)}
                         >
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-3">
                             {expandedSequence === seq.id ? (
                               <ChevronDown className="h-4 w-4 text-muted-foreground" />
                             ) : (
                               <ChevronRight className="h-4 w-4 text-muted-foreground" />
                             )}
-                            <span className="font-medium">Sequencia {index + 1}</span>
+                            <span className="font-medium">{seq.name || `Upsell ${index + 1}`}</span>
+                            {seq.price > 0 && (
+                              <span className="text-xs text-muted-foreground bg-secondary/50 px-2 py-0.5 rounded">
+                                R$ {seq.price.toFixed(2).replace(".", ",")}
+                              </span>
+                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <Button
@@ -1996,6 +2009,17 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                         {/* Expanded Content */}
                         {expandedSequence === seq.id && (
                           <CardContent className="pt-0 space-y-6">
+                            {/* Nome do Upsell */}
+                            <div className="space-y-2">
+                              <Label>Nome do Upsell</Label>
+                              <Input
+                                value={seq.name || ""}
+                                onChange={(e) => handleUpdateUpsellSequence(seq.id, "name", e.target.value)}
+                                placeholder="Ex: Pacote Premium"
+                                className="bg-secondary/30 border-border/50"
+                              />
+                            </div>
+
                             {/* Midias */}
                             <div className="space-y-2">
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -2010,8 +2034,8 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                               </div>
                             </div>
 
-                            {/* Enviar + Desconto */}
-                            <div className="flex gap-4">
+                            {/* Enviar + Preco */}
+                            <div className="flex flex-wrap gap-4">
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <Clock className="h-4 w-4" />
@@ -2031,39 +2055,55 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                                 </Select>
                               </div>
 
+                              {/* Tempo personalizado */}
+                              {seq.sendTiming === "custom" && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <Clock className="h-4 w-4" />
+                                    <span>Tempo:</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      value={seq.sendDelayValue || 30}
+                                      onChange={(e) => handleUpdateUpsellSequence(seq.id, "sendDelayValue", parseInt(e.target.value) || 1)}
+                                      className="w-20 bg-secondary/50 border-border/50"
+                                    />
+                                    <Select
+                                      value={seq.sendDelayUnit || "minutes"}
+                                      onValueChange={(value: "minutes" | "hours" | "days") => handleUpdateUpsellSequence(seq.id, "sendDelayUnit", value)}
+                                    >
+                                      <SelectTrigger className="w-28 bg-secondary/50 border-border/50">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="minutes">Minutos</SelectItem>
+                                        <SelectItem value="hours">Horas</SelectItem>
+                                        <SelectItem value="days">Dias</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Preco */}
                               <div className="space-y-2">
                                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                   <DollarSign className="h-4 w-4" />
-                                  <span>Desconto:</span>
+                                  <span>Preco:</span>
                                 </div>
-                                <div className="flex gap-2">
-                                  <Select
-                                    value={seq.discountType}
-                                    onValueChange={(value: "percent" | "fixed") => handleUpdateUpsellSequence(seq.id, "discountType", value)}
-                                  >
-                                    <SelectTrigger className="w-20 bg-secondary/50 border-border/50">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="percent">%</SelectItem>
-                                      <SelectItem value="fixed">R$</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <Select
-                                    value={String(seq.discountValue)}
-                                    onValueChange={(value) => handleUpdateUpsellSequence(seq.id, "discountValue", parseInt(value))}
-                                  >
-                                    <SelectTrigger className="w-20 bg-secondary/50 border-border/50">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="5">5%</SelectItem>
-                                      <SelectItem value="10">10%</SelectItem>
-                                      <SelectItem value="15">15%</SelectItem>
-                                      <SelectItem value="20">20%</SelectItem>
-                                      <SelectItem value="25">25%</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">R$</span>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    value={seq.price || 0}
+                                    onChange={(e) => handleUpdateUpsellSequence(seq.id, "price", parseFloat(e.target.value) || 0)}
+                                    className="w-32 pl-10 bg-secondary/50 border-border/50"
+                                    placeholder="0,00"
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -2071,37 +2111,10 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                             {/* Mensagem */}
                             <div className="space-y-2">
                               <Label>Mensagem <span className="text-destructive">*</span></Label>
-                              <div className="flex items-center gap-1 border-b border-border/50 pb-2">
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Bold className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Italic className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Underline className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Strikethrough className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Code className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <LinkIcon className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Quote className="h-4 w-4" />
-                                </Button>
-                                <div className="w-px h-4 bg-border/50 mx-1" />
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <Smile className="h-4 w-4" />
-                                </Button>
-                              </div>
                               <Textarea
                                 value={seq.message}
                                 onChange={(e) => handleUpdateUpsellSequence(seq.id, "message", e.target.value)}
-                                placeholder="Oferta especial para voce..."
+                                placeholder="Oferta especial para voce! Aproveite esse bonus exclusivo..."
                                 rows={4}
                                 className="bg-secondary/30 border-border/50"
                               />
@@ -2110,34 +2123,9 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
 
                             <div className="border-t border-border/50 pt-4" />
 
-                            {/* Planos da Oferta */}
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Package className="h-4 w-4 text-accent" />
-                                  <span className="font-medium">Planos da Oferta</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                  <span>Criar planos</span>
-                                  <Switch
-                                    checked={seq.createPlans}
-                                    onCheckedChange={(checked) => handleUpdateUpsellSequence(seq.id, "createPlans", checked)}
-                                  />
-                                </div>
-                              </div>
-                              <p className="text-sm text-muted-foreground">
-                                Selecione os planos que serao exibidos com {seq.discountValue}% de desconto
-                              </p>
-                              <div className="rounded-lg bg-secondary/30 p-4">
-                                <p className="text-sm text-muted-foreground">
-                                  Nenhum plano cadastrado. Configure seus planos na aba "Inicial" ou ative "Criar planos" acima.
-                                </p>
-                              </div>
-                            </div>
-
                             {/* Botoes de Aceitar/Recusar */}
                             <div className="space-y-3">
-                              <h4 className="font-medium">Botoes de Aceitar/Recusar</h4>
+                              <h4 className="font-medium">Botoes de Acao</h4>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                   <Label className="text-sm text-muted-foreground">Botao Aceitar</Label>
@@ -2177,11 +2165,11 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                             {/* Entrega Personalizada */}
                             <div className="space-y-3">
                               <div className="flex items-center justify-between">
-                                <h4 className="font-medium">Entrega Personalizada</h4>
+                                <h4 className="font-medium">Entrega</h4>
                                 <span className="text-sm text-muted-foreground">Opcional</span>
                               </div>
                               <p className="text-sm text-muted-foreground">
-                                Por padrao, usa a "Entrega do Upsell" configurada. Configure aqui para usar entrega especifica nesta sequencia.
+                                Por padrao, usa a entrega global configurada na aba Entrega. Configure aqui para usar entrega especifica.
                               </p>
                               <Select
                                 value={seq.deliveryType}
@@ -2194,10 +2182,34 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                                   </div>
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="global">Usar entrega do Upsell (global)</SelectItem>
+                                  <SelectItem value="global">Usar entrega global</SelectItem>
                                   <SelectItem value="custom">Entrega personalizada</SelectItem>
                                 </SelectContent>
                               </Select>
+
+                              {/* Campos de entrega personalizada */}
+                              {seq.deliveryType === "custom" && (
+                                <div className="space-y-4 pt-2">
+                                  <div className="space-y-2">
+                                    <Label className="text-sm">Link de entrega</Label>
+                                    <Input
+                                      value={seq.customDeliveryLink || ""}
+                                      onChange={(e) => handleUpdateUpsellSequence(seq.id, "customDeliveryLink", e.target.value)}
+                                      placeholder="https://..."
+                                      className="bg-secondary/30 border-border/50"
+                                    />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label className="text-sm">Texto do botao</Label>
+                                    <Input
+                                      value={seq.customDeliveryLinkText || ""}
+                                      onChange={(e) => handleUpdateUpsellSequence(seq.id, "customDeliveryLinkText", e.target.value)}
+                                      placeholder="Acessar conteudo"
+                                      className="bg-secondary/30 border-border/50"
+                                    />
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </CardContent>
                         )}

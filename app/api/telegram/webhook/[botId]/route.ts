@@ -62,6 +62,23 @@ async function sendTelegramVideo(
   })
 }
 
+async function answerCallback(
+  botToken: string,
+  callbackQueryId: string,
+  text?: string,
+) {
+  const url = `https://api.telegram.org/bot${botToken}/answerCallbackQuery`
+  const body: Record<string, unknown> = {
+    callback_query_id: callbackQueryId,
+  }
+  if (text) body.text = text
+  await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  })
+}
+
 // Send multiple medias as album (grouped)
 async function sendMediaGroup(
   botToken: string,
@@ -135,14 +152,15 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
     // 3. Check if callback query (button click)
     const callbackQuery = update.callback_query as Record<string, unknown> | null
     const callbackData = callbackQuery?.data as string | null
+    const callbackQueryId = callbackQuery?.id as string | null
     
     // 3.1 Handle callback queries
-    if (callbackQuery && callbackData) {
-      // Answer callback to remove loading state
+    if (callbackQuery && callbackData && callbackQueryId) {
+      // Answer callback to remove loading state (default)
       await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callback_query_id: callbackQuery.id })
+        body: JSON.stringify({ callback_query_id: callbackQueryId })
       })
       
       // Handle "ver_planos" - show plans as buttons
@@ -372,6 +390,251 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         return
       }
       // ========== FIM ORDER BUMP CALLBACKS ==========
+
+      // ========== UPSELL CALLBACKS ==========
+      if (callbackData.startsWith("up_accept_") || callbackData.startsWith("up_decline_")) {
+        console.log("[v0] Upsell Callback recebido:", callbackData)
+        
+        const isAccept = callbackData.startsWith("up_accept_")
+        
+        // Buscar estado atual do usuario
+        const { data: userState } = await supabase
+          .from("user_flow_state")
+          .select("metadata, flow_id")
+          .eq("bot_id", botUuid)
+          .eq("telegram_user_id", String(telegramUserId))
+          .eq("status", "waiting_upsell")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single()
+        
+        if (!userState) {
+          console.log("[v0] Estado de upsell nao encontrado")
+          await answerCallback(botToken, callbackQueryId, "Sessao expirada")
+          return
+        }
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const metadata = userState.metadata as Record<string, any> | null
+        const currentUpsellIndex = metadata?.upsell_index || 0
+        const upsellPrice = metadata?.upsell_price || 0
+        const upsellName = metadata?.upsell_name || "Upsell"
+
+        // Buscar config do fluxo
+        const { data: flowData } = await supabase
+          .from("flows")
+          .select("config")
+          .eq("id", userState.flow_id)
+          .single()
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const flowConfig = flowData?.config as Record<string, any> | null
+        const upsellSequences = flowConfig?.upsell?.sequences || []
+
+        if (isAccept) {
+          // Usuario aceitou o upsell - gerar pagamento
+          console.log(`[v0] Usuario ${telegramUserId} aceitou upsell ${currentUpsellIndex} - R$ ${upsellPrice}`)
+          
+          await answerCallback(botToken, callbackQueryId, "Gerando pagamento...")
+
+          // Buscar gateway de pagamento
+          const { data: gateway } = await supabase
+            .from("user_gateways")
+            .select("*")
+            .eq("bot_id", botUuid)
+            .eq("is_active", true)
+            .limit(1)
+            .single()
+
+          if (!gateway?.access_token) {
+            await sendTelegramMessage(botToken, chatId, "Erro: Gateway de pagamento nao configurado. Entre em contato com o suporte.")
+            return
+          }
+
+          // Gerar PIX para o upsell
+          try {
+            const pixResponse = await fetch("https://api.mercadopago.com/v1/payments", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${gateway.access_token}`,
+                "X-Idempotency-Key": `upsell_${botUuid}_${telegramUserId}_${currentUpsellIndex}_${Date.now()}`,
+              },
+              body: JSON.stringify({
+                transaction_amount: upsellPrice,
+                description: upsellName,
+                payment_method_id: "pix",
+                payer: {
+                  email: `user${telegramUserId}@telegram.bot`,
+                  first_name: (from?.first_name as string) || "Cliente",
+                },
+                notification_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://v0-payment-plans.vercel.app"}/api/payments/webhook/mercadopago`,
+              }),
+            })
+
+            const pixData = await pixResponse.json()
+            console.log("[v0] Upsell PIX Response:", JSON.stringify(pixData))
+
+            if (pixData.id && pixData.point_of_interaction?.transaction_data?.qr_code) {
+              // Salvar pagamento do upsell
+              await supabase.from("payments").insert({
+                bot_id: botUuid,
+                telegram_user_id: String(telegramUserId),
+                amount: upsellPrice,
+                status: "pending",
+                payment_method: "pix",
+                external_payment_id: String(pixData.id),
+                product_type: "upsell",
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+
+              // Atualizar estado
+              await supabase
+                .from("user_flow_state")
+                .update({
+                  status: "waiting_upsell_payment",
+                  metadata: {
+                    ...metadata,
+                    upsell_payment_id: pixData.id,
+                  },
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("bot_id", botUuid)
+                .eq("telegram_user_id", String(telegramUserId))
+
+              // Enviar QR Code
+              const qrCodeBase64 = pixData.point_of_interaction.transaction_data.qr_code_base64
+              const pixCopiaECola = pixData.point_of_interaction.transaction_data.qr_code
+
+              if (qrCodeBase64) {
+                await sendTelegramPhoto(
+                  botToken, 
+                  chatId, 
+                  `data:image/png;base64,${qrCodeBase64}`,
+                  `<b>${upsellName}</b>\n\nValor: R$ ${upsellPrice.toFixed(2).replace(".", ",")}\n\nEscaneie o QR Code ou copie o codigo abaixo:`
+                )
+              }
+
+              // Enviar codigo PIX
+              await sendTelegramMessage(
+                botToken,
+                chatId,
+                `<code>${pixCopiaECola}</code>\n\nApos o pagamento, voce recebera a confirmacao automaticamente.`
+              )
+            } else {
+              console.error("[v0] Erro ao gerar PIX do upsell:", pixData)
+              await sendTelegramMessage(botToken, chatId, "Erro ao gerar pagamento. Tente novamente.")
+            }
+          } catch (error) {
+            console.error("[v0] Erro ao processar upsell:", error)
+            await sendTelegramMessage(botToken, chatId, "Erro ao processar. Tente novamente.")
+          }
+        } else {
+          // Usuario recusou o upsell
+          console.log(`[v0] Usuario ${telegramUserId} recusou upsell ${currentUpsellIndex}`)
+          
+          await answerCallback(botToken, callbackQueryId, "Entendido!")
+
+          const nextIndex = currentUpsellIndex + 1
+
+          if (nextIndex < upsellSequences.length) {
+            // Tem mais upsell - verificar timing e enviar proximo
+            const nextUpsell = upsellSequences[nextIndex]
+            
+            // Atualizar estado com proximo upsell
+            await supabase
+              .from("user_flow_state")
+              .update({
+                status: "waiting_upsell",
+                metadata: {
+                  upsell_index: nextIndex,
+                  upsell_name: nextUpsell.name,
+                  upsell_price: nextUpsell.price,
+                },
+                updated_at: new Date().toISOString(),
+              })
+              .eq("bot_id", botUuid)
+              .eq("telegram_user_id", String(telegramUserId))
+
+            // Enviar proximo upsell
+            if (nextUpsell.sendTiming === "immediate") {
+              // Enviar midias
+              if (nextUpsell.medias && nextUpsell.medias.length > 0) {
+                for (const mediaUrl of nextUpsell.medias) {
+                  if (mediaUrl.includes(".mp4") || mediaUrl.includes("video")) {
+                    await sendTelegramVideo(botToken, chatId, mediaUrl, "")
+                  } else {
+                    await sendTelegramPhoto(botToken, chatId, mediaUrl, "")
+                  }
+                  await new Promise(r => setTimeout(r, 500))
+                }
+              }
+
+              // Montar botoes
+              const inlineKeyboard: { inline_keyboard: { text: string; callback_data: string }[][] } = {
+                inline_keyboard: [
+                  [{ text: nextUpsell.acceptButtonText || "Quero essa oferta!", callback_data: `up_accept_${nextUpsell.price}_${nextIndex}` }]
+                ]
+              }
+
+              if (!nextUpsell.hideRejectButton) {
+                inlineKeyboard.inline_keyboard.push([
+                  { text: nextUpsell.rejectButtonText || "Nao tenho interesse", callback_data: `up_decline_${nextIndex}` }
+                ])
+              }
+
+              const message = nextUpsell.message || `Oferta especial: ${nextUpsell.name}\n\nValor: R$ ${(nextUpsell.price || 0).toFixed(2).replace(".", ",")}`
+              await sendTelegramMessage(botToken, chatId, message, inlineKeyboard)
+            }
+          } else {
+            // Acabou os upsells - enviar entrega
+            console.log(`[v0] Todos os upsells processados, enviando entrega`)
+            
+            // Atualizar estado
+            await supabase
+              .from("user_flow_state")
+              .update({
+                status: "completed",
+                updated_at: new Date().toISOString(),
+              })
+              .eq("bot_id", botUuid)
+              .eq("telegram_user_id", String(telegramUserId))
+
+            // Enviar entrega
+            const delivery = flowConfig?.delivery
+            if (delivery) {
+              if (delivery.medias && delivery.medias.length > 0) {
+                for (const mediaUrl of delivery.medias) {
+                  if (mediaUrl.includes(".mp4") || mediaUrl.includes("video")) {
+                    await sendTelegramVideo(botToken, chatId, mediaUrl, "")
+                  } else {
+                    await sendTelegramPhoto(botToken, chatId, mediaUrl, "")
+                  }
+                  await new Promise(r => setTimeout(r, 500))
+                }
+              }
+
+              if (delivery.link) {
+                const buttonText = delivery.linkText || "Acessar conteudo"
+                const keyboard = {
+                  inline_keyboard: [
+                    [{ text: buttonText, url: delivery.link }]
+                  ]
+                }
+                await sendTelegramMessage(botToken, chatId, "Seu acesso foi liberado! Clique no botao abaixo:", keyboard)
+              } else {
+                await sendTelegramMessage(botToken, chatId, "Obrigado pela compra! Seu acesso foi liberado.")
+              }
+            } else {
+              await sendTelegramMessage(botToken, chatId, "Obrigado pela compra! Seu acesso foi liberado.")
+            }
+          }
+        }
+
+        return
+      }
+      // ========== FIM UPSELL CALLBACKS ==========
       
       // Handle plan selection - generate PIX
       if (callbackData.startsWith("plan_")) {
