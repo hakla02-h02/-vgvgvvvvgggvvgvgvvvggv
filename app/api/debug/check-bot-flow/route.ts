@@ -13,8 +13,79 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // PRIMEIRO: Verificar se conseguimos acessar as tabelas (debug RLS)
+    const { data: botsCount, error: botsCountError } = await supabase
+      .from("bots")
+      .select("id", { count: "exact", head: true })
+    
+    const { data: flowsCount, error: flowsCountError } = await supabase
+      .from("flows")
+      .select("id", { count: "exact", head: true })
+
+    const { data: flowBotsCount, error: flowBotsCountError } = await supabase
+      .from("flow_bots")
+      .select("id", { count: "exact", head: true })
+
+    const { data: plansCount, error: plansCountError } = await supabase
+      .from("payment_plans")
+      .select("id", { count: "exact", head: true })
+
+    result.debug_tabelas = {
+      bots: { acessivel: !botsCountError, erro: botsCountError?.message },
+      flows: { acessivel: !flowsCountError, erro: flowsCountError?.message },
+      flow_bots: { acessivel: !flowBotsCountError, erro: flowBotsCountError?.message },
+      payment_plans: { acessivel: !plansCountError, erro: plansCountError?.message },
+    }
+
+    // Buscar TODOS os bots sem filtro para debug
+    const { data: allBotsRaw, error: allBotsError } = await supabase
+      .from("bots")
+      .select("*")
+    
+    result.debug_bots_raw = {
+      total: allBotsRaw?.length || 0,
+      erro: allBotsError?.message,
+      bots: allBotsRaw?.map(b => ({
+        id: b.id,
+        username: b.username,
+        telegram_bot_id: b.telegram_bot_id,
+        status: b.status,
+        user_id: b.user_id,
+      })) || [],
+    }
+
+    // Buscar TODOS os fluxos para debug
+    const { data: allFlowsRaw, error: allFlowsError } = await supabase
+      .from("flows")
+      .select("id, name, bot_id, config")
+    
+    result.debug_flows_raw = {
+      total: allFlowsRaw?.length || 0,
+      erro: allFlowsError?.message,
+      flows: allFlowsRaw?.map(f => ({
+        id: f.id,
+        name: f.name,
+        bot_id: f.bot_id,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        has_order_bump: f.config ? "orderBump" in (f.config as Record<string, any>) : false,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        order_bump_enabled: (f.config as Record<string, any>)?.orderBump?.inicial?.enabled,
+      })) || [],
+    }
+
+    // Buscar TODOS os vinculos flow_bots
+    const { data: allFlowBots, error: allFlowBotsError } = await supabase
+      .from("flow_bots")
+      .select("id, flow_id, bot_id")
+    
+    result.debug_flow_bots_raw = {
+      total: allFlowBots?.length || 0,
+      erro: allFlowBotsError?.message,
+      vinculos: allFlowBots || [],
+    }
+
     // Buscar o bot
-    let botQuery = supabase.from("bots").select("id, username, telegram_bot_id, bot_token")
+    let botQuery = supabase.from("bots").select("id, username, telegram_bot_id, token")
     
     if (botUsername) {
       botQuery = botQuery.eq("username", botUsername)
@@ -22,10 +93,11 @@ export async function GET(request: NextRequest) {
       botQuery = botQuery.eq("telegram_bot_id", telegramBotId)
     } else {
       // Listar todos os bots
-      const { data: allBots } = await supabase.from("bots").select("id, username, telegram_bot_id")
+      const { data: allBots, error: listError } = await supabase.from("bots").select("id, username, telegram_bot_id")
       return NextResponse.json({
         ...result,
         instrucao: "Passe ?bot=USERNAME ou ?telegram_id=ID para verificar um bot especifico",
+        list_error: listError?.message,
         todos_bots: allBots?.map(b => ({
           id: b.id,
           username: b.username,
