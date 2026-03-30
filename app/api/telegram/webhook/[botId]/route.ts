@@ -421,8 +421,50 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
     // 4. Check if /start command
     const isStart = text.toLowerCase().startsWith("/start")
 
-    // 5. Get or create lead
+    // 5. Get or create lead AND bot_user
     if (telegramUserId && isStart) {
+      // 5.1 Insert/Update bot_users (for Clientes page)
+      const { data: existingBotUser } = await supabase
+        .from("bot_users")
+        .select("id")
+        .eq("bot_id", botUuid)
+        .eq("telegram_user_id", telegramUserId)
+        .limit(1)
+        .single()
+
+      if (existingBotUser) {
+        // Update existing user
+        await supabase
+          .from("bot_users")
+          .update({
+            first_name: (from.first_name as string) || null,
+            last_name: (from.last_name as string) || null,
+            username: (from.username as string) || null,
+            last_activity: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("bot_id", botUuid)
+          .eq("telegram_user_id", telegramUserId)
+      } else {
+        // Insert new user
+        const { error: botUserError } = await supabase.from("bot_users").insert({
+          bot_id: botUuid,
+          telegram_user_id: telegramUserId,
+          chat_id: chatId,
+          first_name: (from.first_name as string) || null,
+          last_name: (from.last_name as string) || null,
+          username: (from.username as string) || null,
+          funnel_step: 1,
+          is_subscriber: false,
+          last_activity: new Date().toISOString(),
+        })
+        
+        if (botUserError) {
+          console.error("[webhook] Erro ao inserir bot_user:", botUserError.message, botUserError.code)
+        }
+      }
+
+      // 5.2 Insert lead (legacy support)
       const { data: existingLead } = await supabase
         .from("leads")
         .select("id")
