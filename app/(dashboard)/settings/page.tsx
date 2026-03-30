@@ -207,7 +207,7 @@ export default function SettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#0a0a0a]">
+      <div className="flex-1 flex items-center justify-center bg-[#f5f5f7]">
         <Loader2 className="h-6 w-6 animate-spin text-[#bfff00]" />
       </div>
     )
@@ -215,7 +215,7 @@ export default function SettingsPage() {
 
   return (
     <ScrollArea className="flex-1">
-      <div className="min-h-[calc(100vh-60px)] bg-[#0a0a0a]">
+      <div className="min-h-[calc(100vh-60px)] bg-[#f5f5f7]">
         <div className="max-w-4xl mx-auto p-4 md:p-8">
 
           {/* ══════════════════════════════════════════════════════════════════
@@ -292,48 +292,24 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              {/* Stats row - Premium badges with gradients */}
-              <div className="mt-10 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                {/* Desde */}
-                <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1c] to-[#141416] border border-[#2a2a2e] hover:border-[#bfff00]/30 transition-colors p-4">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#bfff00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative flex items-center gap-3">
-                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-[#bfff00]/20 to-[#22c55e]/10 border border-[#bfff00]/20">
-                      <CalendarDays className="h-4 w-4 text-[#bfff00]" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Membro desde</p>
-                      <p className="text-sm font-bold text-white mt-0.5">{memberSince}</p>
-                    </div>
-                  </div>
+              {/* Stats row - Clean badges */}
+              <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#22c55e]/10 border border-[#22c55e]/20">
+                  <CalendarDays className="h-3.5 w-3.5 text-[#22c55e]" />
+                  <span className="text-xs text-gray-400">Desde</span>
+                  <span className="text-xs font-semibold text-white">{memberSince}</span>
                 </div>
-
-                {/* Ultimo acesso */}
-                <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-[#1a1a1c] to-[#141416] border border-[#2a2a2e] hover:border-blue-500/30 transition-colors p-4">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative flex items-center gap-3">
-                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20">
-                      <Clock className="h-4 w-4 text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Ultimo acesso</p>
-                      <p className="text-sm font-bold text-white mt-0.5">{lastAccess}</p>
-                    </div>
-                  </div>
+                
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#3b82f6]/10 border border-[#3b82f6]/20">
+                  <Clock className="h-3.5 w-3.5 text-[#3b82f6]" />
+                  <span className="text-xs text-gray-400">Acesso</span>
+                  <span className="text-xs font-semibold text-white">{lastAccess}</span>
                 </div>
-
-                {/* Taxa */}
-                <div className="relative group overflow-hidden rounded-2xl bg-gradient-to-br from-[#bfff00]/10 to-[#22c55e]/5 border border-[#bfff00]/20 hover:border-[#bfff00]/40 transition-colors p-4">
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#bfff00]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <div className="relative flex items-center gap-3">
-                    <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-gradient-to-br from-[#bfff00]/30 to-[#22c55e]/20 border border-[#bfff00]/30">
-                      <DollarSign className="h-4 w-4 text-[#bfff00]" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Taxa por venda</p>
-                      <p className="text-sm font-extrabold text-[#bfff00] mt-0.5">R$ 0,50</p>
-                    </div>
-                  </div>
+                
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-[#bfff00]/10 border border-[#bfff00]/20">
+                  <DollarSign className="h-3.5 w-3.5 text-[#bfff00]" />
+                  <span className="text-xs text-gray-400">Taxa</span>
+                  <span className="text-xs font-bold text-[#bfff00]">R$ 0,50</span>
                 </div>
               </div>
             </div>
@@ -369,16 +345,8 @@ export default function SettingsPage() {
           {activeSection === "perfil" && (
             <section className="rounded-[24px] bg-gradient-to-b from-[#1a1a1c] to-[#141416] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-[#2a2a2e]/80 bg-[#1a1a1c]/50">
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-[#bfff00]/20 to-[#22c55e]/10 border border-[#bfff00]/20">
-                    <User className="h-5 w-5 text-[#bfff00]" />
-                  </div>
-                  <div>
-                    <h2 className="text-base font-bold text-white">Informacoes Pessoais</h2>
-                    <p className="text-xs text-gray-500 mt-0.5">Gerencie seus dados de perfil</p>
-                  </div>
-                </div>
+              <div className="flex items-center justify-between px-6 py-5 border-b border-[#2a2a2e]/80">
+                <h2 className="text-base font-semibold text-white">Informacoes Pessoais</h2>
                 <button
                   className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-200 ${
                     editMode
@@ -417,74 +385,54 @@ export default function SettingsPage() {
                   </div>
                 )}
 
-                {/* Info cards grid */}
-                <div className="grid gap-3">
+                {/* Info list - clean and simple */}
+                <div className="divide-y divide-[#2a2a2e]">
                   {/* Nome */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-[#1f1f21] border border-[#2a2a2e] hover:border-[#bfff00]/20 transition-all p-4">
-                    <div className="absolute inset-0 bg-gradient-to-r from-[#bfff00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                    <div className="relative flex items-center gap-4">
-                      <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-[#bfff00]/10 to-[#22c55e]/5 border border-[#bfff00]/10 group-hover:border-[#bfff00]/30 transition-colors">
-                        <User className="h-5 w-5 text-[#bfff00]" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Nome</p>
+                  <div className="py-4 first:pt-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">Nome</p>
                         {editMode ? (
                           <Input
                             value={nome}
                             onChange={(e) => setNome(e.target.value)}
-                            className="bg-[#2a2a2e] border-[#3a3a3e] rounded-lg h-10 text-sm text-white placeholder:text-gray-600 focus:border-[#bfff00]/50 focus:ring-[#bfff00]/20"
+                            className="bg-[#2a2a2e] border-[#3a3a3e] rounded-lg h-10 text-sm text-white placeholder:text-gray-600 focus:border-[#bfff00]/50 focus:ring-[#bfff00]/20 max-w-sm"
                           />
                         ) : (
-                          <p className="text-sm font-semibold text-white truncate">{profile?.name || "Nao informado"}</p>
+                          <p className="text-sm font-medium text-white">{profile?.name || "Nao informado"}</p>
                         )}
                       </div>
-                      {!editMode && (
-                        <ChevronRight className="h-4 w-4 text-gray-600 group-hover:text-[#bfff00] transition-colors" />
-                      )}
                     </div>
                   </div>
 
                   {/* Email */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-[#1f1f21] border border-[#2a2a2e] p-4">
-                    <div className="relative flex items-center gap-4">
-                      <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/10">
-                        <Mail className="h-5 w-5 text-blue-400" />
+                  <div className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">Email</p>
+                        <p className="text-sm font-medium text-white">{profile?.email || session?.email || "Nao informado"}</p>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Email</p>
-                        <p className="text-sm font-semibold text-white truncate">{profile?.email || session?.email || "Nao informado"}</p>
-                      </div>
-                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#2a2a2e]">
-                        <Lock className="h-3.5 w-3.5 text-gray-600" />
-                      </div>
+                      <Lock className="h-4 w-4 text-gray-600" />
                     </div>
                   </div>
 
                   {/* Telefone */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-[#1f1f21] border border-[#2a2a2e] p-4">
-                    <div className="relative flex items-center gap-4">
-                      <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/10">
-                        <Phone className="h-5 w-5 text-purple-400" />
+                  <div className="py-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">Telefone</p>
+                        <p className="text-sm font-medium text-white">{profile?.phone || "Nao informado"}</p>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Telefone</p>
-                        <p className="text-sm font-semibold text-white truncate">{profile?.phone || "Nao informado"}</p>
-                      </div>
-                      <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-[#2a2a2e]">
-                        <Lock className="h-3.5 w-3.5 text-gray-600" />
-                      </div>
+                      <Lock className="h-4 w-4 text-gray-600" />
                     </div>
                   </div>
 
                   {/* Conta criada */}
-                  <div className="group relative overflow-hidden rounded-2xl bg-[#1f1f21] border border-[#2a2a2e] p-4">
-                    <div className="relative flex items-center gap-4">
-                      <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-amber-500/10 to-orange-600/5 border border-amber-500/10">
-                        <CalendarDays className="h-5 w-5 text-amber-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-1">Conta criada em</p>
-                        <p className="text-sm font-semibold text-white">
+                  <div className="py-4 last:pb-0">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <p className="text-xs text-gray-500 mb-1">Conta criada em</p>
+                        <p className="text-sm font-medium text-white">
                           {profile?.created_at
                             ? new Date(profile.created_at).toLocaleDateString("pt-BR", {
                                 day: "2-digit",
@@ -507,14 +455,8 @@ export default function SettingsPage() {
           {activeSection === "seguranca" && (
             <section className="rounded-[24px] bg-gradient-to-b from-[#1a1a1c] to-[#141416] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="flex items-center gap-4 px-6 py-5 border-b border-[#2a2a2e]/80 bg-[#1a1a1c]/50">
-                <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-[#bfff00]/20 to-[#22c55e]/10 border border-[#bfff00]/20">
-                  <KeyRound className="h-5 w-5 text-[#bfff00]" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-white">Alterar Senha</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Atualize sua senha de acesso</p>
-                </div>
+              <div className="px-6 py-5 border-b border-[#2a2a2e]/80">
+                <h2 className="text-base font-semibold text-white">Alterar Senha</h2>
               </div>
 
               <div className="p-6">
@@ -613,16 +555,10 @@ export default function SettingsPage() {
               <div className="border-t border-[#2a2a2e] p-6">
                 <button
                   onClick={logout}
-                  className="group flex items-center gap-4 w-full p-4 rounded-2xl text-red-400 hover:text-red-300 bg-red-500/5 hover:bg-red-500/10 border border-red-500/10 hover:border-red-500/20 transition-all duration-200"
+                  className="flex items-center gap-3 text-red-400 hover:text-red-300 transition-colors"
                 >
-                  <div className="flex items-center justify-center h-12 w-12 rounded-xl bg-red-500/10 group-hover:bg-red-500/20 transition-colors">
-                    <LogOut className="h-5 w-5" />
-                  </div>
-                  <div className="text-left flex-1">
-                    <p className="text-sm font-bold">Sair da conta</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Encerrar sua sessao atual</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 opacity-50 group-hover:opacity-100 transition-opacity" />
+                  <LogOut className="h-4 w-4" />
+                  <span className="text-sm font-medium">Sair da conta</span>
                 </button>
               </div>
             </section>
@@ -632,74 +568,42 @@ export default function SettingsPage() {
               REWARDS / PREMIACOES SECTION
           ══════════════════════════════════════════════════════════════════ */}
           {activeSection === "premiacoes" && (
-            <section className="rounded-[24px] bg-gradient-to-b from-[#1a1a1c] to-[#141416] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
+            <section className="rounded-[24px] bg-[#1c1c1e] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="flex items-center gap-4 px-6 py-5 border-b border-[#2a2a2e]/80 bg-[#1a1a1c]/50">
-                <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-gradient-to-br from-[#bfff00]/20 to-[#22c55e]/10 border border-[#bfff00]/20">
-                  <Gift className="h-5 w-5 text-[#bfff00]" />
-                </div>
-                <div>
-                  <h2 className="text-base font-bold text-white">Premiacoes</h2>
-                  <p className="text-xs text-gray-500 mt-0.5">Acompanhe suas conquistas</p>
-                </div>
+              <div className="px-6 py-5 border-b border-[#2a2a2e]/80">
+                <h2 className="text-base font-semibold text-white">Premiacoes</h2>
               </div>
 
               <div className="p-6">
-                {/* Milestone cards - horizontal grid */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                {/* Timeline vertical - clean */}
+                <div className="space-y-4 mb-8">
                   {milestones.map((m, i) => {
                     const unlocked = faturamentoAtual >= m.value
                     const isNext = i === currentMilestoneIdx
-                    const IconComponent = m.icon
                     
                     return (
-                      <div 
-                        key={m.label} 
-                        className={`relative group overflow-hidden rounded-2xl border transition-all duration-300 ${
+                      <div key={m.label} className="flex items-center gap-4">
+                        <div className={`flex items-center justify-center h-10 w-10 rounded-xl border-2 ${
                           unlocked 
-                            ? "bg-gradient-to-br from-[#bfff00]/10 to-[#22c55e]/5 border-[#bfff00]/30" 
+                            ? "border-[#bfff00] bg-[#bfff00]/10" 
                             : isNext
-                              ? "bg-[#1f1f21] border-[#bfff00]/20 hover:border-[#bfff00]/40"
-                              : "bg-[#1f1f21] border-[#2a2a2e] opacity-60"
-                        }`}
-                      >
-                        {/* Glow for unlocked/next */}
-                        {(unlocked || isNext) && (
-                          <div 
-                            className="absolute inset-0 pointer-events-none"
-                            style={{ 
-                              background: `radial-gradient(circle at top, ${m.color}15 0%, transparent 70%)` 
-                            }}
-                          />
-                        )}
-                        
-                        <div className="relative p-4 text-center">
-                          <div className={`mx-auto flex items-center justify-center h-14 w-14 rounded-2xl mb-3 transition-all ${
-                            unlocked 
-                              ? "bg-gradient-to-br from-[#bfff00]/30 to-[#22c55e]/20 shadow-lg shadow-[#bfff00]/20"
-                              : isNext
-                                ? "bg-gradient-to-br from-[#bfff00]/10 to-[#22c55e]/5 border border-[#bfff00]/20"
-                                : "bg-[#2a2a2e] border border-[#3a3a3e]"
-                          }`}>
-                            {unlocked ? (
-                              <Trophy className="h-6 w-6 text-[#bfff00]" />
-                            ) : (
-                              <Lock className={`h-5 w-5 ${isNext ? "text-gray-500" : "text-gray-600"}`} />
-                            )}
-                          </div>
-                          <p className={`text-lg font-extrabold ${
+                              ? "border-[#bfff00]/50 bg-[#bfff00]/5"
+                              : "border-[#3a3a3e] bg-[#2a2a2e]"
+                        }`}>
+                          {unlocked ? (
+                            <Trophy className="h-4 w-4 text-[#bfff00]" />
+                          ) : (
+                            <Lock className={`h-4 w-4 ${isNext ? "text-gray-400" : "text-gray-600"}`} />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-sm font-bold ${
                             unlocked ? "text-[#bfff00]" : isNext ? "text-white" : "text-gray-600"
                           }`}>
                             {m.label}
                           </p>
-                          <p className={`text-[10px] font-semibold uppercase tracking-wider mt-1 ${
-                            unlocked 
-                              ? "text-[#bfff00]/70" 
-                              : isNext 
-                                ? "text-[#bfff00]/50" 
-                                : "text-gray-600"
-                          }`}>
-                            {unlocked ? "Conquistado" : isNext ? "Proxima" : "Bloqueado"}
+                          <p className="text-xs text-gray-500">
+                            {unlocked ? "Conquistado" : isNext ? "Proxima meta" : "Bloqueado"}
                           </p>
                         </div>
                       </div>
@@ -707,48 +611,27 @@ export default function SettingsPage() {
                   })}
                 </div>
 
-                {/* Progress card */}
-                <div className="relative rounded-2xl bg-gradient-to-br from-[#1f1f21] to-[#1a1a1c] border border-[#2a2a2e] p-5 overflow-hidden">
-                  {/* Glow effect */}
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
-                    style={{ background: "radial-gradient(ellipse at center bottom, rgba(190, 255, 0, 0.08) 0%, transparent 70%)" }}
-                  />
+                {/* Progress bar */}
+                <div className="rounded-xl bg-[#2a2a2e] p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm text-white font-medium">Progresso atual</span>
+                    <span className="text-sm font-bold text-[#bfff00]">{progressPercent.toFixed(0)}%</span>
+                  </div>
                   
-                  <div className="relative">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#bfff00]/10 border border-[#bfff00]/20">
-                          <Target className="h-4 w-4 text-[#bfff00]" />
-                        </div>
-                        <span className="text-sm font-bold text-white">Progresso atual</span>
-                      </div>
-                      <span className="text-sm font-extrabold text-[#bfff00] bg-[#bfff00]/10 px-4 py-1.5 rounded-full border border-[#bfff00]/20">
-                        {progressPercent.toFixed(0)}%
-                      </span>
-                    </div>
-                    
-                    <div className="relative h-3 bg-[#2a2a2e] rounded-full overflow-hidden mb-5">
-                      <div 
-                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#bfff00] to-[#22c55e] rounded-full transition-all duration-500"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                      <div 
-                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-white/20 to-transparent rounded-full"
-                        style={{ width: `${progressPercent}%` }}
-                      />
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 font-medium">Faturamento:</span>
-                        <span className="text-sm font-bold text-white">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500 font-medium">Meta:</span>
-                        <span className="text-sm font-extrabold text-[#bfff00]">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
-                      </div>
-                    </div>
+                  <div className="relative h-2 bg-[#3a3a3e] rounded-full overflow-hidden mb-4">
+                    <div 
+                      className="absolute inset-y-0 left-0 bg-[#bfff00] rounded-full"
+                      style={{ width: `${progressPercent}%` }}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">
+                      Faturamento: <span className="text-white font-medium">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
+                    </span>
+                    <span className="text-gray-500">
+                      Meta: <span className="text-[#bfff00] font-bold">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
+                    </span>
                   </div>
                 </div>
               </div>
