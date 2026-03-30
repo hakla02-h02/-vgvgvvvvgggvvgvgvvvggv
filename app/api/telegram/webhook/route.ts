@@ -803,10 +803,8 @@ async function processCallbackQuery({
   // ========== ORDER BUMP CALLBACKS ==========
   // Formato: ob_accept_{mainAmount}_{bumpAmount} ou ob_decline_{mainAmount}
   if (callbackData.startsWith("ob_accept_") || callbackData.startsWith("ob_decline_")) {
-    console.log("[v0] Order Bump Callback recebido:", callbackData)
     const isAccept = callbackData.startsWith("ob_accept_")
     const parts = callbackData.replace("ob_accept_", "").replace("ob_decline_", "").split("_")
-    console.log("[v0] Order Bump - Aceito:", isAccept, "Parts:", parts)
     
     // Buscar metadata do order bump salvo no estado
     const { data: userState } = await supabase
@@ -835,12 +833,10 @@ async function processCallbackQuery({
       totalAmount = mainAmount + bumpAmount
       productType = "order_bump"
       description = `${mainDescription} + ${orderBumpName}`
-      console.log("[v0] Order Bump ACEITO - mainAmount:", mainAmount, "bumpAmount:", bumpAmount, "TOTAL:", totalAmount)
     } else {
       // Recusado: cobrar apenas produto principal
       totalAmount = parseFloat(parts[0]) || 0
       description = mainDescription
-      console.log("[v0] Order Bump RECUSADO - Total (só produto):", totalAmount)
     }
 
     if (totalAmount <= 0) {
@@ -977,9 +973,6 @@ async function processCallbackQuery({
   const isPaymentCallback = callbackData.startsWith("pay_")
   
   if (isPaymentCallback) {
-    console.log("[v0] ========== PAYMENT CALLBACK RECEBIDO ==========")
-    console.log("[v0] callbackData:", callbackData)
-    console.log("[v0] bot.id:", bot.id, "chatId:", chatId)
     let amount = 0
     let description = "Pagamento"
     let planId: string | null = null
@@ -1013,48 +1006,70 @@ async function processCallbackQuery({
     }
 
     // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
-    // Primeiro tentar buscar o estado do usuario
+    // Buscar o fluxo associado ao bot de 3 formas diferentes
+    let flowId: string | null = null
+    let flowConfig: Record<string, unknown> | null = null
+
+    // Forma 1: Buscar pelo estado do usuario
     const { data: state } = await supabase
       .from("user_flow_state")
-      .select("flow_id, current_node_position, status")
+      .select("flow_id")
       .eq("bot_id", bot.id)
       .eq("telegram_user_id", telegramUserId)
       .order("updated_at", { ascending: false })
       .limit(1)
       .single()
+    
+    if (state?.flow_id) {
+      flowId = state.flow_id
+    }
 
-    // Se nao tiver estado, buscar o fluxo diretamente pelo bot_id
-    let flowId = state?.flow_id
+    // Forma 2: Buscar o fluxo diretamente pelo bot_id
     if (!flowId) {
       const { data: flowByBot } = await supabase
         .from("flows")
-        .select("id")
+        .select("id, config")
         .eq("bot_id", bot.id)
         .limit(1)
         .single()
-      flowId = flowByBot?.id
+      if (flowByBot) {
+        flowId = flowByBot.id
+        flowConfig = flowByBot.config as Record<string, unknown> | null
+      }
     }
 
-    console.log("[v0] Order Bump Check - State:", state ? "SIM" : "NAO", "flow_id:", flowId)
+    // Forma 3: Buscar pela tabela bots -> user_id -> flows
+    if (!flowId) {
+      const { data: flowsByUser } = await supabase
+        .from("flows")
+        .select("id, config, bot_id")
+        .eq("user_id", bot.user_id)
+      
+      // Encontrar o fluxo que tem este bot_id ou o primeiro fluxo do usuario
+      const matchingFlow = flowsByUser?.find(f => f.bot_id === bot.id) || flowsByUser?.[0]
+      if (matchingFlow) {
+        flowId = matchingFlow.id
+        flowConfig = matchingFlow.config as Record<string, unknown> | null
+      }
+    }
 
-    if (flowId) {
-      // Buscar a config do fluxo
+    // Se encontrou flowId mas nao tem config ainda, buscar
+    if (flowId && !flowConfig) {
       const { data: flowData } = await supabase
         .from("flows")
         .select("config")
         .eq("id", flowId)
         .single()
+      flowConfig = flowData?.config as Record<string, unknown> | null
+    }
 
+    if (flowId && flowConfig) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const flowConfig = flowData?.config as Record<string, any> | null
-      const orderBumpConfig = flowConfig?.orderBump
+      const orderBumpConfig = (flowConfig as any)?.orderBump
       const orderBumpInicial = orderBumpConfig?.inicial
-
-      console.log("[v0] Order Bump Config encontrado:", orderBumpInicial?.enabled ? "ATIVO" : "INATIVO", "price:", orderBumpInicial?.price)
 
       // Verificar se o Order Bump Inicial esta habilitado
       if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
-        console.log("[v0] Order Bump ATIVADO! Enviando oferta ao usuario...")
         const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
         const orderBumpAmount = orderBumpInicial.price
         const orderBumpAcceptText = orderBumpInicial.acceptText || "ADICIONAR"
@@ -1115,7 +1130,6 @@ async function processCallbackQuery({
     }
 
     // Sem Order Bump - gerar pagamento diretamente
-    console.log("[v0] Order Bump NAO ativado ou NAO encontrado - gerando pagamento diretamente")
     await generatePayment(
       supabase, botToken, chatId, telegramUserId, bot,
       amount, description, "main_product"
