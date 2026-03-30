@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!
+const SUPABASE_URL = "https://izvulojnfvgsbmhyvqtn.supabase.co"
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ""
 
 /**
  * API DE TESTE DO ORDER BUMP
@@ -22,7 +22,7 @@ export async function GET(request: Request) {
 
   console.log("[v0] ORDER BUMP TEST - flow_id:", flowId)
 
-  const supabase = createClient(supabaseUrl, supabaseKey)
+  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
   const results: {
     step: string
