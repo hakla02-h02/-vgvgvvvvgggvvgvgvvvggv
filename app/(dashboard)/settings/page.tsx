@@ -291,37 +291,37 @@ export default function SettingsPage() {
                 </button>
               </div>
 
-              {/* Stats row - Original card design */}
-              <div className="mt-8 grid grid-cols-3 gap-3">
+              {/* Stats row - Clean minimal cards */}
+              <div className="mt-6 flex items-stretch gap-2">
                 {/* Membro Desde */}
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1f1f21] border border-[#2a2a2e]">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#bfff00]">
+                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-br from-[#232325] to-[#1a1a1c] border border-[#333]">
+                  <div className="shrink-0 flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br from-[#bfff00] to-[#9fdf00] shadow-lg shadow-[#bfff00]/20">
                     <CalendarDays className="h-5 w-5 text-black" />
                   </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Membro desde</p>
-                    <p className="text-sm font-semibold text-white">{memberSince}</p>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">Membro desde</p>
+                    <p className="text-sm font-semibold text-white truncate">{memberSince}</p>
                   </div>
                 </div>
                 
                 {/* Ultimo Acesso */}
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1f1f21] border border-[#2a2a2e]">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#3b82f6]">
+                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-br from-[#232325] to-[#1a1a1c] border border-[#333]">
+                  <div className="shrink-0 flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br from-[#3b82f6] to-[#2563eb] shadow-lg shadow-blue-500/20">
                     <Clock className="h-5 w-5 text-white" />
                   </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Ultimo acesso</p>
-                    <p className="text-sm font-semibold text-white">{lastAccess}</p>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">Ultimo acesso</p>
+                    <p className="text-sm font-semibold text-white truncate">{lastAccess}</p>
                   </div>
                 </div>
                 
                 {/* Taxa por Venda */}
-                <div className="flex items-center gap-3 p-3 rounded-xl bg-[#1f1f21] border border-[#bfff00]/30">
-                  <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#bfff00]">
+                <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-2xl bg-gradient-to-br from-[#232325] to-[#1a1a1c] border border-[#bfff00]/20">
+                  <div className="shrink-0 flex items-center justify-center h-11 w-11 rounded-xl bg-gradient-to-br from-[#bfff00] to-[#9fdf00] shadow-lg shadow-[#bfff00]/20">
                     <DollarSign className="h-5 w-5 text-black" />
                   </div>
-                  <div>
-                    <p className="text-[10px] text-gray-500 uppercase tracking-wide">Taxa por venda</p>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-gray-500 font-medium tracking-wider uppercase">Taxa por venda</p>
                     <p className="text-sm font-bold text-[#bfff00]">R$ 0,50</p>
                   </div>
                 </div>
@@ -579,84 +579,85 @@ export default function SettingsPage() {
           )}
 
           {/* ══════════════════════════════════════════════════════════════════
-              REWARDS / PREMIACOES SECTION
+              REWARDS / PREMIACOES SECTION - Light Theme
           ══════════════════════════════════════════════════════════════════ */}
           {activeSection === "premiacoes" && (
-            <section className="rounded-xl bg-[#1c1c1e] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
+            <section className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="flex items-center gap-3 px-5 py-4 border-b border-[#2a2a2e]">
-                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#bfff00]">
-                  <Gift className="h-5 w-5 text-black" />
-                </div>
-                <div>
-                  <h2 className="text-sm font-semibold text-white">Premiacoes</h2>
-                  <p className="text-xs text-gray-500">Acompanhe suas conquistas</p>
-                </div>
+              <div className="px-5 py-4 border-b border-gray-100">
+                <h2 className="text-sm font-semibold text-gray-900">Metas de Faturamento</h2>
+                <p className="text-xs text-gray-500 mt-0.5">Desbloqueie recompensas ao atingir cada meta</p>
               </div>
 
               <div className="p-5">
                 {/* Milestone cards - horizontal grid */}
-                <div className="grid grid-cols-4 gap-3 mb-6">
+                <div className="grid grid-cols-4 gap-3 mb-5">
                   {milestones.map((m, i) => {
                     const unlocked = faturamentoAtual >= m.value
                     const isNext = i === currentMilestoneIdx
+                    const MilestoneIcon = m.icon
                     
                     return (
                       <div 
                         key={m.label} 
-                        className={`relative rounded-xl border p-4 text-center transition-all ${
-                          isNext 
-                            ? "bg-[#bfff00]/10 border-[#bfff00]/50" 
-                            : "bg-[#1f1f21] border-[#2a2a2e]"
+                        className={`relative rounded-2xl p-4 text-center transition-all ${
+                          unlocked 
+                            ? "bg-gradient-to-b from-emerald-50 to-emerald-100/50 ring-1 ring-emerald-200"
+                            : isNext 
+                              ? "bg-gradient-to-b from-lime-50 to-lime-100/30 ring-1 ring-lime-300" 
+                              : "bg-gray-50/80 ring-1 ring-gray-100"
                         }`}
                       >
-                        <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-xl mb-3 ${
-                          isNext 
-                            ? "bg-[#bfff00]/20 border border-[#bfff00]/30" 
-                            : "bg-[#2a2a2e] border border-[#3a3a3e]"
+                        <div className={`mx-auto flex items-center justify-center h-11 w-11 rounded-xl mb-2.5 ${
+                          unlocked
+                            ? "bg-emerald-500 shadow-md shadow-emerald-200"
+                            : isNext 
+                              ? "bg-[#bfff00] shadow-md shadow-lime-200" 
+                              : "bg-gray-200"
                         }`}>
-                          <Lock className={`h-5 w-5 ${isNext ? "text-[#bfff00]" : "text-gray-600"}`} />
+                          {unlocked ? (
+                            <Trophy className="h-5 w-5 text-white" />
+                          ) : (
+                            <MilestoneIcon className={`h-5 w-5 ${isNext ? "text-black" : "text-gray-400"}`} />
+                          )}
                         </div>
-                        <p className={`text-lg font-bold ${isNext ? "text-white" : "text-gray-500"}`}>
+                        <p className={`text-base font-bold ${
+                          unlocked ? "text-emerald-700" : isNext ? "text-gray-900" : "text-gray-400"
+                        }`}>
                           {m.label}
                         </p>
-                        <p className={`text-[10px] uppercase tracking-wide mt-1 ${
-                          isNext ? "text-[#bfff00]" : "text-gray-600"
+                        <p className={`text-[10px] font-medium mt-0.5 ${
+                          unlocked ? "text-emerald-600" : isNext ? "text-lime-600" : "text-gray-400"
                         }`}>
-                          {unlocked ? "Conquistado" : isNext ? "Proxima" : "Bloqueado"}
+                          {unlocked ? "Conquistado" : isNext ? "Proxima meta" : "Bloqueado"}
                         </p>
                       </div>
                     )
                   })}
                 </div>
 
-                {/* Progress bar card */}
-                <div className="rounded-xl bg-[#1f1f21] border border-[#2a2a2e] p-4">
+                {/* Progress section */}
+                <div className="rounded-xl bg-gray-50 p-4">
                   <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-[#bfff00]/10 border border-[#bfff00]/20">
-                        <Target className="h-4 w-4 text-[#bfff00]" />
-                      </div>
-                      <span className="text-sm font-semibold text-white">Progresso atual</span>
-                    </div>
-                    <span className="text-sm font-bold text-[#bfff00] bg-[#bfff00]/10 px-3 py-1 rounded-full">
+                    <span className="text-sm font-medium text-gray-700">Seu progresso</span>
+                    <span className="text-xs font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-full">
                       {progressPercent.toFixed(0)}%
                     </span>
                   </div>
                   
-                  <div className="relative h-2 bg-[#2a2a2e] rounded-full overflow-hidden mb-4">
+                  <div className="relative h-2.5 bg-gray-200 rounded-full overflow-hidden mb-3">
                     <div 
-                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#bfff00] to-[#22c55e] rounded-full"
-                      style={{ width: `${progressPercent}%` }}
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#bfff00] to-emerald-500 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.max(progressPercent, 2)}%` }}
                     />
                   </div>
                   
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">
-                      Faturamento: <span className="text-white font-medium">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
+                      Atual: <span className="text-gray-900 font-semibold">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
                     </span>
                     <span className="text-gray-500">
-                      Meta: <span className="text-[#bfff00] font-bold">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
+                      Meta: <span className="text-emerald-600 font-semibold">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
                     </span>
                   </div>
                 </div>
