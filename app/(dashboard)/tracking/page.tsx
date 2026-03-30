@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -34,7 +34,7 @@ export default function TrackingPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Trackeamento" />
+
         <NoBotSelected />
       </>
     )
@@ -46,7 +46,6 @@ export default function TrackingPage() {
 
   return (
     <>
-      <DashboardHeader title="Trackeamento" />
       <ScrollArea className="flex-1">
         <div className="p-4 md:p-8 bg-background min-h-full">
           <div className="max-w-5xl mx-auto">

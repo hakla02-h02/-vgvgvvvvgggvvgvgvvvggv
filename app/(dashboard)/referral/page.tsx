@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -183,7 +183,6 @@ export default function ReferralPage() {
 
   return (
     <>
-      <DashboardHeader title="Indique e Ganhe" />
       <ScrollArea className="flex-1">
         <div className="min-h-full bg-[#f3f4f6] text-[#1A1A1A] pb-8">
           <div className="w-full max-w-md mx-auto px-4 sm:px-6 lg:max-w-5xl space-y-6 pt-6">
@@ -206,7 +205,16 @@ export default function ReferralPage() {
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
                 <div className="flex flex-col gap-4 sm:gap-6 relative z-10 h-full justify-between">
                   <div>
-                    <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold">Ganhos Totais</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="bg-accent hover:bg-accent/90 text-black font-bold border-0 rounded-xl px-4"
+                      >
+                        Sacar
+                      </Button>
+                    </div>
                     <div className="flex items-baseline gap-2 flex-wrap">
                       <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter">
                         R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
@@ -223,7 +231,7 @@ export default function ReferralPage() {
                     </div>
                     <div>
                       <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Comissao Atual</p>
-                      <p className="text-xl lg:text-2xl font-bold text-accent">25%</p>
+                      <p className="text-xl lg:text-2xl font-bold text-accent">15%</p>
                     </div>
                   </div>
                 </div>

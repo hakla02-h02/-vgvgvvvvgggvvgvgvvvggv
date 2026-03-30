@@ -122,7 +122,9 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
 
     const msg = message as Record<string, unknown>
     const chat = msg.chat as Record<string, unknown>
-    const from = (msg.from || (update.callback_query as Record<string, unknown>)?.from) as Record<string, unknown>
+    // Para callback_query, o from do USUARIO que clicou vem de callback_query.from, nao de message.from
+    const callbackFrom = (update.callback_query as Record<string, unknown>)?.from as Record<string, unknown> | undefined
+    const from = callbackFrom || (msg.from as Record<string, unknown>)
     
     const chatId = chat?.id as number
     const text = (msg.text as string) || ""
@@ -317,13 +319,15 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         }
         
         // Get gateway for this user (all bots use the same gateway)
-        const { data: gateway } = await supabase
+        const { data: gateway, error: gwError } = await supabase
           .from("user_gateways")
           .select("*")
           .eq("user_id", botData.user_id)
           .eq("is_active", true)
           .limit(1)
           .single()
+        
+        console.log("[v0] Gateway lookup - user_id:", botData.user_id, "found:", !!gateway, "has_token:", !!gateway?.access_token, "error:", gwError?.message)
         
         if (!gateway || !gateway.access_token) {
           await sendTelegramMessage(
@@ -417,8 +421,50 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
     // 4. Check if /start command
     const isStart = text.toLowerCase().startsWith("/start")
 
-    // 5. Get or create lead
+    // 5. Get or create lead AND bot_user
     if (telegramUserId && isStart) {
+      // 5.1 Insert/Update bot_users (for Clientes page)
+      const { data: existingBotUser } = await supabase
+        .from("bot_users")
+        .select("id")
+        .eq("bot_id", botUuid)
+        .eq("telegram_user_id", telegramUserId)
+        .limit(1)
+        .single()
+
+      if (existingBotUser) {
+        // Update existing user
+        await supabase
+          .from("bot_users")
+          .update({
+            first_name: (from.first_name as string) || null,
+            last_name: (from.last_name as string) || null,
+            username: (from.username as string) || null,
+            last_activity: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          })
+          .eq("bot_id", botUuid)
+          .eq("telegram_user_id", telegramUserId)
+      } else {
+        // Insert new user
+        const { error: botUserError } = await supabase.from("bot_users").insert({
+          bot_id: botUuid,
+          telegram_user_id: telegramUserId,
+          chat_id: chatId,
+          first_name: (from.first_name as string) || null,
+          last_name: (from.last_name as string) || null,
+          username: (from.username as string) || null,
+          funnel_step: 1,
+          is_subscriber: false,
+          last_activity: new Date().toISOString(),
+        })
+        
+        if (botUserError) {
+          console.error("[webhook] Erro ao inserir bot_user:", botUserError.message, botUserError.code)
+        }
+      }
+
+      // 5.2 Insert lead (legacy support)
       const { data: existingLead } = await supabase
         .from("leads")
         .select("id")

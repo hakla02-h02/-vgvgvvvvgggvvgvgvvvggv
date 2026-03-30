@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import {
@@ -382,7 +382,7 @@ export default function BioLinkPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Dragon Sites" />
+        
         <NoBotSelected />
       </>
     )
@@ -396,7 +396,7 @@ export default function BioLinkPage() {
   if (loading) {
     return (
       <>
-        <DashboardHeader title="Dragon Sites" />
+        
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
         </div>
@@ -406,7 +406,7 @@ export default function BioLinkPage() {
 
   return (
     <>
-      <DashboardHeader title="Dragon Sites" />
+      
       <ScrollArea className="flex-1">
         <div className="p-4 md:p-8 bg-[#f4f5f7] min-h-full">
           <div className="max-w-5xl mx-auto">

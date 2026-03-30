@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect, useCallback } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -205,7 +205,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <>
-        <DashboardHeader title="Meu Perfil" />
+        
         <div className="flex-1 flex items-center justify-center">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
@@ -215,7 +215,7 @@ export default function SettingsPage() {
 
   return (
     <>
-      <DashboardHeader title="Meu Perfil" />
+      
       <ScrollArea className="flex-1">
         <div className="flex flex-col gap-5 p-4 md:p-6 max-w-5xl mx-auto w-full">
 

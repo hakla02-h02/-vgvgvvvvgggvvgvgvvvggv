@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Lock, ChevronRight, ChevronLeft } from "lucide-react"
 
@@ -59,7 +59,7 @@ export default function RewardsPage() {
 
   return (
     <>
-      <DashboardHeader title="Premiacoes" />
+      
       <ScrollArea className="flex-1">
         <div className="min-h-full bg-[#f3f4f6]">
           <div className="max-w-3xl mx-auto px-6 py-10">

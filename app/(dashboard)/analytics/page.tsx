@@ -1,6 +1,6 @@
 "use client"
 
-import { DashboardHeader } from "@/components/dashboard-header"
+
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
@@ -122,7 +122,7 @@ export default function AnalyticsPage() {
   if (!selectedBot) {
     return (
       <>
-        <DashboardHeader title="Analytics" />
+
         <NoBotSelected />
       </>
     )
@@ -130,7 +130,6 @@ export default function AnalyticsPage() {
 
   return (
     <>
-      <DashboardHeader title="Analytics" />
       <ScrollArea className="flex-1">
         <div className="p-4 md:p-8 bg-background min-h-full">
           
