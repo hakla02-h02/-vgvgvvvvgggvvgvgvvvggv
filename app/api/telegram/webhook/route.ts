@@ -1010,9 +1010,8 @@ async function processCallbackQuery({
     }
 
     // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
-    // Buscar o estado atual do usuario e a config do fluxo
-    // Buscar QUALQUER estado recente do usuario (nao filtrar por status)
-    const { data: state, error: stateError } = await supabase
+    // Primeiro tentar buscar o estado do usuario
+    const { data: state } = await supabase
       .from("user_flow_state")
       .select("flow_id, current_node_position, status")
       .eq("bot_id", bot.id)
@@ -1021,14 +1020,26 @@ async function processCallbackQuery({
       .limit(1)
       .single()
 
-    console.log("[v0] Order Bump Check - State encontrado:", state ? "SIM" : "NAO", "flow_id:", state?.flow_id, "status:", state?.status, "error:", stateError?.message)
+    // Se nao tiver estado, buscar o fluxo diretamente pelo bot_id
+    let flowId = state?.flow_id
+    if (!flowId) {
+      const { data: flowByBot } = await supabase
+        .from("flows")
+        .select("id")
+        .eq("bot_id", bot.id)
+        .limit(1)
+        .single()
+      flowId = flowByBot?.id
+    }
 
-    if (state) {
-      // Buscar a config do fluxo (nao do payment node)
+    console.log("[v0] Order Bump Check - State:", state ? "SIM" : "NAO", "flow_id:", flowId)
+
+    if (flowId) {
+      // Buscar a config do fluxo
       const { data: flowData } = await supabase
         .from("flows")
         .select("config")
-        .eq("id", state.flow_id)
+        .eq("id", flowId)
         .single()
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -1036,13 +1047,11 @@ async function processCallbackQuery({
       const orderBumpConfig = flowConfig?.orderBump
       const orderBumpInicial = orderBumpConfig?.inicial
 
-      console.log("[v0] Order Bump Config:", JSON.stringify(orderBumpConfig, null, 2))
-      console.log("[v0] Order Bump Inicial enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
+      console.log("[v0] Order Bump Config encontrado:", orderBumpInicial?.enabled ? "ATIVO" : "INATIVO", "price:", orderBumpInicial?.price)
 
       // Verificar se o Order Bump Inicial esta habilitado
-      console.log("[v0] Order Bump - Verificando: enabled=", orderBumpInicial?.enabled, "price=", orderBumpInicial?.price)
       if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
-        console.log("[v0] Order Bump ATIVADO! Enviando oferta...")
+        console.log("[v0] Order Bump ATIVADO! Enviando oferta ao usuario...")
         const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
         const orderBumpAmount = orderBumpInicial.price
         const orderBumpAcceptText = orderBumpInicial.acceptText || "ADICIONAR"
@@ -1062,22 +1071,41 @@ async function processCallbackQuery({
 
         await sendTelegramMessage(botToken, chatId, orderBumpDesc, orderBumpKeyboard)
 
-        // Atualizar estado para aguardar decisao do Order Bump
+        // Atualizar ou criar estado para aguardar decisao do Order Bump
         // Salvar informacoes do order bump no estado
-        await supabase
-          .from("user_flow_state")
-          .update({
-            status: "waiting_order_bump",
-            updated_at: new Date().toISOString(),
-            metadata: {
-              order_bump_name: orderBumpName,
-              order_bump_price: orderBumpAmount,
-              main_amount: amount,
-              main_description: description
-            }
-          })
-          .eq("bot_id", bot.id)
-          .eq("telegram_user_id", telegramUserId)
+        if (state) {
+          await supabase
+            .from("user_flow_state")
+            .update({
+              status: "waiting_order_bump",
+              updated_at: new Date().toISOString(),
+              metadata: {
+                order_bump_name: orderBumpName,
+                order_bump_price: orderBumpAmount,
+                main_amount: amount,
+                main_description: description
+              }
+            })
+            .eq("bot_id", bot.id)
+            .eq("telegram_user_id", telegramUserId)
+        } else {
+          // Criar novo estado se nao existir
+          await supabase
+            .from("user_flow_state")
+            .insert({
+              bot_id: bot.id,
+              telegram_user_id: telegramUserId,
+              flow_id: flowId,
+              status: "waiting_order_bump",
+              current_node_position: 0,
+              metadata: {
+                order_bump_name: orderBumpName,
+                order_bump_price: orderBumpAmount,
+                main_amount: amount,
+                main_description: description
+              }
+            })
+        }
 
         return // STOP - aguardar decisao do Order Bump
       }
