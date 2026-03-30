@@ -977,6 +977,9 @@ async function processCallbackQuery({
   const isPaymentCallback = callbackData.startsWith("pay_")
   
   if (isPaymentCallback) {
+    console.log("[v0] ========== PAYMENT CALLBACK RECEBIDO ==========")
+    console.log("[v0] callbackData:", callbackData)
+    console.log("[v0] bot.id:", bot.id, "chatId:", chatId)
     let amount = 0
     let description = "Pagamento"
     let planId: string | null = null
