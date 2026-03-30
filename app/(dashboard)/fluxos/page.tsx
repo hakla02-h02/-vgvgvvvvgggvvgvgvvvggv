@@ -409,35 +409,47 @@ export default function FluxosPage() {
           </div>
         </div>
 
-        {/* Stats Cards - grid responsivo */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 mb-6">
-          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl p-3 sm:px-4 sm:py-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
-              <Bot className="h-4 w-4 text-[#bfff00]" />
-            </div>
-            <div className="text-center sm:text-left">
-              <span className="text-lg sm:text-xl font-bold text-[#bfff00]">{stats.linkedBots}</span>
-              <p className="text-[10px] sm:text-xs text-gray-500">bots</p>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl p-3 sm:px-4 sm:py-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-[#bfff00]" />
-            </div>
-            <div className="text-center sm:text-left">
-              <span className="text-lg sm:text-xl font-bold text-white">{stats.basicFlows}</span>
-              <p className="text-[10px] sm:text-xs text-gray-500">basicos</p>
+        {/* Stats Cards - grid responsivo com visual moderno */}
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+          {/* Bots Card */}
+          <div className="group relative overflow-hidden bg-gradient-to-br from-[#1c1c1e] to-[#232326] border border-[#2a2a2e] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:border-[#bfff00]/30 hover:shadow-lg hover:shadow-[#bfff00]/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#bfff00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#bfff00]/20 to-[#bfff00]/5 flex items-center justify-center border border-[#bfff00]/20 shadow-inner">
+                <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-[#bfff00]" />
+              </div>
+              <div className="text-center sm:text-left">
+                <span className="text-2xl sm:text-3xl font-bold text-[#bfff00] tracking-tight">{stats.linkedBots}</span>
+                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-0.5">bots</p>
+              </div>
             </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl p-3 sm:px-4 sm:py-3">
-            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
-              <Workflow className="h-4 w-4 text-purple-400" />
+          {/* Basicos Card */}
+          <div className="group relative overflow-hidden bg-gradient-to-br from-[#1c1c1e] to-[#232326] border border-[#2a2a2e] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:border-[#bfff00]/30 hover:shadow-lg hover:shadow-[#bfff00]/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#bfff00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#bfff00]/20 to-[#bfff00]/5 flex items-center justify-center border border-[#bfff00]/20 shadow-inner">
+                <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-[#bfff00]" />
+              </div>
+              <div className="text-center sm:text-left">
+                <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stats.basicFlows}</span>
+                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-0.5">basicos</p>
+              </div>
             </div>
-            <div className="text-center sm:text-left">
-              <span className="text-lg sm:text-xl font-bold text-white">{stats.n8nFlows}</span>
-              <p className="text-[10px] sm:text-xs text-gray-500">n8n</p>
+          </div>
+          
+          {/* N8N Card */}
+          <div className="group relative overflow-hidden bg-gradient-to-br from-[#1c1c1e] to-[#232326] border border-[#2a2a2e] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/5">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center border border-purple-500/20 shadow-inner">
+                <Workflow className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
+              </div>
+              <div className="text-center sm:text-left">
+                <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stats.n8nFlows}</span>
+                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-0.5">n8n</p>
+              </div>
             </div>
           </div>
         </div>
