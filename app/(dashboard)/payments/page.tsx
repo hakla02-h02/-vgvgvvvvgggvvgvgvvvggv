@@ -153,7 +153,7 @@ export default function VendasPage() {
                 />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Faturamento</span>
+                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wide">Faturamento</span>
                     <div className="w-9 h-9 rounded-xl bg-[#bfff00]/20 flex items-center justify-center">
                       <DollarSign className="h-4 w-4 text-[#bfff00]" />
                     </div>
@@ -171,7 +171,7 @@ export default function VendasPage() {
                 />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Total de Vendas</span>
+                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wide">Total de Vendas</span>
                     <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
                       <TrendingUp className="h-4 w-4 text-blue-400" />
                     </div>
@@ -189,7 +189,7 @@ export default function VendasPage() {
                 />
                 <div className="relative">
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-bold text-gray-400 uppercase tracking-wide">Pendentes</span>
+                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wide">Pendentes</span>
                     <div className="w-9 h-9 rounded-xl bg-yellow-500/20 flex items-center justify-center">
                       <Clock className="h-4 w-4 text-yellow-400" />
                     </div>

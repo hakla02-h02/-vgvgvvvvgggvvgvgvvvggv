@@ -6,14 +6,12 @@ import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
-  BarChart3,
   DollarSign,
   Users,
   Bot,
   GitBranch,
   Megaphone,
   CreditCard,
-  Crosshair,
   LinkIcon,
   Gift,
   Trophy,
@@ -46,7 +44,6 @@ const navSections: NavSection[] = [
     category: "MENU",
     items: [
       { label: "Dashboard", description: "Visao geral", href: "/", icon: LayoutDashboard },
-      { label: "Analises", description: "Metricas e relatorios", href: "/analytics", icon: BarChart3 },
       { label: "Vendas", description: "Vendas e transacoes", href: "/payments", icon: DollarSign },
       { label: "Clientes", description: "Base de leads", href: "/users", icon: Users },
     ],
@@ -63,7 +60,6 @@ const navSections: NavSection[] = [
     category: "INTEGRACOES",
     items: [
       { label: "Gateways", description: "Pagamentos PIX", href: "/gateways", icon: CreditCard },
-      { label: "Trackeamento", description: "Pixels e UTM", href: "/tracking", icon: Crosshair },
       { label: "Dragon Sites", description: "Crie paginas de conversao", href: "/biolink", icon: LinkIcon },
     ],
   },

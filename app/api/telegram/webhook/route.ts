@@ -801,13 +801,32 @@ async function processCallbackQuery({
   const bot = bots[0]
 
   // ========== ORDER BUMP CALLBACKS ==========
-  // Formato: ob_accept_{mainAmount}_{bumpAmount}_{nodePos} ou ob_decline_{mainAmount}_{nodePos}
+  // Formato: ob_accept_{mainAmount}_{bumpAmount} ou ob_decline_{mainAmount}
   if (callbackData.startsWith("ob_accept_") || callbackData.startsWith("ob_decline_")) {
+    console.log("[v0] Order Bump Callback recebido:", callbackData)
     const isAccept = callbackData.startsWith("ob_accept_")
     const parts = callbackData.replace("ob_accept_", "").replace("ob_decline_", "").split("_")
+    console.log("[v0] Order Bump - Aceito:", isAccept, "Parts:", parts)
+    
+    // Buscar metadata do order bump salvo no estado
+    const { data: userState } = await supabase
+      .from("user_flow_state")
+      .select("metadata")
+      .eq("bot_id", bot.id)
+      .eq("telegram_user_id", telegramUserId)
+      .eq("status", "waiting_order_bump")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .single()
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const metadata = userState?.metadata as Record<string, any> | null
+    const orderBumpName = metadata?.order_bump_name || "Order Bump"
+    const mainDescription = metadata?.main_description || "Produto Principal"
     
     let totalAmount = 0
     let productType: "main_product" | "order_bump" = "main_product"
+    let description = mainDescription
     
     if (isAccept) {
       // Aceito: cobrar produto principal + order bump
@@ -815,9 +834,13 @@ async function processCallbackQuery({
       const bumpAmount = parseFloat(parts[1]) || 0
       totalAmount = mainAmount + bumpAmount
       productType = "order_bump"
+      description = `${mainDescription} + ${orderBumpName}`
+      console.log("[v0] Order Bump ACEITO - mainAmount:", mainAmount, "bumpAmount:", bumpAmount, "TOTAL:", totalAmount)
     } else {
       // Recusado: cobrar apenas produto principal
       totalAmount = parseFloat(parts[0]) || 0
+      description = mainDescription
+      console.log("[v0] Order Bump RECUSADO - Total (só produto):", totalAmount)
     }
 
     if (totalAmount <= 0) {
@@ -828,7 +851,7 @@ async function processCallbackQuery({
     // Gerar o pagamento com o valor correto
     await generatePayment(
       supabase, botToken, chatId, telegramUserId, bot,
-      totalAmount, productType === "order_bump" ? "Produto + Order Bump" : "Produto Principal",
+      totalAmount, description,
       productType
     )
     return
@@ -987,7 +1010,7 @@ async function processCallbackQuery({
     }
 
     // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
-    // Buscar o estado atual do usuario para encontrar o fluxo e nó de pagamento
+    // Buscar o estado atual do usuario e a config do fluxo
     const { data: state } = await supabase
       .from("user_flow_state")
       .select("flow_id, current_node_position")
@@ -998,60 +1021,64 @@ async function processCallbackQuery({
       .limit(1)
       .single()
 
+    console.log("[v0] Order Bump Check - State encontrado:", state ? "SIM" : "NAO", state?.flow_id)
+
     if (state) {
-      // Buscar o nó de pagamento para verificar Order Bump
-      const nodes = await fetchNodes(state.flow_id)
-      const paymentNode = nodes.find(n => n.type === "payment")
+      // Buscar a config do fluxo (nao do payment node)
+      const { data: flowData } = await supabase
+        .from("flows")
+        .select("config")
+        .eq("id", state.flow_id)
+        .single()
 
-      if (paymentNode?.config) {
-        // Verificar tanto string "true" quanto boolean true
-        const hasOrderBumpRaw = paymentNode.config?.has_order_bump
-        const hasOrderBump = hasOrderBumpRaw === "true" || hasOrderBumpRaw === true
-        const orderBumpDesc = (paymentNode.config?.order_bump_desc as string) || ""
-        const orderBumpAmount = (paymentNode.config?.order_bump_amount as string) || ""
-        const orderBumpAcceptText = (paymentNode.config?.order_bump_accept_text as string) || "Sim, quero adicionar!"
-        const orderBumpDeclineText = (paymentNode.config?.order_bump_decline_text as string) || "Nao, obrigado"
-        const orderBumpMediaUrl = (paymentNode.config?.order_bump_media_url as string) || ""
-        const orderBumpMediaType = (paymentNode.config?.order_bump_media_type as string) || ""
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const flowConfig = flowData?.config as Record<string, any> | null
+      const orderBumpConfig = flowConfig?.orderBump
+      const orderBumpInicial = orderBumpConfig?.inicial
 
-        if (hasOrderBump && orderBumpAmount) {
-          // Enviar midia do Order Bump se configurada
-          if (orderBumpMediaUrl) {
-            if (orderBumpMediaType === "video") {
-              await sendTelegramVideo(botToken, chatId, orderBumpMediaUrl, "", undefined)
-            } else if (orderBumpMediaType === "photo") {
-              await sendTelegramPhoto(botToken, chatId, orderBumpMediaUrl, "", undefined)
-            }
-          }
+      console.log("[v0] Order Bump Config:", JSON.stringify(orderBumpConfig, null, 2))
+      console.log("[v0] Order Bump Inicial enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
 
-          // Enviar mensagem do Order Bump com botoes de aceitar/recusar
-          const orderBumpMessage = orderBumpDesc || `Deseja adicionar este bonus por apenas R$ ${orderBumpAmount}?`
-          
-          // Formato: ob_accept_{mainAmount}_{bumpAmount} ou ob_decline_{mainAmount}
-          const mainAmount = String(amount)
-          const bumpAmount = orderBumpAmount.replace(",", ".")
-          
-          const orderBumpKeyboard = {
-            inline_keyboard: [
-              [{ text: orderBumpAcceptText, callback_data: `ob_accept_${mainAmount}_${bumpAmount}` }],
-              [{ text: orderBumpDeclineText, callback_data: `ob_decline_${mainAmount}` }]
-            ]
-          }
+      // Verificar se o Order Bump Inicial esta habilitado
+      if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
+        console.log("[v0] Order Bump ATIVADO! Enviando oferta...")
+        const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
+        const orderBumpAmount = orderBumpInicial.price
+        const orderBumpAcceptText = orderBumpInicial.acceptText || "ADICIONAR"
+        const orderBumpDeclineText = orderBumpInicial.rejectText || "NAO QUERO"
+        const orderBumpName = orderBumpInicial.name || "Order Bump"
 
-          await sendTelegramMessage(botToken, chatId, orderBumpMessage, orderBumpKeyboard)
-
-          // Atualizar estado para aguardar decisao do Order Bump
-          await supabase
-            .from("user_flow_state")
-            .update({
-              status: "waiting_order_bump",
-              updated_at: new Date().toISOString(),
-            })
-            .eq("bot_id", bot.id)
-            .eq("telegram_user_id", telegramUserId)
-
-          return // STOP - aguardar decisao do Order Bump
+        // Formato: ob_accept_{mainAmount}_{bumpAmount}_{bumpName} ou ob_decline_{mainAmount}
+        const mainAmount = String(amount)
+        const bumpAmount = String(orderBumpAmount)
+        
+        const orderBumpKeyboard = {
+          inline_keyboard: [
+            [{ text: orderBumpAcceptText, callback_data: `ob_accept_${mainAmount}_${bumpAmount}` }],
+            [{ text: orderBumpDeclineText, callback_data: `ob_decline_${mainAmount}` }]
+          ]
         }
+
+        await sendTelegramMessage(botToken, chatId, orderBumpDesc, orderBumpKeyboard)
+
+        // Atualizar estado para aguardar decisao do Order Bump
+        // Salvar informacoes do order bump no estado
+        await supabase
+          .from("user_flow_state")
+          .update({
+            status: "waiting_order_bump",
+            updated_at: new Date().toISOString(),
+            metadata: {
+              order_bump_name: orderBumpName,
+              order_bump_price: orderBumpAmount,
+              main_amount: amount,
+              main_description: description
+            }
+          })
+          .eq("bot_id", bot.id)
+          .eq("telegram_user_id", telegramUserId)
+
+        return // STOP - aguardar decisao do Order Bump
       }
     }
 
