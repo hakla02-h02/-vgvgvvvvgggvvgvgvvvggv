@@ -1005,6 +1005,9 @@ async function processCallbackQuery({
       return
     }
 
+    // LOG PARA RENDER - REMOVER DEPOIS
+    console.log("=== ORDER BUMP CHECK === bot.id:", bot.id, "amount:", amount)
+
     // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
     // Buscar o fluxo associado ao bot de 3 formas diferentes
     let flowId: string | null = null
@@ -1063,13 +1066,18 @@ async function processCallbackQuery({
       flowConfig = flowData?.config as Record<string, unknown> | null
     }
 
+    console.log("=== ORDER BUMP === flowId:", flowId, "hasConfig:", !!flowConfig)
+
     if (flowId && flowConfig) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const orderBumpConfig = (flowConfig as any)?.orderBump
       const orderBumpInicial = orderBumpConfig?.inicial
 
+      console.log("=== ORDER BUMP === enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
+
       // Verificar se o Order Bump Inicial esta habilitado
       if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
+        console.log("=== ORDER BUMP ATIVO! Enviando mensagem ===")
         const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
         const orderBumpAmount = orderBumpInicial.price
         const orderBumpAcceptText = orderBumpInicial.acceptText || "ADICIONAR"
