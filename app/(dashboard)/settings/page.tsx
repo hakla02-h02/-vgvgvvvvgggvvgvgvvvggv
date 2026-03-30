@@ -582,69 +582,81 @@ export default function SettingsPage() {
               REWARDS / PREMIACOES SECTION
           ══════════════════════════════════════════════════════════════════ */}
           {activeSection === "premiacoes" && (
-            <section className="rounded-xl bg-white border border-gray-200 shadow-sm overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
+            <section className="rounded-xl bg-[#1c1c1e] border border-[#2a2a2e] overflow-hidden animate-in fade-in-0 slide-in-from-bottom-3 duration-300">
               {/* Header */}
-              <div className="px-5 py-4 border-b border-gray-100">
-                <h2 className="text-sm font-semibold text-gray-900">Premiacoes</h2>
+              <div className="flex items-center gap-3 px-5 py-4 border-b border-[#2a2a2e]">
+                <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-[#bfff00]">
+                  <Gift className="h-5 w-5 text-black" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Premiacoes</h2>
+                  <p className="text-xs text-gray-500">Acompanhe suas conquistas</p>
+                </div>
               </div>
 
               <div className="p-5">
-                {/* Timeline vertical - compact */}
-                <div className="space-y-3 mb-6">
+                {/* Milestone cards - horizontal grid */}
+                <div className="grid grid-cols-4 gap-3 mb-6">
                   {milestones.map((m, i) => {
                     const unlocked = faturamentoAtual >= m.value
                     const isNext = i === currentMilestoneIdx
                     
                     return (
-                      <div key={m.label} className="flex items-center gap-3">
-                        <div className={`flex items-center justify-center h-8 w-8 rounded-lg border ${
-                          unlocked 
-                            ? "border-[#22c55e] bg-[#22c55e]/10" 
-                            : isNext
-                              ? "border-[#bfff00]/50 bg-[#bfff00]/5"
-                              : "border-gray-200 bg-gray-50"
+                      <div 
+                        key={m.label} 
+                        className={`relative rounded-xl border p-4 text-center transition-all ${
+                          isNext 
+                            ? "bg-[#bfff00]/10 border-[#bfff00]/50" 
+                            : "bg-[#1f1f21] border-[#2a2a2e]"
+                        }`}
+                      >
+                        <div className={`mx-auto flex items-center justify-center h-12 w-12 rounded-xl mb-3 ${
+                          isNext 
+                            ? "bg-[#bfff00]/20 border border-[#bfff00]/30" 
+                            : "bg-[#2a2a2e] border border-[#3a3a3e]"
                         }`}>
-                          {unlocked ? (
-                            <Trophy className="h-3.5 w-3.5 text-[#22c55e]" />
-                          ) : (
-                            <Lock className={`h-3.5 w-3.5 ${isNext ? "text-gray-400" : "text-gray-300"}`} />
-                          )}
+                          <Lock className={`h-5 w-5 ${isNext ? "text-[#bfff00]" : "text-gray-600"}`} />
                         </div>
-                        <div className="flex-1">
-                          <p className={`text-xs font-semibold ${
-                            unlocked ? "text-[#22c55e]" : isNext ? "text-gray-900" : "text-gray-400"
-                          }`}>
-                            {m.label}
-                          </p>
-                          <p className="text-[10px] text-gray-500">
-                            {unlocked ? "Conquistado" : isNext ? "Proxima meta" : "Bloqueado"}
-                          </p>
-                        </div>
+                        <p className={`text-lg font-bold ${isNext ? "text-white" : "text-gray-500"}`}>
+                          {m.label}
+                        </p>
+                        <p className={`text-[10px] uppercase tracking-wide mt-1 ${
+                          isNext ? "text-[#bfff00]" : "text-gray-600"
+                        }`}>
+                          {unlocked ? "Conquistado" : isNext ? "Proxima" : "Bloqueado"}
+                        </p>
                       </div>
                     )
                   })}
                 </div>
 
-                {/* Progress bar */}
-                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs text-gray-900 font-medium">Progresso atual</span>
-                    <span className="text-xs font-bold text-[#22c55e]">{progressPercent.toFixed(0)}%</span>
+                {/* Progress bar card */}
+                <div className="rounded-xl bg-[#1f1f21] border border-[#2a2a2e] p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-center h-9 w-9 rounded-xl bg-[#bfff00]/10 border border-[#bfff00]/20">
+                        <Target className="h-4 w-4 text-[#bfff00]" />
+                      </div>
+                      <span className="text-sm font-semibold text-white">Progresso atual</span>
+                    </div>
+                    <span className="text-sm font-bold text-[#bfff00] bg-[#bfff00]/10 px-3 py-1 rounded-full">
+                      {progressPercent.toFixed(0)}%
+                    </span>
                   </div>
                   
-                  <div className="relative h-1.5 bg-gray-200 rounded-full overflow-hidden mb-3">
+                  <div className="relative h-2 bg-[#2a2a2e] rounded-full overflow-hidden mb-4">
                     <div 
-                      className="absolute inset-y-0 left-0 bg-[#22c55e] rounded-full"
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-[#bfff00] to-[#22c55e] rounded-full"
                       style={{ width: `${progressPercent}%` }}
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between text-[11px]">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">
-                      Faturamento: <span className="text-gray-900 font-medium">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
+                      Faturamento: <span className="text-white font-medium">R$ {faturamentoAtual.toLocaleString("pt-BR")}</span>
                     </span>
                     <span className="text-gray-500">
-                      Meta: <span className="text-[#22c55e] font-semibold">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
+                      Meta: <span className="text-[#bfff00] font-bold">R$ {proximaMeta.toLocaleString("pt-BR")}</span>
                     </span>
                   </div>
                 </div>
