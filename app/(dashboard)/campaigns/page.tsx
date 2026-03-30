@@ -2,17 +2,24 @@
 
 import { useState, useEffect, useCallback } from "react"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { useBots } from "@/lib/bot-context"
 import { useAuth } from "@/lib/auth-context"
 import {
-  Plus, Target, Play, Pause, Send,
-  UserX, ShoppingCart, CheckCircle2, Trash2, RefreshCw,
-  Megaphone, MessageSquare, Loader2, ArrowRight, Zap, Users, Sparkles
+  Plus, Search, MoreVertical, Trash2, Pause, Play, Copy,
+  Megaphone, Send, UserX, ShoppingCart, CheckCircle2,
+  RefreshCw, Loader2, ChevronRight
 } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
-// ==================== TYPES ====================
 interface CampaignNode {
   id?: string
   type: "message" | "delay"
@@ -39,43 +46,48 @@ interface Campaign {
 const AUDIENCES = [
   {
     id: "started_not_continued",
-    name: "Iniciou mas nao continuou",
-    shortName: "Abandonou",
-    description: "Usuarios que deram /start mas nao avancaram",
+    label: "Abandonou",
+    description: "Iniciou mas nao continuou",
     icon: UserX,
-    color: "#f97316",
-    bgGradient: "from-orange-500/20 to-orange-500/5",
+    color: "#f59e0b",
+    bgClass: "bg-amber-500/20",
+    textClass: "text-amber-400",
   },
   {
     id: "not_paid",
-    name: "Nao finalizou pagamento",
-    shortName: "Nao pagou",
-    description: "Chegaram ate o pagamento mas nao finalizaram",
+    label: "Nao pagou",
+    description: "Gerou PIX mas nao finalizou",
     icon: ShoppingCart,
     color: "#ef4444",
-    bgGradient: "from-red-500/20 to-red-500/5",
+    bgClass: "bg-red-500/20",
+    textClass: "text-red-400",
   },
   {
     id: "paid",
-    name: "Clientes que pagaram",
-    shortName: "Pagou",
-    description: "Usuarios que ja realizaram compra",
+    label: "Pagou",
+    description: "Clientes que ja compraram",
     icon: CheckCircle2,
     color: "#22c55e",
-    bgGradient: "from-emerald-500/20 to-emerald-500/5",
-  }
+    bgClass: "bg-emerald-500/20",
+    textClass: "text-emerald-400",
+  },
 ]
 
-// ==================== MAIN PAGE ====================
 export default function CampaignsPage() {
   const { selectedBot } = useBots()
   const { session } = useAuth()
   const [campaigns, setCampaigns] = useState<Campaign[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [showCreateModal, setShowCreateModal] = useState(false)
-  const [createStep, setCreateStep] = useState(1)
-  const [newCampaignName, setNewCampaignName] = useState("")
-  const [newCampaignAudience, setNewCampaignAudience] = useState<string | null>(null)
+  const [search, setSearch] = useState("")
+  const [activeTab, setActiveTab] = useState("todas")
+  
+  // Create Modal
+  const [createOpen, setCreateOpen] = useState(false)
+  const [step, setStep] = useState(1)
+  const [newName, setNewName] = useState("")
+  const [selectedAudience, setSelectedAudience] = useState<string | null>(null)
+  const [isCreating, setIsCreating] = useState(false)
+  
   const [deleting, setDeleting] = useState<string | null>(null)
   const [activating, setActivating] = useState<string | null>(null)
 
@@ -119,9 +131,10 @@ export default function CampaignsPage() {
     setActivating(null)
   }
 
-  const handleCreateCampaign = async () => {
-    if (!newCampaignName.trim() || !newCampaignAudience || !selectedBot || !session?.userId) return
+  const handleCreate = async () => {
+    if (!newName.trim() || !selectedAudience || !selectedBot || !session?.userId) return
     
+    setIsCreating(true)
     try {
       const res = await fetch("/api/campaigns", {
         method: "POST",
@@ -129,8 +142,8 @@ export default function CampaignsPage() {
         body: JSON.stringify({
           bot_id: selectedBot.id,
           user_id: session.userId,
-          name: newCampaignName,
-          audience: newCampaignAudience,
+          name: newName,
+          audience: selectedAudience,
           status: "rascunho",
           campaign_type: "basic",
           nodes: []
@@ -142,348 +155,398 @@ export default function CampaignsPage() {
       }
     } catch { /* ignore */ }
     
-    resetCreateModal()
+    setIsCreating(false)
+    resetModal()
   }
 
-  const resetCreateModal = () => {
-    setShowCreateModal(false)
-    setNewCampaignName("")
-    setNewCampaignAudience(null)
-    setCreateStep(1)
+  const resetModal = () => {
+    setCreateOpen(false)
+    setNewName("")
+    setSelectedAudience(null)
+    setStep(1)
   }
 
-  const getAudienceInfo = (audienceId: string) => {
-    return AUDIENCES.find(a => a.id === audienceId)
+  const getAudience = (id: string) => AUDIENCES.find(a => a.id === id) || AUDIENCES[0]
+
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    })
   }
+
+  const filteredCampaigns = campaigns.filter((c) => {
+    const matchesSearch = c.name.toLowerCase().includes(search.toLowerCase())
+    const matchesTab = activeTab === "todas" || c.status === activeTab
+    return matchesSearch && matchesTab
+  })
+
+  const stats = {
+    total: campaigns.length,
+    ativas: campaigns.filter(c => c.status === "ativa").length,
+    enviadas: campaigns.reduce((acc, c) => acc + (c.sent_count || 0), 0),
+  }
+
+  const tabs = [
+    { id: "todas", label: "Todas", count: campaigns.length },
+    { id: "ativa", label: "Ativas", count: campaigns.filter(c => c.status === "ativa").length },
+    { id: "pausada", label: "Pausadas", count: campaigns.filter(c => c.status === "pausada").length },
+    { id: "rascunho", label: "Rascunhos", count: campaigns.filter(c => c.status === "rascunho").length },
+  ]
 
   if (!selectedBot) {
     return <NoBotSelected />
   }
 
-  const stats = {
-    total: campaigns.length,
-    active: campaigns.filter(c => c.status === "ativa").length,
-    totalSent: campaigns.reduce((acc, c) => acc + (c.sent_count || 0), 0),
-  }
-
   return (
     <>
       <ScrollArea className="flex-1">
-        <div className="min-h-[calc(100vh-60px)] bg-[#f5f5f7]">
-          <div className="max-w-5xl mx-auto px-6 py-8">
+        <div className="p-4 md:p-8 bg-[#f5f5f7] min-h-[calc(100vh-60px)]">
+          <div className="max-w-5xl mx-auto">
             
-            {/* Hero Section - Unique */}
-            <div className="relative mb-10">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-5">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#bfff00] to-[#9fdf00] flex items-center justify-center shadow-xl shadow-[#bfff00]/30">
-                    <Megaphone className="h-8 w-8 text-black" />
+            {/* Header */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">Remarketing</h1>
+                <p className="text-gray-500">Reconquiste leads com campanhas automatizadas</p>
+              </div>
+              <button 
+                onClick={() => setCreateOpen(true)}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#1c1c1e] text-white text-sm font-medium hover:bg-[#2a2a2e] transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Nova Campanha
+              </button>
+            </div>
+
+            {/* Stats Cards com Glow */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+              {/* Total */}
+              <div className="relative rounded-[20px] p-5 overflow-hidden bg-[#1c1c1e]">
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at center bottom, rgba(190, 255, 0, 0.15) 0%, transparent 70%)" }}
+                />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wide">Campanhas</span>
+                    <div className="w-9 h-9 rounded-xl bg-[#bfff00]/20 flex items-center justify-center">
+                      <Megaphone className="h-4 w-4 text-[#bfff00]" />
+                    </div>
                   </div>
-                  <div>
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Remarketing</h1>
-                    <p className="text-gray-500 mt-1">Reconquiste leads com campanhas automatizadas</p>
-                  </div>
+                  <p className="text-3xl font-extrabold text-white">{stats.total}</p>
+                  <p className="text-sm font-medium text-gray-500 mt-1">campanhas criadas</p>
                 </div>
-                <button 
-                  onClick={() => setShowCreateModal(true)}
-                  className="flex items-center gap-2.5 px-6 py-3 rounded-2xl bg-gray-900 text-white text-sm font-bold hover:bg-gray-800 transition-all shadow-xl shadow-gray-900/20 group"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span>Nova Campanha</span>
-                  <ArrowRight className="h-4 w-4 opacity-50 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                </button>
+              </div>
+
+              {/* Ativas */}
+              <div className="relative rounded-[20px] p-5 overflow-hidden bg-[#1c1c1e]">
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at center bottom, rgba(34, 197, 94, 0.15) 0%, transparent 70%)" }}
+                />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wide">Ativas</span>
+                    <div className="w-9 h-9 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                      <Play className="h-4 w-4 text-emerald-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-extrabold text-emerald-400">{stats.ativas}</p>
+                  <p className="text-sm font-medium text-gray-500 mt-1">em execucao</p>
+                </div>
+              </div>
+
+              {/* Enviadas */}
+              <div className="relative rounded-[20px] p-5 overflow-hidden bg-[#1c1c1e]">
+                <div 
+                  className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+                  style={{ background: "radial-gradient(ellipse at center bottom, rgba(59, 130, 246, 0.15) 0%, transparent 70%)" }}
+                />
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-gray-400 uppercase tracking-wide">Enviadas</span>
+                    <div className="w-9 h-9 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                      <Send className="h-4 w-4 text-blue-400" />
+                    </div>
+                  </div>
+                  <p className="text-3xl font-extrabold text-blue-400">{stats.enviadas}</p>
+                  <p className="text-sm font-medium text-gray-500 mt-1">mensagens no total</p>
+                </div>
               </div>
             </div>
 
-            {/* Mini Stats Row - Inline Compact */}
-            <div className="flex items-center gap-3 mb-8">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-[#bfff00]" />
-                <span className="text-sm font-semibold text-gray-700">{stats.total} campanhas</span>
+            {/* Search and Tabs */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 mb-4">
+              <div className="relative flex-1 max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar campanha..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full h-9 pl-9 pr-4 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-100 focus:border-gray-300 transition-all"
+                />
               </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-sm font-semibold text-gray-700">{stats.active} ativas</span>
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-gray-200 shadow-sm">
-                <Send className="h-3.5 w-3.5 text-gray-400" />
-                <span className="text-sm font-semibold text-gray-700">{stats.totalSent.toLocaleString("pt-BR")} enviadas</span>
-              </div>
-            </div>
 
-            {/* Content */}
-            {isLoading ? (
-              <div className="flex items-center justify-center py-32">
-                <RefreshCw className="h-6 w-6 animate-spin text-gray-400" />
-              </div>
-            ) : campaigns.length === 0 ? (
-              /* Empty State - Unique Design */
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-b from-[#bfff00]/5 to-transparent rounded-3xl" />
-                <div className="relative bg-white rounded-3xl border border-gray-200/80 shadow-sm p-12 text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-gray-100 to-gray-50 mb-6">
-                    <Zap className="h-10 w-10 text-gray-400" />
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">Comece a reconquistar seus leads</h3>
-                  <p className="text-gray-500 mb-8 max-w-md mx-auto">
-                    Crie campanhas de remarketing para reengajar usuarios que abandonaram o funil ou nao finalizaram a compra.
-                  </p>
-                  
-                  {/* Quick Audience Preview */}
-                  <div className="flex items-center justify-center gap-4 mb-8">
-                    {AUDIENCES.map((aud) => {
-                      const Icon = aud.icon
-                      return (
-                        <div key={aud.id} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-50 border border-gray-100">
-                          <Icon className="h-4 w-4" style={{ color: aud.color }} />
-                          <span className="text-xs font-medium text-gray-600">{aud.shortName}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  <button 
-                    onClick={() => setShowCreateModal(true)}
-                    className="inline-flex items-center gap-2 px-8 py-3.5 rounded-2xl bg-[#bfff00] text-black text-sm font-bold hover:bg-[#d4ff4d] transition-all shadow-lg shadow-[#bfff00]/30"
+              <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                {tabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                      activeTab === tab.id
+                        ? "bg-white text-gray-900 shadow-sm"
+                        : "text-gray-500 hover:text-gray-700"
+                    }`}
                   >
-                    <Sparkles className="h-5 w-5" />
-                    Criar Primeira Campanha
+                    {tab.label} ({tab.count})
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Table */}
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-[1fr_140px_100px_100px_60px] gap-4 px-5 py-3 bg-gray-50 border-b border-gray-200">
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Campanha</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide">Publico</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide text-center">Enviadas</span>
+                <span className="text-xs font-bold text-gray-500 uppercase tracking-wide text-center">Status</span>
+                <span />
+              </div>
+
+              {/* Body */}
+              {isLoading ? (
+                <div className="flex items-center justify-center py-16">
+                  <RefreshCw className="h-5 w-5 animate-spin text-gray-400" />
+                </div>
+              ) : filteredCampaigns.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
+                    <Megaphone className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <p className="text-sm font-bold text-gray-900">Nenhuma campanha encontrada</p>
+                  <p className="text-xs text-gray-500 mt-1">Crie sua primeira campanha de remarketing</p>
+                  <button 
+                    onClick={() => setCreateOpen(true)}
+                    className="mt-4 flex items-center gap-2 px-4 py-2 rounded-lg bg-[#bfff00] text-[#1c1c1e] text-sm font-semibold hover:bg-[#d4ff4d] transition-colors"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Nova Campanha
                   </button>
                 </div>
-              </div>
-            ) : (
-              /* Campaigns Grid - Card Layout (NOT Table) */
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {campaigns.map((campaign) => {
-                  const audience = getAudienceInfo(campaign.audience || "not_paid")
-                  const AudienceIcon = audience?.icon || Users
-                  const msgCount = campaign.nodes?.filter((n) => n.type === "message").length || 0
-                  const isActive = campaign.status === "ativa"
-                  const isPaused = campaign.status === "pausada"
-                  
-                  return (
-                    <div
-                      key={campaign.id}
-                      className={`group relative bg-white rounded-2xl border transition-all duration-200 overflow-hidden ${
-                        isActive 
-                          ? "border-emerald-200 shadow-lg shadow-emerald-100" 
-                          : "border-gray-200 shadow-sm hover:shadow-md hover:border-gray-300"
-                      }`}
-                    >
-                      {/* Active Indicator Bar */}
-                      {isActive && (
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-emerald-500" />
-                      )}
-                      
-                      <div className="p-5">
-                        {/* Header */}
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div 
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${audience?.bgGradient || "from-gray-100 to-gray-50"}`}
-                            >
-                              <AudienceIcon className="h-6 w-6" style={{ color: audience?.color }} />
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-gray-900">{campaign.name}</h3>
-                              <p className="text-xs text-gray-500">{audience?.shortName || "Publico"}</p>
-                            </div>
-                          </div>
-                          
-                          {/* Status Badge */}
-                          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            isActive 
+              ) : (
+                <div className="divide-y divide-gray-100">
+                  {filteredCampaigns.map((campaign) => {
+                    const audience = getAudience(campaign.audience || "not_paid")
+                    const Icon = audience.icon
+                    return (
+                      <div
+                        key={campaign.id}
+                        className="grid grid-cols-[1fr_140px_100px_100px_60px] gap-4 items-center px-5 py-4 hover:bg-gray-50 transition-colors"
+                      >
+                        {/* Nome */}
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-gray-900 truncate">{campaign.name}</p>
+                          <p className="text-xs text-gray-500">{formatDate(campaign.created_at)}</p>
+                        </div>
+
+                        {/* Publico */}
+                        <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${audience.bgClass} ${audience.textClass} w-fit`}>
+                          <Icon className="h-3 w-3" />
+                          {audience.label}
+                        </div>
+
+                        {/* Enviadas */}
+                        <div className="text-center">
+                          <p className="text-sm font-semibold text-gray-900">{campaign.sent_count || 0}</p>
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex justify-center">
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${
+                            campaign.status === "ativa" 
                               ? "bg-emerald-100 text-emerald-700" 
-                              : isPaused 
-                                ? "bg-yellow-100 text-yellow-700"
+                              : campaign.status === "pausada"
+                                ? "bg-amber-100 text-amber-700"
                                 : "bg-gray-100 text-gray-600"
                           }`}>
-                            {isActive && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />}
-                            {isActive ? "Ativa" : isPaused ? "Pausada" : "Rascunho"}
-                          </div>
+                            {campaign.status === "ativa" && <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />}
+                            {campaign.status.charAt(0).toUpperCase() + campaign.status.slice(1)}
+                          </span>
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex items-center gap-6 mb-4">
-                          <div>
-                            <p className="text-2xl font-black text-gray-900">{campaign.sent_count || 0}</p>
-                            <p className="text-xs text-gray-500">enviadas</p>
-                          </div>
-                          <div className="w-px h-8 bg-gray-200" />
-                          <div>
-                            <p className="text-2xl font-black text-gray-900">{campaign.open_rate || 0}%</p>
-                            <p className="text-xs text-gray-500">abertura</p>
-                          </div>
-                          <div className="w-px h-8 bg-gray-200" />
-                          <div>
-                            <p className="text-2xl font-black text-gray-900">{msgCount}</p>
-                            <p className="text-xs text-gray-500">mensagens</p>
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-2 pt-4 border-t border-gray-100">
-                          <button 
-                            onClick={() => handleToggleStatus(campaign)}
-                            disabled={activating === campaign.id}
-                            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
-                              isActive
-                                ? "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
-                                : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                            }`}
-                          >
-                            {activating === campaign.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : isActive ? (
-                              <>
-                                <Pause className="h-4 w-4" />
-                                Pausar
-                              </>
-                            ) : (
-                              <>
-                                <Play className="h-4 w-4" />
-                                Ativar
-                              </>
-                            )}
-                          </button>
-                          <button 
-                            onClick={() => handleDelete(campaign.id)}
-                            disabled={deleting === campaign.id}
-                            className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                          >
-                            {deleting === campaign.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <Trash2 className="h-4 w-4" />
-                            )}
-                          </button>
+                        {/* Acoes */}
+                        <div className="flex justify-end">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="w-8 h-8 rounded-lg hover:bg-gray-100 flex items-center justify-center transition-colors">
+                                <MoreVertical className="h-4 w-4 text-gray-500" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              <DropdownMenuItem 
+                                onClick={() => handleToggleStatus(campaign)}
+                                className="gap-2"
+                              >
+                                {activating === campaign.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : campaign.status === "ativa" ? (
+                                  <>
+                                    <Pause className="h-4 w-4" />
+                                    Pausar
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="h-4 w-4" />
+                                    Ativar
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem className="gap-2">
+                                <Copy className="h-4 w-4" />
+                                Duplicar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => handleDelete(campaign.id)}
+                                className="gap-2 text-red-600"
+                              >
+                                {deleting === campaign.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : (
+                                  <>
+                                    <Trash2 className="h-4 w-4" />
+                                    Excluir
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-
+                    )
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </ScrollArea>
 
-      {/* Create Campaign Modal - Unique Design */}
-      <Dialog open={showCreateModal} onOpenChange={(open) => !open && resetCreateModal()}>
-        <DialogContent className="sm:max-w-[520px] bg-white border-0 p-0 gap-0 overflow-hidden rounded-3xl shadow-2xl [&>button]:hidden">
-          
-          {/* Header with gradient */}
-          <div className="relative px-8 pt-8 pb-6 bg-gradient-to-b from-gray-50 to-white">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-[#bfff00] to-[#9fdf00] flex items-center justify-center shadow-lg shadow-[#bfff00]/30">
-                <Target className="h-7 w-7 text-black" />
+      {/* Create Modal - Dark Theme */}
+      <Dialog open={createOpen} onOpenChange={(open) => {
+        if (!open) resetModal()
+        else setCreateOpen(true)
+      }}>
+        <DialogContent className="sm:max-w-[400px] bg-[#1c1c1e] border-[#2a2a2e] p-0 gap-0 overflow-hidden rounded-[20px] [&>button]:text-gray-400 [&>button]:hover:text-white">
+          <div className="p-5">
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-12 h-12 rounded-xl bg-[#bfff00]/10 flex items-center justify-center border border-[#bfff00]/20">
+                <Megaphone className="h-6 w-6 text-[#bfff00]" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900">Nova Campanha</h2>
-                <p className="text-sm text-gray-500">Passo {createStep} de 2</p>
+                <h2 className="text-lg font-bold text-white">Nova Campanha</h2>
+                <p className="text-xs text-gray-400">Etapa {step} de 2</p>
               </div>
             </div>
-            
-            {/* Progress Bar */}
-            <div className="mt-6 h-1 bg-gray-200 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-[#bfff00] transition-all duration-300"
-                style={{ width: createStep === 1 ? "50%" : "100%" }}
-              />
-            </div>
-          </div>
 
-          <div className="px-8 pb-8 pt-4">
-            {/* Step 1: Nome */}
-            {createStep === 1 && (
-              <div className="space-y-6">
+            {/* Progress */}
+            <div className="flex gap-2 mb-5">
+              <div className={`flex-1 h-1 rounded-full ${step >= 1 ? "bg-[#bfff00]" : "bg-[#2a2a2e]"}`} />
+              <div className={`flex-1 h-1 rounded-full ${step >= 2 ? "bg-[#bfff00]" : "bg-[#2a2a2e]"}`} />
+            </div>
+
+            {step === 1 && (
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Nome da campanha</label>
-                  <input
-                    type="text"
-                    value={newCampaignName}
-                    onChange={(e) => setNewCampaignName(e.target.value)}
-                    placeholder="Ex: Recuperar carrinhos abandonados"
-                    className="w-full h-14 px-5 bg-gray-50 border-2 border-gray-200 rounded-2xl text-gray-900 placeholder:text-gray-400 focus:outline-none focus:border-[#bfff00] focus:bg-white transition-all text-base"
+                  <Label className="text-xs font-medium text-gray-400 mb-1.5 block uppercase tracking-wide">
+                    Nome da Campanha
+                  </Label>
+                  <Input
+                    placeholder="Ex: Recuperar carrinho abandonado"
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && newName.trim() && setStep(2)}
+                    className="bg-[#2a2a2e] border-[#3a3a3e] text-white placeholder:text-gray-500 h-12 rounded-xl focus:border-[#bfff00] focus:ring-0"
                     autoFocus
                   />
-                  <p className="mt-2 text-xs text-gray-500">Escolha um nome descritivo para identificar sua campanha</p>
                 </div>
-
+                
                 <button
-                  onClick={() => setCreateStep(2)}
-                  disabled={!newCampaignName.trim()}
-                  className="w-full h-14 rounded-2xl bg-gray-900 text-white text-base font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+                  onClick={() => setStep(2)}
+                  disabled={!newName.trim()}
+                  className="w-full bg-[#bfff00] text-[#1c1c1e] py-3 rounded-xl font-bold text-sm hover:bg-[#d4ff4d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   Continuar
-                  <ArrowRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             )}
 
-            {/* Step 2: Publico */}
-            {createStep === 2 && (
-              <div className="space-y-6">
+            {step === 2 && (
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-4">Selecione o publico-alvo</label>
-                  
-                  <div className="space-y-3">
-                    {AUDIENCES.map((aud) => {
-                      const Icon = aud.icon
-                      const isSelected = newCampaignAudience === aud.id
-                      
+                  <Label className="text-xs font-medium text-gray-400 mb-3 block uppercase tracking-wide">
+                    Selecione o Publico
+                  </Label>
+                  <div className="space-y-2">
+                    {AUDIENCES.map((audience) => {
+                      const Icon = audience.icon
                       return (
                         <button
-                          key={aud.id}
-                          type="button"
-                          onClick={() => setNewCampaignAudience(aud.id)}
-                          className={`w-full p-5 rounded-2xl border-2 text-left transition-all ${
-                            isSelected 
-                              ? "border-[#bfff00] bg-[#bfff00]/5" 
-                              : "border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50"
+                          key={audience.id}
+                          onClick={() => setSelectedAudience(audience.id)}
+                          className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-all text-left ${
+                            selectedAudience === audience.id
+                              ? "bg-[#bfff00]/10 border-[#bfff00]/50"
+                              : "bg-[#2a2a2e] border-[#3a3a3e] hover:border-[#4a4a4e]"
                           }`}
                         >
-                          <div className="flex items-center gap-4">
-                            <div 
-                              className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-br ${aud.bgGradient}`}
-                            >
-                              <Icon className="h-6 w-6" style={{ color: aud.color }} />
-                            </div>
-                            <div className="flex-1">
-                              <p className="font-semibold text-gray-900">{aud.name}</p>
-                              <p className="text-sm text-gray-500">{aud.description}</p>
-                            </div>
-                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                              isSelected ? "border-[#bfff00] bg-[#bfff00]" : "border-gray-300"
-                            }`}>
-                              {isSelected && (
-                                <svg className="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </div>
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${audience.bgClass}`}>
+                            <Icon className={`h-5 w-5 ${audience.textClass}`} />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-semibold text-white">{audience.label}</p>
+                            <p className="text-xs text-gray-500">{audience.description}</p>
+                          </div>
+                          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                            selectedAudience === audience.id
+                              ? "border-[#bfff00] bg-[#bfff00]"
+                              : "border-gray-600"
+                          }`}>
+                            {selectedAudience === audience.id && (
+                              <svg className="w-3 h-3 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
                           </div>
                         </button>
                       )
                     })}
                   </div>
                 </div>
-
-                <div className="flex items-center gap-3">
+                
+                <div className="flex gap-3">
                   <button
-                    onClick={() => setCreateStep(1)}
-                    className="flex-1 h-14 rounded-2xl bg-gray-100 text-gray-700 text-base font-semibold hover:bg-gray-200 transition-colors"
+                    onClick={() => setStep(1)}
+                    className="flex-1 bg-[#2a2a2e] text-white py-3 rounded-xl font-semibold text-sm hover:bg-[#3a3a3e] transition-colors"
                   >
                     Voltar
                   </button>
                   <button
-                    onClick={handleCreateCampaign}
-                    disabled={!newCampaignAudience}
-                    className="flex-1 h-14 rounded-2xl bg-[#bfff00] text-black text-base font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[#d4ff4d] transition-colors flex items-center justify-center gap-2"
+                    onClick={handleCreate}
+                    disabled={!selectedAudience || isCreating}
+                    className="flex-1 bg-[#bfff00] text-[#1c1c1e] py-3 rounded-xl font-bold text-sm hover:bg-[#d4ff4d] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    Criar Campanha
-                    <Sparkles className="h-5 w-5" />
+                    {isCreating ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      "Criar Campanha"
+                    )}
                   </button>
                 </div>
               </div>
