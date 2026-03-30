@@ -47,9 +47,35 @@ export async function GET(request: NextRequest) {
       id: f.id,
       name: f.name,
       bot_id: f.bot_id,
+      bot_id_problema: f.bot_id === null ? "SIM - FLUXO NAO VINCULADO A BOT!" : "OK",
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       order_bump_config: (f.config as Record<string, any>)?.orderBump?.inicial,
     }))
+
+    // Buscar vinculos da tabela flow_bots
+    const { data: flowBots } = await supabase
+      .from("flow_bots")
+      .select("id, flow_id, bot_id, bot:bots(id, username)")
+    
+    diagnostics.flow_bots_vinculos = flowBots?.map(fb => ({
+      flow_id: fb.flow_id,
+      bot_id: fb.bot_id,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      bot_username: (fb.bot as any)?.username,
+    })) || []
+
+    // Verificar se fluxos com Order Bump tem vinculo
+    diagnostics.verificacao_vinculos = flowsWithOrderBump.map(f => {
+      const temVinculoDireto = f.bot_id !== null
+      const temVinculoFlowBots = flowBots?.some(fb => fb.flow_id === f.id) || false
+      return {
+        flow_id: f.id,
+        flow_name: f.name,
+        tem_bot_id_direto: temVinculoDireto,
+        tem_vinculo_flow_bots: temVinculoFlowBots,
+        status: temVinculoDireto || temVinculoFlowBots ? "OK" : "ERRO - Fluxo sem vinculo com bot!",
+      }
+    })
 
     // Se tiver bot_id, buscar estado dos usuarios
     if (botId) {
