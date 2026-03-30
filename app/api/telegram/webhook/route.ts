@@ -1041,18 +1041,27 @@ async function processCallbackQuery({
       }
     }
 
-    // Forma 3: Buscar pela tabela bots -> user_id -> flows
+    // Forma 3: Buscar pela tabela bots -> user_id -> flows (pegar o primeiro fluxo do usuario)
     if (!flowId) {
       const { data: flowsByUser } = await supabase
         .from("flows")
         .select("id, config, bot_id")
         .eq("user_id", bot.user_id)
+        .order("created_at", { ascending: false })
       
       // Encontrar o fluxo que tem este bot_id ou o primeiro fluxo do usuario
       const matchingFlow = flowsByUser?.find(f => f.bot_id === bot.id) || flowsByUser?.[0]
       if (matchingFlow) {
         flowId = matchingFlow.id
         flowConfig = matchingFlow.config as Record<string, unknown> | null
+        
+        // Se o fluxo nao tem bot_id, atualizar para associar ao bot atual
+        if (!matchingFlow.bot_id) {
+          await supabase
+            .from("flows")
+            .update({ bot_id: bot.id })
+            .eq("id", matchingFlow.id)
+        }
       }
     }
 
