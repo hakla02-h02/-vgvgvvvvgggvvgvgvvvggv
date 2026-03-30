@@ -336,12 +336,12 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             )
           }
           
-          // Send PIX code
+          // Send PIX code - usando <code> HTML para ser clicavel
           if (pixResultOB.copyPaste) {
             await sendTelegramMessage(
               botToken,
               chatId,
-              `Ou copie o codigo PIX abaixo:\n\n\`${pixResultOB.copyPaste}\``,
+              `Clique no codigo abaixo para copiar:\n\n<code>${pixResultOB.copyPaste}</code>`,
               undefined
             )
           }
@@ -608,12 +608,12 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             )
           }
           
-          // Send PIX copy-paste code
+          // Send PIX copy-paste code - usando <code> HTML para ser clicavel
           if (pixResult.copyPaste) {
             await sendTelegramMessage(
               botToken,
               chatId,
-              `Ou copie o codigo PIX abaixo:\n\n\`${pixResult.copyPaste}\``,
+              `Clique no codigo abaixo para copiar:\n\n<code>${pixResult.copyPaste}</code>`,
               undefined
             )
           }
