@@ -228,6 +228,151 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         return
       }
       
+      // ========== ORDER BUMP CALLBACKS ==========
+      if (callbackData.startsWith("ob_accept_") || callbackData.startsWith("ob_decline_")) {
+        console.log("[v0] Order Bump Callback recebido:", callbackData)
+        
+        const isAccept = callbackData.startsWith("ob_accept_")
+        const parts = callbackData.replace("ob_accept_", "").replace("ob_decline_", "").split("_")
+        
+        // Buscar metadata do order bump salvo no estado
+        const { data: userState } = await supabase
+          .from("user_flow_state")
+          .select("metadata, flow_id")
+          .eq("bot_id", botUuid)
+          .eq("telegram_user_id", String(telegramUserId))
+          .eq("status", "waiting_order_bump")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .single()
+        
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const metadata = userState?.metadata as Record<string, any> | null
+        const orderBumpName = metadata?.order_bump_name || "Order Bump"
+        const mainDescription = metadata?.main_description || "Produto Principal"
+        
+        let totalAmount = 0
+        let description = mainDescription
+        
+        if (isAccept) {
+          const mainAmount = parseFloat(parts[0]) || 0
+          const bumpAmount = parseFloat(parts[1]) || 0
+          totalAmount = mainAmount + bumpAmount
+          description = `${mainDescription} + ${orderBumpName}`
+          console.log("[v0] Order Bump ACEITO - main:", mainAmount, "bump:", bumpAmount, "TOTAL:", totalAmount)
+        } else {
+          totalAmount = parseFloat(parts[0]) || 0
+          description = mainDescription
+          console.log("[v0] Order Bump RECUSADO - Total:", totalAmount)
+        }
+        
+        if (totalAmount <= 0) {
+          await sendTelegramMessage(botToken, chatId, "Erro ao processar. Tente novamente.")
+          return
+        }
+        
+        // Atualizar estado
+        await supabase
+          .from("user_flow_state")
+          .update({ status: "payment_pending", updated_at: new Date().toISOString() })
+          .eq("bot_id", botUuid)
+          .eq("telegram_user_id", String(telegramUserId))
+        
+        // Enviar mensagem de processamento
+        await sendTelegramMessage(
+          botToken,
+          chatId,
+          `${isAccept ? "Otimo! " : ""}Gerando pagamento PIX...\n\nValor: R$ ${totalAmount.toFixed(2).replace(".", ",")}`,
+          undefined
+        )
+        
+        // Get user_id from bot to find gateway
+        const { data: botDataOB } = await supabase
+          .from("bots")
+          .select("user_id")
+          .eq("id", botUuid)
+          .single()
+        
+        if (!botDataOB?.user_id) {
+          await sendTelegramMessage(botToken, chatId, "Erro: Bot nao encontrado.", undefined)
+          return
+        }
+        
+        // Get gateway
+        const { data: gatewayOB } = await supabase
+          .from("user_gateways")
+          .select("*")
+          .eq("user_id", botDataOB.user_id)
+          .eq("is_active", true)
+          .limit(1)
+          .single()
+        
+        if (!gatewayOB || !gatewayOB.access_token) {
+          await sendTelegramMessage(botToken, chatId, "Gateway de pagamento nao configurado.", undefined)
+          return
+        }
+        
+        // Generate PIX
+        try {
+          const pixResultOB = await createPixPayment({
+            accessToken: gatewayOB.access_token,
+            amount: totalAmount,
+            description: `Pagamento - ${description}`,
+            payerEmail: "cliente@email.com",
+          })
+          
+          if (!pixResultOB.success) {
+            await sendTelegramMessage(botToken, chatId, `Erro ao gerar PIX: ${pixResultOB.error || "Tente novamente"}`, undefined)
+            return
+          }
+          
+          // Send QR Code
+          if (pixResultOB.qrCodeUrl) {
+            await sendTelegramPhoto(
+              botToken,
+              chatId,
+              pixResultOB.qrCodeUrl,
+              `Escaneie o QR Code para pagar\n\nValor: R$ ${totalAmount.toFixed(2).replace(".", ",")}\nProduto: ${description}`
+            )
+          }
+          
+          // Send PIX code
+          if (pixResultOB.copyPaste) {
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              `Ou copie o codigo PIX abaixo:\n\n\`${pixResultOB.copyPaste}\``,
+              undefined
+            )
+          }
+          
+          // Save payment
+          await supabase.from("payments").insert({
+            bot_id: botUuid,
+            user_id: botDataOB.user_id,
+            flow_id: userState?.flow_id,
+            amount: totalAmount,
+            status: "pending",
+            payment_method: "pix",
+            gateway: "mercadopago",
+            external_id: pixResultOB.paymentId,
+            pix_code: pixResultOB.copyPaste,
+            qr_code_url: pixResultOB.qrCodeUrl,
+            telegram_user_id: String(telegramUserId),
+            telegram_chat_id: String(chatId),
+            product_type: isAccept ? "order_bump" : "main_product",
+            metadata: { description, isOrderBump: isAccept, orderBumpName: isAccept ? orderBumpName : null }
+          })
+          
+        } catch (pixError) {
+          console.error("[v0] Erro ao gerar PIX para Order Bump:", pixError)
+          await sendTelegramMessage(botToken, chatId, "Erro ao gerar pagamento. Tente novamente.", undefined)
+        }
+        
+        return
+      }
+      // ========== FIM ORDER BUMP CALLBACKS ==========
+      
       // Handle plan selection - generate PIX
       if (callbackData.startsWith("plan_")) {
         const planId = callbackData.replace("plan_", "")
@@ -297,6 +442,64 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           await sendTelegramMessage(botToken, chatId, "Plano nao encontrado.")
           return
         }
+        
+        // ========== VERIFICAR ORDER BUMP ANTES DE GERAR PAGAMENTO ==========
+        if (flowWithPlan) {
+          const flowConfig = (flowWithPlan.config as Record<string, unknown>) || {}
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const orderBumpConfig = flowConfig.orderBump as Record<string, any> | undefined
+          const orderBumpInicial = orderBumpConfig?.inicial
+          
+          console.log("[v0] Order Bump Check - enabled:", orderBumpInicial?.enabled, "price:", orderBumpInicial?.price)
+          
+          if (orderBumpInicial?.enabled && orderBumpInicial?.price > 0) {
+            console.log("[v0] Order Bump ATIVADO! Enviando oferta ao usuario...")
+            
+            const orderBumpDesc = orderBumpInicial.description || `Deseja adicionar ${orderBumpInicial.name || "este bonus"} por apenas R$ ${orderBumpInicial.price}?`
+            const orderBumpAcceptText = orderBumpInicial.acceptText || "ADICIONAR"
+            const orderBumpDeclineText = orderBumpInicial.rejectText || "NAO QUERO"
+            
+            // Formato: ob_accept_{mainAmount}_{bumpAmount} ou ob_decline_{mainAmount}
+            const orderBumpKeyboard = {
+              inline_keyboard: [
+                [{ text: orderBumpAcceptText, callback_data: `ob_accept_${planPrice}_${orderBumpInicial.price}` }],
+                [{ text: orderBumpDeclineText, callback_data: `ob_decline_${planPrice}` }]
+              ]
+            }
+            
+            // Enviar mensagem do plano selecionado
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              `Voce selecionou: *${planName}*\n\nValor: R$ ${planPrice.toFixed(2).replace(".", ",")}`,
+              undefined
+            )
+            
+            // Enviar oferta do Order Bump
+            await sendTelegramMessage(botToken, chatId, orderBumpDesc, orderBumpKeyboard)
+            
+            // Salvar estado para quando usuario responder
+            await supabase.from("user_flow_state").upsert({
+              bot_id: botUuid,
+              telegram_user_id: String(telegramUserId),
+              flow_id: flowWithPlan.id,
+              status: "waiting_order_bump",
+              current_node_position: 0,
+              metadata: {
+                order_bump_name: orderBumpInicial.name || "Order Bump",
+                order_bump_price: orderBumpInicial.price,
+                main_amount: planPrice,
+                main_description: planName
+              },
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: "bot_id,telegram_user_id"
+            })
+            
+            return // STOP - aguardar decisao do Order Bump
+          }
+        }
+        // ========== FIM ORDER BUMP ==========
         
         // Send processing message
         await sendTelegramMessage(
