@@ -433,9 +433,14 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setDownsellEnabled(config.downsell?.enabled || false)
     setDownsellMessage(config.downsell?.message || "")
     setDownsellDiscount(config.downsell?.discount_percent || 10)
-    setOrderBumpEnabled(config.orderBump?.enabled || false)
-    setOrderBumpName(config.orderBump?.name || "")
-    setOrderBumpPrice(config.orderBump?.price?.toString() || "")
+        setOrderBumpEnabled(config.orderBump?.enabled || false)
+        setOrderBumpName(config.orderBump?.name || "")
+        setOrderBumpPrice(config.orderBump?.price?.toString() || "")
+        if (config.orderBump?.inicial) setOrderBumpInicial(config.orderBump.inicial)
+        if (config.orderBump?.upsell) setOrderBumpUpsell(config.orderBump.upsell)
+        if (config.orderBump?.downsell) setOrderBumpDownsell(config.orderBump.downsell)
+        if (config.orderBump?.packs) setOrderBumpPacks(config.orderBump.packs)
+        if (config.orderBump?.applyInicialTo) setApplyInicialTo(config.orderBump.applyInicialTo)
     setPacks(config.packs || [])
     setPaymentGateway(config.payments?.gateway || "")
     setPixKey(config.payments?.pix_key || "")
@@ -574,6 +579,11 @@ Clique no botao abaixo para renovar com desconto especial!`)
         enabled: orderBumpEnabled,
         name: orderBumpName,
         price: parseFloat(orderBumpPrice) || 0,
+        inicial: orderBumpInicial,
+        upsell: orderBumpUpsell,
+        downsell: orderBumpDownsell,
+        packs: orderBumpPacks,
+        applyInicialTo,
       },
       packs,
       payments: {
@@ -2695,34 +2705,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
                               }}
                               className="bg-transparent border-0 p-0 h-auto focus-visible:ring-0 uppercase font-medium"
                             />
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* CTA */}
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">Mensagem CTA (opcional)</Label>
-                        <Input
-                          value={orderBumpInicial.ctaMessage}
-                          onChange={(e) => {
-                            setOrderBumpInicial({...orderBumpInicial, ctaMessage: e.target.value})
-                            setHasChanges(true)
-                          }}
-                          placeholder="Ex: CLIQUE EM ADICIONAR ANTES QUE TIREM DO AR"
-                          className="bg-secondary/50"
-                        />
-                      </div>
-
-                      {/* Midias */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <ImageIcon className="h-4 w-4" />
-                          <span>Midias (ate 3)</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400/50 transition-colors">
-                            <Plus className="h-5 w-5 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
                           </div>
                         </div>
                       </div>
