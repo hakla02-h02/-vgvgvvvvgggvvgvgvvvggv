@@ -43,6 +43,17 @@ interface Flow {
   updated_at: string
 }
 
+interface DeliveryConfig {
+  type: "media" | "vip_group" | "link" | null
+  medias?: string[]
+  link?: string
+  linkText?: string
+  vipGroupId?: string
+  vipGroupName?: string
+  vipAutoAdd?: boolean
+  vipAutoRemoveOnExpire?: boolean
+}
+
 interface FlowConfig {
   welcomeMessage?: string
   welcomeMedias?: string[]
@@ -63,6 +74,7 @@ interface FlowConfig {
   packs?: PackConfig[]
   payments?: PaymentConfig
   subscription?: SubscriptionConfig
+  delivery?: DeliveryConfig
 }
 
 interface FlowPlan {
@@ -381,6 +393,17 @@ Clique no botao abaixo para renovar com desconto especial!`)
   const [telegramChats, setTelegramChats] = useState<TelegramChat[]>([])
   const [isLoadingChats, setIsLoadingChats] = useState(false)
 
+  // Entregaveis (Delivery)
+  const [showDeliveryConfig, setShowDeliveryConfig] = useState(false)
+  const [deliveryType, setDeliveryType] = useState<"media" | "vip_group" | "link" | null>(null)
+  const [deliveryMedias, setDeliveryMedias] = useState<string[]>([])
+  const [deliveryLink, setDeliveryLink] = useState("")
+  const [deliveryLinkText, setDeliveryLinkText] = useState("Acessar Conteudo")
+  const [vipGroupId, setVipGroupId] = useState("")
+  const [vipGroupName, setVipGroupName] = useState("")
+  const [vipAutoAdd, setVipAutoAdd] = useState(true)
+  const [vipAutoRemoveOnExpire, setVipAutoRemoveOnExpire] = useState(true)
+
   // Stats (placeholder)
   const [stats] = useState({ leads: 0, vips: 0, revenue: 0 })
 
@@ -433,9 +456,14 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setDownsellEnabled(config.downsell?.enabled || false)
     setDownsellMessage(config.downsell?.message || "")
     setDownsellDiscount(config.downsell?.discount_percent || 10)
-    setOrderBumpEnabled(config.orderBump?.enabled || false)
-    setOrderBumpName(config.orderBump?.name || "")
-    setOrderBumpPrice(config.orderBump?.price?.toString() || "")
+        setOrderBumpEnabled(config.orderBump?.enabled || false)
+        setOrderBumpName(config.orderBump?.name || "")
+        setOrderBumpPrice(config.orderBump?.price?.toString() || "")
+        if (config.orderBump?.inicial) setOrderBumpInicial(config.orderBump.inicial)
+        if (config.orderBump?.upsell) setOrderBumpUpsell(config.orderBump.upsell)
+        if (config.orderBump?.downsell) setOrderBumpDownsell(config.orderBump.downsell)
+        if (config.orderBump?.packs) setOrderBumpPacks(config.orderBump.packs)
+        if (config.orderBump?.applyInicialTo) setApplyInicialTo(config.orderBump.applyInicialTo)
     setPacks(config.packs || [])
     setPaymentGateway(config.payments?.gateway || "")
     setPixKey(config.payments?.pix_key || "")
@@ -444,9 +472,24 @@ Clique no botao abaixo para renovar com desconto especial!`)
     setSecondaryMessage(config.secondaryMessage?.message || "")
     setWelcomeMedias(config.welcomeMedias || [])
     setCtaButtonText(config.ctaButtonText || "Ver Planos")
-    setRedirectButtonEnabled(config.redirectButton?.enabled || false)
-    setRedirectButtonText(config.redirectButton?.text || "")
-    setRedirectButtonUrl(config.redirectButton?.url || "")
+setRedirectButtonEnabled(config.redirectButton?.enabled || false)
+  setRedirectButtonText(config.redirectButton?.text || "")
+  setRedirectButtonUrl(config.redirectButton?.url || "")
+  
+  // Load delivery config
+  if (config.delivery) {
+    setDeliveryType(config.delivery.type || null)
+    setDeliveryMedias(config.delivery.medias || [])
+    setDeliveryLink(config.delivery.link || "")
+    setDeliveryLinkText(config.delivery.linkText || "Acessar Conteudo")
+    setVipGroupId(config.delivery.vipGroupId || "")
+    setVipGroupName(config.delivery.vipGroupName || "")
+    setVipAutoAdd(config.delivery.vipAutoAdd !== false)
+    setVipAutoRemoveOnExpire(config.delivery.vipAutoRemoveOnExpire !== false)
+    if (config.delivery.type) {
+      setShowDeliveryConfig(true)
+    }
+  }
 
     setIsLoading(false)
   }, [flowId, session?.userId, router, isAuthLoading])
@@ -547,6 +590,8 @@ Clique no botao abaixo para renovar com desconto especial!`)
 
     setIsSaving(true)
 
+    console.log("[v0] SALVANDO Order Bump Inicial:", JSON.stringify(orderBumpInicial, null, 2))
+
     const config: FlowConfig = {
       welcomeMessage: welcomeMessage,
       welcomeMedias: welcomeMedias,
@@ -574,6 +619,11 @@ Clique no botao abaixo para renovar com desconto especial!`)
         enabled: orderBumpEnabled,
         name: orderBumpName,
         price: parseFloat(orderBumpPrice) || 0,
+        inicial: orderBumpInicial,
+        upsell: orderBumpUpsell,
+        downsell: orderBumpDownsell,
+        packs: orderBumpPacks,
+        applyInicialTo,
       },
       packs,
       payments: {
@@ -582,6 +632,16 @@ Clique no botao abaixo para renovar com desconto especial!`)
       },
       subscription: {
         enabled: subscriptionEnabled,
+      },
+      delivery: {
+        type: deliveryType,
+        medias: deliveryMedias,
+        link: deliveryLink,
+        linkText: deliveryLinkText,
+        vipGroupId: vipGroupId,
+        vipGroupName: vipGroupName,
+        vipAutoAdd: vipAutoAdd,
+        vipAutoRemoveOnExpire: vipAutoRemoveOnExpire,
       },
     }
 
@@ -594,25 +654,32 @@ Clique no botao abaixo para renovar com desconto especial!`)
       updated_at: new Date().toISOString(),
     }
 
+    console.log("[v0] Update payload orderBump:", JSON.stringify(updatePayload.config.orderBump, null, 2))
+
     const { data, error } = await supabase
       .from("flows")
       .update(updatePayload)
       .eq("id", flow.id)
       .select()
 
+    console.log("[v0] Supabase update result - data:", data, "error:", error)
+
     if (error) {
+      console.log("[v0] ERRO ao salvar:", error.message)
       toast({
         title: "Erro",
         description: `Nao foi possivel salvar: ${error.message}`,
         variant: "destructive",
       })
     } else if (!data || data.length === 0) {
+      console.log("[v0] ERRO: Nenhuma linha atualizada")
       toast({
         title: "Erro",
         description: "Nenhuma linha foi atualizada",
         variant: "destructive",
       })
     } else {
+      console.log("[v0] SUCESSO! Dados salvos:", JSON.stringify(data[0]?.config?.orderBump, null, 2))
       toast({
         title: "Sucesso",
         description: "Configuracoes salvas com sucesso!",
@@ -2699,34 +2766,6 @@ Clique no botao abaixo para renovar com desconto especial!`)
                         </div>
                       </div>
 
-                      {/* CTA */}
-                      <div className="space-y-2">
-                        <Label className="text-muted-foreground">Mensagem CTA (opcional)</Label>
-                        <Input
-                          value={orderBumpInicial.ctaMessage}
-                          onChange={(e) => {
-                            setOrderBumpInicial({...orderBumpInicial, ctaMessage: e.target.value})
-                            setHasChanges(true)
-                          }}
-                          placeholder="Ex: CLIQUE EM ADICIONAR ANTES QUE TIREM DO AR"
-                          className="bg-secondary/50"
-                        />
-                      </div>
-
-                      {/* Midias */}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <ImageIcon className="h-4 w-4" />
-                          <span>Midias (ate 3)</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-blue-400/50 transition-colors">
-                            <Plus className="h-5 w-5 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
-                          </div>
-                        </div>
-                      </div>
-
                       {/* Entrega */}
                       <div className="space-y-2">
                         <Label className="text-muted-foreground">Entrega do Order Bump</Label>
@@ -3813,93 +3852,278 @@ Clique no botao abaixo para renovar com desconto especial!`)
             </div>
           )}
 
-          {/* Media Cache - Only show in bots tab */}
+          {/* Entregaveis - Only show in bots tab */}
           {activeTab === "bots" && (
-            <>
-              <Card className="border-border/50 mb-6">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <Settings2 className="h-4 w-4 text-accent" />
-                    Cache de Midia
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Canal ou grupo para cache do Telegram
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <Select
-                      value={mediaCacheChat}
-                      onValueChange={(value) => {
-                        setMediaCacheChat(value)
-                        setHasChanges(true)
-                      }}
-                    >
-                      <SelectTrigger className="bg-secondary/30">
-                        <SelectValue placeholder="Selecionar canal/grupo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {telegramChats.map((chat) => (
-                          <SelectItem key={chat.id} value={chat.id}>
-                            {chat.title}
-                          </SelectItem>
-                        ))}
-                        {telegramChats.length === 0 && (
-                          <SelectItem value="none" disabled>
-                            Nenhum canal disponivel
-                          </SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+            <Card className="border-border/50 mb-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Gift className="h-4 w-4 text-accent" />
+                  Entregavel
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {!showDeliveryConfig ? (
+                  <div className="space-y-3">
+                    <p className="text-xs text-muted-foreground">
+                      Configure o que sera entregue apos o pagamento ser aprovado
+                    </p>
                     <Button
                       variant="outline"
-                      size="icon"
-                      onClick={handleRefreshChats}
-                      disabled={isLoadingChats}
+                      className="w-full justify-start gap-3 h-auto py-3"
+                      onClick={() => setShowDeliveryConfig(true)}
                     >
-                      <RefreshCw className={`h-4 w-4 ${isLoadingChats ? "animate-spin" : ""}`} />
+                      <div className="h-9 w-9 rounded-lg bg-accent/10 flex items-center justify-center">
+                        <Settings2 className="h-4 w-4 text-accent" />
+                      </div>
+                      <div className="text-left">
+                        <p className="font-medium text-sm">Configurar Entregavel</p>
+                        <p className="text-xs text-muted-foreground">Clique para definir o tipo de entrega</p>
+                      </div>
                     </Button>
                   </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Tipo de Entregavel */}
+                    <div className="space-y-3">
+                      <Label className="text-xs text-muted-foreground">Tipo de Entregavel</Label>
+                      <div className="grid grid-cols-1 gap-2">
+                        {/* Midia */}
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryType("media")}
+                          className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                            deliveryType === "media"
+                              ? "border-accent bg-accent/10"
+                              : "border-border/50 hover:border-accent/50 hover:bg-accent/5"
+                          }`}
+                        >
+                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                            deliveryType === "media" ? "bg-accent text-black" : "bg-secondary/50"
+                          }`}>
+                            <ImageIcon className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">Entregavel de Midia</p>
+                            <p className="text-xs text-muted-foreground">Envie fotos, videos ou arquivos</p>
+                          </div>
+                        </button>
 
-                  {/* Instructions */}
-                  <div className="mt-4 p-3 rounded-lg bg-success/10 border border-success/30">
-                    <p className="text-xs font-medium text-success mb-2">Como configurar:</p>
-                    <ol className="text-xs text-muted-foreground space-y-1">
-                      <li>1. Crie um <span className="text-success font-medium">canal</span> ou <span className="text-success font-medium">grupo</span> no Telegram</li>
-                      <li>2. Adicione o bot como <span className="text-accent font-medium">administrador</span></li>
-                      <li>3. De permissao de <span className="font-medium">postar mensagens</span></li>
-                      <li>4. Clique no botao <span className="text-accent font-medium">&quot;Atualizar&quot;</span> ao lado</li>
-                    </ol>
-                    <div className="flex items-center gap-2 mt-3 pt-2 border-t border-success/20">
-                      <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-                      <span className="text-[10px] text-warning">Necessario para enviar midia</span>
+                        {/* Grupo VIP */}
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryType("vip_group")}
+                          className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                            deliveryType === "vip_group"
+                              ? "border-accent bg-accent/10"
+                              : "border-border/50 hover:border-accent/50 hover:bg-accent/5"
+                          }`}
+                        >
+                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                            deliveryType === "vip_group" ? "bg-accent text-black" : "bg-secondary/50"
+                          }`}>
+                            <Users className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">Entregavel de Grupo VIP</p>
+                            <p className="text-xs text-muted-foreground">Adicione automaticamente ao grupo</p>
+                          </div>
+                        </button>
+
+                        {/* Link */}
+                        <button
+                          type="button"
+                          onClick={() => setDeliveryType("link")}
+                          className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                            deliveryType === "link"
+                              ? "border-accent bg-accent/10"
+                              : "border-border/50 hover:border-accent/50 hover:bg-accent/5"
+                          }`}
+                        >
+                          <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                            deliveryType === "link" ? "bg-accent text-black" : "bg-secondary/50"
+                          }`}>
+                            <Link2 className="h-5 w-5" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">Entregavel de Link</p>
+                            <p className="text-xs text-muted-foreground">Envie um link de acesso</p>
+                          </div>
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
 
-              {/* Support */}
-              <Card className="border-border/50">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-sm">
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                    @ Suporte
-                    <span className="text-xs text-muted-foreground font-normal">(opcional)</span>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Input
-                    value={supportUsername}
-                    onChange={(e) => {
-                      setSupportUsername(e.target.value.replace("@", ""))
-                      setHasChanges(true)
-                    }}
-                    placeholder="@username"
-                    className="bg-secondary/30"
-                  />
-                </CardContent>
-              </Card>
-            </>
+                    {/* Config baseado no tipo */}
+                    {deliveryType === "media" && (
+                      <div className="space-y-3 p-3 rounded-xl bg-secondary/20 border border-border/50">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-xs font-medium">Midias do Entregavel</Label>
+                          <span className="text-[10px] text-muted-foreground">{deliveryMedias.length}/20</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {deliveryMedias.map((media, index) => (
+                            <div key={index} className="relative w-16 h-16 rounded-lg border border-border/50 overflow-hidden group">
+                              <img src={media} alt={`Media ${index + 1}`} className="w-full h-full object-cover" />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setDeliveryMedias(deliveryMedias.filter((_, i) => i !== index))
+                                  setHasChanges(true)
+                                }}
+                                className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                              >
+                                <Trash2 className="h-4 w-4 text-white" />
+                              </button>
+                            </div>
+                          ))}
+                          {deliveryMedias.length < 20 && (
+                            <label className="w-16 h-16 rounded-lg border-2 border-dashed border-border/50 flex flex-col items-center justify-center cursor-pointer hover:border-accent/50 transition-colors">
+                              <Plus className="h-5 w-5 text-muted-foreground" />
+                              <input
+                                type="file"
+                                accept="image/*,video/*"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0]
+                                  if (file && flow) {
+                                    try {
+                                      const fileExt = file.name.split('.').pop()
+                                      const fileName = `${flow.id}/delivery/${Date.now()}.${fileExt}`
+                                      const { data, error } = await supabase.storage
+                                        .from('flow-medias')
+                                        .upload(fileName, file, { cacheControl: '3600', upsert: false })
+                                      if (error) {
+                                        toast({ title: "Erro no upload", description: error.message, variant: "destructive" })
+                                        return
+                                      }
+                                      const { data: urlData } = supabase.storage.from('flow-medias').getPublicUrl(fileName)
+                                      setDeliveryMedias([...deliveryMedias, urlData.publicUrl])
+                                      setHasChanges(true)
+                                    } catch (err) {
+                                      toast({ title: "Erro", description: "Falha ao fazer upload", variant: "destructive" })
+                                    }
+                                  }
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Adicione ate 20 midias que serao enviadas apos o pagamento
+                        </p>
+                      </div>
+                    )}
+
+                    {deliveryType === "vip_group" && (
+                      <div className="space-y-3 p-3 rounded-xl bg-secondary/20 border border-border/50">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">ID do Grupo VIP</Label>
+                          <Input
+                            value={vipGroupId}
+                            onChange={(e) => {
+                              setVipGroupId(e.target.value)
+                              setHasChanges(true)
+                            }}
+                            placeholder="-1001234567890"
+                            className="bg-secondary/30 font-mono text-sm"
+                          />
+                          <p className="text-[10px] text-muted-foreground">
+                            ID do grupo no Telegram (use @userinfobot para obter)
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">Nome do Grupo (opcional)</Label>
+                          <Input
+                            value={vipGroupName}
+                            onChange={(e) => {
+                              setVipGroupName(e.target.value)
+                              setHasChanges(true)
+                            }}
+                            placeholder="Grupo VIP Premium"
+                            className="bg-secondary/30 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-2 pt-2 border-t border-border/30">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-medium">Adicionar automaticamente</p>
+                              <p className="text-[10px] text-muted-foreground">Adicionar membro ao pagar</p>
+                            </div>
+                            <Switch
+                              checked={vipAutoAdd}
+                              onCheckedChange={(checked) => {
+                                setVipAutoAdd(checked)
+                                setHasChanges(true)
+                              }}
+                            />
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-medium">Remover ao expirar</p>
+                              <p className="text-[10px] text-muted-foreground">Remover quando acesso expirar</p>
+                            </div>
+                            <Switch
+                              checked={vipAutoRemoveOnExpire}
+                              onCheckedChange={(checked) => {
+                                setVipAutoRemoveOnExpire(checked)
+                                setHasChanges(true)
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <div className="p-2 rounded-lg bg-accent/10 border border-accent/20">
+                          <p className="text-[10px] text-accent">
+                            O bot precisa ser administrador do grupo com permissao de adicionar membros
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {deliveryType === "link" && (
+                      <div className="space-y-3 p-3 rounded-xl bg-secondary/20 border border-border/50">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">Link de Acesso</Label>
+                          <Input
+                            value={deliveryLink}
+                            onChange={(e) => {
+                              setDeliveryLink(e.target.value)
+                              setHasChanges(true)
+                            }}
+                            placeholder="https://exemplo.com/acesso"
+                            className="bg-secondary/30 text-sm"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium">Texto do Botao</Label>
+                          <Input
+                            value={deliveryLinkText}
+                            onChange={(e) => {
+                              setDeliveryLinkText(e.target.value)
+                              setHasChanges(true)
+                            }}
+                            placeholder="Acessar Conteudo"
+                            className="bg-secondary/30 text-sm"
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          O link sera enviado como botao clicavel apos o pagamento
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Botao Voltar */}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowDeliveryConfig(false)}
+                      className="w-full"
+                    >
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Voltar
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
 
 
