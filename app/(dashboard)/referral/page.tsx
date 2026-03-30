@@ -205,9 +205,18 @@ export default function ReferralPage() {
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 w-[80%] h-20 bg-accent opacity-20 blur-[40px] rounded-full pointer-events-none"></div>
                 <div className="flex flex-col gap-4 sm:gap-6 relative z-10 h-full justify-between">
                   <div>
-                    <p className="text-muted-foreground text-xs uppercase tracking-widest font-semibold mb-1">Ganhos Totais</p>
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-muted-foreground text-sm font-bold uppercase tracking-widest">Ganhos Totais</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        className="bg-accent hover:bg-accent/90 text-black font-bold border-0 rounded-xl px-4"
+                      >
+                        Sacar
+                      </Button>
+                    </div>
                     <div className="flex items-baseline gap-2 flex-wrap">
-                      <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tighter">
+                      <span className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tighter">
                         R$ {totalEarnings.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </span>
                       {totalEarnings > 0 && (
@@ -217,12 +226,12 @@ export default function ReferralPage() {
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-4 sm:pt-6 border-t border-background/10 dark:border-border">
                     <div>
-                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Usuarios Indicados</p>
-                      <p className="text-xl lg:text-2xl font-bold">{totalReferrals}</p>
+                      <p className="text-muted-foreground text-sm font-bold uppercase tracking-wider mb-1">Usuarios Indicados</p>
+                      <p className="text-2xl lg:text-3xl font-extrabold">{totalReferrals}</p>
                     </div>
                     <div>
-                      <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-1">Comissao Atual</p>
-                      <p className="text-xl lg:text-2xl font-bold text-accent">25%</p>
+                      <p className="text-muted-foreground text-sm font-bold uppercase tracking-wider mb-1">Comissao Atual</p>
+                      <p className="text-2xl lg:text-3xl font-extrabold text-accent">15%</p>
                     </div>
                   </div>
                 </div>
