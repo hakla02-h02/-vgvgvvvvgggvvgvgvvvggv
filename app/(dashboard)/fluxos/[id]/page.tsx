@@ -288,6 +288,7 @@ export default function FlowEditorPage() {
   const [upsellDeliveryType, setUpsellDeliveryType] = useState<"same" | "custom">("same")
   const [upsellCustomDelivery, setUpsellCustomDelivery] = useState("")
   const [expandedSequence, setExpandedSequence] = useState<string | null>(null)
+  const [uploadingUpsellMedia, setUploadingUpsellMedia] = useState<string | null>(null)
 
   // Downsell
   const [downsellEnabled, setDownsellEnabled] = useState(false)
@@ -887,12 +888,60 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
 
   // Duplicate upsell sequence
   const handleDuplicateUpsellSequence = (seq: UpsellSequence) => {
-    if (upsellSequences.length >= 20) return
-    const newSequence = { ...seq, id: `seq-${Date.now()}` }
-    setUpsellSequences([...upsellSequences, newSequence])
-    setHasChanges(true)
+  if (upsellSequences.length >= 20) return
+  const newSequence = { ...seq, id: `seq-${Date.now()}` }
+  setUpsellSequences([...upsellSequences, newSequence])
+  setHasChanges(true)
   }
 
+  // Upload media for upsell sequence
+  const handleUploadUpsellMedia = async (seqId: string, file: File) => {
+    if (!file) return
+    
+    const currentSeq = upsellSequences.find(s => s.id === seqId)
+    if (!currentSeq || (currentSeq.medias?.length || 0) >= 3) {
+      alert("Maximo de 3 midias permitido")
+      return
+    }
+
+    setUploadingUpsellMedia(seqId)
+    
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("mediaType", file.type.startsWith("video/") ? "video" : "photo")
+
+      const response = await fetch("/api/upload-media", {
+        method: "POST",
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Erro ao fazer upload")
+      }
+
+      // Adicionar a URL da midia ao array de midias
+      const updatedMedias = [...(currentSeq.medias || []), data.url]
+      handleUpdateUpsellSequence(seqId, "medias", updatedMedias)
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error)
+      alert(error instanceof Error ? error.message : "Erro ao fazer upload")
+    } finally {
+      setUploadingUpsellMedia(null)
+    }
+  }
+
+  // Remove media from upsell sequence
+  const handleRemoveUpsellMedia = (seqId: string, mediaIndex: number) => {
+    const currentSeq = upsellSequences.find(s => s.id === seqId)
+    if (!currentSeq) return
+    
+    const updatedMedias = (currentSeq.medias || []).filter((_, i) => i !== mediaIndex)
+    handleUpdateUpsellSequence(seqId, "medias", updatedMedias)
+  }
+  
   // Add downsell sequence
   const handleAddDownsellSequence = () => {
     if (downsellSequences.length >= 20) return
@@ -2026,11 +2075,49 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                                 <ImageIcon className="h-4 w-4" />
                                 <span>Midias (ate 3)</span>
                               </div>
-                              <div className="flex gap-2">
-                                <div className="w-24 h-20 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-accent/50 transition-colors">
-                                  <Plus className="h-5 w-5 text-muted-foreground" />
-                                  <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
-                                </div>
+                              <div className="flex flex-wrap gap-2">
+                                {/* Midias existentes */}
+                                {(seq.medias || []).map((media, mediaIndex) => (
+                                  <div key={mediaIndex} className="relative w-24 h-20 rounded-lg overflow-hidden group">
+                                    {media.includes("video") || media.includes("mp4") ? (
+                                      <video src={media} className="w-full h-full object-cover" muted />
+                                    ) : (
+                                      <img src={media} alt={`Midia ${mediaIndex + 1}`} className="w-full h-full object-cover" />
+                                    )}
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRemoveUpsellMedia(seq.id, mediaIndex)}
+                                      className="absolute top-1 right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <X className="h-3 w-3 text-white" />
+                                    </button>
+                                  </div>
+                                ))}
+                                
+                                {/* Botao de adicionar */}
+                                {(seq.medias?.length || 0) < 3 && (
+                                  <label className="w-24 h-20 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-accent/50 transition-colors">
+                                    {uploadingUpsellMedia === seq.id ? (
+                                      <div className="animate-spin h-5 w-5 border-2 border-accent border-t-transparent rounded-full" />
+                                    ) : (
+                                      <>
+                                        <Plus className="h-5 w-5 text-muted-foreground" />
+                                        <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                                      </>
+                                    )}
+                                    <input
+                                      type="file"
+                                      accept="image/*,video/*"
+                                      className="hidden"
+                                      onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file) handleUploadUpsellMedia(seq.id, file)
+                                        e.target.value = ""
+                                      }}
+                                      disabled={uploadingUpsellMedia === seq.id}
+                                    />
+                                  </label>
+                                )}
                               </div>
                             </div>
 
