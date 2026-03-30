@@ -1663,7 +1663,7 @@ Clique no botao abaixo para renovar com desconto especial!`)
                   </CardContent>
                 </Card>
 
-                {/* Entrega Padrao */}
+                {/* Entrega Padrao - Configuracao de Entregaveis */}
                 <Card className="border-border/50">
                   <CardHeader className="pb-3">
                     <div className="flex items-center gap-3">
@@ -1671,38 +1671,116 @@ Clique no botao abaixo para renovar com desconto especial!`)
                         <Package className="h-5 w-5 text-accent" />
                       </div>
                       <div>
-                        <CardTitle className="text-base">Entrega Padrao (Fallback)</CardTitle>
+                        <CardTitle className="text-base">Entregaveis</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                          Usada quando o plano esta em "Usar padrao"
+                          Configure o que entregar apos o pagamento ser aprovado
                         </p>
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <Label>
-                        Destino da Entrega <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="flex gap-2">
-                        <Select>
-                          <SelectTrigger className="bg-secondary/50 border-border/50">
-                            <SelectValue placeholder="Selecione o destino" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="channel1">Canal 1</SelectItem>
-                            <SelectItem value="channel2">Canal 2</SelectItem>
-                            <SelectItem value="group1">Grupo 1</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <Button variant="outline" size="icon" className="shrink-0">
-                          <RefreshCw className="h-4 w-4" />
-                        </Button>
+                  <CardContent className="space-y-5">
+                    {/* Tipo 1: Link */}
+                    <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10">
+                            <ExternalLink className="h-4 w-4 text-blue-500" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Link</p>
+                            <p className="text-xs text-muted-foreground">Enviar um link apos pagamento</p>
+                          </div>
+                        </div>
+                        <Switch defaultChecked={false} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">URL do Link</Label>
+                        <Input 
+                          placeholder="https://exemplo.com/acesso" 
+                          className="bg-secondary/50 border-border/50"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Texto do botao (opcional)</Label>
+                        <Input 
+                          placeholder="Acessar conteudo" 
+                          className="bg-secondary/50 border-border/50"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Tipo 2: Midia */}
+                    <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-purple-500/10">
+                            <ImageIcon className="h-4 w-4 text-purple-500" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Midia</p>
+                            <p className="text-xs text-muted-foreground">Enviar fotos ou videos do cache</p>
+                          </div>
+                        </div>
+                        <Switch defaultChecked={false} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Canal/Grupo de Cache</Label>
+                        <div className="flex gap-2">
+                          <Select>
+                            <SelectTrigger className="bg-secondary/50 border-border/50">
+                              <SelectValue placeholder="Selecione o cache de midia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cache1">Canal de Fotos</SelectItem>
+                              <SelectItem value="cache2">Canal de Videos</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Button variant="outline" size="icon" className="shrink-0">
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        <p className="text-[10px] text-muted-foreground">
+                          Configure o cache de midia nas configuracoes do bot
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Tipo 3: Grupo VIP */}
+                    <div className="rounded-xl border border-border/50 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent/10">
+                            <Users className="h-4 w-4 text-accent" />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-sm">Grupo VIP</p>
+                            <p className="text-xs text-muted-foreground">Adicionar ao grupo automaticamente</p>
+                          </div>
+                        </div>
+                        <Switch defaultChecked={false} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">ID do Grupo</Label>
+                        <Input 
+                          placeholder="-1001234567890" 
+                          className="bg-secondary/50 border-border/50"
+                        />
+                        <p className="text-[10px] text-muted-foreground">
+                          O bot deve ser admin do grupo com permissao para adicionar membros
+                        </p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs text-muted-foreground">Mensagem de boas-vindas (opcional)</Label>
+                        <Input 
+                          placeholder="Bem-vindo ao grupo VIP!" 
+                          className="bg-secondary/50 border-border/50"
+                        />
                       </div>
                     </div>
 
                     <div className="rounded-lg bg-accent/10 p-3">
                       <p className="text-sm text-accent">
-                        <span className="font-medium">Dica:</span> Esta configuracao sera usada quando um plano estiver marcado como "Usar entrega padrao". Cada plano pode ter sua propria entrega personalizada.
+                        <span className="font-medium">Dica:</span> Voce pode ativar multiplos entregaveis. Todos serao enviados automaticamente apos a aprovacao do pagamento.
                       </p>
                     </div>
                   </CardContent>
