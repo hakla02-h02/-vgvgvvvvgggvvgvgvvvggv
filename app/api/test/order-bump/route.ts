@@ -17,6 +17,8 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const flowId = searchParams.get("flow_id")
 
+  console.log("[v0] ORDER BUMP TEST - flow_id:", flowId)
+
   const supabase = await createClient()
 
   const results: {
@@ -44,6 +46,8 @@ export async function GET(request: Request) {
 
     const { data: flows, error: flowError } = await flowQuery.limit(10)
 
+    console.log("[v0] ORDER BUMP TEST - Fluxos encontrados:", flows?.length, "Erro:", flowError?.message)
+
     if (flowError) {
       return NextResponse.json({
         success: false,
@@ -61,9 +65,11 @@ export async function GET(request: Request) {
     for (const flow of flows || []) {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const config = flow.config as Record<string, any>
+      console.log("[v0] ORDER BUMP TEST - Verificando fluxo:", flow.name, "orderBump:", JSON.stringify(config?.orderBump))
       if (config?.orderBump?.inicial?.enabled) {
         selectedFlow = flow
         orderBumpConfig = config.orderBump
+        console.log("[v0] ORDER BUMP TEST - ENCONTRADO Order Bump ativo em:", flow.name)
         break
       }
     }
