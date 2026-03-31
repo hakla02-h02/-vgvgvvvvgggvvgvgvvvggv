@@ -925,6 +925,65 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             status: "pending",
           })
           
+          // AGENDAR DOWNSELLS DO TIPO "PIX" (para quem gerou pix mas nao pagou)
+          // Buscar flow para pegar config de downsell
+          const { data: flowForDownsell } = await supabase
+            .from("flows")
+            .select("id, config")
+            .eq("bot_id", botUuid)
+            .eq("status", "ativo")
+            .limit(1)
+            .single()
+          
+          if (flowForDownsell) {
+            const flowConfig = (flowForDownsell.config as Record<string, unknown>) || {}
+            const downsellConfig = flowConfig.downsell as { enabled?: boolean; sequences?: Array<{ 
+              id: string; message: string; medias?: string[]; sendDelay: number; sendDelayUnit?: string; 
+              price: number; targetType?: string; deliveryType?: string 
+            }> } | undefined
+            
+            if (downsellConfig?.enabled && downsellConfig.sequences && downsellConfig.sequences.length > 0) {
+              const now = new Date()
+              
+              // Apenas sequencias do tipo "pix"
+              const pixSequences = downsellConfig.sequences.filter(s => s.targetType === "pix")
+              
+              for (const seq of pixSequences) {
+                // Se imediato, agendar para agora. Se custom, usar o valor configurado
+                let delayMinutes = 0
+                if (seq.sendTiming === "custom" && seq.sendDelayValue) {
+                  delayMinutes = seq.sendDelayValue
+                  if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelayValue * 60
+                  else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelayValue * 60 * 24
+                }
+                const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
+                
+                await supabase.from("scheduled_messages").insert({
+                  bot_id: botUuid,
+                  flow_id: flowForDownsell.id,
+                  telegram_user_id: String(telegramUserId),
+                  telegram_chat_id: String(chatId),
+                  message_type: "downsell",
+                  sequence_id: seq.id,
+                  sequence_index: pixSequences.indexOf(seq),
+                  scheduled_for: scheduledFor.toISOString(),
+                  status: "pending",
+                  metadata: {
+                    message: seq.message,
+                    medias: seq.medias || [],
+                    price: seq.price,
+                    deliveryType: seq.deliveryType,
+                    botToken: botToken,
+                    targetType: "pix",
+                    pixPaymentId: pixResult.paymentId,
+                  }
+                })
+              }
+              
+              console.log(`[DOWNSELL PIX] Scheduled ${pixSequences.length} pix downsells for user ${telegramUserId}`)
+            }
+          }
+          
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : String(err)
           console.error("PIX generation error:", errorMsg)
@@ -1125,6 +1184,57 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         if (secondaryMsg.enabled && secondaryMsg.message) {
           await new Promise(resolve => setTimeout(resolve, 500))
           await sendTelegramMessage(botToken, chatId, replaceVars(secondaryMsg.message))
+        }
+        
+        // STEP 4: Schedule downsell sequences (enviadas para quem NAO pagou)
+        const downsellConfig = flowConfig.downsell as { enabled?: boolean; sequences?: Array<{ 
+          id: string; message: string; medias?: string[]; sendDelay: number; sendDelayUnit?: string; 
+          price: number; targetType?: string; deliveryType?: string 
+        }> } | undefined
+        
+        if (downsellConfig?.enabled && downsellConfig.sequences && downsellConfig.sequences.length > 0) {
+          const now = new Date()
+          
+          // Cancelar agendamentos anteriores deste usuario
+          await supabase
+            .from("scheduled_messages")
+            .update({ status: "cancelled" })
+            .eq("bot_id", botUuid)
+            .eq("telegram_user_id", String(telegramUserId))
+            .eq("status", "pending")
+          
+          // Agendar sequencias do tipo "geral" (para todos que derem start)
+          const geralSequences = downsellConfig.sequences.filter(s => s.targetType === "geral" || !s.targetType)
+          
+          for (const seq of geralSequences) {
+            // Se imediato, agendar para agora. Se custom, usar o valor configurado
+            let delayMinutes = 0
+            if (seq.sendTiming === "custom" && seq.sendDelayValue) {
+              delayMinutes = seq.sendDelayValue
+              if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelayValue * 60
+              else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelayValue * 60 * 24
+            }
+            const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
+            
+            await supabase.from("scheduled_messages").insert({
+              bot_id: botUuid,
+              flow_id: startFlow.id,
+              telegram_user_id: String(telegramUserId),
+              telegram_chat_id: String(chatId),
+              message_type: "downsell",
+              sequence_id: seq.id,
+              sequence_index: geralSequences.indexOf(seq),
+              scheduled_for: scheduledFor.toISOString(),
+              status: "pending",
+              metadata: {
+                message: seq.message,
+                medias: seq.medias || [],
+                price: seq.price,
+                deliveryType: seq.deliveryType,
+                botToken: botToken, // Necessario para enviar
+              }
+            })
+          }
         }
         
         return

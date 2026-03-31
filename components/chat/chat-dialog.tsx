@@ -1,14 +1,17 @@
 "use client"
 
+// Chat Dialog Component - v3 - REBUILD FORÇADO
 import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, X, Search, MessageSquare, User, Bot, RefreshCw } from "lucide-react"
-import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+
+// Cliente Supabase importado diretamente
+import { supabase } from "@/lib/supabase"
 
 interface Conversation {
   telegram_user_id: string
@@ -18,9 +21,9 @@ interface Conversation {
   username?: string
   last_message?: string
   last_message_at?: string
-  unread_count?: number
   bot_id: string
   bot_username?: string
+  unread_count?: number
 }
 
 interface Message {
@@ -29,9 +32,8 @@ interface Message {
   telegram_user_id: string
   telegram_chat_id: string
   direction: "incoming" | "outgoing"
-  message_type: "text" | "photo" | "video" | "document" | "callback"
+  message_type: string
   content: string
-  media_url?: string
   created_at: string
 }
 
@@ -44,95 +46,105 @@ interface ChatDialogProps {
 
 export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDialogProps) {
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [messages, setMessages] = useState<Message[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState("")
-  const [loading, setLoading] = useState(false)
+  const [searchQuery, setSearchQuery] = useState("")
   const [sending, setSending] = useState(false)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [loading, setLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null)
 
-  // Buscar conversas
+  // Buscar conversas quando abrir
+  useEffect(() => {
+    if (open) {
+      fetchConversations()
+    }
+  }, [open, botId])
+
+  // Buscar mensagens quando selecionar conversa
+  useEffect(() => {
+    if (selectedConversation) {
+      fetchMessages()
+    }
+  }, [selectedConversation])
+
+  // Auto-refresh a cada 10 segundos
+  useEffect(() => {
+    if (!open) return
+    const interval = setInterval(() => {
+      fetchConversations()
+      if (selectedConversation) {
+        fetchMessages()
+      }
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [open, selectedConversation])
+
+  // Buscar conversas usando bot_users (igual a API de conversations)
   const fetchConversations = async () => {
+    console.log("[v0] fetchConversations iniciado")
+    setLoading(true)
     try {
       const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
+      console.log("[v0] userData:", userData?.user?.id)
+      if (!userData.user) {
+        console.log("[v0] Usuario nao autenticado")
+        setLoading(false)
+        return
+      }
 
       // Buscar bots do usuario
-      const { data: bots } = await supabase
+      const { data: bots, error: botsError } = await supabase
         .from("bots")
         .select("id, username, token")
         .eq("user_id", userData.user.id)
 
-      if (!bots || bots.length === 0) return
+      console.log("[v0] bots encontrados:", bots?.length, "erro:", botsError)
+      if (!bots || bots.length === 0) {
+        console.log("[v0] Nenhum bot encontrado")
+        setLoading(false)
+        return
+      }
 
       const botIds = bots.map(b => b.id)
-      const convMap = new Map<string, Conversation>()
+      const convList: Conversation[] = []
 
-      // Tentar buscar do bot_messages primeiro
-      const { data: messagesData, error: msgError } = await supabase
-        .from("bot_messages")
-        .select("*")
-        .in("bot_id", botIds)
-        .order("created_at", { ascending: false })
-
-      if (!msgError && messagesData && messagesData.length > 0) {
-        // Usar dados do bot_messages
-        for (const msg of messagesData) {
-          const key = `${msg.bot_id}_${msg.telegram_user_id}`
-          if (!convMap.has(key)) {
-            const bot = bots.find(b => b.id === msg.bot_id)
-            convMap.set(key, {
-              telegram_user_id: msg.telegram_user_id,
-              telegram_chat_id: msg.telegram_chat_id,
-              first_name: msg.user_first_name || "Usuario",
-              last_name: msg.user_last_name,
-              username: msg.user_username,
-              last_message: msg.content,
-              last_message_at: msg.created_at,
-              bot_id: msg.bot_id,
-              bot_username: bot?.username,
-              unread_count: msg.direction === "incoming" ? 1 : 0,
-            })
-          }
-        }
-      } else {
-        // Fallback: usar user_flow_state para obter usuarios que interagiram
-        const { data: flowStates } = await supabase
-          .from("user_flow_state")
+      // Buscar usuarios de TODOS os bots do usuario (usando bot_users como fonte principal)
+      for (const bot of bots) {
+        const { data: botUsers, error: usersError } = await supabase
+          .from("bot_users")
           .select("*")
-          .in("bot_id", botIds)
-          .order("updated_at", { ascending: false })
+          .eq("bot_id", bot.id)
+          .order("last_activity", { ascending: false })
+          .limit(50)
 
-        if (flowStates) {
-          for (const state of flowStates) {
-            const key = `${state.bot_id}_${state.telegram_user_id}`
-            if (!convMap.has(key)) {
-              const bot = bots.find(b => b.id === state.bot_id)
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const metadata = state.metadata as Record<string, any> | null
-              convMap.set(key, {
-                telegram_user_id: state.telegram_user_id,
-                telegram_chat_id: state.telegram_user_id, // Usar mesmo ID
-                first_name: metadata?.user_name || "Usuario",
-                username: metadata?.username,
-                last_message: `Status: ${state.status}`,
-                last_message_at: state.updated_at,
-                bot_id: state.bot_id,
-                bot_username: bot?.username,
-                unread_count: 0,
-              })
-            }
+        console.log("[v0] bot_users para bot", bot.username, ":", botUsers?.length, "erro:", usersError)
+
+        if (botUsers) {
+          for (const user of botUsers) {
+            convList.push({
+              telegram_user_id: String(user.telegram_user_id),
+              telegram_chat_id: String(user.chat_id || user.telegram_user_id),
+              first_name: user.first_name || "Usuario",
+              last_name: user.last_name,
+              username: user.username,
+              last_message: user.last_activity ? `Ativo: ${new Date(user.last_activity).toLocaleDateString("pt-BR")}` : undefined,
+              last_message_at: user.last_activity,
+              bot_id: bot.id,
+              bot_username: bot.username,
+              unread_count: 0,
+            })
           }
         }
       }
 
-      setConversations(Array.from(convMap.values()))
+      console.log("[v0] Total de conversas encontradas:", convList.length)
+      setConversations(convList)
 
       // Se tiver initialUserId, selecionar automaticamente
+      console.log("[v0] initialUserId:", initialUserId)
       if (initialUserId) {
-        const conv = Array.from(convMap.values()).find(c => 
+        const conv = convList.find(c => 
           c.telegram_user_id === initialUserId || c.username === initialUserId
         )
         if (conv) {
@@ -140,7 +152,9 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
         }
       }
     } catch (error) {
-      console.error("Erro ao buscar conversas:", error)
+      console.error("[v0] Erro ao buscar conversas:", error)
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -181,8 +195,8 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
   }
 
   // Enviar mensagem
-  const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedConversation || sending) return
 
     setSending(true)
     try {
@@ -192,195 +206,161 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
         body: JSON.stringify({
           botId: selectedConversation.bot_id,
           chatId: selectedConversation.telegram_chat_id,
-          message: newMessage,
+          message: newMessage.trim(),
         }),
       })
 
-      const data = await response.json()
+      const result = await response.json()
 
-      if (data.success) {
+      if (result.success) {
         setNewMessage("")
-        // Recarregar mensagens
-        await fetchMessages()
+        // Adicionar mensagem localmente
+        const newMsg: Message = {
+          id: `local-${Date.now()}`,
+          bot_id: selectedConversation.bot_id,
+          telegram_user_id: selectedConversation.telegram_user_id,
+          telegram_chat_id: selectedConversation.telegram_chat_id,
+          direction: "outgoing",
+          message_type: "text",
+          content: newMessage.trim(),
+          created_at: new Date().toISOString(),
+        }
+        setMessages(prev => [...prev, newMsg])
+        setTimeout(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+        }, 100)
       } else {
-        console.error("Erro ao enviar:", data.error)
+        alert("Erro ao enviar mensagem: " + result.error)
       }
     } catch (error) {
-      console.error("Erro ao enviar mensagem:", error)
+      console.error("Erro ao enviar:", error)
+      alert("Erro ao enviar mensagem")
     } finally {
       setSending(false)
     }
   }
 
-  // Effect para buscar conversas quando abre
-  useEffect(() => {
-    if (open) {
-      fetchConversations()
-    }
-  }, [open])
-
-  // Effect para buscar mensagens quando seleciona conversa
-  useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages()
-    }
-  }, [selectedConversation])
-
-  // Effect para refresh automatico
-  useEffect(() => {
-    if (open && selectedConversation) {
-      refreshIntervalRef.current = setInterval(() => {
-        fetchMessages()
-      }, 5000) // Refresh a cada 5 segundos
-    }
-
-    return () => {
-      if (refreshIntervalRef.current) {
-        clearInterval(refreshIntervalRef.current)
-      }
-    }
-  }, [open, selectedConversation])
-
   // Filtrar conversas
   const filteredConversations = conversations.filter(conv => {
-    const search = searchTerm.toLowerCase()
+    const searchLower = searchQuery.toLowerCase()
     return (
-      conv.first_name?.toLowerCase().includes(search) ||
-      conv.username?.toLowerCase().includes(search) ||
-      conv.telegram_user_id.includes(search)
+      conv.first_name?.toLowerCase().includes(searchLower) ||
+      conv.last_name?.toLowerCase().includes(searchLower) ||
+      conv.username?.toLowerCase().includes(searchLower)
     )
   })
-
-  const formatTime = (dateStr: string) => {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const hours = Math.floor(diff / (1000 * 60 * 60))
-    
-    if (hours < 24) {
-      return date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-    } else {
-      return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })
-    }
-  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0 overflow-hidden">
         <div className="flex h-full">
-          {/* Lista de conversas - Lado esquerdo */}
-          <div className="w-80 border-r border-border flex flex-col bg-secondary/30">
+          {/* Lista de conversas */}
+          <div className="w-[380px] border-r border-border flex flex-col bg-muted/30">
             {/* Header */}
-            <div className="p-4 border-b border-border">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <MessageSquare className="h-5 w-5" />
-                  Conversas
-                </h2>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={fetchConversations}
-                  className="h-8 w-8"
-                >
-                  <RefreshCw className="h-4 w-4" />
-                </Button>
+            <div className="p-4 border-b border-border flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5" />
+                <h2 className="font-semibold">Conversas</h2>
               </div>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={fetchConversations}
+                disabled={loading}
+              >
+                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              </Button>
+            </div>
+
+            {/* Search */}
+            <div className="p-3 border-b border-border">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar conversa..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 bg-secondary/50"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
                 />
               </div>
             </div>
 
-            {/* Lista de conversas */}
+            {/* Lista */}
             <ScrollArea className="flex-1">
               {filteredConversations.length === 0 ? (
-                <div className="p-4 text-center text-muted-foreground">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                <div className="p-8 text-center text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-50" />
                   <p>Nenhuma conversa encontrada</p>
                 </div>
               ) : (
-                filteredConversations.map((conv) => (
-                  <div
-                    key={`${conv.bot_id}_${conv.telegram_user_id}`}
-                    onClick={() => setSelectedConversation(conv)}
-                    className={cn(
-                      "flex items-center gap-3 p-3 cursor-pointer hover:bg-secondary/50 transition-colors border-b border-border/50",
-                      selectedConversation?.telegram_user_id === conv.telegram_user_id &&
+                <div className="divide-y divide-border">
+                  {filteredConversations.map((conv) => (
+                    <button
+                      key={`${conv.bot_id}_${conv.telegram_user_id}`}
+                      onClick={() => setSelectedConversation(conv)}
+                      className={cn(
+                        "w-full p-4 text-left hover:bg-muted/50 transition-colors",
+                        selectedConversation?.telegram_user_id === conv.telegram_user_id &&
                         selectedConversation?.bot_id === conv.bot_id &&
-                        "bg-secondary"
-                    )}
-                  >
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-accent/20 text-accent">
-                        {conv.first_name?.[0]?.toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium truncate">
-                          {conv.first_name} {conv.last_name || ""}
-                        </span>
-                        {conv.last_message_at && (
-                          <span className="text-xs text-muted-foreground">
-                            {formatTime(conv.last_message_at)}
-                          </span>
-                        )}
+                        "bg-accent/10"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-accent/20">
+                            <User className="h-5 w-5" />
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <p className="font-medium truncate">
+                              {conv.first_name} {conv.last_name || ""}
+                            </p>
+                            {conv.unread_count && conv.unread_count > 0 && (
+                              <span className="bg-accent text-accent-foreground text-xs px-2 py-0.5 rounded-full">
+                                {conv.unread_count}
+                              </span>
+                            )}
+                          </div>
+                          {conv.username && (
+                            <p className="text-xs text-muted-foreground">@{conv.username}</p>
+                          )}
+                          <p className="text-sm text-muted-foreground truncate mt-0.5">
+                            {conv.last_message || "Sem mensagens"}
+                          </p>
+                        </div>
                       </div>
-                      {conv.username && (
-                        <p className="text-xs text-muted-foreground">@{conv.username}</p>
-                      )}
-                      {conv.last_message && (
-                        <p className="text-sm text-muted-foreground truncate">
-                          {conv.last_message.substring(0, 30)}...
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                ))
+                    </button>
+                  ))}
+                </div>
               )}
             </ScrollArea>
           </div>
 
-          {/* Area de chat - Lado direito */}
+          {/* Area de mensagens */}
           <div className="flex-1 flex flex-col">
             {selectedConversation ? (
               <>
                 {/* Header do chat */}
-                <div className="p-4 border-b border-border flex items-center justify-between bg-secondary/20">
+                <div className="p-4 border-b border-border flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-accent/20 text-accent">
-                        {selectedConversation.first_name?.[0]?.toUpperCase() || "U"}
+                      <AvatarFallback className="bg-accent/20">
+                        <User className="h-5 w-5" />
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold">
+                      <p className="font-medium">
                         {selectedConversation.first_name} {selectedConversation.last_name || ""}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedConversation.username ? `@${selectedConversation.username}` : `ID: ${selectedConversation.telegram_user_id}`}
                       </p>
+                      {selectedConversation.username && (
+                        <p className="text-xs text-muted-foreground">@{selectedConversation.username}</p>
+                      )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">
-                      via {selectedConversation.bot_username || "Bot"}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={fetchMessages}
-                      className="h-8 w-8"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
 
                 {/* Mensagens */}
@@ -390,13 +370,13 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
                       <div
                         key={msg.id}
                         className={cn(
-                          "flex items-end gap-2",
+                          "flex gap-2",
                           msg.direction === "outgoing" ? "justify-end" : "justify-start"
                         )}
                       >
                         {msg.direction === "incoming" && (
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-secondary text-xs">
+                            <AvatarFallback className="bg-muted">
                               <User className="h-4 w-4" />
                             </AvatarFallback>
                           </Avatar>
@@ -405,30 +385,21 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
                           className={cn(
                             "max-w-[70%] rounded-2xl px-4 py-2",
                             msg.direction === "outgoing"
-                              ? "bg-accent text-accent-foreground rounded-br-md"
-                              : "bg-secondary rounded-bl-md"
+                              ? "bg-accent text-accent-foreground"
+                              : "bg-muted"
                           )}
                         >
-                          {msg.media_url && (
-                            <div className="mb-2">
-                              {msg.message_type === "photo" ? (
-                                <img src={msg.media_url} alt="Imagem" className="rounded-lg max-w-full" />
-                              ) : msg.message_type === "video" ? (
-                                <video src={msg.media_url} controls className="rounded-lg max-w-full" />
-                              ) : null}
-                            </div>
-                          )}
-                          <p className="whitespace-pre-wrap break-words">{msg.content}</p>
-                          <span className={cn(
-                            "text-xs mt-1 block",
-                            msg.direction === "outgoing" ? "text-accent-foreground/70" : "text-muted-foreground"
-                          )}>
-                            {formatTime(msg.created_at)}
-                          </span>
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          <p className="text-[10px] opacity-60 mt-1">
+                            {new Date(msg.created_at).toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
                         </div>
                         {msg.direction === "outgoing" && (
                           <Avatar className="h-8 w-8">
-                            <AvatarFallback className="bg-accent/20 text-xs">
+                            <AvatarFallback className="bg-accent/20">
                               <Bot className="h-4 w-4" />
                             </AvatarFallback>
                           </Avatar>
@@ -440,39 +411,31 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
                 </ScrollArea>
 
                 {/* Input de mensagem */}
-                <div className="p-4 border-t border-border bg-secondary/20">
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault()
-                      sendMessage()
-                    }}
-                    className="flex items-center gap-2"
-                  >
+                <div className="p-4 border-t border-border">
+                  <div className="flex gap-2">
                     <Input
                       placeholder="Digite sua mensagem..."
                       value={newMessage}
                       onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && !e.shiftKey) {
+                          e.preventDefault()
+                          handleSendMessage()
+                        }
+                      }}
                       disabled={sending}
-                      className="flex-1"
                     />
-                    <Button type="submit" disabled={sending || !newMessage.trim()}>
-                      {sending ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
+                    <Button onClick={handleSendMessage} disabled={sending || !newMessage.trim()}>
+                      <Send className="h-4 w-4" />
                     </Button>
-                  </form>
+                  </div>
                 </div>
               </>
             ) : (
-              /* Estado vazio */
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center text-muted-foreground">
-                  <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <h3 className="text-lg font-medium mb-2">Selecione uma conversa</h3>
-                  <p className="text-sm">Escolha uma conversa na lista para ver o historico de mensagens</p>
-                </div>
+              <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
+                <MessageSquare className="h-16 w-16 mb-4 opacity-50" />
+                <h3 className="text-lg font-medium">Selecione uma conversa</h3>
+                <p className="text-sm">Escolha uma conversa na lista para ver o historico de mensagens</p>
               </div>
             )}
           </div>
