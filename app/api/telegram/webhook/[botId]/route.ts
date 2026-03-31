@@ -175,15 +175,16 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
     
     // 3.1 Handle callback queries
     if (callbackQuery && callbackData && callbackQueryId) {
-      // Answer callback to remove loading state (default)
-      await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ callback_query_id: callbackQueryId })
-      })
+      console.log("[v0] Callback recebido:", callbackData)
       
       // Handle "ver_planos" - show plans as buttons
       if (callbackData === "ver_planos") {
+        // Answer callback
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: callbackQueryId })
+        })
         // Find flow for this bot
         const { data: directFlow } = await supabase
           .from("flows")
@@ -302,7 +303,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ callback_query_id: callbackQuery.id })
+          body: JSON.stringify({ callback_query_id: callbackQueryId })
         })
         
         // Buscar flow config com packs
@@ -352,7 +353,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ callback_query_id: callbackQuery.id })
+          body: JSON.stringify({ callback_query_id: callbackQueryId })
         })
         
         // Reenviar os planos
@@ -403,7 +404,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ callback_query_id: callbackQuery.id, text: "Carregando pack..." })
+          body: JSON.stringify({ callback_query_id: callbackQueryId, text: "Carregando pack..." })
         })
         
         // Buscar flow config com packs
@@ -463,7 +464,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ callback_query_id: callbackQuery.id, text: "Gerando pagamento..." })
+          body: JSON.stringify({ callback_query_id: callbackQueryId, text: "Gerando pagamento..." })
         })
         
         // Buscar gateway de pagamento
@@ -944,7 +945,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            callback_query_id: callbackQuery.id,
+            callback_query_id: callbackQueryId,
             text: isAccept ? "Gerando pagamento..." : "Oferta recusada"
           })
         })
