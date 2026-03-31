@@ -130,8 +130,9 @@ interface DownsellSequence {
   id: string
   message: string
   medias: string[]
-  sendDelay: number
-  sendDelayUnit: "minutes" | "hours" | "days"
+  sendTiming: "immediate" | "custom"
+  sendDelayValue?: number
+  sendDelayUnit?: "minutes" | "hours" | "days"
   price: number
   deliveryType: "global" | "custom"
   customDelivery?: string
@@ -970,7 +971,8 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
   id: `ds-seq-${Date.now()}`,
   message: "",
   medias: [],
-  sendDelay: 5,
+  sendTiming: "immediate",
+  sendDelayValue: 30,
   sendDelayUnit: "minutes",
   price: 0,
   deliveryType: "global",
@@ -2632,35 +2634,57 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                               </div>
 
                               {/* Enviar + Preco */}
-                              <div className="flex gap-4">
+                              <div className="flex flex-wrap gap-4">
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Clock className="h-4 w-4" />
                                     <span>Enviar:</span>
                                   </div>
-                                  <div className="flex gap-2">
-                                    <Input
-                                      type="number"
-                                      value={seq.sendDelay}
-                                      onChange={(e) => handleUpdateDownsellSequence(seq.id, "sendDelay", parseInt(e.target.value) || 0)}
-                                      className="w-20 bg-secondary/50 border-border/50"
-                                      min={1}
-                                    />
-                                    <Select
-                                      value={seq.sendDelayUnit || "minutes"}
-                                      onValueChange={(value: "minutes" | "hours" | "days") => handleUpdateDownsellSequence(seq.id, "sendDelayUnit", value)}
-                                    >
-                                      <SelectTrigger className="w-28 bg-secondary/50 border-border/50">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="minutes">Minutos</SelectItem>
-                                        <SelectItem value="hours">Horas</SelectItem>
-                                        <SelectItem value="days">Dias</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
+                                  <Select
+                                    value={seq.sendTiming || "immediate"}
+                                    onValueChange={(value: "immediate" | "custom") => handleUpdateDownsellSequence(seq.id, "sendTiming", value)}
+                                  >
+                                    <SelectTrigger className="w-40 bg-secondary/50 border-border/50">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="immediate">Imediato</SelectItem>
+                                      <SelectItem value="custom">Personalizado</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 </div>
+
+                                {/* Tempo personalizado */}
+                                {seq.sendTiming === "custom" && (
+                                  <div className="space-y-2">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                      <Clock className="h-4 w-4" />
+                                      <span>Tempo:</span>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Input
+                                        type="number"
+                                        value={seq.sendDelayValue || 30}
+                                        onChange={(e) => handleUpdateDownsellSequence(seq.id, "sendDelayValue", parseInt(e.target.value) || 0)}
+                                        className="w-20 bg-secondary/50 border-border/50"
+                                        min={1}
+                                      />
+                                      <Select
+                                        value={seq.sendDelayUnit || "minutes"}
+                                        onValueChange={(value: "minutes" | "hours" | "days") => handleUpdateDownsellSequence(seq.id, "sendDelayUnit", value)}
+                                      >
+                                        <SelectTrigger className="w-28 bg-secondary/50 border-border/50">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="minutes">Minutos</SelectItem>
+                                          <SelectItem value="hours">Horas</SelectItem>
+                                          <SelectItem value="days">Dias</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+                                )}
 
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">

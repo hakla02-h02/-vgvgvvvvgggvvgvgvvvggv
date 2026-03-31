@@ -948,11 +948,15 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
               // Apenas sequencias do tipo "pix"
               const pixSequences = downsellConfig.sequences.filter(s => s.targetType === "pix")
               
-  for (const seq of pixSequences) {
-  let delayMinutes = seq.sendDelay
-  if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelay * 60
-  else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelay * 60 * 24
-  const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
+              for (const seq of pixSequences) {
+                // Se imediato, agendar para agora. Se custom, usar o valor configurado
+                let delayMinutes = 0
+                if (seq.sendTiming === "custom" && seq.sendDelayValue) {
+                  delayMinutes = seq.sendDelayValue
+                  if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelayValue * 60
+                  else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelayValue * 60 * 24
+                }
+                const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
                 
                 await supabase.from("scheduled_messages").insert({
                   bot_id: botUuid,
@@ -1203,9 +1207,13 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           const geralSequences = downsellConfig.sequences.filter(s => s.targetType === "geral" || !s.targetType)
           
           for (const seq of geralSequences) {
-            let delayMinutes = seq.sendDelay
-            if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelay * 60
-            else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelay * 60 * 24
+            // Se imediato, agendar para agora. Se custom, usar o valor configurado
+            let delayMinutes = 0
+            if (seq.sendTiming === "custom" && seq.sendDelayValue) {
+              delayMinutes = seq.sendDelayValue
+              if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelayValue * 60
+              else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelayValue * 60 * 24
+            }
             const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
             
             await supabase.from("scheduled_messages").insert({
