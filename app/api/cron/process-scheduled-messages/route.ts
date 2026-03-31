@@ -77,12 +77,11 @@ async function sendTelegramVideo(
 }
 
 export async function GET(request: NextRequest) {
-  // Autorizacao opcional - se CRON_SECRET estiver definido, verifica
+  // Verificar autorizacao (pode ser um secret ou API key)
   const authHeader = request.headers.get("authorization")
   const cronSecret = process.env.CRON_SECRET
   
-  // Apenas verifica se CRON_SECRET estiver definido E nao for vazio
-  if (cronSecret && cronSecret.length > 0 && authHeader !== `Bearer ${cronSecret}`) {
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   
