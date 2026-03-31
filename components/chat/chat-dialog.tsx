@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, X, Search, MessageSquare, User, Bot, RefreshCw } from "lucide-react"
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"
+import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 
 interface Conversation {
@@ -43,7 +43,6 @@ interface ChatDialogProps {
 }
 
 export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDialogProps) {
-  const supabase = createClientComponentClient()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
