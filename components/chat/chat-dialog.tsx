@@ -1,5 +1,6 @@
 "use client"
 
+// Chat Dialog Component - v2
 import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
