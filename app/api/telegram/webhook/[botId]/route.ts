@@ -225,12 +225,26 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             .eq("is_active", true)
             .order("position", { ascending: true })
           
+          // Verificar se Packs esta habilitado
+          const flowConfig = (flowForConfig.config as Record<string, unknown>) || {}
+          const packsConfig = flowConfig.packs as { enabled?: boolean; buttonText?: string; list?: Array<{ id: string; name: string; price: number; active?: boolean }> } | undefined
+          const packsEnabled = packsConfig?.enabled && packsConfig?.list && packsConfig.list.filter(p => p.active !== false).length > 0
+          const packsButtonText = packsConfig?.buttonText || "Packs Disponiveis"
+          
           if (plans && plans.length > 0) {
             // Build buttons for each plan (only name, no price)
-            const planButtons = plans.map(plan => [{
+            const planButtons: Array<Array<{ text: string; callback_data: string }>> = plans.map(plan => [{
               text: plan.name,
               callback_data: `plan_${plan.id}`
             }])
+            
+            // Adicionar botao de Packs se habilitado
+            if (packsEnabled) {
+              planButtons.push([{
+                text: packsButtonText,
+                callback_data: "show_packs"
+              }])
+            }
             
             await sendTelegramMessage(
               botToken, 
@@ -240,20 +254,35 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             )
           } else {
             // Fallback: get plans from flow config JSON
-            const flowConfig = (flowForConfig.config as Record<string, unknown>) || {}
             const configPlans = (flowConfig.plans as Array<{ id: string; name: string; price: number }>) || []
             
             if (configPlans.length > 0) {
-              const planButtons = configPlans.map(plan => [{
+              const planButtons: Array<Array<{ text: string; callback_data: string }>> = configPlans.map(plan => [{
                 text: plan.name,
                 callback_data: `plan_${plan.id}`
               }])
+              
+              // Adicionar botao de Packs se habilitado
+              if (packsEnabled) {
+                planButtons.push([{
+                  text: packsButtonText,
+                  callback_data: "show_packs"
+                }])
+              }
               
               await sendTelegramMessage(
                 botToken, 
                 chatId, 
                 "Escolha seu plano:",
                 { inline_keyboard: planButtons }
+              )
+            } else if (packsEnabled) {
+              // Apenas packs, sem planos
+              await sendTelegramMessage(
+                botToken, 
+                chatId, 
+                "Confira nossas opcoes:",
+                { inline_keyboard: [[{ text: packsButtonText, callback_data: "show_packs" }]] }
               )
             } else {
               await sendTelegramMessage(botToken, chatId, "Nenhum plano disponivel no momento.")
@@ -262,6 +291,255 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         } else {
           await sendTelegramMessage(botToken, chatId, "Fluxo nao encontrado.")
         }
+        return
+      }
+      
+      // ========== SHOW PACKS CALLBACK ==========
+      if (callbackData === "show_packs") {
+        console.log("[v0] Show Packs Callback recebido")
+        
+        // Confirmar recebimento
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: callbackQuery.id })
+        })
+        
+        // Buscar flow config com packs
+        const { data: flowForPacks } = await supabase
+          .from("flows")
+          .select("id, config")
+          .eq("bot_id", botUuid)
+          .eq("status", "ativo")
+          .limit(1)
+          .single()
+        
+        if (flowForPacks) {
+          const flowConfig = (flowForPacks.config as Record<string, unknown>) || {}
+          const packsConfig = flowConfig.packs as { enabled?: boolean; list?: Array<{ id: string; name: string; emoji?: string; price: number; description?: string; previewMedias?: string[]; buttonText?: string; active?: boolean }> } | undefined
+          const packsList = packsConfig?.list?.filter(p => p.active !== false) || []
+          
+          if (packsList.length > 0) {
+            // Enviar mensagem com botoes para cada pack
+            const packButtons = packsList.map(pack => [{
+              text: `${pack.emoji || "📦"} ${pack.name} - R$ ${pack.price.toFixed(2).replace(".", ",")}`,
+              callback_data: `pack_${pack.id}`
+            }])
+            
+            // Adicionar botao de voltar
+            packButtons.push([{
+              text: "Voltar aos Planos",
+              callback_data: "back_to_plans"
+            }])
+            
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              "Escolha um pack:",
+              { inline_keyboard: packButtons }
+            )
+          } else {
+            await sendTelegramMessage(botToken, chatId, "Nenhum pack disponivel no momento.")
+          }
+        }
+        
+        return
+      }
+      
+      // ========== BACK TO PLANS CALLBACK ==========
+      if (callbackData === "back_to_plans") {
+        // Confirmar recebimento
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: callbackQuery.id })
+        })
+        
+        // Reenviar os planos
+        const { data: flowForPlans } = await supabase
+          .from("flows")
+          .select("id, config")
+          .eq("bot_id", botUuid)
+          .eq("status", "ativo")
+          .limit(1)
+          .single()
+        
+        if (flowForPlans) {
+          const { data: plans } = await supabase
+            .from("flow_plans")
+            .select("*")
+            .eq("flow_id", flowForPlans.id)
+            .eq("is_active", true)
+            .order("position", { ascending: true })
+          
+          const flowConfig = (flowForPlans.config as Record<string, unknown>) || {}
+          const packsConfig = flowConfig.packs as { enabled?: boolean; buttonText?: string; list?: Array<{ active?: boolean }> } | undefined
+          const packsEnabled = packsConfig?.enabled && packsConfig?.list && packsConfig.list.filter(p => p.active !== false).length > 0
+          const packsButtonText = packsConfig?.buttonText || "Packs Disponiveis"
+          
+          if (plans && plans.length > 0) {
+            const planButtons: Array<Array<{ text: string; callback_data: string }>> = plans.map(plan => [{
+              text: plan.name,
+              callback_data: `plan_${plan.id}`
+            }])
+            
+            if (packsEnabled) {
+              planButtons.push([{ text: packsButtonText, callback_data: "show_packs" }])
+            }
+            
+            await sendTelegramMessage(botToken, chatId, "Escolha seu plano:", { inline_keyboard: planButtons })
+          }
+        }
+        
+        return
+      }
+      
+      // ========== PACK SELECTION CALLBACK ==========
+      if (callbackData.startsWith("pack_")) {
+        const packId = callbackData.replace("pack_", "")
+        console.log("[v0] Pack Selection Callback:", packId)
+        
+        // Confirmar recebimento
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: callbackQuery.id, text: "Carregando pack..." })
+        })
+        
+        // Buscar flow config com packs
+        const { data: flowForPack } = await supabase
+          .from("flows")
+          .select("id, config")
+          .eq("bot_id", botUuid)
+          .eq("status", "ativo")
+          .limit(1)
+          .single()
+        
+        if (flowForPack) {
+          const flowConfig = (flowForPack.config as Record<string, unknown>) || {}
+          const packsConfig = flowConfig.packs as { list?: Array<{ id: string; name: string; emoji?: string; price: number; description?: string; previewMedias?: string[]; buttonText?: string }> } | undefined
+          const pack = packsConfig?.list?.find(p => p.id === packId)
+          
+          if (pack) {
+            // Enviar midias de preview se existirem
+            if (pack.previewMedias && pack.previewMedias.length > 0) {
+              const validMedias = pack.previewMedias.filter(m => m && m.startsWith("http"))
+              if (validMedias.length > 0) {
+                await sendMediaGroup(botToken, chatId, validMedias, "")
+              }
+            }
+            
+            // Enviar descricao com botao de compra
+            const description = pack.description || `Pack ${pack.name}`
+            const priceText = `R$ ${pack.price.toFixed(2).replace(".", ",")}`
+            const buttonText = pack.buttonText || "Comprar Pack"
+            
+            await sendTelegramMessage(
+              botToken,
+              chatId,
+              `${pack.emoji || "📦"} <b>${pack.name}</b>\n\n${description}\n\n<b>Valor:</b> ${priceText}`,
+              { 
+                inline_keyboard: [
+                  [{ text: buttonText, callback_data: `buy_pack_${pack.id}_${pack.price}` }],
+                  [{ text: "Voltar aos Packs", callback_data: "show_packs" }]
+                ] 
+              }
+            )
+          }
+        }
+        
+        return
+      }
+      
+      // ========== BUY PACK CALLBACK ==========
+      if (callbackData.startsWith("buy_pack_")) {
+        const parts = callbackData.replace("buy_pack_", "").split("_")
+        const packId = parts[0]
+        const packPrice = parseFloat(parts[1]) || 0
+        
+        console.log("[v0] Buy Pack Callback:", packId, packPrice)
+        
+        // Confirmar recebimento
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ callback_query_id: callbackQuery.id, text: "Gerando pagamento..." })
+        })
+        
+        // Buscar gateway de pagamento
+        const { data: gateway } = await supabase
+          .from("payment_gateways")
+          .select("*")
+          .eq("bot_id", botUuid)
+          .eq("is_active", true)
+          .single()
+        
+        if (gateway && packPrice > 0) {
+          try {
+            // Buscar nome do pack
+            const { data: flowForPackName } = await supabase
+              .from("flows")
+              .select("config")
+              .eq("bot_id", botUuid)
+              .eq("status", "ativo")
+              .limit(1)
+              .single()
+            
+            const flowConfig = (flowForPackName?.config as Record<string, unknown>) || {}
+            const packsConfig = flowConfig.packs as { list?: Array<{ id: string; name: string }> } | undefined
+            const pack = packsConfig?.list?.find(p => p.id === packId)
+            const packName = pack?.name || "Pack"
+            
+            // Gerar PIX
+            const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "https://dragonteste.onrender.com"}/api/mercadopago/pix`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                accessToken: gateway.credentials?.access_token,
+                amount: packPrice,
+                description: `Pack - ${packName}`,
+                email: `${telegramUserId}@telegram.user`,
+                externalReference: `pack_${packId}_${telegramUserId}_${Date.now()}`
+              })
+            })
+            
+            const pixResult = await response.json()
+            
+            if (pixResult.success && pixResult.qrCode) {
+              // Enviar QR Code
+              await sendTelegramPhoto(botToken, chatId, pixResult.qrCode, 
+                `Pague R$ ${packPrice.toFixed(2).replace(".", ",")} via PIX\n\nCopie o codigo abaixo:`
+              )
+              await sendTelegramMessage(botToken, chatId, `<code>${pixResult.copyPaste}</code>`)
+              
+              // Salvar pagamento
+              await supabase.from("payments").insert({
+                user_id: botData?.user_id,
+                bot_id: botUuid,
+                telegram_user_id: String(telegramUserId),
+                telegram_username: from?.username || null,
+                telegram_first_name: from?.first_name || null,
+                gateway: gateway.gateway_name || "mercadopago",
+                external_payment_id: pixResult.paymentId,
+                amount: packPrice,
+                description: `Pack - ${packName}`,
+                qr_code: pixResult.qrCode,
+                qr_code_url: pixResult.qrCodeUrl,
+                copy_paste: pixResult.copyPaste,
+                status: "pending",
+                product_type: "pack"
+              })
+            } else {
+              await sendTelegramMessage(botToken, chatId, "Erro ao gerar pagamento. Tente novamente.")
+            }
+          } catch (err) {
+            console.error("Erro ao gerar PIX do pack:", err)
+            await sendTelegramMessage(botToken, chatId, "Erro ao processar pagamento.")
+          }
+        } else {
+          await sendTelegramMessage(botToken, chatId, "Pagamento nao disponivel no momento.")
+        }
+        
         return
       }
       
