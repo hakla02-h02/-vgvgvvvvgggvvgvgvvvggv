@@ -57,12 +57,13 @@ const filterOptions = [
 // Fetcher para SWR
 const fetcher = (url: string) => fetch(url).then(res => res.json())
 
-// Tipo para conversa
-interface Conversation {
+  // Tipo para conversa
+  interface Conversation {
   id: string
   nome: string
   telegram: string
-  canal: string
+  telegramUserId: string
+  telegramChatId: string
   mensagens: number
   status: string
   statusLabel: string
@@ -619,10 +620,10 @@ export default function DashboardPage() {
                     <tr 
                       key={conv.id} 
                       className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
-                      onClick={() => {
-                        setSelectedChatUserId(conv.telegram.replace("@", ""))
-                        setChatOpen(true)
-                      }}
+  onClick={() => {
+    setSelectedChatUserId(conv.telegramUserId)
+    setChatOpen(true)
+  }}
                     >
                       {/* Usuario */}
                       <td className="py-4 px-2">
@@ -695,11 +696,11 @@ export default function DashboardPage() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            setSelectedChatUserId(conv.telegram.replace("@", ""))
-                            setChatOpen(true)
-                          }}
+  onClick={(e) => {
+    e.stopPropagation()
+    setSelectedChatUserId(conv.telegramUserId)
+    setChatOpen(true)
+  }}
                           className="gap-1.5"
                         >
                           <MessageSquare size={14} />

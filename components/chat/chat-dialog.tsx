@@ -63,41 +63,69 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
       // Buscar bots do usuario
       const { data: bots } = await supabase
         .from("bots")
-        .select("id, username")
+        .select("id, username, token")
         .eq("user_id", userData.user.id)
 
       if (!bots || bots.length === 0) return
 
       const botIds = bots.map(b => b.id)
+      const convMap = new Map<string, Conversation>()
 
-      // Buscar mensagens agrupadas por usuario
-      const { data: messagesData } = await supabase
+      // Tentar buscar do bot_messages primeiro
+      const { data: messagesData, error: msgError } = await supabase
         .from("bot_messages")
         .select("*")
         .in("bot_id", botIds)
         .order("created_at", { ascending: false })
 
-      if (!messagesData) return
+      if (!msgError && messagesData && messagesData.length > 0) {
+        // Usar dados do bot_messages
+        for (const msg of messagesData) {
+          const key = `${msg.bot_id}_${msg.telegram_user_id}`
+          if (!convMap.has(key)) {
+            const bot = bots.find(b => b.id === msg.bot_id)
+            convMap.set(key, {
+              telegram_user_id: msg.telegram_user_id,
+              telegram_chat_id: msg.telegram_chat_id,
+              first_name: msg.user_first_name || "Usuario",
+              last_name: msg.user_last_name,
+              username: msg.user_username,
+              last_message: msg.content,
+              last_message_at: msg.created_at,
+              bot_id: msg.bot_id,
+              bot_username: bot?.username,
+              unread_count: msg.direction === "incoming" ? 1 : 0,
+            })
+          }
+        }
+      } else {
+        // Fallback: usar user_flow_state para obter usuarios que interagiram
+        const { data: flowStates } = await supabase
+          .from("user_flow_state")
+          .select("*")
+          .in("bot_id", botIds)
+          .order("updated_at", { ascending: false })
 
-      // Agrupar por telegram_user_id
-      const convMap = new Map<string, Conversation>()
-      
-      for (const msg of messagesData) {
-        const key = `${msg.bot_id}_${msg.telegram_user_id}`
-        if (!convMap.has(key)) {
-          const bot = bots.find(b => b.id === msg.bot_id)
-          convMap.set(key, {
-            telegram_user_id: msg.telegram_user_id,
-            telegram_chat_id: msg.telegram_chat_id,
-            first_name: msg.user_first_name || "Usuario",
-            last_name: msg.user_last_name,
-            username: msg.user_username,
-            last_message: msg.content,
-            last_message_at: msg.created_at,
-            bot_id: msg.bot_id,
-            bot_username: bot?.username,
-            unread_count: msg.direction === "incoming" ? 1 : 0,
-          })
+        if (flowStates) {
+          for (const state of flowStates) {
+            const key = `${state.bot_id}_${state.telegram_user_id}`
+            if (!convMap.has(key)) {
+              const bot = bots.find(b => b.id === state.bot_id)
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const metadata = state.metadata as Record<string, any> | null
+              convMap.set(key, {
+                telegram_user_id: state.telegram_user_id,
+                telegram_chat_id: state.telegram_user_id, // Usar mesmo ID
+                first_name: metadata?.user_name || "Usuario",
+                username: metadata?.username,
+                last_message: `Status: ${state.status}`,
+                last_message_at: state.updated_at,
+                bot_id: state.bot_id,
+                bot_username: bot?.username,
+                unread_count: 0,
+              })
+            }
+          }
         }
       }
 
@@ -105,7 +133,9 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
 
       // Se tiver initialUserId, selecionar automaticamente
       if (initialUserId) {
-        const conv = Array.from(convMap.values()).find(c => c.telegram_user_id === initialUserId)
+        const conv = Array.from(convMap.values()).find(c => 
+          c.telegram_user_id === initialUserId || c.username === initialUserId
+        )
         if (conv) {
           setSelectedConversation(conv)
         }
@@ -120,19 +150,32 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
     if (!selectedConversation) return
 
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("bot_messages")
         .select("*")
         .eq("bot_id", selectedConversation.bot_id)
         .eq("telegram_user_id", selectedConversation.telegram_user_id)
         .order("created_at", { ascending: true })
 
-      if (data) {
+      if (!error && data && data.length > 0) {
         setMessages(data)
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-        }, 100)
+      } else {
+        // Se nao houver mensagens, mostrar mensagem inicial
+        setMessages([{
+          id: "welcome",
+          bot_id: selectedConversation.bot_id,
+          telegram_user_id: selectedConversation.telegram_user_id,
+          telegram_chat_id: selectedConversation.telegram_chat_id,
+          direction: "outgoing",
+          message_type: "text",
+          content: "Nenhuma mensagem registrada ainda. Envie uma mensagem para iniciar a conversa.",
+          created_at: new Date().toISOString(),
+        }])
       }
+      
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+      }, 100)
     } catch (error) {
       console.error("Erro ao buscar mensagens:", error)
     }
