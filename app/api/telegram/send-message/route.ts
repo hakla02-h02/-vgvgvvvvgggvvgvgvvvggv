@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { supabase } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
@@ -9,8 +8,6 @@ export async function POST(request: NextRequest) {
     if (!botId || !chatId || !message) {
       return NextResponse.json({ success: false, error: "Dados incompletos" }, { status: 400 })
     }
-
-    const supabase = createRouteHandlerClient({ cookies })
 
     // Verificar autenticacao
     const { data: userData } = await supabase.auth.getUser()
