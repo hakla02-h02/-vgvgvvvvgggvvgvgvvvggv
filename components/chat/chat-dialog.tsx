@@ -47,7 +47,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
   const [messages, setMessages] = useState<Message[]>([])
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null)
   const [newMessage, setNewMessage] = useState("")
-  const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -124,13 +123,12 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
             const key = `${state.bot_id}_${state.telegram_user_id}`
             if (!convMap.has(key)) {
               const bot = bots.find(b => b.id === state.bot_id)
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const metadata = state.metadata as Record<string, any> | null
+              const metadata = state.metadata as Record<string, unknown> | null
               convMap.set(key, {
                 telegram_user_id: state.telegram_user_id,
-                telegram_chat_id: state.telegram_user_id, // Usar mesmo ID
-                first_name: metadata?.user_name || "Usuario",
-                username: metadata?.username,
+                telegram_chat_id: state.telegram_user_id,
+                first_name: (metadata?.user_name as string) || "Usuario",
+                username: metadata?.username as string | undefined,
                 last_message: `Status: ${state.status}`,
                 last_message_at: state.updated_at,
                 bot_id: state.bot_id,
@@ -175,7 +173,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
       if (!error && data && data.length > 0) {
         setMessages(data)
       } else {
-        // Se nao houver mensagens, mostrar mensagem inicial
         setMessages([{
           id: "welcome",
           bot_id: selectedConversation.bot_id,
@@ -216,7 +213,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
 
       if (data.success) {
         setNewMessage("")
-        // Recarregar mensagens
         await fetchMessages()
       } else {
         console.error("Erro ao enviar:", data.error)
@@ -228,26 +224,23 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
     }
   }
 
-  // Effect para buscar conversas quando abre
   useEffect(() => {
     if (open) {
       fetchConversations()
     }
   }, [open])
 
-  // Effect para buscar mensagens quando seleciona conversa
   useEffect(() => {
     if (selectedConversation) {
       fetchMessages()
     }
   }, [selectedConversation])
 
-  // Effect para refresh automatico
   useEffect(() => {
     if (open && selectedConversation) {
       refreshIntervalRef.current = setInterval(() => {
         fetchMessages()
-      }, 5000) // Refresh a cada 5 segundos
+      }, 5000)
     }
 
     return () => {
@@ -257,7 +250,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
     }
   }, [open, selectedConversation])
 
-  // Filtrar conversas
   const filteredConversations = conversations.filter(conv => {
     const search = searchTerm.toLowerCase()
     return (
@@ -284,9 +276,8 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl h-[80vh] p-0 gap-0 overflow-hidden">
         <div className="flex h-full">
-          {/* Lista de conversas - Lado esquerdo */}
+          {/* Lista de conversas */}
           <div className="w-80 border-r border-border flex flex-col bg-secondary/30">
-            {/* Header */}
             <div className="p-4 border-b border-border">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold flex items-center gap-2">
@@ -313,7 +304,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
               </div>
             </div>
 
-            {/* Lista de conversas */}
             <ScrollArea className="flex-1">
               {filteredConversations.length === 0 ? (
                 <div className="p-4 text-center text-muted-foreground">
@@ -363,11 +353,10 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
             </ScrollArea>
           </div>
 
-          {/* Area de chat - Lado direito */}
+          {/* Area de chat */}
           <div className="flex-1 flex flex-col">
             {selectedConversation ? (
               <>
-                {/* Header do chat */}
                 <div className="p-4 border-b border-border flex items-center justify-between bg-secondary/20">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-10 w-10">
@@ -399,7 +388,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
                   </div>
                 </div>
 
-                {/* Mensagens */}
                 <ScrollArea className="flex-1 p-4">
                   <div className="space-y-4">
                     {messages.map((msg) => (
@@ -455,7 +443,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
                   </div>
                 </ScrollArea>
 
-                {/* Input de mensagem */}
                 <div className="p-4 border-t border-border bg-secondary/20">
                   <form
                     onSubmit={(e) => {
@@ -482,7 +469,6 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
                 </div>
               </>
             ) : (
-              /* Estado vazio */
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center text-muted-foreground">
                   <MessageSquare className="h-16 w-16 mx-auto mb-4 opacity-50" />
