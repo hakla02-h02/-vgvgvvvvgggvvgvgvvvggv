@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-// Cliente Supabase com service role para bypassar RLS
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Funcao para criar cliente Supabase (lazy initialization)
+function getSupabaseAdmin() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // Funcoes de envio do Telegram (copiadas do webhook)
 async function sendTelegramMessage(
@@ -82,6 +84,9 @@ export async function GET(request: NextRequest) {
   if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
+  
+  // Criar cliente Supabase dentro da funcao (lazy initialization)
+  const supabaseAdmin = getSupabaseAdmin()
   
   try {
     const now = new Date().toISOString()
