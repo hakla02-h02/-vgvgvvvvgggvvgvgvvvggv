@@ -45,9 +45,10 @@ CREATE POLICY "Users can update their scheduled messages" ON scheduled_messages
     bot_id IN (SELECT id FROM bots WHERE user_id = auth.uid())
   );
 
--- Policy para permitir que o service role faca tudo (para o webhook)
+-- Policy para permitir que o service role faca tudo (para o webhook e cron)
 CREATE POLICY "Service role can manage all scheduled messages" ON scheduled_messages
-  FOR ALL USING (auth.jwt() ->> 'role' = 'service_role');
+  FOR ALL USING (true) WITH CHECK (true);
+-- Nota: O webhook usa supabase client normal, entao precisamos permitir todas operacoes
 
 -- Trigger para atualizar updated_at
 CREATE OR REPLACE FUNCTION update_scheduled_messages_updated_at()

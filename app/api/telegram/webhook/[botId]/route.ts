@@ -655,6 +655,108 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       }
       // ========== FIM UPSELL CALLBACKS ==========
       
+      // ========== DOWNSELL CALLBACKS ==========
+      if (callbackData.startsWith("ds_accept_") || callbackData.startsWith("ds_decline_")) {
+        console.log("[v0] Downsell Callback recebido:", callbackData)
+        
+        const isAccept = callbackData.startsWith("ds_accept_")
+        
+        // Confirmar recebimento do callback
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            callback_query_id: callbackQuery.id,
+            text: isAccept ? "Gerando pagamento..." : "Oferta recusada"
+          })
+        })
+        
+        if (isAccept) {
+          // ds_accept_sequenceId_price
+          const parts = callbackData.replace("ds_accept_", "").split("_")
+          const sequenceId = parts[0]
+          const price = parseFloat(parts[1]) || 0
+          
+          if (price > 0) {
+            // Buscar gateway de pagamento
+            const { data: gateway } = await supabase
+              .from("payment_gateways")
+              .select("*")
+              .eq("bot_id", botUuid)
+              .eq("is_active", true)
+              .single()
+            
+            if (gateway) {
+              try {
+                // Gerar PIX para o downsell
+                const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "https://dragonteste.onrender.com"}/api/mercadopago/pix`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    accessToken: gateway.credentials?.access_token,
+                    amount: price,
+                    description: `Downsell - Oferta Especial`,
+                    email: `${telegramUserId}@telegram.user`,
+                    externalReference: `downsell_${sequenceId}_${telegramUserId}_${Date.now()}`
+                  })
+                })
+                
+                const pixResult = await response.json()
+                
+                if (pixResult.success && pixResult.qrCode) {
+                  // Enviar QR Code
+                  await sendTelegramPhoto(botToken, chatId, pixResult.qrCode, 
+                    `Pague R$ ${price.toFixed(2).replace(".", ",")} via PIX\n\nCopie o codigo abaixo:`
+                  )
+                  await sendTelegramMessage(botToken, chatId, `<code>${pixResult.copyPaste}</code>`)
+                  
+                  // Salvar pagamento
+                  await supabase.from("payments").insert({
+                    user_id: botData?.user_id,
+                    bot_id: botUuid,
+                    telegram_user_id: String(telegramUserId),
+                    telegram_username: from?.username || null,
+                    telegram_first_name: from?.first_name || null,
+                    gateway: gateway.gateway_name || "mercadopago",
+                    external_payment_id: pixResult.paymentId,
+                    amount: price,
+                    description: `Downsell - Oferta Especial`,
+                    qr_code: pixResult.qrCode,
+                    qr_code_url: pixResult.qrCodeUrl,
+                    copy_paste: pixResult.copyPaste,
+                    status: "pending",
+                    product_type: "downsell"
+                  })
+                  
+                  // Cancelar outros downsells pendentes
+                  await supabase
+                    .from("scheduled_messages")
+                    .update({ status: "cancelled" })
+                    .eq("bot_id", botUuid)
+                    .eq("telegram_user_id", String(telegramUserId))
+                    .eq("message_type", "downsell")
+                    .eq("status", "pending")
+                    
+                } else {
+                  await sendTelegramMessage(botToken, chatId, "Erro ao gerar pagamento. Tente novamente mais tarde.")
+                }
+              } catch (err) {
+                console.error("Erro ao gerar PIX do downsell:", err)
+                await sendTelegramMessage(botToken, chatId, "Erro ao processar pagamento.")
+              }
+            } else {
+              await sendTelegramMessage(botToken, chatId, "Pagamento nao disponivel no momento.")
+            }
+          }
+        } else {
+          // Usuario recusou o downsell
+          await sendTelegramMessage(botToken, chatId, "Tudo bem! Se mudar de ideia, estamos aqui.")
+        }
+        
+        return
+      }
+      // ========== FIM DOWNSELL CALLBACKS ==========
+      
       // Handle plan selection - generate PIX
       if (callbackData.startsWith("plan_")) {
         const planId = callbackData.replace("plan_", "")
