@@ -1556,6 +1556,11 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         const redirectButton = flowConfig.redirectButton as { enabled?: boolean; text?: string; url?: string } || {}
         const secondaryMsg = flowConfig.secondaryMessage as { enabled?: boolean; message?: string } || {}
         
+        // Verificar se Packs esta habilitado
+        const packsConfig = flowConfig.packs as { enabled?: boolean; buttonText?: string; list?: Array<{ id: string; active?: boolean }> } | undefined
+        const packsEnabled = packsConfig?.enabled && packsConfig?.list && packsConfig.list.filter(p => p.active !== false).length > 0
+        const packsButtonText = packsConfig?.buttonText || "Packs Disponiveis"
+        
         // Always send welcome flow (we have at least a default message)
         const finalMsg = replaceVars(welcomeMsg) || `Ola! Bem-vindo ao ${bot.name || "bot"}.`
         
@@ -1564,6 +1569,11 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         
         // CTA Button (Ver Planos) - callback button
         inlineKeyboard.push([{ text: ctaButtonText, callback_data: "ver_planos" }])
+        
+        // Packs Button - se habilitado, adiciona na mensagem de boas-vindas
+        if (packsEnabled) {
+          inlineKeyboard.push([{ text: packsButtonText, callback_data: "show_packs" }])
+        }
         
         // Redirect Button - URL button (if enabled)
         if (redirectButton.enabled && redirectButton.text && redirectButton.url) {
