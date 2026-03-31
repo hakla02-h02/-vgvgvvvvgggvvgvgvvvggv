@@ -1,6 +1,6 @@
 "use client"
 
-// Chat Dialog Component - v2
+// Chat Dialog Component - v3 - REBUILD FORÇADO
 import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Send, X, Search, MessageSquare, User, Bot, RefreshCw } from "lucide-react"
-import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+
+// Cliente Supabase importado diretamente
+import { supabase } from "@/lib/supabase"
 
 interface Conversation {
   telegram_user_id: string
