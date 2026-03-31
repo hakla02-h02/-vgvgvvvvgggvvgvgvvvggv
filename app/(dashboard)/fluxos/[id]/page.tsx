@@ -469,10 +469,18 @@ Clique no botao abaixo para renovar com desconto especial!`)
         if (config.orderBump?.inicial) setOrderBumpInicial(config.orderBump.inicial)
         if (config.orderBump?.upsell) setOrderBumpUpsell(config.orderBump.upsell)
         if (config.orderBump?.downsell) setOrderBumpDownsell(config.orderBump.downsell)
-        if (config.orderBump?.packs) setOrderBumpPacks(config.orderBump.packs)
-        if (config.orderBump?.applyInicialTo) setApplyInicialTo(config.orderBump.applyInicialTo)
-    setPacks(config.packs || [])
-    setPaymentGateway(config.payments?.gateway || "")
+  if (config.orderBump?.packs) setOrderBumpPacks(config.orderBump.packs)
+  if (config.orderBump?.applyInicialTo) setApplyInicialTo(config.orderBump.applyInicialTo)
+  // Carregar configuracao de Packs
+  if (typeof config.packs === 'object' && config.packs !== null && 'enabled' in config.packs) {
+    setPacksEnabled(config.packs.enabled || false)
+    setPacksButtonText(config.packs.buttonText || "Packs Disponiveis")
+    setPacksList(config.packs.list || [])
+  } else {
+    // Compatibilidade com formato antigo
+    setPacks(Array.isArray(config.packs) ? config.packs : [])
+  }
+  setPaymentGateway(config.payments?.gateway || "")
     setPixKey(config.payments?.pix_key || "")
     setSubscriptionEnabled(config.subscription?.enabled || false)
     setSecondaryMessageEnabled(config.secondaryMessage?.enabled || false)
@@ -634,7 +642,11 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
         packs: orderBumpPacks,
         applyInicialTo,
       },
-      packs,
+      packs: {
+        enabled: packsEnabled,
+        buttonText: packsButtonText,
+        list: packsList,
+      },
       payments: {
         gateway: paymentGateway,
         pix_key: pixKey,
@@ -3379,16 +3391,71 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                               />
                             </div>
 
-                            {/* Midia de Preview */}
+                            {/* Texto do Botao Personalizado */}
+                            <div className="space-y-2">
+                              <Label className="text-muted-foreground">Texto do Botao</Label>
+                              <Input
+                                value={pack.buttonText || "Comprar Pack"}
+                                onChange={(e) => handleUpdatePack(pack.id, "buttonText", e.target.value)}
+                                placeholder="Comprar Pack"
+                                className="bg-secondary/50"
+                              />
+                              <p className="text-xs text-muted-foreground">Texto exibido no botao de compra deste pack</p>
+                            </div>
+
+                            {/* Midias de Preview */}
                             <Card className="border-border/50 bg-secondary/10">
                               <CardContent className="pt-4 space-y-3">
-                                <div className="flex items-center gap-2 text-sm">
-                                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                                  <span>Midia de Preview (exibida antes da compra)</span>
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                                    <span>Midias de Preview (ate 10 - exibidas antes da compra)</span>
+                                  </div>
+                                  <span className="text-xs text-muted-foreground">{(pack.previewMedias?.length || 0)}/10</span>
                                 </div>
-                                <div className="w-32 h-28 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500/50 transition-colors">
-                                  <Plus className="h-5 w-5 text-muted-foreground" />
-                                  <span className="text-xs text-muted-foreground mt-1">Adicionar midia</span>
+                                <div className="flex flex-wrap gap-2">
+                                  {/* Midias existentes */}
+                                  {(pack.previewMedias || []).map((media, mediaIndex) => (
+                                    <div key={mediaIndex} className="relative w-24 h-20 rounded-lg overflow-hidden group">
+                                      {media.includes("video") || media.includes("mp4") ? (
+                                        <video src={media} className="w-full h-full object-cover" muted />
+                                      ) : (
+                                        <img src={media} alt={`Preview ${mediaIndex + 1}`} className="w-full h-full object-cover" />
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemovePackMedia(pack.id, mediaIndex)}
+                                        className="absolute top-1 right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <X className="h-3 w-3 text-white" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  
+                                  {/* Botao de adicionar */}
+                                  {(pack.previewMedias?.length || 0) < 10 && (
+                                    <label className="w-24 h-20 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500/50 transition-colors">
+                                      {uploadingPackMedia === pack.id ? (
+                                        <div className="animate-spin h-5 w-5 border-2 border-emerald-500 border-t-transparent rounded-full" />
+                                      ) : (
+                                        <>
+                                          <Plus className="h-5 w-5 text-muted-foreground" />
+                                          <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                                        </>
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*,video/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0]
+                                          if (file) handleUploadPackMedia(pack.id, file)
+                                          e.target.value = ""
+                                        }}
+                                        disabled={uploadingPackMedia === pack.id}
+                                      />
+                                    </label>
+                                  )}
                                 </div>
                               </CardContent>
                             </Card>
