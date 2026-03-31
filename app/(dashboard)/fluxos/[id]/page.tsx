@@ -131,7 +131,7 @@ interface DownsellSequence {
   message: string
   medias: string[]
   sendDelay: number
-  sendDelayUnit: "minutes" | "hours"
+  sendDelayUnit: "minutes" | "hours" | "days"
   price: number
   deliveryType: "global" | "custom"
   customDelivery?: string
@@ -2648,7 +2648,7 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                                     />
                                     <Select
                                       value={seq.sendDelayUnit || "minutes"}
-                                      onValueChange={(value: "minutes" | "hours") => handleUpdateDownsellSequence(seq.id, "sendDelayUnit", value)}
+                                      onValueChange={(value: "minutes" | "hours" | "days") => handleUpdateDownsellSequence(seq.id, "sendDelayUnit", value)}
                                     >
                                       <SelectTrigger className="w-28 bg-secondary/50 border-border/50">
                                         <SelectValue />
@@ -2656,6 +2656,7 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                                       <SelectContent>
                                         <SelectItem value="minutes">Minutos</SelectItem>
                                         <SelectItem value="hours">Horas</SelectItem>
+                                        <SelectItem value="days">Dias</SelectItem>
                                       </SelectContent>
                                     </Select>
                                   </div>
