@@ -55,17 +55,26 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
 
   // Buscar conversas
   const fetchConversations = async () => {
+    console.log("[v0] fetchConversations iniciado")
     try {
       const { data: userData } = await supabase.auth.getUser()
-      if (!userData.user) return
+      console.log("[v0] userData:", userData?.user?.id)
+      if (!userData.user) {
+        console.log("[v0] Usuario nao autenticado")
+        return
+      }
 
       // Buscar bots do usuario
-      const { data: bots } = await supabase
+      const { data: bots, error: botsError } = await supabase
         .from("bots")
         .select("id, username, token")
         .eq("user_id", userData.user.id)
 
-      if (!bots || bots.length === 0) return
+      console.log("[v0] bots encontrados:", bots?.length, "erro:", botsError)
+      if (!bots || bots.length === 0) {
+        console.log("[v0] Nenhum bot encontrado")
+        return
+      }
 
       const botIds = bots.map(b => b.id)
       const convMap = new Map<string, Conversation>()
@@ -76,6 +85,8 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
         .select("*")
         .in("bot_id", botIds)
         .order("created_at", { ascending: false })
+
+      console.log("[v0] bot_messages:", messagesData?.length, "erro:", msgError)
 
       if (!msgError && messagesData && messagesData.length > 0) {
         // Usar dados do bot_messages
@@ -99,11 +110,14 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
         }
       } else {
         // Fallback: usar user_flow_state para obter usuarios que interagiram
-        const { data: flowStates } = await supabase
+        console.log("[v0] Usando fallback user_flow_state")
+        const { data: flowStates, error: flowError } = await supabase
           .from("user_flow_state")
           .select("*")
           .in("bot_id", botIds)
           .order("updated_at", { ascending: false })
+
+        console.log("[v0] flowStates:", flowStates?.length, "erro:", flowError)
 
         if (flowStates) {
           for (const state of flowStates) {
@@ -128,9 +142,11 @@ export function ChatDialog({ open, onOpenChange, botId, initialUserId }: ChatDia
         }
       }
 
+      console.log("[v0] Total de conversas encontradas:", convMap.size)
       setConversations(Array.from(convMap.values()))
 
       // Se tiver initialUserId, selecionar automaticamente
+      console.log("[v0] initialUserId:", initialUserId)
       if (initialUserId) {
         const conv = Array.from(convMap.values()).find(c => 
           c.telegram_user_id === initialUserId || c.username === initialUserId
