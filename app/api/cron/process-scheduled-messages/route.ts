@@ -77,11 +77,12 @@ async function sendTelegramVideo(
 }
 
 export async function GET(request: NextRequest) {
-  // Verificar autorizacao (pode ser um secret ou API key)
+  // Autorizacao opcional - se CRON_SECRET estiver definido, verifica
   const authHeader = request.headers.get("authorization")
   const cronSecret = process.env.CRON_SECRET
   
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  // Apenas verifica se CRON_SECRET estiver definido E nao for vazio
+  if (cronSecret && cronSecret.length > 0 && authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
   
@@ -182,14 +183,15 @@ export async function GET(request: NextRequest) {
           await sendTelegramMessage(botToken, chatId, message)
         }
         
-        // Se tem preco, enviar botao de pagamento
+        // Enviar botoes de Aceitar e Recusar (igual ao upsell)
         if (price > 0) {
-          const paymentButton = {
-            inline_keyboard: [[
-              { text: `Pagar R$ ${price.toFixed(2)}`, callback_data: `downsell_pay_${msg.sequence_id}_${price}` }
-            ]]
+          const inlineKeyboard = {
+            inline_keyboard: [
+              [{ text: `Quero por R$ ${price.toFixed(2).replace(".", ",")}!`, callback_data: `ds_accept_${msg.sequence_id}_${price}` }],
+              [{ text: "Nao tenho interesse", callback_data: `ds_decline_${msg.sequence_id}` }]
+            ]
           }
-          await sendTelegramMessage(botToken, chatId, "Aproveite esta oferta especial:", paymentButton)
+          await sendTelegramMessage(botToken, chatId, "Aproveite esta oferta especial:", inlineKeyboard)
         }
         
         // Marcar como enviado

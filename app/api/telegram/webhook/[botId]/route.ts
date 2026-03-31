@@ -655,6 +655,108 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       }
       // ========== FIM UPSELL CALLBACKS ==========
       
+      // ========== DOWNSELL CALLBACKS ==========
+      if (callbackData.startsWith("ds_accept_") || callbackData.startsWith("ds_decline_")) {
+        console.log("[v0] Downsell Callback recebido:", callbackData)
+        
+        const isAccept = callbackData.startsWith("ds_accept_")
+        
+        // Confirmar recebimento do callback
+        await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            callback_query_id: callbackQuery.id,
+            text: isAccept ? "Gerando pagamento..." : "Oferta recusada"
+          })
+        })
+        
+        if (isAccept) {
+          // ds_accept_sequenceId_price
+          const parts = callbackData.replace("ds_accept_", "").split("_")
+          const sequenceId = parts[0]
+          const price = parseFloat(parts[1]) || 0
+          
+          if (price > 0) {
+            // Buscar gateway de pagamento
+            const { data: gateway } = await supabase
+              .from("payment_gateways")
+              .select("*")
+              .eq("bot_id", botUuid)
+              .eq("is_active", true)
+              .single()
+            
+            if (gateway) {
+              try {
+                // Gerar PIX para o downsell
+                const response = await fetch(`${process.env.NEXT_PUBLIC_APP_URL || "https://dragonteste.onrender.com"}/api/mercadopago/pix`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    accessToken: gateway.credentials?.access_token,
+                    amount: price,
+                    description: `Downsell - Oferta Especial`,
+                    email: `${telegramUserId}@telegram.user`,
+                    externalReference: `downsell_${sequenceId}_${telegramUserId}_${Date.now()}`
+                  })
+                })
+                
+                const pixResult = await response.json()
+                
+                if (pixResult.success && pixResult.qrCode) {
+                  // Enviar QR Code
+                  await sendTelegramPhoto(botToken, chatId, pixResult.qrCode, 
+                    `Pague R$ ${price.toFixed(2).replace(".", ",")} via PIX\n\nCopie o codigo abaixo:`
+                  )
+                  await sendTelegramMessage(botToken, chatId, `<code>${pixResult.copyPaste}</code>`)
+                  
+                  // Salvar pagamento
+                  await supabase.from("payments").insert({
+                    user_id: botData?.user_id,
+                    bot_id: botUuid,
+                    telegram_user_id: String(telegramUserId),
+                    telegram_username: from?.username || null,
+                    telegram_first_name: from?.first_name || null,
+                    gateway: gateway.gateway_name || "mercadopago",
+                    external_payment_id: pixResult.paymentId,
+                    amount: price,
+                    description: `Downsell - Oferta Especial`,
+                    qr_code: pixResult.qrCode,
+                    qr_code_url: pixResult.qrCodeUrl,
+                    copy_paste: pixResult.copyPaste,
+                    status: "pending",
+                    product_type: "downsell"
+                  })
+                  
+                  // Cancelar outros downsells pendentes
+                  await supabase
+                    .from("scheduled_messages")
+                    .update({ status: "cancelled" })
+                    .eq("bot_id", botUuid)
+                    .eq("telegram_user_id", String(telegramUserId))
+                    .eq("message_type", "downsell")
+                    .eq("status", "pending")
+                    
+                } else {
+                  await sendTelegramMessage(botToken, chatId, "Erro ao gerar pagamento. Tente novamente mais tarde.")
+                }
+              } catch (err) {
+                console.error("Erro ao gerar PIX do downsell:", err)
+                await sendTelegramMessage(botToken, chatId, "Erro ao processar pagamento.")
+              }
+            } else {
+              await sendTelegramMessage(botToken, chatId, "Pagamento nao disponivel no momento.")
+            }
+          }
+        } else {
+          // Usuario recusou o downsell
+          await sendTelegramMessage(botToken, chatId, "Tudo bem! Se mudar de ideia, estamos aqui.")
+        }
+        
+        return
+      }
+      // ========== FIM DOWNSELL CALLBACKS ==========
+      
       // Handle plan selection - generate PIX
       if (callbackData.startsWith("plan_")) {
         const planId = callbackData.replace("plan_", "")
@@ -925,7 +1027,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             status: "pending",
           })
           
-          // AGENDAR DOWNSELLS DO TIPO "PIX" (para quem gerou pix mas nao pagou)
+          // DOWNSELLS DO TIPO "PIX" (para quem gerou pix mas nao pagou)
           // Buscar flow para pegar config de downsell
           const { data: flowForDownsell } = await supabase
             .from("flows")
@@ -938,7 +1040,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           if (flowForDownsell) {
             const flowConfig = (flowForDownsell.config as Record<string, unknown>) || {}
             const downsellConfig = flowConfig.downsell as { enabled?: boolean; sequences?: Array<{ 
-              id: string; message: string; medias?: string[]; sendDelay: number; sendDelayUnit?: string; 
+              id: string; message: string; medias?: string[]; sendTiming?: string; sendDelayValue?: number; sendDelayUnit?: string; 
               price: number; targetType?: string; deliveryType?: string 
             }> } | undefined
             
@@ -949,38 +1051,66 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
               const pixSequences = downsellConfig.sequences.filter(s => s.targetType === "pix")
               
               for (const seq of pixSequences) {
-                // Se imediato, agendar para agora. Se custom, usar o valor configurado
-                let delayMinutes = 0
-                if (seq.sendTiming === "custom" && seq.sendDelayValue) {
-                  delayMinutes = seq.sendDelayValue
-                  if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelayValue * 60
-                  else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelayValue * 60 * 24
-                }
-                const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
+                const isImmediate = !seq.sendTiming || seq.sendTiming === "immediate"
                 
-                await supabase.from("scheduled_messages").insert({
-                  bot_id: botUuid,
-                  flow_id: flowForDownsell.id,
-                  telegram_user_id: String(telegramUserId),
-                  telegram_chat_id: String(chatId),
-                  message_type: "downsell",
-                  sequence_id: seq.id,
-                  sequence_index: pixSequences.indexOf(seq),
-                  scheduled_for: scheduledFor.toISOString(),
-                  status: "pending",
-                  metadata: {
-                    message: seq.message,
-                    medias: seq.medias || [],
-                    price: seq.price,
-                    deliveryType: seq.deliveryType,
-                    botToken: botToken,
-                    targetType: "pix",
-                    pixPaymentId: pixResult.paymentId,
+                if (isImmediate) {
+                  // ENVIAR IMEDIATAMENTE
+                  try {
+                    if (seq.medias && seq.medias.length > 0) {
+                      const validMedias = seq.medias.filter(m => m && !m.startsWith("data:") && m.startsWith("http"))
+                      if (validMedias.length > 0) {
+                        await sendMediaGroup(botToken, chatId, validMedias, seq.message || "")
+                      } else if (seq.message) {
+                        await sendTelegramMessage(botToken, chatId, seq.message)
+                      }
+                    } else if (seq.message) {
+                      await sendTelegramMessage(botToken, chatId, seq.message)
+                    }
+                    
+                    if (seq.price > 0) {
+                      const inlineKeyboard = {
+                        inline_keyboard: [
+                          [{ text: `Quero por R$ ${seq.price.toFixed(2).replace(".", ",")}!`, callback_data: `ds_accept_${seq.id}_${seq.price}` }],
+                          [{ text: "Nao tenho interesse", callback_data: `ds_decline_${seq.id}` }]
+                        ]
+                      }
+                      await sendTelegramMessage(botToken, chatId, "Aproveite esta oferta especial:", inlineKeyboard)
+                    }
+                  } catch (err) {
+                    console.error("[DOWNSELL PIX] Erro ao enviar imediato:", err)
                   }
-                })
+                } else {
+                  // AGENDAR PARA DEPOIS
+                  let delayMinutes = seq.sendDelayValue || 30
+                  if (seq.sendDelayUnit === "hours") delayMinutes = (seq.sendDelayValue || 1) * 60
+                  else if (seq.sendDelayUnit === "days") delayMinutes = (seq.sendDelayValue || 1) * 60 * 24
+                  
+                  const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
+                  
+                  await supabase.from("scheduled_messages").insert({
+                    bot_id: botUuid,
+                    flow_id: flowForDownsell.id,
+                    telegram_user_id: String(telegramUserId),
+                    telegram_chat_id: String(chatId),
+                    message_type: "downsell",
+                    sequence_id: seq.id,
+                    sequence_index: pixSequences.indexOf(seq),
+                    scheduled_for: scheduledFor.toISOString(),
+                    status: "pending",
+                    metadata: {
+                      message: seq.message,
+                      medias: seq.medias || [],
+                      price: seq.price,
+                      deliveryType: seq.deliveryType,
+                      botToken: botToken,
+                      targetType: "pix",
+                      pixPaymentId: pixResult.paymentId,
+                    }
+                  })
+                }
               }
               
-              console.log(`[DOWNSELL PIX] Scheduled ${pixSequences.length} pix downsells for user ${telegramUserId}`)
+              console.log(`[DOWNSELL PIX] Processed ${pixSequences.length} pix downsells for user ${telegramUserId}`)
             }
           }
           
@@ -1186,9 +1316,9 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           await sendTelegramMessage(botToken, chatId, replaceVars(secondaryMsg.message))
         }
         
-        // STEP 4: Schedule downsell sequences (enviadas para quem NAO pagou)
+        // STEP 4: Send/Schedule downsell sequences (enviadas para quem NAO pagou)
         const downsellConfig = flowConfig.downsell as { enabled?: boolean; sequences?: Array<{ 
-          id: string; message: string; medias?: string[]; sendDelay: number; sendDelayUnit?: string; 
+          id: string; message: string; medias?: string[]; sendTiming?: string; sendDelayValue?: number; sendDelayUnit?: string; 
           price: number; targetType?: string; deliveryType?: string 
         }> } | undefined
         
@@ -1203,37 +1333,67 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
             .eq("telegram_user_id", String(telegramUserId))
             .eq("status", "pending")
           
-          // Agendar sequencias do tipo "geral" (para todos que derem start)
+          // Sequencias do tipo "geral" (para todos que derem start)
           const geralSequences = downsellConfig.sequences.filter(s => s.targetType === "geral" || !s.targetType)
           
           for (const seq of geralSequences) {
-            // Se imediato, agendar para agora. Se custom, usar o valor configurado
-            let delayMinutes = 0
-            if (seq.sendTiming === "custom" && seq.sendDelayValue) {
-              delayMinutes = seq.sendDelayValue
-              if (seq.sendDelayUnit === "hours") delayMinutes = seq.sendDelayValue * 60
-              else if (seq.sendDelayUnit === "days") delayMinutes = seq.sendDelayValue * 60 * 24
-            }
-            const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
+            const isImmediate = !seq.sendTiming || seq.sendTiming === "immediate"
             
-            await supabase.from("scheduled_messages").insert({
-              bot_id: botUuid,
-              flow_id: startFlow.id,
-              telegram_user_id: String(telegramUserId),
-              telegram_chat_id: String(chatId),
-              message_type: "downsell",
-              sequence_id: seq.id,
-              sequence_index: geralSequences.indexOf(seq),
-              scheduled_for: scheduledFor.toISOString(),
-              status: "pending",
-              metadata: {
-                message: seq.message,
-                medias: seq.medias || [],
-                price: seq.price,
-                deliveryType: seq.deliveryType,
-                botToken: botToken, // Necessario para enviar
+            if (isImmediate) {
+              // ENVIAR IMEDIATAMENTE - nao depende de cron
+              try {
+                // Enviar midias se tiver
+                if (seq.medias && seq.medias.length > 0) {
+                  const validMedias = seq.medias.filter(m => m && !m.startsWith("data:") && m.startsWith("http"))
+                  if (validMedias.length > 0) {
+                    await sendMediaGroup(botToken, chatId, validMedias, seq.message || "")
+                  } else if (seq.message) {
+                    await sendTelegramMessage(botToken, chatId, seq.message)
+                  }
+                } else if (seq.message) {
+                  await sendTelegramMessage(botToken, chatId, seq.message)
+                }
+                
+                // Enviar botoes de Aceitar/Recusar
+                if (seq.price > 0) {
+                  const inlineKeyboard = {
+                    inline_keyboard: [
+                      [{ text: `Quero por R$ ${seq.price.toFixed(2).replace(".", ",")}!`, callback_data: `ds_accept_${seq.id}_${seq.price}` }],
+                      [{ text: "Nao tenho interesse", callback_data: `ds_decline_${seq.id}` }]
+                    ]
+                  }
+                  await sendTelegramMessage(botToken, chatId, "Aproveite esta oferta especial:", inlineKeyboard)
+                }
+              } catch (err) {
+                console.error("[DOWNSELL] Erro ao enviar downsell imediato:", err)
               }
-            })
+            } else {
+              // AGENDAR PARA DEPOIS - salva no banco para cron externo processar
+              let delayMinutes = seq.sendDelayValue || 30
+              if (seq.sendDelayUnit === "hours") delayMinutes = (seq.sendDelayValue || 1) * 60
+              else if (seq.sendDelayUnit === "days") delayMinutes = (seq.sendDelayValue || 1) * 60 * 24
+              
+              const scheduledFor = new Date(now.getTime() + delayMinutes * 60 * 1000)
+              
+              await supabase.from("scheduled_messages").insert({
+                bot_id: botUuid,
+                flow_id: startFlow.id,
+                telegram_user_id: String(telegramUserId),
+                telegram_chat_id: String(chatId),
+                message_type: "downsell",
+                sequence_id: seq.id,
+                sequence_index: geralSequences.indexOf(seq),
+                scheduled_for: scheduledFor.toISOString(),
+                status: "pending",
+                metadata: {
+                  message: seq.message,
+                  medias: seq.medias || [],
+                  price: seq.price,
+                  deliveryType: seq.deliveryType,
+                  botToken: botToken,
+                }
+              })
+            }
           }
         }
         
