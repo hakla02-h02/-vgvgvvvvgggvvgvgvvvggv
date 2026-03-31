@@ -153,7 +153,8 @@ interface Pack {
   name: string
   price: number
   description: string
-  previewMedia?: string
+  previewMedias: string[] // Array de midias de preview (ate 10)
+  buttonText: string // Texto do botao personalizado
   deliveryDestination: string
   active: boolean
 }
@@ -1069,26 +1070,94 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
   
   // Add pack
   const handleAddPack = () => {
-    if (packsList.length >= 20) return
-    const newPack: Pack = {
-      id: `pack-${Date.now()}`,
-      emoji: "📦",
-      name: "",
-      price: 0,
-      description: "",
-      deliveryDestination: "",
-      active: true,
-    }
-    setPacksList([...packsList, newPack])
-    setExpandedPack(newPack.id)
-    setHasChanges(true)
+  if (packsList.length >= 20) return
+  const newPack: Pack = {
+  id: `pack-${Date.now()}`,
+  emoji: "📦",
+  name: "",
+  price: 0,
+  description: "",
+  previewMedias: [],
+  buttonText: "Comprar Pack",
+  deliveryDestination: "",
+  active: true,
+  }
+  setPacksList([...packsList, newPack])
+  setExpandedPack(newPack.id)
+  setHasChanges(true)
   }
 
   // Remove pack
   const handleRemovePack = (id: string) => {
-    setPacksList(packsList.filter(p => p.id !== id))
-    if (expandedPack === id) setExpandedPack(null)
-    setHasChanges(true)
+  setPacksList(packsList.filter(p => p.id !== id))
+  if (expandedPack === id) setExpandedPack(null)
+  setHasChanges(true)
+  }
+  
+  // Estado para upload de midia do pack
+  const [uploadingPackMedia, setUploadingPackMedia] = useState<string | null>(null)
+  
+  // Upload media for pack
+  const handleUploadPackMedia = async (packId: string, file: File) => {
+    if (!file || !flow) return
+    
+    const currentPack = packsList.find(p => p.id === packId)
+    if (!currentPack || (currentPack.previewMedias?.length || 0) >= 10) {
+      toast({
+        title: "Limite atingido",
+        description: "Maximo de 10 midias por pack",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setUploadingPackMedia(packId)
+    
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${flow.id}/pack_${packId}_${Date.now()}.${fileExt}`
+      
+      const { error } = await supabase.storage
+        .from('flow-medias')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (error) {
+        toast({
+          title: "Erro no upload",
+          description: error.message,
+          variant: "destructive",
+        })
+        return
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('flow-medias')
+        .getPublicUrl(fileName)
+
+      const updatedMedias = [...(currentPack.previewMedias || []), urlData.publicUrl]
+      handleUpdatePack(packId, "previewMedias", updatedMedias)
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error)
+      toast({
+        title: "Erro",
+        description: "Falha ao fazer upload da midia",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingPackMedia(null)
+    }
+  }
+
+  // Remove media from pack
+  const handleRemovePackMedia = (packId: string, mediaIndex: number) => {
+    const currentPack = packsList.find(p => p.id === packId)
+    if (!currentPack) return
+    
+    const updatedMedias = (currentPack.previewMedias || []).filter((_, i) => i !== mediaIndex)
+    handleUpdatePack(packId, "previewMedias", updatedMedias)
   }
 
   // Update pack
