@@ -268,6 +268,17 @@ export async function POST(request: NextRequest) {
 
             if (bot?.token && payment.telegram_user_id) {
               const chatId = parseInt(payment.telegram_user_id)
+              
+              // CANCELAR todos os downsells pendentes (usuario ja pagou)
+              await supabase
+                .from("scheduled_messages")
+                .update({ status: "cancelled" })
+                .eq("bot_id", payment.bot_id)
+                .eq("telegram_user_id", payment.telegram_user_id)
+                .eq("message_type", "downsell")
+                .eq("status", "pending")
+              
+              console.log(`[DOWNSELL] Cancelled pending downsells for user ${payment.telegram_user_id}`)
 
               // Enviar mensagem de confirmacao
               await sendTelegramMessage(

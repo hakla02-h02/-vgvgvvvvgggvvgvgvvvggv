@@ -131,19 +131,19 @@ interface DownsellSequence {
   message: string
   medias: string[]
   sendDelay: number
-  discountType: "percent" | "fixed"
-  discountValue: number
+  sendDelayUnit: "minutes" | "hours"
+  price: number
   deliveryType: "global" | "custom"
   customDelivery?: string
-  createPlans: boolean
+  targetType: "geral" | "pix" // geral = todos, pix = apenas quem gerou pix mas nao pagou
 }
 
 interface DownsellConfig {
   enabled: boolean
   message?: string
-  discount_percent?: number
-  plans?: FlowPlan[]
   sequences?: DownsellSequence[]
+  deliveryType?: "same" | "custom"
+  customDelivery?: string
 }
 
 interface Pack {
@@ -293,11 +293,11 @@ export default function FlowEditorPage() {
   // Downsell
   const [downsellEnabled, setDownsellEnabled] = useState(false)
   const [downsellMessage, setDownsellMessage] = useState("")
-  const [downsellDiscount, setDownsellDiscount] = useState(10)
   const [downsellSequences, setDownsellSequences] = useState<DownsellSequence[]>([])
   const [downsellDeliveryType, setDownsellDeliveryType] = useState<"same" | "custom">("same")
   const [downsellSubTab, setDownsellSubTab] = useState<"geral" | "pix">("geral")
   const [expandedDownsellSequence, setExpandedDownsellSequence] = useState<string | null>(null)
+  const [uploadingDownsellMedia, setUploadingDownsellMedia] = useState<string | null>(null)
 
   // Order Bump
   const [orderBumpEnabled, setOrderBumpEnabled] = useState(false)
@@ -457,9 +457,10 @@ Clique no botao abaixo para renovar com desconto especial!`)
   setUpsellEnabled(config.upsell?.enabled || false)
   setUpsellMessage(config.upsell?.message || "")
   setUpsellSequences(config.upsell?.sequences || [])
-    setDownsellEnabled(config.downsell?.enabled || false)
-    setDownsellMessage(config.downsell?.message || "")
-    setDownsellDiscount(config.downsell?.discount_percent || 10)
+  setDownsellEnabled(config.downsell?.enabled || false)
+  setDownsellMessage(config.downsell?.message || "")
+  setDownsellSequences(config.downsell?.sequences || [])
+  setDownsellDeliveryType(config.downsell?.deliveryType || "same")
         setOrderBumpEnabled(config.orderBump?.enabled || false)
         setOrderBumpName(config.orderBump?.name || "")
         setOrderBumpPrice(config.orderBump?.price?.toString() || "")
@@ -615,11 +616,12 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
         message: upsellMessage,
         sequences: upsellSequences,
       },
-      downsell: {
-        enabled: downsellEnabled,
-        message: downsellMessage,
-        discount_percent: downsellDiscount,
-      },
+  downsell: {
+  enabled: downsellEnabled,
+  message: downsellMessage,
+  sequences: downsellSequences,
+  deliveryType: downsellDeliveryType,
+  },
       orderBump: {
         enabled: orderBumpEnabled,
         name: orderBumpName,
@@ -963,20 +965,20 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
   
   // Add downsell sequence
   const handleAddDownsellSequence = () => {
-    if (downsellSequences.length >= 20) return
-    const newSequence: DownsellSequence = {
-      id: `ds-seq-${Date.now()}`,
-      message: "",
-      medias: [],
-      sendDelay: 5,
-      discountType: "percent",
-      discountValue: 5,
-      deliveryType: "global",
-      createPlans: false,
-    }
-    setDownsellSequences([...downsellSequences, newSequence])
-    setExpandedDownsellSequence(newSequence.id)
-    setHasChanges(true)
+  if (downsellSequences.length >= 20) return
+  const newSequence: DownsellSequence = {
+  id: `ds-seq-${Date.now()}`,
+  message: "",
+  medias: [],
+  sendDelay: 5,
+  sendDelayUnit: "minutes",
+  price: 0,
+  deliveryType: "global",
+  targetType: downsellSubTab === "pix" ? "pix" : "geral", // Usa a aba atual como targetType
+  }
+  setDownsellSequences([...downsellSequences, newSequence])
+  setExpandedDownsellSequence(newSequence.id)
+  setHasChanges(true)
   }
 
   // Remove downsell sequence
@@ -994,12 +996,75 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
 
   // Duplicate downsell sequence
   const handleDuplicateDownsellSequence = (seq: DownsellSequence) => {
-    if (downsellSequences.length >= 20) return
-    const newSequence = { ...seq, id: `ds-seq-${Date.now()}` }
-    setDownsellSequences([...downsellSequences, newSequence])
-    setHasChanges(true)
+  if (downsellSequences.length >= 20) return
+  const newSequence = { ...seq, id: `ds-seq-${Date.now()}` }
+  setDownsellSequences([...downsellSequences, newSequence])
+  setHasChanges(true)
   }
 
+  // Upload media for downsell sequence
+  const handleUploadDownsellMedia = async (seqId: string, file: File) => {
+    if (!file || !flow) return
+    
+    const currentSeq = downsellSequences.find(s => s.id === seqId)
+    if (!currentSeq || (currentSeq.medias?.length || 0) >= 3) {
+      toast({
+        title: "Limite atingido",
+        description: "Maximo de 3 midias permitido",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setUploadingDownsellMedia(seqId)
+    
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${flow.id}/downsell_${seqId}_${Date.now()}.${fileExt}`
+      
+      const { error } = await supabase.storage
+        .from('flow-medias')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (error) {
+        toast({
+          title: "Erro no upload",
+          description: error.message,
+          variant: "destructive",
+        })
+        return
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('flow-medias')
+        .getPublicUrl(fileName)
+
+      const updatedMedias = [...(currentSeq.medias || []), urlData.publicUrl]
+      handleUpdateDownsellSequence(seqId, "medias", updatedMedias)
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error)
+      toast({
+        title: "Erro",
+        description: "Falha ao fazer upload da midia",
+        variant: "destructive",
+      })
+    } finally {
+      setUploadingDownsellMedia(null)
+    }
+  }
+
+  // Remove media from downsell sequence
+  const handleRemoveDownsellMedia = (seqId: string, mediaIndex: number) => {
+    const currentSeq = downsellSequences.find(s => s.id === seqId)
+    if (!currentSeq) return
+    
+    const updatedMedias = (currentSeq.medias || []).filter((_, i) => i !== mediaIndex)
+    handleUpdateDownsellSequence(seqId, "medias", updatedMedias)
+  }
+  
   // Add pack
   const handleAddPack = () => {
     if (packsList.length >= 20) return
@@ -2440,8 +2505,12 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                 {/* Main Content - Sequences */}
                 <div className="flex-1">
                   <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold">Sequencias de Downsell</h3>
-                    <span className="text-sm text-muted-foreground">{downsellSequences.length}/20</span>
+                    <h3 className="text-lg font-semibold">
+                      {downsellSubTab === "geral" ? "Sequencias Gerais" : "Sequencias Pix Gerado"}
+                    </h3>
+                    <span className="text-sm text-muted-foreground">
+                      {downsellSequences.filter(s => s.targetType === downsellSubTab || (!s.targetType && downsellSubTab === "geral")).length}/20
+                    </span>
                   </div>
 
                   {!downsellEnabled ? (
@@ -2451,12 +2520,16 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                         <p className="text-muted-foreground">Ative o Downsell para configurar sequencias</p>
                       </CardContent>
                     </Card>
-                  ) : downsellSequences.length === 0 ? (
+                  ) : downsellSequences.filter(s => s.targetType === downsellSubTab || (!s.targetType && downsellSubTab === "geral")).length === 0 ? (
                     <Card className="border-border/50">
                       <CardContent className="flex flex-col items-center justify-center py-16">
                         <Plus className="h-10 w-10 text-muted-foreground/30 mb-4" />
-                        <p className="text-muted-foreground mb-4">Nenhuma sequencia configurada</p>
-                        <Button onClick={handleAddDownsellSequence} className="bg-pink-500 hover:bg-pink-600">
+                        <p className="text-muted-foreground mb-4">
+                          {downsellSubTab === "geral" 
+                            ? "Nenhuma sequencia geral configurada" 
+                            : "Nenhuma sequencia para Pix Gerado configurada"}
+                        </p>
+                        <Button onClick={handleAddDownsellSequence} className={downsellSubTab === "pix" ? "bg-orange-500 hover:bg-orange-600" : "bg-pink-500 hover:bg-pink-600"}>
                           <Plus className="h-4 w-4 mr-2" />
                           Adicionar Sequencia
                         </Button>
@@ -2464,7 +2537,7 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                     </Card>
                   ) : (
                     <div className="space-y-4">
-                      {downsellSequences.map((seq, index) => (
+                      {downsellSequences.filter(s => s.targetType === downsellSubTab || (!s.targetType && downsellSubTab === "geral")).map((seq, index) => (
                         <Card key={seq.id} className="border-border/50">
                           {/* Sequence Header */}
                           <div
@@ -2512,71 +2585,99 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                                   <ImageIcon className="h-4 w-4" />
                                   <span>Midias (ate 3)</span>
                                 </div>
-                                <div className="flex gap-2">
-                                  <div className="w-24 h-20 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-pink-500/50 transition-colors">
-                                    <Plus className="h-5 w-5 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
-                                  </div>
+                                <div className="flex flex-wrap gap-2">
+                                  {/* Midias existentes */}
+                                  {(seq.medias || []).map((media, mediaIndex) => (
+                                    <div key={mediaIndex} className="relative w-24 h-20 rounded-lg overflow-hidden group">
+                                      {media.includes("video") || media.includes("mp4") ? (
+                                        <video src={media} className="w-full h-full object-cover" muted />
+                                      ) : (
+                                        <img src={media} alt={`Midia ${mediaIndex + 1}`} className="w-full h-full object-cover" />
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={() => handleRemoveDownsellMedia(seq.id, mediaIndex)}
+                                        className="absolute top-1 right-1 w-5 h-5 bg-destructive rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                      >
+                                        <X className="h-3 w-3 text-white" />
+                                      </button>
+                                    </div>
+                                  ))}
+                                  
+                                  {/* Botao de adicionar */}
+                                  {(seq.medias?.length || 0) < 3 && (
+                                    <label className="w-24 h-20 border-2 border-dashed border-border/50 rounded-lg flex flex-col items-center justify-center cursor-pointer hover:border-pink-500/50 transition-colors">
+                                      {uploadingDownsellMedia === seq.id ? (
+                                        <div className="animate-spin h-5 w-5 border-2 border-pink-500 border-t-transparent rounded-full" />
+                                      ) : (
+                                        <>
+                                          <Plus className="h-5 w-5 text-muted-foreground" />
+                                          <span className="text-xs text-muted-foreground mt-1">Adicionar</span>
+                                        </>
+                                      )}
+                                      <input
+                                        type="file"
+                                        accept="image/*,video/*"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0]
+                                          if (file) handleUploadDownsellMedia(seq.id, file)
+                                          e.target.value = ""
+                                        }}
+                                        disabled={uploadingDownsellMedia === seq.id}
+                                      />
+                                    </label>
+                                  )}
                                 </div>
                               </div>
 
-                              {/* Enviar + Desconto */}
+                              {/* Enviar + Preco */}
                               <div className="flex gap-4">
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <Clock className="h-4 w-4" />
                                     <span>Enviar:</span>
                                   </div>
-                                  <Select
-                                    value={String(seq.sendDelay)}
-                                    onValueChange={(value) => handleUpdateDownsellSequence(seq.id, "sendDelay", parseInt(value))}
-                                  >
-                                    <SelectTrigger className="w-40 bg-secondary/50 border-border/50">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="5">5 minutos</SelectItem>
-                                      <SelectItem value="10">10 minutos</SelectItem>
-                                      <SelectItem value="15">15 minutos</SelectItem>
-                                      <SelectItem value="30">30 minutos</SelectItem>
-                                      <SelectItem value="60">1 hora</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                                  <div className="flex gap-2">
+                                    <Input
+                                      type="number"
+                                      value={seq.sendDelay}
+                                      onChange={(e) => handleUpdateDownsellSequence(seq.id, "sendDelay", parseInt(e.target.value) || 0)}
+                                      className="w-20 bg-secondary/50 border-border/50"
+                                      min={1}
+                                    />
+                                    <Select
+                                      value={seq.sendDelayUnit || "minutes"}
+                                      onValueChange={(value: "minutes" | "hours") => handleUpdateDownsellSequence(seq.id, "sendDelayUnit", value)}
+                                    >
+                                      <SelectTrigger className="w-28 bg-secondary/50 border-border/50">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="minutes">Minutos</SelectItem>
+                                        <SelectItem value="hours">Horas</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
                                 </div>
 
                                 <div className="space-y-2">
                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                     <DollarSign className="h-4 w-4" />
-                                    <span>Desconto:</span>
+                                    <span>Preco:</span>
                                   </div>
-                                  <div className="flex gap-2">
-                                    <Select
-                                      value={seq.discountType}
-                                      onValueChange={(value: "percent" | "fixed") => handleUpdateDownsellSequence(seq.id, "discountType", value)}
-                                    >
-                                      <SelectTrigger className="w-20 bg-secondary/50 border-border/50">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="percent">%</SelectItem>
-                                        <SelectItem value="fixed">R$</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                    <Select
-                                      value={String(seq.discountValue)}
-                                      onValueChange={(value) => handleUpdateDownsellSequence(seq.id, "discountValue", parseInt(value))}
-                                    >
-                                      <SelectTrigger className="w-20 bg-secondary/50 border-border/50">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="5">5%</SelectItem>
-                                        <SelectItem value="10">10%</SelectItem>
-                                        <SelectItem value="15">15%</SelectItem>
-                                        <SelectItem value="20">20%</SelectItem>
-                                        <SelectItem value="25">25%</SelectItem>
-                                      </SelectContent>
-                                    </Select>
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-sm text-muted-foreground">R$</span>
+                                    <Input
+                                      type="number"
+                                      value={seq.price || 0}
+                                      onChange={(e) => {
+                                        handleUpdateDownsellSequence(seq.id, "price", parseFloat(e.target.value) || 0)
+                                      }}
+                                      className="w-28 bg-secondary/50 border-border/50"
+                                      min={0}
+                                      step="0.01"
+                                    />
                                   </div>
                                 </div>
                               </div>
@@ -2622,31 +2723,6 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
                               </div>
 
                               <div className="border-t border-border/50 pt-4" />
-
-                              {/* Planos da Oferta */}
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <Package className="h-4 w-4 text-pink-500" />
-                                    <span className="font-medium">Planos da Oferta</span>
-                                  </div>
-                                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                    <span>Criar planos</span>
-                                    <Switch
-                                      checked={seq.createPlans}
-                                      onCheckedChange={(checked) => handleUpdateDownsellSequence(seq.id, "createPlans", checked)}
-                                    />
-                                  </div>
-                                </div>
-                                <p className="text-sm text-muted-foreground">
-                                  Selecione os planos que serao exibidos com {seq.discountValue}% de desconto
-                                </p>
-                                <div className="rounded-lg bg-secondary/30 p-4">
-                                  <p className="text-sm text-muted-foreground">
-                                    Nenhum plano cadastrado. Configure seus planos na aba "Inicial" ou ative "Criar planos" acima.
-                                  </p>
-                                </div>
-                              </div>
 
                               {/* Entrega Personalizada */}
                               <div className="space-y-3">
