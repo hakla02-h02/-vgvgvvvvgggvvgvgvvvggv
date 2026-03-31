@@ -146,8 +146,27 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
     const chatId = chat?.id as number
     const text = (msg.text as string) || ""
     const telegramUserId = from?.id
+    const userFirstName = from?.first_name as string
+    const userLastName = from?.last_name as string
+    const userUsername = from?.username as string
 
     if (!chatId) return
+
+    // Salvar mensagem recebida no historico (exceto callbacks que nao sao mensagens reais)
+    if (text && !update.callback_query) {
+      await supabase.from("bot_messages").insert({
+        bot_id: botUuid,
+        telegram_user_id: String(telegramUserId),
+        telegram_chat_id: String(chatId),
+        direction: "incoming",
+        message_type: "text",
+        content: text,
+        user_first_name: userFirstName,
+        user_last_name: userLastName,
+        user_username: userUsername,
+        telegram_message_id: msg.message_id as number,
+      }).then(() => {}).catch(e => console.error("Erro ao salvar mensagem:", e))
+    }
 
     // 3. Check if callback query (button click)
     const callbackQuery = update.callback_query as Record<string, unknown> | null

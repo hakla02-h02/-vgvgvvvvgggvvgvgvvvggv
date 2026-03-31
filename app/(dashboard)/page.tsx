@@ -37,6 +37,7 @@ import { useAuth } from "@/lib/auth-context"
 import { NoBotSelected } from "@/components/no-bot-selected"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Button } from "@/components/ui/button"
+import { ChatDialog } from "@/components/chat/chat-dialog"
 
 const dateRanges = [
   { label: "Hoje", value: "today" },
@@ -123,6 +124,8 @@ export default function DashboardPage() {
   const [salesDateRange, setSalesDateRange] = useState(firstWeek)
   const [dealDateRange, setDealDateRange] = useState(firstWeek)
   const [tablePeriod, setTablePeriod] = useState("month")
+  const [chatOpen, setChatOpen] = useState(false)
+  const [selectedChatUserId, setSelectedChatUserId] = useState<string | null>(null)
 
   // Buscar conversas recentes
   const { data: conversationsData, isLoading: loadingConversations } = useSWR<{
@@ -587,12 +590,12 @@ export default function DashboardPage() {
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="text-xs text-muted-foreground border-b border-border">
-                  <th className="pb-3 font-medium px-2">Usuário</th>
-                  <th className="pb-3 font-medium px-2">Canal</th>
+                  <th className="pb-3 font-medium px-2">Usuario</th>
                   <th className="pb-3 font-medium px-2">Mensagens</th>
                   <th className="pb-3 font-medium px-2">Status</th>
                   <th className="pb-3 font-medium px-2">Tempo de Resposta</th>
-                  <th className="pb-3 font-medium px-2 text-right">Resultado</th>
+                  <th className="pb-3 font-medium px-2">Resultado</th>
+                  <th className="pb-3 font-medium px-2 text-right">Acao</th>
                 </tr>
               </thead>
               <tbody>
@@ -613,8 +616,15 @@ export default function DashboardPage() {
                   </tr>
                 ) : (
                   conversations.map((conv) => (
-                    <tr key={conv.id} className="border-b border-border/50 hover:bg-muted/30 transition-colors">
-                      {/* Usuário */}
+                    <tr 
+                      key={conv.id} 
+                      className="border-b border-border/50 hover:bg-muted/30 transition-colors cursor-pointer"
+                      onClick={() => {
+                        setSelectedChatUserId(conv.telegram.replace("@", ""))
+                        setChatOpen(true)
+                      }}
+                    >
+                      {/* Usuario */}
                       <td className="py-4 px-2">
                         <div className="flex items-center gap-3">
                           <div className="w-9 h-9 rounded-full bg-accent/20 flex items-center justify-center flex-shrink-0">
@@ -624,15 +634,6 @@ export default function DashboardPage() {
                             <span className="text-sm font-medium text-foreground">{conv.nome}</span>
                             <span className="text-xs text-muted-foreground">{conv.telegram}</span>
                           </div>
-                        </div>
-                      </td>
-                      {/* Canal */}
-                      <td className="py-4 px-2">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 rounded bg-blue-500/20 flex items-center justify-center">
-                            <Send size={12} className="text-blue-500" />
-                          </div>
-                          <span className="text-sm text-foreground">{conv.canal}</span>
                         </div>
                       </td>
                       {/* Mensagens */}
@@ -678,7 +679,7 @@ export default function DashboardPage() {
                         </div>
                       </td>
                       {/* Resultado */}
-                      <td className="py-4 px-2 text-right">
+                      <td className="py-4 px-2">
                         <span className={`text-sm font-medium ${
                           conv.resultadoTipo === "positivo" 
                             ? "text-green-600 dark:text-green-400" 
@@ -689,6 +690,22 @@ export default function DashboardPage() {
                           {conv.resultado}
                         </span>
                       </td>
+                      {/* Acao */}
+                      <td className="py-4 px-2 text-right">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            setSelectedChatUserId(conv.telegram.replace("@", ""))
+                            setChatOpen(true)
+                          }}
+                          className="gap-1.5"
+                        >
+                          <MessageSquare size={14} />
+                          Abrir Chat
+                        </Button>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -697,6 +714,14 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Chat Dialog */}
+      <ChatDialog 
+        open={chatOpen} 
+        onOpenChange={setChatOpen}
+        botId={selectedBot?.id}
+        initialUserId={selectedChatUserId || undefined}
+      />
     </div>
   )
 }
