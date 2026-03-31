@@ -896,38 +896,57 @@ setRedirectButtonEnabled(config.redirectButton?.enabled || false)
 
   // Upload media for upsell sequence
   const handleUploadUpsellMedia = async (seqId: string, file: File) => {
-    if (!file) return
+    if (!file || !flow) return
     
     const currentSeq = upsellSequences.find(s => s.id === seqId)
     if (!currentSeq || (currentSeq.medias?.length || 0) >= 3) {
-      alert("Maximo de 3 midias permitido")
+      toast({
+        title: "Limite atingido",
+        description: "Maximo de 3 midias permitido",
+        variant: "destructive",
+      })
       return
     }
 
     setUploadingUpsellMedia(seqId)
     
     try {
-      const formData = new FormData()
-      formData.append("file", file)
-      formData.append("mediaType", file.type.startsWith("video/") ? "video" : "photo")
-
-      const response = await fetch("/api/upload-media", {
-        method: "POST",
-        body: formData,
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Erro ao fazer upload")
+      // Upload para Supabase Storage (igual boas-vindas)
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${flow.id}/upsell_${seqId}_${Date.now()}.${fileExt}`
+      
+      const { data, error } = await supabase.storage
+        .from('flow-medias')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+      
+      if (error) {
+        console.error('Upload error:', error)
+        toast({
+          title: "Erro no upload",
+          description: error.message,
+          variant: "destructive",
+        })
+        return
       }
+      
+      // Pegar URL publica
+      const { data: urlData } = supabase.storage
+        .from('flow-medias')
+        .getPublicUrl(fileName)
 
       // Adicionar a URL da midia ao array de midias
-      const updatedMedias = [...(currentSeq.medias || []), data.url]
+      const updatedMedias = [...(currentSeq.medias || []), urlData.publicUrl]
       handleUpdateUpsellSequence(seqId, "medias", updatedMedias)
     } catch (error) {
       console.error("Erro ao fazer upload:", error)
-      alert(error instanceof Error ? error.message : "Erro ao fazer upload")
+      toast({
+        title: "Erro",
+        description: "Falha ao fazer upload da midia",
+        variant: "destructive",
+      })
     } finally {
       setUploadingUpsellMedia(null)
     }
