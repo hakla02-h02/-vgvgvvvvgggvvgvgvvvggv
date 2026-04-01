@@ -409,47 +409,44 @@ export default function FluxosPage() {
           </div>
         </div>
 
-        {/* Stats Cards - grid responsivo com visual moderno */}
-        <div className="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+        {/* Stats Cards - compacto */}
+        <div className="flex items-center gap-2 sm:gap-3 mb-6">
           {/* Bots Card */}
-          <div className="group relative overflow-hidden bg-gradient-to-br from-[#1c1c1e] to-[#232326] border border-[#2a2a2e] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:border-[#bfff00]/30 hover:shadow-lg hover:shadow-[#bfff00]/5">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#bfff00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#bfff00]/20 to-[#bfff00]/5 flex items-center justify-center border border-[#bfff00]/20 shadow-inner">
-                <Bot className="h-5 w-5 sm:h-6 sm:w-6 text-[#bfff00]" />
-              </div>
-              <div className="text-center sm:text-left">
-                <span className="text-2xl sm:text-3xl font-bold text-[#bfff00] tracking-tight">{stats.linkedBots}</span>
-                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-0.5">bots</p>
-              </div>
+          <div className="flex items-center gap-2 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-3 py-2 hover:border-[#bfff00]/30 transition-colors">
+            <div className="w-7 h-7 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+              <svg className="h-3.5 w-3.5 text-[#bfff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 8V4H8" /><rect width="16" height="12" x="4" y="8" rx="2" /><path d="M2 14h2" /><path d="M20 14h2" /><path d="M15 13v2" /><path d="M9 13v2" />
+              </svg>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-[#bfff00]">{stats.linkedBots}</span>
+              <span className="text-xs text-gray-500">bots</span>
             </div>
           </div>
           
           {/* Basicos Card */}
-          <div className="group relative overflow-hidden bg-gradient-to-br from-[#1c1c1e] to-[#232326] border border-[#2a2a2e] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:border-[#bfff00]/30 hover:shadow-lg hover:shadow-[#bfff00]/5">
-            <div className="absolute inset-0 bg-gradient-to-br from-[#bfff00]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-[#bfff00]/20 to-[#bfff00]/5 flex items-center justify-center border border-[#bfff00]/20 shadow-inner">
-                <Zap className="h-5 w-5 sm:h-6 sm:w-6 text-[#bfff00]" />
-              </div>
-              <div className="text-center sm:text-left">
-                <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stats.basicFlows}</span>
-                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-0.5">basicos</p>
-              </div>
+          <div className="flex items-center gap-2 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-3 py-2 hover:border-[#bfff00]/30 transition-colors">
+            <div className="w-7 h-7 rounded-lg bg-[#bfff00]/10 flex items-center justify-center">
+              <svg className="h-3.5 w-3.5 text-[#bfff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+              </svg>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-white">{stats.basicFlows}</span>
+              <span className="text-xs text-gray-500">basicos</span>
             </div>
           </div>
           
           {/* N8N Card */}
-          <div className="group relative overflow-hidden bg-gradient-to-br from-[#1c1c1e] to-[#232326] border border-[#2a2a2e] rounded-2xl p-4 sm:p-5 transition-all duration-300 hover:border-purple-500/30 hover:shadow-lg hover:shadow-purple-500/5">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="relative flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4">
-              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/5 flex items-center justify-center border border-purple-500/20 shadow-inner">
-                <Workflow className="h-5 w-5 sm:h-6 sm:w-6 text-purple-400" />
-              </div>
-              <div className="text-center sm:text-left">
-                <span className="text-2xl sm:text-3xl font-bold text-white tracking-tight">{stats.n8nFlows}</span>
-                <p className="text-xs sm:text-sm text-gray-400 font-medium mt-0.5">n8n</p>
-              </div>
+          <div className="flex items-center gap-2 bg-[#1c1c1e] border border-[#2a2a2e] rounded-xl px-3 py-2 hover:border-orange-500/30 transition-colors">
+            <div className="w-7 h-7 rounded-lg bg-orange-500/10 flex items-center justify-center">
+              <svg className="h-3.5 w-3.5 text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="2" y="2" width="6" height="6" rx="1" /><rect x="16" y="2" width="6" height="6" rx="1" /><rect x="9" y="16" width="6" height="6" rx="1" /><path d="M5 8v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8" /><path d="M12 13v3" />
+              </svg>
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-lg font-bold text-white">{stats.n8nFlows}</span>
+              <span className="text-xs text-gray-500">n8n</span>
             </div>
           </div>
         </div>
