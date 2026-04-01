@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
+// Lazy initialization do Supabase
+function getSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
+}
 
 // Simula o fluxo completo de Packs
 export async function GET(request: NextRequest) {
+  const supabase = getSupabase()
   const { searchParams } = new URL(request.url)
   const botId = searchParams.get("botId")
   const action = searchParams.get("action") || "show_packs"
