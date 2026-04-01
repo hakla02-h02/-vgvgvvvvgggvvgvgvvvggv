@@ -297,7 +297,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
       
       // ========== SHOW PACKS CALLBACK ==========
       if (callbackData === "show_packs") {
-        console.log("[v0] Show Packs Callback recebido")
+        console.log("[v0] Show Packs Callback recebido - botUuid:", botUuid)
         
         // Confirmar recebimento
         await fetch(`https://api.telegram.org/bot${botToken}/answerCallbackQuery`, {
@@ -307,7 +307,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         })
         
         // Buscar flow config com packs
-        const { data: flowForPacks } = await supabase
+        const { data: flowForPacks, error: flowError } = await supabase
           .from("flows")
           .select("id, config")
           .eq("bot_id", botUuid)
@@ -315,10 +315,16 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           .limit(1)
           .single()
         
+        console.log("[v0] flowForPacks encontrado:", !!flowForPacks, "error:", flowError?.message || "nenhum")
+        
         if (flowForPacks) {
           const flowConfig = (flowForPacks.config as Record<string, unknown>) || {}
+          console.log("[v0] flowConfig.packs:", JSON.stringify(flowConfig.packs).substring(0, 500))
+          
           const packsConfig = flowConfig.packs as { enabled?: boolean; list?: Array<{ id: string; name: string; emoji?: string; price: number; description?: string; previewMedias?: string[]; buttonText?: string; active?: boolean }> } | undefined
           const packsList = packsConfig?.list?.filter(p => p.active !== false) || []
+          
+          console.log("[v0] packsList.length:", packsList.length)
           
           if (packsList.length > 0) {
             // Enviar mensagem com botoes para cada pack
@@ -333,6 +339,8 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
               callback_data: "back_to_plans"
             }])
             
+            console.log("[v0] Enviando botoes de packs:", packButtons.length)
+            
             await sendTelegramMessage(
               botToken,
               chatId,
@@ -340,8 +348,12 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
               { inline_keyboard: packButtons }
             )
           } else {
+            console.log("[v0] Nenhum pack ativo encontrado")
             await sendTelegramMessage(botToken, chatId, "Nenhum pack disponivel no momento.")
           }
+        } else {
+          console.log("[v0] Flow nao encontrado para mostrar packs")
+          await sendTelegramMessage(botToken, chatId, "Erro ao carregar packs. Tente novamente.")
         }
         
         return
