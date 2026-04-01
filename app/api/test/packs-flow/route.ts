@@ -18,26 +18,50 @@ export async function GET(request: NextRequest) {
   try {
     // STEP 1: Buscar o bot
     if (!botId) {
-      // Buscar qualquer bot ativo para teste
-      const { data: bots, error: botError } = await supabase
+      // Listar TODOS os bots disponiveis para o usuario escolher
+      const { data: allBots, error: botError } = await supabase
         .from("bots")
-        .select("id, name, token")
-        .limit(1)
-        .single()
+        .select("id, name, user_id, created_at")
+        .order("created_at", { ascending: false })
 
-      if (botError || !bots) {
+      if (botError || !allBots || allBots.length === 0) {
         return NextResponse.json({
           error: "Nenhum bot encontrado",
           details: botError?.message
         }, { status: 404 })
       }
 
-      results.bot = { id: bots.id, name: bots.name }
-      results.botId = bots.id
-      ;(results.steps as string[]).push("STEP 1: Bot encontrado - " + bots.name)
+      // Retorna lista de bots para o usuario escolher
+      return NextResponse.json({
+        message: "Passe o botId na URL para testar um bot especifico",
+        exemplo: `/api/test/packs-flow?botId=SEU_BOT_ID`,
+        botsDisponiveis: allBots.map(b => ({
+          id: b.id,
+          name: b.name,
+          user_id: b.user_id,
+          url_teste: `/api/test/packs-flow?botId=${b.id}`
+        })),
+        totalBots: allBots.length
+      })
     } else {
+      // Buscar o bot especifico
+      const { data: bot, error: botError } = await supabase
+        .from("bots")
+        .select("id, name, user_id")
+        .eq("id", botId)
+        .single()
+      
+      if (botError || !bot) {
+        return NextResponse.json({
+          error: "Bot nao encontrado com esse ID",
+          botId,
+          details: botError?.message
+        }, { status: 404 })
+      }
+      
+      results.bot = { id: bot.id, name: bot.name, user_id: bot.user_id }
       results.botId = botId
-      ;(results.steps as string[]).push("STEP 1: Usando botId fornecido - " + botId)
+      ;(results.steps as string[]).push("STEP 1: Bot encontrado - " + bot.name + " (user: " + bot.user_id + ")")
     }
 
     // STEP 2: Buscar flows vinculados via flow_bots (relacao many-to-many)
