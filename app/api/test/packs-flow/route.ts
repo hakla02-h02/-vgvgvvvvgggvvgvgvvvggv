@@ -40,10 +40,20 @@ export async function GET(request: NextRequest) {
       ;(results.steps as string[]).push("STEP 1: Usando botId fornecido - " + botId)
     }
 
-    // STEP 2: Buscar flow ativo
+    // STEP 2: Buscar TODOS os flows do bot para debug
+    const { data: allFlows, error: allFlowsError } = await supabase
+      .from("flows")
+      .select("id, name, status, created_at")
+      .eq("bot_id", results.botId)
+    
+    results.allFlowsForBot = allFlows || []
+    results.allFlowsError = allFlowsError?.message
+    ;(results.steps as string[]).push(`STEP 2: Encontrados ${allFlows?.length || 0} flows para este bot`)
+    
+    // Buscar flow ativo
     const { data: flow, error: flowError } = await supabase
       .from("flows")
-      .select("id, name, config")
+      .select("id, name, config, status")
       .eq("bot_id", results.botId)
       .eq("status", "ativo")
       .limit(1)
@@ -54,6 +64,8 @@ export async function GET(request: NextRequest) {
         error: "Nenhum flow ativo encontrado para este bot",
         details: flowError?.message,
         botId: results.botId,
+        allFlowsForBot: allFlows,
+        message: "Voce tem flows mas nenhum esta com status='ativo'. Verifique a lista acima e ative um flow.",
         steps: results.steps
       }, { status: 404 })
     }
