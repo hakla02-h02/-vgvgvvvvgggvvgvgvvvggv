@@ -3,6 +3,45 @@ import { getSupabase } from "@/lib/supabase"
 import { createPixPayment } from "@/lib/payments/gateways/mercadopago"
 
 // ---------------------------------------------------------------------------
+// Helper: Busca flow ativo para um bot via flow_bots (relacao many-to-many)
+// ---------------------------------------------------------------------------
+async function getActiveFlowForBot(supabase: ReturnType<typeof getSupabase>, botUuid: string) {
+  // Primeiro tenta via flow_bots (correta)
+  const { data: flowBot } = await supabase
+    .from("flow_bots")
+    .select(`
+      flow_id,
+      flows:flow_id (
+        id,
+        name,
+        config,
+        status
+      )
+    `)
+    .eq("bot_id", botUuid)
+    .limit(1)
+    .single()
+  
+  if (flowBot?.flows) {
+    const flow = flowBot.flows as { id: string; name: string; config: Record<string, unknown>; status: string }
+    if (flow.status === "ativo") {
+      return flow
+    }
+  }
+  
+  // Fallback: busca direto na tabela flows (compatibilidade)
+  const { data: directFlow } = await supabase
+    .from("flows")
+    .select("id, name, config, status")
+    .eq("bot_id", botUuid)
+    .eq("status", "ativo")
+    .limit(1)
+    .single()
+  
+  return directFlow
+}
+
+// ---------------------------------------------------------------------------
 // Telegram helpers
 // ---------------------------------------------------------------------------
 
@@ -306,16 +345,10 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           body: JSON.stringify({ callback_query_id: callbackQueryId })
         })
         
-        // Buscar flow config com packs
-        const { data: flowForPacks, error: flowError } = await supabase
-          .from("flows")
-          .select("id, config")
-          .eq("bot_id", botUuid)
-          .eq("status", "ativo")
-          .limit(1)
-          .single()
+        // Buscar flow config com packs via flow_bots
+        const flowForPacks = await getActiveFlowForBot(supabase, botUuid)
         
-        console.log("[v0] flowForPacks encontrado:", !!flowForPacks, "error:", flowError?.message || "nenhum")
+        console.log("[v0] flowForPacks encontrado:", !!flowForPacks)
         
         if (flowForPacks) {
           const flowConfig = (flowForPacks.config as Record<string, unknown>) || {}
@@ -368,14 +401,8 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           body: JSON.stringify({ callback_query_id: callbackQueryId })
         })
         
-        // Reenviar os planos
-        const { data: flowForPlans } = await supabase
-          .from("flows")
-          .select("id, config")
-          .eq("bot_id", botUuid)
-          .eq("status", "ativo")
-          .limit(1)
-          .single()
+        // Reenviar os planos via flow_bots
+        const flowForPlans = await getActiveFlowForBot(supabase, botUuid)
         
         if (flowForPlans) {
           const { data: plans } = await supabase
@@ -419,14 +446,8 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           body: JSON.stringify({ callback_query_id: callbackQueryId, text: "Carregando pack..." })
         })
         
-        // Buscar flow config com packs
-        const { data: flowForPack } = await supabase
-          .from("flows")
-          .select("id, config")
-          .eq("bot_id", botUuid)
-          .eq("status", "ativo")
-          .limit(1)
-          .single()
+        // Buscar flow config com packs via flow_bots
+        const flowForPack = await getActiveFlowForBot(supabase, botUuid)
         
         if (flowForPack) {
           const flowConfig = (flowForPack.config as Record<string, unknown>) || {}
@@ -489,16 +510,10 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
         
         if (gateway && packPrice > 0) {
           try {
-            // Buscar nome do pack
-            const { data: flowForPackName } = await supabase
-              .from("flows")
-              .select("config")
-              .eq("bot_id", botUuid)
-              .eq("status", "ativo")
-              .limit(1)
-              .single()
-            
-            const flowConfig = (flowForPackName?.config as Record<string, unknown>) || {}
+          // Buscar nome do pack via flow_bots
+          const flowForPackName = await getActiveFlowForBot(supabase, botUuid)
+          
+          const flowConfig = (flowForPackName?.config as Record<string, unknown>) || {}
             const packsConfig = flowConfig.packs as { list?: Array<{ id: string; name: string }> } | undefined
             const pack = packsConfig?.list?.find(p => p.id === packId)
             const packName = pack?.name || "Pack"
@@ -1071,13 +1086,7 @@ async function processUpdate(botId: string, update: Record<string, unknown>) {
           // Try to find plan in flow config - check direct flow first
           let flowWithPlan = null
           
-          const { data: directFlow } = await supabase
-            .from("flows")
-            .select("id, config, bot_id")
-            .eq("bot_id", botUuid)
-            .eq("status", "ativo")
-            .limit(1)
-            .single()
+          const directFlow = await getActiveFlowForBot(supabase, botUuid)
           
           if (directFlow) {
             flowWithPlan = directFlow

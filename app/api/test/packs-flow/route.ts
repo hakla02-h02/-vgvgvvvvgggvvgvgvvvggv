@@ -40,35 +40,45 @@ export async function GET(request: NextRequest) {
       ;(results.steps as string[]).push("STEP 1: Usando botId fornecido - " + botId)
     }
 
-    // STEP 2: Buscar TODOS os flows do bot para debug
-    const { data: allFlows, error: allFlowsError } = await supabase
-      .from("flows")
-      .select("id, name, status, created_at")
+    // STEP 2: Buscar flows vinculados via flow_bots (relacao many-to-many)
+    const { data: flowBots, error: flowBotsError } = await supabase
+      .from("flow_bots")
+      .select(`
+        flow_id,
+        flows:flow_id (
+          id,
+          name,
+          status,
+          config,
+          created_at
+        )
+      `)
       .eq("bot_id", results.botId)
     
-    results.allFlowsForBot = allFlows || []
-    results.allFlowsError = allFlowsError?.message
-    ;(results.steps as string[]).push(`STEP 2: Encontrados ${allFlows?.length || 0} flows para este bot`)
+    results.flowBotsRaw = flowBots
+    results.flowBotsError = flowBotsError?.message
+    ;(results.steps as string[]).push(`STEP 2: Encontrados ${flowBots?.length || 0} vinculos flow_bots para este bot`)
+    
+    // Extrair flows dos vinculos
+    const allFlows = flowBots?.map((fb: any) => fb.flows).filter(Boolean) || []
+    results.allFlowsForBot = allFlows.map((f: any) => ({ id: f.id, name: f.name, status: f.status }))
+    ;(results.steps as string[]).push(`STEP 2b: ${allFlows.length} flows encontrados`)
     
     // Buscar flow ativo
-    const { data: flow, error: flowError } = await supabase
-      .from("flows")
-      .select("id, name, config, status")
-      .eq("bot_id", results.botId)
-      .eq("status", "ativo")
-      .limit(1)
-      .single()
+    const activeFlow = allFlows.find((f: any) => f.status === "ativo")
 
-    if (flowError || !flow) {
+    if (!activeFlow) {
       return NextResponse.json({
         error: "Nenhum flow ativo encontrado para este bot",
-        details: flowError?.message,
+        details: flowBotsError?.message,
         botId: results.botId,
-        allFlowsForBot: allFlows,
-        message: "Voce tem flows mas nenhum esta com status='ativo'. Verifique a lista acima e ative um flow.",
+        allFlowsForBot: allFlows.map((f: any) => ({ id: f.id, name: f.name, status: f.status })),
+        message: "Voce tem flows vinculados mas nenhum esta com status='ativo'. Verifique a lista acima e ative um flow.",
         steps: results.steps
       }, { status: 404 })
     }
+    
+    const flow = activeFlow
 
     results.flow = { id: flow.id, name: flow.name }
     ;(results.steps as string[]).push("STEP 2: Flow ativo encontrado - " + flow.name)
